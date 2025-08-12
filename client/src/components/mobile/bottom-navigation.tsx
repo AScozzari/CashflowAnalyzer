@@ -1,4 +1,4 @@
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -73,19 +73,19 @@ export function BottomNavigation({ className }: BottomNavigationProps) {
     {
       icon: Plus,
       label: "Nuovo Movimento",
-      action: () => setLocation("/movements?action=new"),
+      action: () => window.location.href = "/movements",
       color: "bg-green-500 hover:bg-green-600"
     },
     {
       icon: Search,
-      label: "Ricerca Rapida",
-      action: () => setLocation("/movements?search=true"),
+      label: "Ricerca Rapida", 
+      action: () => window.location.href = "/movements",
       color: "bg-blue-500 hover:bg-blue-600"
     },
     {
       icon: BarChart3,
       label: "Analytics Rapide",
-      action: () => setLocation("/analytics?quick=true"),
+      action: () => window.location.href = "/analytics",
       color: "bg-purple-500 hover:bg-purple-600"
     }
   ];
@@ -103,18 +103,17 @@ export function BottomNavigation({ className }: BottomNavigationProps) {
             const active = isActive(item.path);
             
             return (
-              <Button
-                key={item.path}
-                variant="ghost"
-                size="sm"
-                onClick={() => setLocation(item.path)}
-                className={cn(
-                  "relative flex flex-col items-center justify-center h-14 w-16 rounded-xl transition-all duration-200",
-                  active 
-                    ? "bg-primary/10 text-primary" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                )}
-              >
+              <Link key={item.path} href={item.path}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "relative flex flex-col items-center justify-center h-14 w-16 rounded-xl transition-all duration-200",
+                    active 
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )}
+                >
                 <Icon className={cn(
                   "h-5 w-5 mb-1 transition-transform duration-200",
                   active && "scale-110"
@@ -138,7 +137,8 @@ export function BottomNavigation({ className }: BottomNavigationProps) {
                 {active && (
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
                 )}
-              </Button>
+                </Button>
+              </Link>
             );
           })}
           
@@ -231,18 +231,16 @@ export function MobileHeader({ title, subtitle }: { title: string; subtitle?: st
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <Button
-                    key={item.path}
-                    variant="ghost"
-                    onClick={() => {
-                      // setLocation(item.path);
-                      setShowMenu(false);
-                    }}
-                    className="w-full justify-start gap-3 h-12"
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                  </Button>
+                  <Link key={item.path} href={item.path}>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowMenu(false)}
+                      className="w-full justify-start gap-3 h-12"
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </Button>
+                  </Link>
                 );
               })}
             </div>
