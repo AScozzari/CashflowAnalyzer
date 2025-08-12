@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import FooterSignature from "@/components/layout/footer-signature";
-import ModularDashboard from "@/components/dashboard/modular-dashboard-fixed";
+import ModularDashboard from "@/components/dashboard/modular-dashboard";
 // import { InstallPrompt } from "@/components/ui/install-prompt"; // Temporaneamente disabilitato
 import { ResponsiveLayout } from "@/components/layout/responsive-layout";
 
@@ -47,13 +47,7 @@ export default function Dashboard() {
       <div className="space-y-4">
         {/* <InstallPrompt /> */}
         
-        <ModularDashboard 
-          stats={stats}
-          cashFlowData={cashFlowData}
-          statusDistribution={statusDistribution}
-          recentMovements={recentMovements}
-          isLoading={statsLoading || cashFlowLoading || statusLoading || movementsLoading}
-        />
+        <ModularDashboard />
       </div>
     </ResponsiveLayout>
   );
