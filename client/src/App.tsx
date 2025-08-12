@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
-import { ThemeProvider } from "@/contexts/theme-context";
+import { SimpleThemeProvider } from "@/contexts/simple-theme-context";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Sidebar from "@/components/layout/sidebar";
 import Dashboard from "@/pages/dashboard-new";
@@ -86,7 +86,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider>
+      <SimpleThemeProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <TooltipProvider>
@@ -95,7 +95,7 @@ function App() {
             </TooltipProvider>
           </AuthProvider>
         </QueryClientProvider>
-      </ThemeProvider>
+      </SimpleThemeProvider>
     </ErrorBoundary>
   );
 }
