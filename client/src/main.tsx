@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
-import App from "./App-clean"; // App pulita senza problemi drag&drop
-import "./index.css"; // CSS originale
+import App from "./test-simple-html"; // Test ultra-semplice senza CSS Tailwind
+// import "./index.css"; // CSS temporaneamente disabilitato
 
 // Service Worker temporaneamente disabilitato per debug
 // Register Service Worker for PWA functionality
