@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import FooterSignature from "@/components/layout/footer-signature";
-import ModularDashboard from "@/components/dashboard/modular-dashboard";
+// ModularDashboard disabilitato - causa errori Draggable
+// import ModularDashboard from "@/components/dashboard/modular-dashboard";
 // import { InstallPrompt } from "@/components/ui/install-prompt"; // Temporaneamente disabilitato
 import { ResponsiveLayout } from "@/components/layout/responsive-layout";
 
@@ -47,13 +48,16 @@ export default function Dashboard() {
       <div className="space-y-4">
         {/* <InstallPrompt /> */}
         
-        <ModularDashboard 
-          stats={stats}
-          cashFlowData={cashFlowData}
-          statusDistribution={statusDistribution}
-          recentMovements={recentMovements}
-          isLoading={statsLoading || cashFlowLoading || statusLoading || movementsLoading}
-        />
+        {/* ModularDashboard sostituito con dashboard semplificato */}
+        <div className="flex-1 space-y-6 p-4 md:p-6 pt-6">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+            Dashboard EasyCashFlows
+          </h2>
+          <div className="text-center p-8 border-2 border-dashed border-gray-300 rounded-lg">
+            <p className="text-gray-600">Dashboard temporaneamente semplificata per evitare errori drag&drop</p>
+            <p className="text-sm text-gray-500 mt-2">Usa l'app ultra-stabile per accedere alla dashboard completa</p>
+          </div>
+        </div>
       </div>
     </ResponsiveLayout>
   );
