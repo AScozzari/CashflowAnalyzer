@@ -25,19 +25,18 @@ export default function Movements() {
   const [viewingMovement, setViewingMovement] = useState<MovementWithRelations | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-  const { data: movementsData, isLoading } = useQuery({
+  const { data: movementsResponse, isLoading } = useQuery<{
+    data: MovementWithRelations[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+    };
+  }>({
     queryKey: ["/api/movements"],
-    queryFn: async () => {
-      const response = await fetch("/api/movements");
-      if (!response.ok) {
-        throw new Error('Failed to fetch movements');
-      }
-      const result = await response.json();
-      return result.data || []; // Extract the data array from paginated response
-    },
   });
 
-  const movements = Array.isArray(movementsData) ? movementsData : [];
+  const movements = Array.isArray(movementsResponse?.data) ? movementsResponse.data : [];
 
   // Delete movement mutation
   const deleteMutation = useMutation({
