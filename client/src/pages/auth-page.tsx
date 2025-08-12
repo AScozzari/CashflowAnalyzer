@@ -297,9 +297,9 @@ export default function AuthPage() {
                       
                       <div className="text-center mt-4">
                         <Link href="/forgot-password">
-                          <Button variant="ghost" size="sm" className="text-sm text-muted-foreground hover:text-primary">
+                          <span className="text-sm text-muted-foreground hover:text-primary cursor-pointer">
                             Password dimenticata?
-                          </Button>
+                          </span>
                         </Link>
                       </div>
                     </form>
