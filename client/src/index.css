@@ -52,37 +52,37 @@
 }
 
 .dark {
-  --background: hsl(0 0% 0%);
-  --foreground: hsl(200 6.6667% 91.1765%);
-  --card: hsl(228 9.8039% 10%);
-  --card-foreground: hsl(0 0% 85.0980%);
-  --popover: hsl(0 0% 0%);
-  --popover-foreground: hsl(200 6.6667% 91.1765%);
+  --background: hsl(220 13% 9%);
+  --foreground: hsl(210 40% 98%);
+  --card: hsl(220 13% 11%);
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(220 13% 11%);
+  --popover-foreground: hsl(210 40% 98%);
   --primary: hsl(203.7736 87.6033% 52.5490%);
   --primary-foreground: hsl(0 0% 100%);
   --secondary: hsl(195.0000 15.3846% 94.9020%);
   --secondary-foreground: hsl(210 25% 7.8431%);
-  --muted: hsl(0 0% 9.4118%);
-  --muted-foreground: hsl(210 3.3898% 46.2745%);
-  --accent: hsl(205.7143 70% 7.8431%);
-  --accent-foreground: hsl(203.7736 87.6033% 52.5490%);
-  --destructive: hsl(356.3033 90.5579% 54.3137%);
+  --muted: hsl(220 13% 15%);
+  --muted-foreground: hsl(220 9% 55%);
+  --accent: hsl(220 13% 15%);
+  --accent-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 84% 60%);
   --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(210 5.2632% 25%);
-  --input: hsl(207.6923 27.6596% 25%);
+  --border: hsl(220 13% 18%);
+  --input: hsl(220 13% 18%);
   --ring: hsl(202.8169 89.1213% 53.1373%);
   --chart-1: hsl(203.8863 88.2845% 53.1373%);
   --chart-2: hsl(159.7826 100% 36.0784%);
   --chart-3: hsl(42.0290 92.8251% 56.2745%);
   --chart-4: hsl(147.1429 78.5047% 41.9608%);
   --chart-5: hsl(341.4894 75.2000% 50.9804%);
-  --sidebar: hsl(228 9.8039% 10%);
-  --sidebar-foreground: hsl(0 0% 85.0980%);
-  --sidebar-primary: hsl(202.8169 89.1213% 53.1373%);
+  --sidebar: hsl(220 13% 11%);
+  --sidebar-foreground: hsl(210 40% 98%);
+  --sidebar-primary: hsl(217 91% 60%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(205.7143 70% 7.8431%);
-  --sidebar-accent-foreground: hsl(203.7736 87.6033% 52.5490%);
-  --sidebar-border: hsl(205.7143 15.7895% 26.0784%);
+  --sidebar-accent: hsl(220 13% 15%);
+  --sidebar-accent-foreground: hsl(210 40% 98%);
+  --sidebar-border: hsl(220 13% 18%);
   --sidebar-ring: hsl(202.8169 89.1213% 53.1373%);
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
@@ -105,5 +105,54 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  /* Forza il tema per tutti i modal e dialog */
+  [data-radix-dialog-content],
+  [data-radix-dialog-overlay],
+  [data-radix-popover-content],
+  [data-radix-select-content],
+  [data-radix-dropdown-menu-content],
+  [data-radix-context-menu-content],
+  [data-radix-hover-card-content],
+  [data-radix-menubar-content],
+  [data-radix-navigation-menu-content],
+  [data-radix-toast-viewport],
+  [data-radix-tooltip-content],
+  .dialog-content,
+  .modal-content {
+    @apply bg-card text-card-foreground border border-border;
+  }
+  
+  /* Forza il tema per input nei modal */
+  [data-radix-dialog-content] input,
+  [data-radix-popover-content] input,
+  .dialog-content input,
+  .modal-content input {
+    @apply bg-background text-foreground border-input;
+  }
+  
+  /* Forza il tema per select nei modal */
+  [data-radix-dialog-content] [data-radix-select-trigger],
+  [data-radix-popover-content] [data-radix-select-trigger],
+  .dialog-content select,
+  .modal-content select {
+    @apply bg-background text-foreground border-input;
+  }
+  
+  /* Forza il tema per textarea nei modal */
+  [data-radix-dialog-content] textarea,
+  [data-radix-popover-content] textarea,
+  .dialog-content textarea,
+  .modal-content textarea {
+    @apply bg-background text-foreground border-input;
+  }
+  
+  /* Forza il tema per label nei modal */
+  [data-radix-dialog-content] label,
+  [data-radix-popover-content] label,
+  .dialog-content label,
+  .modal-content label {
+    @apply text-foreground;
   }
 }

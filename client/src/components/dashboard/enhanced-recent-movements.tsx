@@ -12,47 +12,50 @@ import {
   Building, 
   Users, 
   CreditCard,
-  Calendar,
-  TrendingUp,
+  Clock,
+  MoreHorizontal,
   Eye,
   Edit,
-  Plus
+  Download,
+  Calendar,
+  DollarSign,
+  TrendingUp
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { MovementWithRelations } from "@shared/schema";
 
-interface DashboardRecentMovementsProps {
+interface RecentMovementsProps {
   movements: MovementWithRelations[];
   isLoading: boolean;
   className?: string;
 }
 
-export default function DashboardRecentMovements({ movements, isLoading, className }: DashboardRecentMovementsProps) {
-  const formatCurrency = (amount: string | number, type: string) => {
+export default function EnhancedRecentMovements({ movements, isLoading, className }: RecentMovementsProps) {
+  const formatCurrency = (amount: string, type: string) => {
     const formatted = new Intl.NumberFormat('it-IT', {
       style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(typeof amount === 'string' ? parseFloat(amount) : amount);
+    }).format(parseFloat(amount));
     
     return {
       amount: formatted,
       sign: type === 'income' ? '+' : '-',
-      color: type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+      color: type === 'income' ? 'text-green-600' : 'text-red-600',
       bgColor: type === 'income' ? 'bg-green-50 dark:bg-green-950/30' : 'bg-red-50 dark:bg-red-950/30'
     };
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, string> = {
-      "Saldato": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      "Da Saldare": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-      "In Lavorazione": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      "Saldato Parziale": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-      "Annullato": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-      "Sospeso": "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
+    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; color: string }> = {
+      "Saldato": { variant: "default", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
+      "Da Saldare": { variant: "secondary", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" },
+      "In Lavorazione": { variant: "outline", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300" },
+      "Saldato Parziale": { variant: "secondary", color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300" },
+      "Annullato": { variant: "destructive", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" },
+      "Sospeso": { variant: "outline", color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300" },
     };
     return variants[status] || variants["Da Saldare"];
   };
@@ -69,7 +72,7 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
         <CardContent>
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center justify-between p-4 border border-border rounded-lg">
+              <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center space-x-4">
                   <Skeleton className="w-10 h-10 rounded-full" />
                   <div className="space-y-2">
@@ -106,10 +109,7 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
               Non sono presenti movimenti recenti da visualizzare
             </p>
             <Button asChild variant="outline">
-              <Link href="/movements">
-                <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Movimento
-              </Link>
+              <Link href="/movements">Aggiungi Movimento</Link>
             </Button>
           </div>
         </CardContent>
@@ -138,9 +138,9 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {movements.map((movement: any) => {
+          {movements.map((movement) => {
             const currency = formatCurrency(movement.amount, movement.type);
-            const statusColor = getStatusBadge(movement.movementStatus?.name || "Da Saldare");
+            const status = getStatusBadge(movement.movementStatus?.name || "Da Saldare");
             
             return (
               <div
@@ -171,7 +171,7 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
                       )}
                     </div>
                     
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <Calendar className="w-3 h-3" />
                         <span>{format(new Date(movement.flowDate), 'dd MMM yyyy', { locale: it })}</span>
@@ -194,21 +194,16 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
                       {movement.resource && (
                         <div className="flex items-center space-x-1">
                           <Users className="w-3 h-3" />
-                          <span className="truncate max-w-20">
-                            {movement.resource.firstName} {movement.resource.lastName}
-                          </span>
+                          <span className="truncate max-w-20">{movement.resource.firstName} {movement.resource.lastName}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* VAT and additional info */}
+                    {/* VAT Information */}
                     {movement.vatAmount && parseFloat(movement.vatAmount) > 0 && (
                       <div className="mt-2 flex items-center space-x-2">
                         <Badge variant="outline" className="text-xs">
-                          IVA: {new Intl.NumberFormat('it-IT', { 
-                            style: 'currency', 
-                            currency: 'EUR' 
-                          }).format(parseFloat(movement.vatAmount))}
+                          IVA: {new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(parseFloat(movement.vatAmount))}
                         </Badge>
                         {movement.vatType && (
                           <Badge variant="outline" className="text-xs">
@@ -227,13 +222,13 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
                   </div>
                   
                   <Badge 
-                    variant="outline"
-                    className={`text-xs ${statusColor}`}
+                    variant={status.variant as any}
+                    className={`text-xs ${status.color}`}
                   >
                     {movement.movementStatus?.name || "Da Saldare"}
                   </Badge>
                   
-                  {/* Action Buttons - Visible on hover */}
+                  {/* Action Buttons */}
                   <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       size="sm"
@@ -249,7 +244,7 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
                     
                     <Button
                       size="sm"
-                      variant="ghost" 
+                      variant="ghost"
                       className="h-8 w-8 p-0"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -269,7 +264,7 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
         <div className="mt-6 pt-4 border-t border-border">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              Ultimi {movements.length} movimenti registrati
+              Ultimi {movements.length} movimenti
             </span>
             <Button asChild variant="link" size="sm">
               <Link href="/movements" className="text-primary">
