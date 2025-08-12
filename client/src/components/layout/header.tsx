@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { LogOut, User, Shield, CreditCard } from "lucide-react";
 import { NotificationsBell } from "./notifications-bell";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -60,14 +61,15 @@ export default function Header({ title, subtitle, action }: HeaderProps) {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 p-6">
+    <header className="bg-background border-b border-border p-6 transition-colors">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
-          {subtitle && <p className="text-gray-600">{subtitle}</p>}
+          <h2 className="text-2xl font-bold text-foreground">{title}</h2>
+          {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
         </div>
         <div className="flex items-center space-x-4">
           {action}
+          <ThemeToggle />
           <NotificationsBell />
           
           {user && (

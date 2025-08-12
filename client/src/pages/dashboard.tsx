@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import FooterSignature from "@/components/layout/footer-signature";
-import StatsCards from "@/components/dashboard/stats-cards";
-import CashFlowChart from "@/components/dashboard/cash-flow-chart";
-import MovementStatusChart from "@/components/dashboard/movement-status-chart";
-import RecentMovements from "@/components/dashboard/recent-movements";
+import ModularDashboard from "@/components/dashboard/modular-dashboard";
+import { InstallPrompt } from "@/components/ui/install-prompt";
+import { ResponsiveLayout, useScreenSize } from "@/components/responsive/responsive-layout";
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery<{
@@ -38,30 +37,52 @@ export default function Dashboard() {
     },
   });
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        title="Dashboard" 
-        subtitle="Panoramica generale dei flussi finanziari"
-      />
-      
-      <div className="p-6 space-y-6">
-        <StatsCards 
-          totalIncome={stats?.totalIncome || 0}
-          totalExpenses={stats?.totalExpenses || 0}
-          netCashFlow={stats?.netBalance || 0}
-          movementCount={stats?.totalMovements || 0}
+  const { isMobile } = useScreenSize();
+
+  // Desktop layout
+  if (!isMobile) {
+    return (
+      <div className="min-h-screen bg-background transition-colors">
+        <Header 
+          title="Dashboard" 
+          subtitle="Panoramica generale dei flussi finanziari"
         />
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <CashFlowChart data={cashFlowData} isLoading={cashFlowLoading} />
-          <MovementStatusChart data={statusDistribution} isLoading={statusLoading} />
+        <div className="p-6 space-y-6">
+          <InstallPrompt />
+          
+          <ModularDashboard 
+            stats={stats}
+            cashFlowData={cashFlowData}
+            statusDistribution={statusDistribution}
+            recentMovements={recentMovements}
+            isLoading={statsLoading || cashFlowLoading || statusLoading || movementsLoading}
+          />
         </div>
         
-        <RecentMovements movements={recentMovements} isLoading={movementsLoading} />
+        <FooterSignature />
       </div>
-      
-      <FooterSignature />
-    </div>
+    );
+  }
+
+  // Mobile layout with responsive components
+  return (
+    <ResponsiveLayout
+      title="Dashboard"
+      subtitle="Panoramica flussi finanziari"
+      enableGestures={true}
+    >
+      <div className="space-y-4">
+        <InstallPrompt />
+        
+        <ModularDashboard 
+          stats={stats}
+          cashFlowData={cashFlowData}
+          statusDistribution={statusDistribution}
+          recentMovements={recentMovements}
+          isLoading={statsLoading || cashFlowLoading || statusLoading || movementsLoading}
+        />
+      </div>
+    </ResponsiveLayout>
   );
 }

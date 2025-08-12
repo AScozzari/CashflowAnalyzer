@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { ThemeProvider } from "@/contexts/theme-context";
 import Sidebar from "@/components/layout/sidebar";
 import Dashboard from "@/pages/dashboard";
 import Movements from "@/pages/movements";
@@ -25,7 +26,7 @@ function Router() {
       
       {/* Route protette con layout */}
       <ProtectedRoute path="/" component={() => (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex min-h-screen bg-background transition-colors">
           <Sidebar />
           <main className="flex-1 overflow-auto">
             <Dashboard />
@@ -34,7 +35,7 @@ function Router() {
       )} />
       
       <ProtectedRoute path="/dashboard" component={() => (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex min-h-screen bg-background transition-colors">
           <Sidebar />
           <main className="flex-1 overflow-auto">
             <Dashboard />
@@ -43,7 +44,7 @@ function Router() {
       )} />
       
       <ProtectedRoute path="/movements" component={() => (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex min-h-screen bg-background transition-colors">
           <Sidebar />
           <main className="flex-1 overflow-auto">
             <Movements />
@@ -52,7 +53,7 @@ function Router() {
       )} />
       
       <ProtectedRoute path="/analytics" component={() => (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex min-h-screen bg-background transition-colors">
           <Sidebar />
           <main className="flex-1 overflow-auto">
             <Analytics />
@@ -65,7 +66,7 @@ function Router() {
         path="/settings" 
         allowedRoles={["admin", "finance"]}
         component={() => (
-          <div className="flex min-h-screen bg-gray-50">
+          <div className="flex min-h-screen bg-background transition-colors">
             <Sidebar />
             <main className="flex-1 overflow-auto">
               <Settings />
@@ -82,14 +83,16 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
