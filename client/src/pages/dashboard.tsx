@@ -9,9 +9,9 @@ import FooterSignature from "@/components/layout/footer-signature";
 import { InstallPrompt } from "@/components/ui/install-prompt";
 import { ResponsiveLayout, useScreenSize } from "@/components/responsive/responsive-layout";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
-import CashFlowChart from "@/components/dashboard/cash-flow-chart";
-import MovementStatusChart from "@/components/dashboard/movement-status-chart";
-import RecentMovements from "@/components/dashboard/recent-movements";
+import DashboardCashFlowChart from "@/components/dashboard/cash-flow-chart";
+import DashboardMovementStatusChart from "@/components/dashboard/movement-status-chart";
+import DashboardRecentMovements from "@/components/dashboard/recent-movements";
 
 const COLORS = {
   "Saldato": "#10B981",
@@ -99,7 +99,7 @@ function StatsCards({ stats, isLoading }: { stats: any; isLoading: boolean }) {
   );
 }
 
-function CashFlowChart({ data, isLoading }: { data: any; isLoading: boolean }) {
+function InlineCashFlowChart({ data, isLoading }: { data: any; isLoading: boolean }) {
   if (isLoading) {
     return (
       <Card className="col-span-2">
@@ -185,7 +185,7 @@ function StatusChart({ data, isLoading }: { data: any; isLoading: boolean }) {
   );
 }
 
-function RecentMovements({ movements, isLoading }: { movements: any; isLoading: boolean }) {
+function InlineRecentMovements({ movements, isLoading }: { movements: any; isLoading: boolean }) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
@@ -361,7 +361,7 @@ export default function Dashboard() {
   // Memoize data to prevent unnecessary re-renders
   const memoizedStats = useMemo(() => stats, [stats]);
   const memoizedCashFlowData = useMemo(() => cashFlowData, [cashFlowData]);
-  const memoizedStatusDistribution = useMemo(() => statusDistribution, [statusDistribution]);
+  const memoizedStatusDistribution = useMemo(() => statusDistribution as Array<{statusName: string; count: number}> | undefined, [statusDistribution]);
   const memoizedRecentMovements = useMemo(() => recentMovements, [recentMovements]);
 
   // Desktop layout
@@ -374,15 +374,15 @@ export default function Dashboard() {
         />
         
         <div className="p-6 space-y-6">
-          <InstallPrompt />
-          
           <StatsCards stats={memoizedStats} isLoading={statsLoading} />
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <CashFlowChart data={memoizedCashFlowData} isLoading={cashFlowLoading} />
-            <MovementStatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
-            <RecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
+            <DashboardCashFlowChart data={memoizedCashFlowData} isLoading={cashFlowLoading} />
+            <DashboardMovementStatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
+            <DashboardRecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
           </div>
+          
+          <InstallPrompt />
         </div>
         
         <FooterSignature />
@@ -403,9 +403,9 @@ export default function Dashboard() {
         <StatsCards stats={memoizedStats} isLoading={statsLoading} />
         
         <div className="space-y-4">
-          <CashFlowChart data={memoizedCashFlowData} isLoading={cashFlowLoading} />
-          <StatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
-          <RecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
+          <DashboardCashFlowChart data={memoizedCashFlowData} isLoading={cashFlowLoading} />
+          <DashboardMovementStatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
+          <DashboardRecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
         </div>
       </div>
     </ResponsiveLayout>
