@@ -10,7 +10,7 @@ import { ThemeProvider } from "@/lib/theme-provider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Sidebar from "@/components/layout/sidebar";
 import { BottomNavigation } from "@/components/mobile/mobile-navigation";
-import Dashboard from "@/pages/dashboard-clean";
+import Dashboard from "@/pages/dashboard-professional";
 import Movements from "@/pages/movements";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
