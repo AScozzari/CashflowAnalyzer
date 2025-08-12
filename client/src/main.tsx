@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import App from "./App-jsx"; // Test JSX semplificato
+import App from "./App-fixed"; // App con error boundaries e lazy loading
 import "./index-fixed.css"; // CSS Tailwind sistemato
 
 // Service Worker temporaneamente disabilitato per debug
