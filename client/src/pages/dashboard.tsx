@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import FooterSignature from "@/components/layout/footer-signature";
-import ModularDashboard from "@/components/dashboard/modular-dashboard";
+import SimpleDashboard from "@/components/dashboard/simple-dashboard";
 import { InstallPrompt } from "@/components/ui/install-prompt";
 import { ResponsiveLayout, useScreenSize } from "@/components/responsive/responsive-layout";
 
