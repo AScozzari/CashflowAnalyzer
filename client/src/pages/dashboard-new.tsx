@@ -128,7 +128,7 @@ function PerformanceIndicators({ stats, isLoading }: { stats: any; isLoading: bo
 }
 
 export default function DashboardNew() {
-  const [location, navigate] = useLocation();
+  const [, setLocation] = useLocation();
   const { isMobile } = useScreenSize();
 
   // Carica i movimenti per il widget recenti
@@ -140,7 +140,7 @@ export default function DashboardNew() {
 
   // Elabora i movimenti per la visualizzazione
   const movements = useMemo(() => {
-    if (!movementsData?.data) return [];
+    if (!movementsData || !Array.isArray(movementsData.data)) return [];
     return movementsData.data.slice(0, 8); // Più movimenti per una vista migliore
   }, [movementsData]);
 
