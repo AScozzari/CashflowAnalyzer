@@ -105,11 +105,12 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
             <p className="text-sm text-muted-foreground mb-4">
               Non sono presenti movimenti recenti da visualizzare
             </p>
-            <Button asChild variant="outline">
-              <Link href="/movements">
-                <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Movimento
-              </Link>
+            <Button 
+              variant="outline"
+              onClick={() => window.location.href = '/movements'}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Aggiungi Movimento
             </Button>
           </div>
         </CardContent>
@@ -128,11 +129,13 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
               {movements.length} transazioni
             </Badge>
           </CardTitle>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/movements">
-              <Eye className="w-4 h-4 mr-2" />
-              Visualizza Tutti
-            </Link>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => window.location.href = '/movements'}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Visualizza Tutti
           </Button>
         </div>
       </CardHeader>
@@ -271,10 +274,13 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
             <span className="text-muted-foreground">
               Ultimi {movements.length} movimenti registrati
             </span>
-            <Button asChild variant="link" size="sm">
-              <Link href="/movements" className="text-primary">
-                Gestisci Tutti i Movimenti →
-              </Link>
+            <Button 
+              variant="link" 
+              size="sm"
+              onClick={() => window.location.href = '/movements'}
+              className="text-primary"
+            >
+              Gestisci Tutti i Movimenti →
             </Button>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { InstallPrompt } from "@/components/ui/install-prompt";
 import { useScreenSize } from "@/components/responsive/responsive-layout";
 import InteractiveDashboard from "@/components/dashboard/interactive-dashboard";
 import DashboardRecentMovements from "@/components/dashboard/recent-movements";
+import StatusPieChart from "@/components/dashboard/status-pie-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,25 +36,33 @@ function QuickActionsWidget() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Button asChild className="w-full justify-start" size="sm">
-          <Link href="/movements">
-            <Plus className="w-4 h-4 mr-2" />
-            Nuovo Movimento
-          </Link>
+        <Button 
+          className="w-full justify-start" 
+          size="sm"
+          onClick={() => window.location.href = '/movements'}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nuovo Movimento
         </Button>
         
-        <Button asChild variant="outline" className="w-full justify-start" size="sm">
-          <Link href="/analytics">
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Visualizza Analytics
-          </Link>
+        <Button 
+          variant="outline" 
+          className="w-full justify-start" 
+          size="sm"
+          onClick={() => window.location.href = '/analytics'}
+        >
+          <BarChart3 className="w-4 h-4 mr-2" />
+          Visualizza Analytics
         </Button>
         
-        <Button asChild variant="outline" className="w-full justify-start" size="sm">
-          <Link href="/settings">
-            <Settings className="w-4 h-4 mr-2" />
-            Impostazioni
-          </Link>
+        <Button 
+          variant="outline" 
+          className="w-full justify-start" 
+          size="sm"
+          onClick={() => window.location.href = '/settings'}
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          Impostazioni
         </Button>
         
         <Button variant="outline" className="w-full justify-start" size="sm">
@@ -135,13 +144,13 @@ export default function DashboardNew() {
   }, [movementsData]);
 
   return (
-    <div className="min-h-screen bg-background transition-colors">
+    <div className="dashboard-container min-h-screen bg-background transition-colors">
       <Header 
         title="Dashboard Finanziaria" 
         subtitle="Centro di controllo avanzato per la gestione dei flussi di cassa"
       />
       
-      <div className="space-y-8">
+      <div className="space-y-8 bg-background">
         {/* Avviso di installazione PWA */}
         <div className="px-4 lg:px-6">
           <InstallPrompt />
@@ -151,7 +160,7 @@ export default function DashboardNew() {
         <InteractiveDashboard />
         
         {/* Sezione Movimenti Recenti Migliorata */}
-        <div className="px-4 lg:px-6">
+        <div className="px-4 lg:px-6 pb-8">
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div className="xl:col-span-2">
               <DashboardRecentMovements 
@@ -162,6 +171,9 @@ export default function DashboardNew() {
             
             {/* Sidebar con informazioni aggiuntive */}
             <div className="space-y-6">
+              {/* Grafico Stati Movimenti */}
+              <StatusPieChart />
+              
               {/* Widget Performance */}
               <PerformanceIndicators 
                 stats={null} 
