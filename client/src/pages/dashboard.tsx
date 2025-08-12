@@ -3,7 +3,7 @@ import Header from "@/components/layout/header";
 import FooterSignature from "@/components/layout/footer-signature";
 import ModularDashboard from "@/components/dashboard/modular-dashboard";
 import { InstallPrompt } from "@/components/ui/install-prompt";
-import { ResponsiveLayout, useScreenSize } from "@/components/responsive/responsive-layout";
+import { ResponsiveLayout } from "@/components/layout/responsive-layout";
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery<{
@@ -37,39 +37,11 @@ export default function Dashboard() {
     },
   });
 
-  const { isMobile } = useScreenSize();
-
-  // Desktop layout
-  if (!isMobile) {
-    return (
-      <div className="min-h-screen bg-background transition-colors">
-        <Header 
-          title="Dashboard" 
-          subtitle="Panoramica generale dei flussi finanziari"
-        />
-        
-        <div className="p-6 space-y-6">
-          <InstallPrompt />
-          
-          <ModularDashboard 
-            stats={stats}
-            cashFlowData={cashFlowData}
-            statusDistribution={statusDistribution}
-            recentMovements={recentMovements}
-            isLoading={statsLoading || cashFlowLoading || statusLoading || movementsLoading}
-          />
-        </div>
-        
-        <FooterSignature />
-      </div>
-    );
-  }
-
-  // Mobile layout with responsive components
+  // Use ResponsiveLayout for all devices
   return (
     <ResponsiveLayout
       title="Dashboard"
-      subtitle="Panoramica flussi finanziari"
+      subtitle="Panoramica generale dei flussi finanziari"
       enableGestures={true}
     >
       <div className="space-y-4">
