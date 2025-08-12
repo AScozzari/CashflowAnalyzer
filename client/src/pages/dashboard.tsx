@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, Activity, FileText, PieChart, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -241,34 +242,81 @@ function RecentMovements({ movements, isLoading }: { movements: any; isLoading: 
 }
 
 export default function Dashboard() {
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const [, setLocation] = useLocation();
+
+  // Check authentication status first
+  const { data: user, isLoading: authLoading, error: authError } = useQuery({
+    queryKey: ["/api/auth/user"],
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    refetchOnReconnect: false,
+    retry: 1,
+    onError: (error: any) => {
+      if (error.message.includes('401')) {
+        setLocation('/auth');
+      }
+    },
+  });
+
+  // Only fetch dashboard data if user is authenticated
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ["/api/analytics/stats"],
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
+    enabled: !!user && !authLoading,
+    retry: 1,
+    onError: (error: any) => {
+      if (error.message.includes('401')) {
+        setLocation('/auth');
+      }
+    },
   });
 
-  const { data: cashFlowData, isLoading: cashFlowLoading } = useQuery({
+  const { data: cashFlowData, isLoading: cashFlowLoading, error: cashFlowError } = useQuery({
     queryKey: ["/api/analytics/cash-flow"],
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
+    enabled: !!user && !authLoading,
+    retry: 1,
+    onError: (error: any) => {
+      if (error.message.includes('401')) {
+        setLocation('/auth');
+      }
+    },
   });
 
-  const { data: statusDistribution, isLoading: statusLoading } = useQuery({
+  const { data: statusDistribution, isLoading: statusLoading, error: statusError } = useQuery({
     queryKey: ["/api/analytics/status-distribution"],
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
+    enabled: !!user && !authLoading,
+    retry: 1,
+    onError: (error: any) => {
+      if (error.message.includes('401')) {
+        setLocation('/auth');
+      }
+    },
   });
 
-  const { data: recentMovements, isLoading: movementsLoading } = useQuery({
+  const { data: recentMovements, isLoading: movementsLoading, error: movementsError } = useQuery({
     queryKey: ["/api/movements"],
     queryFn: async () => {
-      const response = await fetch("/api/movements?limit=5");
+      const response = await fetch("/api/movements?limit=5", {
+        credentials: "include"
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('401: Unauthorized');
+        }
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
       const result = await response.json();
       return result.data;
     },
@@ -276,7 +324,50 @@ export default function Dashboard() {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
+    enabled: !!user && !authLoading,
+    retry: 1,
+    onError: (error: any) => {
+      if (error.message.includes('401')) {
+        setLocation('/auth');
+      }
+    },
   });
+
+  // Redirect to auth if not authenticated
+  useEffect(() => {
+    if (!authLoading && authError && authError.message.includes('401')) {
+      setLocation('/auth');
+    }
+  }, [authLoading, authError, setLocation]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verifica autenticazione...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there are API errors
+  if (statsError || cashFlowError || statusError || movementsError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Errore nel caricamento della dashboard</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+          >
+            Ricarica pagina
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const { isMobile } = useScreenSize();
   
