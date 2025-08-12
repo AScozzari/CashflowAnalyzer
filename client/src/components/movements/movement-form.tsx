@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,6 +70,10 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
 
   // Watch for changes to reset dependent fields
   const watchedCompanyId = form.watch("companyId");
+  
+  // Watch for amount and VAT type changes to calculate VAT automatically
+  const watchedAmount = form.watch("amount");
+  const watchedVatType = form.watch("vatType");
 
   useEffect(() => {
     if (watchedCompanyId !== selectedCompanyId) {
@@ -83,6 +87,37 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
       }
     }
   }, [watchedCompanyId, selectedCompanyId, form, movement?.companyId]);
+
+  // Calculate VAT amount automatically when amount or VAT type changes
+  useEffect(() => {
+    if (watchedAmount && watchedVatType && parseFloat(watchedAmount) > 0) {
+      const amount = parseFloat(watchedAmount);
+      let vatRate = 0;
+      
+      switch (watchedVatType) {
+        case "iva_22":
+          vatRate = 0.22;
+          break;
+        case "iva_10":
+          vatRate = 0.10;
+          break;
+        case "iva_4":
+          vatRate = 0.04;
+          break;
+        case "iva_art_74":
+        case "esente":
+          vatRate = 0;
+          break;
+        default:
+          vatRate = 0;
+      }
+      
+      const vatAmount = (amount * vatRate).toFixed(2);
+      form.setValue("vatAmount", vatAmount);
+    } else if (!watchedVatType || watchedVatType === "esente" || watchedVatType === "iva_art_74") {
+      form.setValue("vatAmount", "0.00");
+    }
+  }, [watchedAmount, watchedVatType, form]);
 
   // Populate form if editing
   useEffect(() => {
@@ -280,8 +315,8 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
       return;
     }
 
-    // Check required fields manually
-    const requiredFields = ['companyId', 'coreId', 'statusId', 'reasonId', 'resourceId', 'amount'];
+    // Check required fields manually (resourceId is now optional)
+    const requiredFields = ['companyId', 'coreId', 'statusId', 'reasonId', 'amount'];
     const missingFields = requiredFields.filter(field => !values[field] || values[field] === '');
     
     if (missingFields.length > 0) {
@@ -290,7 +325,6 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
         coreId: 'Core',
         statusId: 'Stato',
         reasonId: 'Causale',
-        resourceId: 'Risorsa',
         amount: 'Importo'
       };
       
@@ -773,6 +807,7 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
           </div>
 
           {/* Amount, VAT and Document Number */}
+          {/* Amount and VAT Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <FormField
               control={form.control}
@@ -780,26 +815,6 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Importo Totale (€) *</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="vatAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Importo IVA (€)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -830,10 +845,35 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
                       <SelectItem value="iva_22">IVA 22%</SelectItem>
                       <SelectItem value="iva_10">IVA 10%</SelectItem>
                       <SelectItem value="iva_4">IVA 4%</SelectItem>
-                      <SelectItem value="iva_art_74">IVA Art 74</SelectItem>
-                      <SelectItem value="esente">Esente</SelectItem>
+                      <SelectItem value="iva_art_74">IVA Art 74 (0%)</SelectItem>
+                      <SelectItem value="esente">Esente (0%)</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="vatAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Totale IVA (€)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      readOnly
+                      className="bg-muted cursor-not-allowed"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Calcolato automaticamente in base al tipo IVA
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
