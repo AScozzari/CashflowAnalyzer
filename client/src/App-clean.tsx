@@ -32,6 +32,9 @@ function TestDashboard() {
           <p>🟢 Database PostgreSQL - Connesso</p>
           <p>🟢 Autenticazione JWT - Funzionante</p>
           <p>🟢 Frontend React - Caricato</p>
+          <p className="text-blue-600 font-medium">
+            📱 Se vedi "Connessione negata": apri il link in una nuova scheda del browser
+          </p>
         </div>
       </div>
     </div>
