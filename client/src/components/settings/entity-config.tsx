@@ -33,7 +33,7 @@ export default function EntityConfig() {
   return (
     <div className="flex h-[600px]">
       {/* Sidebar Navigation */}
-      <div className="w-64 border-r border-gray-200 bg-white rounded-l-xl">
+      <div className="w-64 border-r border-border dark:border-border bg-card dark:bg-card rounded-l-xl">
         <div className="p-4">
           <nav className="space-y-2">
             {tabs.map((tab) => {
@@ -44,8 +44,8 @@ export default function EntityConfig() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full text-left px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
                     activeTab === tab.id
-                      ? "bg-primary text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-card-foreground dark:text-card-foreground hover:bg-muted dark:hover:bg-muted"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -58,7 +58,7 @@ export default function EntityConfig() {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 bg-white rounded-r-xl">
+      <div className="flex-1 bg-card dark:bg-card rounded-r-xl">
         <div className="p-6">
           {activeTab === "companies" && <CompanyManagement />}
 

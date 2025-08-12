@@ -132,7 +132,7 @@ function SupplierForm({ supplier, onClose }: SupplierFormProps) {
               <FormItem>
                 <FormLabel>Partita IVA *</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="IT12345678901" className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                  <Input {...field} placeholder="IT12345678901" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -146,7 +146,7 @@ function SupplierForm({ supplier, onClose }: SupplierFormProps) {
               <FormItem>
                 <FormLabel>Codice Fiscale</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="12345678901" value={field.value || ""} className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                  <Input {...field} placeholder="12345678901" value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -161,7 +161,7 @@ function SupplierForm({ supplier, onClose }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Indirizzo</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Via Roma 123" value={field.value || ""} className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                <Input {...field} placeholder="Via Roma 123" value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -176,7 +176,7 @@ function SupplierForm({ supplier, onClose }: SupplierFormProps) {
               <FormItem>
                 <FormLabel>CAP</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="20100" value={field.value || ""} className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                  <Input {...field} placeholder="20100" value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -462,8 +462,8 @@ export default function SupplierManagement() {
         </Dialog>
       </div>
 
-      <div className="bg-white rounded-xl shadow border">
-        <div className="p-4 border-b border-gray-200">
+      <div className="bg-card dark:bg-card rounded-xl shadow border border-border dark:border-border">
+        <div className="p-4 border-b border-border dark:border-border">
           <div className="flex items-center gap-2">
             <Truck className="h-5 w-5 text-primary" />
             <span className="font-medium">Lista Fornitori ({suppliers.length})</span>
@@ -485,9 +485,9 @@ export default function SupplierManagement() {
             <TableBody>
               {suppliers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     <div className="flex flex-col items-center gap-2">
-                      <Truck className="h-8 w-8 text-gray-300" />
+                      <Truck className="h-8 w-8 text-muted-foreground/50" />
                       <p>Nessun fornitore configurato</p>
                       <p className="text-sm">Aggiungi il primo fornitore per iniziare</p>
                     </div>

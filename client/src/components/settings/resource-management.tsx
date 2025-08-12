@@ -197,7 +197,7 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
                 <FormItem>
                   <FormLabel>Nome *</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="es. Mario" className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                    <Input {...field} placeholder="es. Mario" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -211,7 +211,7 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
                 <FormItem>
                   <FormLabel>Cognome *</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="es. Rossi" className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                    <Input {...field} placeholder="es. Rossi" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -226,7 +226,7 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
               <FormItem>
                 <FormLabel>Codice Fiscale *</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="es. RSSMRA80A01H501X" className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                  <Input {...field} placeholder="es. RSSMRA80A01H501X" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -240,7 +240,7 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" placeholder="es. mario.rossi@azienda.it" value={field.value || ""} className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                  <Input {...field} type="email" placeholder="es. mario.rossi@azienda.it" value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -255,7 +255,7 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
                 <FormItem>
                   <FormLabel>Password Iniziale *</FormLabel>
                   <FormControl>
-                    <Input {...field} type="password" placeholder="Password da cambiare al primo accesso" value={field.value || ""} className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                    <Input {...field} type="password" placeholder="Password da cambiare al primo accesso" value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                   <p className="text-xs text-muted-foreground">
@@ -273,7 +273,7 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
               <FormItem>
                 <FormLabel>Indirizzo</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="es. Via Roma 123" value={field.value || ""} className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                  <Input {...field} placeholder="es. Via Roma 123" value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
