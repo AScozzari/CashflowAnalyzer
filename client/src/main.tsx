@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
-import App from "./App";
-import "./index.css";
+import App from "./App"; // Ripristino app completa
+import "./index-fixed.css"; // CSS Tailwind sistemato
 
 // Service Worker temporaneamente disabilitato per debug
 // Register Service Worker for PWA functionality

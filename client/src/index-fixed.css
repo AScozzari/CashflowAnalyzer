@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Custom Properties per il tema */
+:root {
+  /* Background Colors */
+  --background: 0 0% 100%;
+  --foreground: 210 25% 7.8431%;
+  
+  /* Card Colors */
+  --card: 180 6.6667% 97.0588%;
+  --card-foreground: 210 25% 7.8431%;
+  
+  /* Primary Colors */
+  --primary: 203.8863 88.2845% 53.1373%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary Colors */
+  --secondary: 210 25% 7.8431%;
+  --secondary-foreground: 0 0% 100%;
+  
+  /* Border Colors */
+  --border: 201.4286 30.4348% 85%;
+  --input: 200 23.0769% 90%;
+  --ring: 202.8169 89.1213% 53.1373%;
+  
+  /* Utility Colors */
+  --muted: 240 1.9608% 90%;
+  --muted-foreground: 210 25% 7.8431%;
+  --accent: 211.5789 51.3514% 92.7451%;
+  --accent-foreground: 203.8863 88.2845% 53.1373%;
+  --destructive: 356.3033 90.5579% 54.3137%;
+  --destructive-foreground: 0 0% 100%;
+  
+  /* Radius */
+  --radius: 1.3rem;
+}
+
+.dark {
+  --background: 0 0% 0%;
+  --foreground: 210 40% 98%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 210 40% 98%;
+  --primary: 203.8863 88.2845% 53.1373%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 203.8863 88.2845% 53.1373%;
+}
+
+/* Base styles */
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Scrollbar personalizzata */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}
+
+/* Utilities personalizzate */
+.text-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-foreground)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animazioni smooth */
+.smooth-transition {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Focus visibile per accessibilità */
+.focus-visible:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
