@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test EasyCashFlows</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            max-width: 500px;
+        }
+        .success { color: #4ade80; font-weight: bold; }
+        .error { color: #f87171; font-weight: bold; }
+        button { 
+            background: #3b82f6; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover { background: #2563eb; }
+        .status { 
+            margin: 20px 0; 
+            padding: 15px; 
+            background: rgba(0,0,0,0.2); 
+            border-radius: 10px; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 EasyCashFlows - Test di Connessione</h1>
+        
+        <div class="status" id="status">
+            <p>🔄 Inizializzazione test...</p>
+        </div>
+        
+        <div>
+            <button onclick="testServer()">🔍 Test Server</button>
+            <button onclick="testAuth()">🔐 Test API Login</button>
+            <button onclick="goToApp()">🚀 Vai all'App</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function updateStatus(message, isSuccess = true) {
+            const status = document.getElementById('status');
+            status.innerHTML = `<p class="${isSuccess ? 'success' : 'error'}">${message}</p>`;
+        }
+        
+        function addResult(message, isSuccess = true) {
+            const results = document.getElementById('results');
+            results.innerHTML += `<div style="margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px;">
+                <span class="${isSuccess ? 'success' : 'error'}">${message}</span>
+            </div>`;
+        }
+        
+        async function testServer() {
+            updateStatus('🔄 Testing server connection...');
+            try {
+                const response = await fetch('/api/auth/user');
+                if (response.status === 401) {
+                    addResult('✅ Server OK - API risponde correttamente (401 = non autenticato)');
+                    updateStatus('✅ Server funziona perfettamente!');
+                } else {
+                    addResult(`✅ Server OK - Risposta: ${response.status}`);
+                    updateStatus('✅ Server raggiungibile!');
+                }
+            } catch (error) {
+                addResult(`❌ Errore server: ${error.message}`, false);
+                updateStatus('❌ Problema di connessione server', false);
+            }
+        }
+        
+        async function testAuth() {
+            updateStatus('🔄 Testing authentication API...');
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('✅ Login API funziona - Credenziali corrette!');
+                    updateStatus('✅ Sistema di autenticazione operativo!');
+                } else {
+                    addResult(`⚠️ Login API risponde (${response.status}) - Verificare credenziali`);
+                    updateStatus('✅ API raggiungibile, verificare credenziali');
+                }
+            } catch (error) {
+                addResult(`❌ Errore login: ${error.message}`, false);
+                updateStatus('❌ Problema API login', false);
+            }
+        }
+        
+        function goToApp() {
+            window.location.href = '/';
+        }
+        
+        // Auto-test on load
+        setTimeout(testServer, 1000);
+    </script>
+</body>
+</html>
