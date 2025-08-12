@@ -10,6 +10,7 @@ import {
 } from "@shared/schema";
 import { emailService } from './email-service';
 import { setupAuth } from "./auth";
+import { loginLimiter, apiLimiter, securityLogger, securityHeaders, sanitizeInput, sessionSecurity } from "./security-middleware";
 import multer from 'multer';
 import type { Request } from 'express';
 import path from 'path';
@@ -95,6 +96,15 @@ async function createMovementNotifications(movementId: string, type: 'new_moveme
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Security middleware globali
+  app.use(securityHeaders);
+  app.use(securityLogger);
+  app.use(sanitizeInput);
+  app.use(sessionSecurity);
+  
+  // Rate limiting per API
+  app.use('/api', apiLimiter);
+  
   // Setup authentication
   const { requireAuth, requireRole } = setupAuth(app);
   

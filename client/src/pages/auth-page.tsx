@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, changePasswordSchema } from "@shared/schema";
 import { z } from "zod";
-import { Loader2, LogIn, Lock, Building2 } from "lucide-react";
+import { Loader2, LogIn, Lock, Building2, Shield, Eye, EyeOff } from "lucide-react";
 
 type LoginFormData = z.infer<typeof loginSchema>;
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
@@ -21,6 +21,10 @@ export default function AuthPage() {
   const { user, loginMutation, changePasswordMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
   const [requirePasswordChange, setRequirePasswordChange] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockTimeLeft, setBlockTimeLeft] = useState(0);
 
   // Se l'utente è già autenticato, redirect alla home
   useEffect(() => {
@@ -46,14 +50,46 @@ export default function AuthPage() {
     },
   });
 
+  // Gestione blocco temporaneo
+  useEffect(() => {
+    if (blockTimeLeft > 0) {
+      const timer = setInterval(() => {
+        setBlockTimeLeft((prev) => {
+          if (prev <= 1) {
+            setIsBlocked(false);
+            setLoginAttempts(0);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [blockTimeLeft]);
+
   const handleLogin = async (data: LoginFormData) => {
+    if (isBlocked) {
+      return;
+    }
+
     try {
       await loginMutation.mutateAsync(data);
+      setLoginAttempts(0);
     } catch (error: any) {
       if (error.status === 202) {
         // First access - password change required
         setRequirePasswordChange(true);
         setActiveTab("change-password");
+      } else {
+        // Incrementa tentativi falliti
+        const newAttempts = loginAttempts + 1;
+        setLoginAttempts(newAttempts);
+        
+        // Blocco temporaneo dopo 5 tentativi
+        if (newAttempts >= 5) {
+          setIsBlocked(true);
+          setBlockTimeLeft(900); // 15 minuti in secondi
+        }
       }
     }
   };
@@ -200,12 +236,27 @@ export default function AuthPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="password">Password</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          placeholder="Inserisci la tua password"
-                          {...loginForm.register("password")}
-                        />
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Inserisci la tua password"
+                            {...loginForm.register("password")}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
                         {loginForm.formState.errors.password && (
                           <p className="text-sm text-destructive">
                             {loginForm.formState.errors.password.message}
@@ -216,12 +267,17 @@ export default function AuthPage() {
                       <Button
                         type="submit"
                         className="w-full"
-                        disabled={loginMutation.isPending}
+                        disabled={loginMutation.isPending || isBlocked}
                       >
                         {loginMutation.isPending ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Accesso in corso...
+                          </>
+                        ) : isBlocked ? (
+                          <>
+                            <Lock className="mr-2 h-4 w-4" />
+                            Bloccato ({Math.floor(blockTimeLeft / 60)}:{(blockTimeLeft % 60).toString().padStart(2, '0')})
                           </>
                         ) : (
                           <>
@@ -230,6 +286,14 @@ export default function AuthPage() {
                           </>
                         )}
                       </Button>
+                      
+                      {loginAttempts > 0 && !isBlocked && (
+                        <div className="text-center mt-2">
+                          <p className="text-sm text-yellow-600">
+                            Tentativo {loginAttempts}/5. Attenzione: dopo 5 tentativi falliti l'account verrà temporaneamente bloccato.
+                          </p>
+                        </div>
+                      )}
                       
                       <div className="text-center mt-4">
                         <Link href="/forgot-password">
@@ -240,14 +304,17 @@ export default function AuthPage() {
                       </div>
                     </form>
 
-                    <div className="mt-6 p-4 bg-muted rounded-lg">
-                      <h4 className="font-medium mb-2">Credenziali Demo:</h4>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Username:</strong> admin<br />
-                        <strong>Password:</strong> admin123<br />
-                        <strong>Ruolo:</strong> Amministratore
-                      </p>
-                    </div>
+                    {loginMutation.isError && (
+                      <Alert className="mt-4" variant={isBlocked ? "destructive" : "default"}>
+                        <Shield className="h-4 w-4" />
+                        <AlertDescription>
+                          {isBlocked 
+                            ? `Account temporaneamente bloccato per sicurezza. Riprova tra ${Math.floor(blockTimeLeft / 60)} minuti e ${blockTimeLeft % 60} secondi.`
+                            : "Credenziali non valide. Verifica username e password."
+                          }
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

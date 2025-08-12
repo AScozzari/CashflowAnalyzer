@@ -51,13 +51,43 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Rate limiting per protezione brute force
+  const loginAttempts = new Map<string, { attempts: number; lastAttempt: number }>();
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minuti
+
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        // Controllo rate limiting
+        const userAttempts = loginAttempts.get(username) || { attempts: 0, lastAttempt: 0 };
+        const now = Date.now();
+        
+        // Reset contatore se sono passati più di 15 minuti
+        if (now - userAttempts.lastAttempt > LOCKOUT_TIME) {
+          userAttempts.attempts = 0;
+        }
+        
+        // Blocco temporaneo se troppi tentativi
+        if (userAttempts.attempts >= MAX_ATTEMPTS) {
+          const timeLeft = Math.ceil((LOCKOUT_TIME - (now - userAttempts.lastAttempt)) / 60000);
+          return done(null, false, { 
+            message: `Account temporaneamente bloccato. Riprova tra ${timeLeft} minuti.` 
+          });
+        }
+
         const user = await storage.getUserByUsername(username);
         if (!user || !(await comparePasswords(password, user.password))) {
+          // Incrementa tentativi falliti
+          userAttempts.attempts += 1;
+          userAttempts.lastAttempt = now;
+          loginAttempts.set(username, userAttempts);
+          
           return done(null, false, { message: "Credenziali non valide" });
         }
+        
+        // Reset tentativi su login riuscito
+        loginAttempts.delete(username);
         
         // Aggiorna ultimo accesso
         await storage.updateLastLogin(user.id);
@@ -139,9 +169,16 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Route per login
-  app.post("/api/auth/login", (req, res, next) => {
-    console.log("Login request received:", req.body);
+  // Route per login con rate limiting
+  app.post("/api/auth/login", async (req, res, next) => {
+    // Importa loginLimiter solo quando serve per evitare errori circolari
+    const { loginLimiter } = await import("./security-middleware");
+    
+    // Applica rate limiting
+    loginLimiter(req, res, (err) => {
+      if (err) return;
+      
+      console.log("Login request received:", req.body);
     
     passport.authenticate("local", (err: any, user: any, info: any) => {
       console.log("Passport authenticate result:", { err, user: !!user, info });
@@ -167,6 +204,7 @@ export function setupAuth(app: Express) {
         res.json(userWithoutPassword);
       });
     })(req, res, next);
+    });
   });
 
   // Route per logout
