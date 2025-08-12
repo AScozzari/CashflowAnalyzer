@@ -217,14 +217,35 @@ export function setupAuth(app: Express) {
   });
 
   // Route per ottenere l'utente corrente
-  app.get("/api/auth/user", (req, res) => {
+  app.get("/api/auth/user", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Non autenticato" });
     }
     
-    // Rimuovi la password dalla risposta
-    const { password: _, ...userWithoutPassword } = req.user;
-    res.json(userWithoutPassword);
+    try {
+      // Get user with resource information
+      const user = req.user;
+      let userWithResource = { ...user };
+      
+      // If user has a resourceId, fetch the resource data for firstName/lastName
+      if (user.resourceId) {
+        const { storage } = await import('./storage');
+        const resource = await storage.getResource(user.resourceId);
+        if (resource) {
+          userWithResource.firstName = resource.firstName;
+          userWithResource.lastName = resource.lastName;
+        }
+      }
+      
+      // Rimuovi la password dalla risposta
+      const { password: _, ...userWithoutPassword } = userWithResource;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error('Error fetching user with resource:', error);
+      // Fallback to basic user data without resource info
+      const { password: _, ...userWithoutPassword } = req.user;
+      res.json(userWithoutPassword);
+    }
   });
 
   // Route per cambiare password

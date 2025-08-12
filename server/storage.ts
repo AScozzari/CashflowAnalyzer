@@ -42,6 +42,7 @@ export interface IStorage {
 
   // Resources
   getResources(): Promise<Resource[]>;
+  getResource(id: string): Promise<Resource | undefined>;
   getResourcesByCompany(companyId: string): Promise<Resource[]>;
   createResource(resource: InsertResource): Promise<Resource>;
   updateResource(id: string, resource: Partial<InsertResource>): Promise<Resource>;
@@ -330,6 +331,16 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error fetching resources:', error);
       throw new Error('Failed to fetch resources');
+    }
+  }
+
+  async getResource(id: string): Promise<Resource | undefined> {
+    try {
+      const [resource] = await db.select().from(resources).where(eq(resources.id, id));
+      return resource || undefined;
+    } catch (error) {
+      console.error('Error fetching resource:', error);
+      throw new Error('Failed to fetch resource');
     }
   }
 

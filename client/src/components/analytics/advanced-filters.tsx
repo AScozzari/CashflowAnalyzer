@@ -232,7 +232,7 @@ export default function AdvancedFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le ragioni sociali</SelectItem>
-                {companies?.map((company: any) => (
+                {(companies || []).map((company: any) => (
                   <SelectItem key={company.id} value={company.id}>
                     {company.name}
                   </SelectItem>
@@ -249,7 +249,7 @@ export default function AdvancedFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le sedi</SelectItem>
-                {offices?.map((office: any) => (
+                {(offices || []).map((office: any) => (
                   <SelectItem key={office.id} value={office.id}>
                     {office.name} - {office.city}
                   </SelectItem>
@@ -266,7 +266,7 @@ export default function AdvancedFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le risorse</SelectItem>
-                {resources?.map((resource: any) => (
+                {(resources || []).map((resource: any) => (
                   <SelectItem key={resource.id} value={resource.id}>
                     {resource.firstName} {resource.lastName}
                   </SelectItem>
@@ -300,7 +300,7 @@ export default function AdvancedFilters({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutti i core</SelectItem>
-                    {cores?.map((core: any) => (
+                    {(cores || []).map((core: any) => (
                       <SelectItem key={core.id} value={core.id}>
                         {core.name}
                       </SelectItem>
@@ -317,7 +317,7 @@ export default function AdvancedFilters({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutti gli IBAN</SelectItem>
-                    {ibans?.map((iban: any) => (
+                    {(ibans || []).map((iban: any) => (
                       <SelectItem key={iban.id} value={iban.id}>
                         {iban.bankName} - {iban.iban.slice(-4)}
                       </SelectItem>
@@ -334,7 +334,7 @@ export default function AdvancedFilters({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutti gli stati</SelectItem>
-                    {statuses?.map((status: any) => (
+                    {(statuses || []).map((status: any) => (
                       <SelectItem key={status.id} value={status.id}>
                         {status.name}
                       </SelectItem>
@@ -351,7 +351,7 @@ export default function AdvancedFilters({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutte le causali</SelectItem>
-                    {reasons?.map((reason: any) => (
+                    {(reasons || []).map((reason: any) => (
                       <SelectItem key={reason.id} value={reason.id}>
                         {reason.name}
                       </SelectItem>
@@ -405,7 +405,7 @@ export default function AdvancedFilters({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutti i fornitori</SelectItem>
-                    {suppliers?.map((supplier: any) => (
+                    {(suppliers || []).map((supplier: any) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name}
                       </SelectItem>

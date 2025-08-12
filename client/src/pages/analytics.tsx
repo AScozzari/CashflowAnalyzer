@@ -167,15 +167,15 @@ export default function Analytics() {
           <>
             {/* Analytics Charts */}
             <AnalyticsCharts 
-              movements={movementsData.data || []}
+              movements={(movementsData as any)?.data || []}
               isLoading={isLoading}
             />
 
             {/* Data Table */}
             <AnalyticsTable
-              movements={movementsData.data || []}
+              movements={(movementsData as any)?.data || []}
               isLoading={isLoading}
-              totalCount={movementsData.totalCount || 0}
+              totalCount={(movementsData as any)?.totalCount || 0}
               currentPage={currentPage}
               pageSize={pageSize}
               onPageChange={handlePageChange}

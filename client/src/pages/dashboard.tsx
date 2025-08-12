@@ -377,7 +377,7 @@ export default function Dashboard() {
           <StatsCards stats={memoizedStats} isLoading={statsLoading} />
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <DashboardCashFlowChart data={memoizedCashFlowData} isLoading={cashFlowLoading} />
+            <DashboardCashFlowChart data={memoizedCashFlowData as any} isLoading={cashFlowLoading} />
             <DashboardMovementStatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
             <DashboardRecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
           </div>
@@ -403,7 +403,7 @@ export default function Dashboard() {
         <StatsCards stats={memoizedStats} isLoading={statsLoading} />
         
         <div className="space-y-4">
-          <DashboardCashFlowChart data={memoizedCashFlowData} isLoading={cashFlowLoading} />
+          <DashboardCashFlowChart data={memoizedCashFlowData as any} isLoading={cashFlowLoading} />
           <DashboardMovementStatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
           <DashboardRecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
         </div>

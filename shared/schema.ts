@@ -169,6 +169,7 @@ export const movements = pgTable("movements", {
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   documentNumber: text("document_number"),
   documentPath: text("document_path"),
+  fileName: text("file_name"), // Nome file originale del documento caricato
   notes: text("notes"),
   
   // Required relationships
@@ -544,4 +545,11 @@ export type CompanyWithRelations = Company & {
   resources: Resource[];
   ibans: Iban[];
   offices: Office[];
+};
+
+// Extended User type with Resource relation for authentication
+export type UserWithResource = User & {
+  resource?: Resource;
+  firstName?: string;  // Derived from resource
+  lastName?: string;   // Derived from resource
 };

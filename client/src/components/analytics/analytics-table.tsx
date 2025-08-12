@@ -168,7 +168,7 @@ export default function AnalyticsTable({
                   </TableHeader>
                   <TableBody>
                     {movements.map((movement) => {
-                      const vatInfo = formatVatInfo(movement.vatAmount, movement.vatType);
+                      const vatInfo = formatVatInfo(movement.vatAmount || null, movement.vatType);
                       
                       return (
                         <TableRow key={movement.id} className="hover:bg-gray-50">
@@ -288,11 +288,11 @@ export default function AnalyticsTable({
                                 <Eye className="h-4 w-4" />
                               </Button>
                               
-                              {movement.fileName && (
+                              {movement.fileName && movement.fileName.length > 0 && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleDownloadFile(movement.id, movement.fileName)}
+                                  onClick={() => handleDownloadFile(movement.id, movement.fileName!)}
                                   title="Scarica allegato"
                                 >
                                   <Download className="h-4 w-4" />
@@ -454,7 +454,7 @@ export default function AnalyticsTable({
                 {viewingMovement.fileName && (
                   <Button
                     variant="outline"
-                    onClick={() => handleDownloadFile(viewingMovement.id, viewingMovement.fileName)}
+                    onClick={() => handleDownloadFile(viewingMovement.id, viewingMovement.fileName!)}
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Scarica Allegato
