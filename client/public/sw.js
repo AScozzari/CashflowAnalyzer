@@ -57,6 +57,12 @@ self.addEventListener('activate', event => {
 // Fetch event - implement cache strategies
 self.addEventListener('fetch', event => {
   const { request } = event;
+  
+  // Skip non-HTTP/HTTPS requests (chrome-extension:, etc.)
+  if (!request.url.startsWith('http://') && !request.url.startsWith('https://')) {
+    return;
+  }
+  
   const url = new URL(request.url);
 
   // Handle API requests
