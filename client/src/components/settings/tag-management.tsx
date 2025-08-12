@@ -194,7 +194,7 @@ export default function TagManagement() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h4 className="text-lg font-medium text-gray-900">Gestione Tags</h4>
+        <h4 className="text-lg font-medium text-foreground dark:text-foreground">Gestione Tags</h4>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => setSelectedTag(null)}>
@@ -202,7 +202,7 @@ export default function TagManagement() {
               Nuovo Tag
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-xl">
+          <DialogContent className="max-w-xl bg-card dark:bg-card text-card-foreground dark:text-card-foreground border-border dark:border-border">
             <DialogHeader>
               <DialogTitle>
                 {selectedTag ? "Modifica Tag" : "Nuovo Tag"}

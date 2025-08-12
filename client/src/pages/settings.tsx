@@ -4,13 +4,13 @@ import EntityConfig from "@/components/settings/entity-config";
 
 export default function Settings() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background dark:bg-background">
       <Header 
         title="Impostazioni" 
         subtitle="Configurazione entità del sistema"
       />
       
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <EntityConfig />
       </div>
       

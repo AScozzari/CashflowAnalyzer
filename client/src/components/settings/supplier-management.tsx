@@ -435,8 +435,8 @@ export default function SupplierManagement() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Gestione Fornitori</h2>
-          <p className="text-gray-600">Gestisci i fornitori aziendali per l'integrazione XML fatture</p>
+          <h2 className="text-2xl font-bold text-foreground dark:text-foreground">Gestione Fornitori</h2>
+          <p className="text-muted-foreground">Gestisci i fornitori aziendali per l'integrazione XML fatture</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -445,7 +445,7 @@ export default function SupplierManagement() {
               Nuovo Fornitore
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card dark:bg-card text-card-foreground dark:text-card-foreground border-border dark:border-border">
             <DialogHeader>
               <DialogTitle>
                 {selectedSupplier ? "Modifica Fornitore" : "Nuovo Fornitore"}

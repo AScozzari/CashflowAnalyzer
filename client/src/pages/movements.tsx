@@ -115,7 +115,7 @@ export default function Movements() {
   };
 
   const getAmountColor = (type: string) => {
-    return type === 'income' ? 'text-green-600' : 'text-red-600';
+    return type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
   };
 
   return (
@@ -131,7 +131,7 @@ export default function Movements() {
                 Nuovo Movimento
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="movement-form-description">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card dark:bg-card text-card-foreground dark:text-card-foreground border-border dark:border-border" aria-describedby="movement-form-description">
               <DialogTitle>{editingMovement ? 'Modifica Movimento' : 'Nuovo Movimento'}</DialogTitle>
               <div id="movement-form-description" className="sr-only">
                 {editingMovement ? 'Modifica i dati del movimento finanziario selezionato' : 'Crea un nuovo movimento finanziario inserendo tutti i dati richiesti'}
@@ -148,18 +148,18 @@ export default function Movements() {
         }
       />
       
-      <div className="p-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6">
+      <div className="p-4 md:p-6">
+        <div className="bg-card dark:bg-card rounded-xl shadow-sm border border-border dark:border-border">
+          <div className="p-4 md:p-6">
             <div className="overflow-x-auto">
               {isLoading ? (
                 <div className="flex items-center justify-center h-64">
-                  <div className="text-gray-500">Caricamento movimenti...</div>
+                  <div className="text-muted-foreground">Caricamento movimenti...</div>
                 </div>
               ) : movements.length === 0 ? (
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
-                    <div className="text-gray-500 mb-2">Nessun movimento trovato</div>
+                    <div className="text-muted-foreground mb-2">Nessun movimento trovato</div>
                     <Button onClick={() => setIsFormOpen(true)} variant="outline">
                       <Plus className="h-4 w-4 mr-2" />
                       Aggiungi il primo movimento

@@ -291,7 +291,7 @@ export default function OfficeManagement() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h4 className="text-lg font-medium text-gray-900">Gestione Sedi Operative</h4>
+        <h4 className="text-lg font-medium text-foreground dark:text-foreground">Gestione Sedi Operative</h4>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => setSelectedOffice(null)}>
@@ -299,7 +299,7 @@ export default function OfficeManagement() {
               Nuova Sede
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-xl">
+          <DialogContent className="max-w-xl bg-card dark:bg-card text-card-foreground dark:text-card-foreground border-border dark:border-border">
             <DialogHeader>
               <DialogTitle>
                 {selectedOffice ? "Modifica Sede Operativa" : "Nuova Sede Operativa"}

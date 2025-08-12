@@ -199,7 +199,7 @@ export default function MovementReasonManagement() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h4 className="text-lg font-medium text-gray-900">Gestione Causali</h4>
+        <h4 className="text-lg font-medium text-foreground dark:text-foreground">Gestione Causali</h4>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => setSelectedReason(null)}>
@@ -207,7 +207,7 @@ export default function MovementReasonManagement() {
               Nuova Causale
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-xl">
+          <DialogContent className="max-w-xl bg-card dark:bg-card text-card-foreground dark:text-card-foreground border-border dark:border-border">
             <DialogHeader>
               <DialogTitle>
                 {selectedReason ? "Modifica Causale" : "Nuova Causale"}

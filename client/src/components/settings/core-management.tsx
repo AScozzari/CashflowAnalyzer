@@ -194,7 +194,7 @@ export default function CoreManagement() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h4 className="text-lg font-medium text-gray-900">Gestione Core Business</h4>
+        <h4 className="text-lg font-medium text-foreground dark:text-foreground">Gestione Core Business</h4>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => setSelectedCore(null)}>
@@ -202,7 +202,7 @@ export default function CoreManagement() {
               Nuovo Core Business
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-xl">
+          <DialogContent className="max-w-xl bg-card dark:bg-card text-card-foreground dark:text-card-foreground border-border dark:border-border">
             <DialogHeader>
               <DialogTitle>
                 {selectedCore ? "Modifica Core Business" : "Nuovo Core Business"}

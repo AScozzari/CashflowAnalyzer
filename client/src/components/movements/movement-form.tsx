@@ -392,8 +392,8 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
 
   return (
     <div>
-      <div className="pb-4 border-b border-gray-200 flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-gray-900">
+      <div className="pb-4 border-b border-border dark:border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h3 className="text-xl font-semibold text-foreground dark:text-foreground">
           {movement ? "Modifica Movimento" : "Nuovo Movimento"}
         </h3>
         {!movement && (
@@ -457,7 +457,7 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-6">
           {/* Date Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <FormField
               control={form.control}
               name="insertDate"
@@ -584,7 +584,7 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
           </div>
 
           {/* Optional Entities */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <FormField
               control={form.control}
               name="resourceId"
@@ -654,7 +654,7 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <FormField
               control={form.control}
               name="ibanId"
@@ -744,7 +744,7 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
           </div>
 
           {/* Tags Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <FormField
               control={form.control}
               name="tagId"
@@ -773,7 +773,7 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
           </div>
 
           {/* Amount, VAT and Document Number */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <FormField
               control={form.control}
               name="amount"
@@ -894,13 +894,13 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
             <Label>Documento Allegato</Label>
             <div className="mt-2">
               {uploadedFile ? (
-                <div className="border border-gray-300 rounded-lg p-4">
+                <div className="border border-border dark:border-border rounded-lg p-4 bg-card dark:bg-card">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <Upload className="h-4 w-4 text-gray-400" />
+                      <Upload className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <span className="text-sm text-gray-600">{uploadedFile.name}</span>
-                        <span className="text-xs text-gray-500 ml-2">
+                        <span className="text-sm text-foreground dark:text-foreground">{uploadedFile.name}</span>
+                        <span className="text-xs text-muted-foreground ml-2">
                           ({formatFileSize(uploadedFile.size)})
                         </span>
                       </div>
@@ -916,10 +916,10 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
                   </div>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary transition-colors">
+                <div className="border-2 border-dashed border-border dark:border-border rounded-lg p-6 hover:border-primary transition-colors bg-card/50 dark:bg-card/50">
                   <div className="text-center">
-                    <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-600">
+                    <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-foreground dark:text-foreground">
                       Trascina qui il documento o{" "}
                       <label className="text-primary cursor-pointer hover:underline">
                         sfoglia file
@@ -931,7 +931,7 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
                         />
                       </label>
                     </p>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-muted-foreground mt-2">
                       PDF, DOC, JPG fino a 10MB
                     </p>
                   </div>
@@ -963,7 +963,7 @@ export default function MovementForm({ movement, onClose }: MovementFormProps) {
           />
 
           {/* Form Actions */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-6 border-t border-border dark:border-border">
             <Button 
               type="button" 
               variant="outline" 
