@@ -87,33 +87,69 @@ export default function DashboardRecentMovements({ movements, isLoading }: Recen
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {movements.slice(0, 5).map((movement: any) => (
-            <div key={movement.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="flex items-center space-x-3">
-                {movement.type === 'income' ? (
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                ) : (
-                  <TrendingDown className="h-5 w-5 text-red-600" />
-                )}
-                <div>
-                  <p className="font-medium text-sm">
-                    {movement.company?.name || 'N/A'}
+            <div key={movement.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md">
+              <div className="flex items-start space-x-3 flex-1 min-w-0">
+                <div className={`p-2 rounded-full ${
+                  movement.type === 'income' 
+                    ? 'bg-green-50 dark:bg-green-900/20' 
+                    : 'bg-red-50 dark:bg-red-900/20'
+                }`}>
+                  {movement.type === 'income' ? (
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-red-600" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <p className="font-semibold text-sm text-foreground truncate">
+                      {movement.company?.name || 'Azienda non specificata'}
+                    </p>
+                    <Badge variant={getStatusBadgeVariant(movement.status?.name)} className="text-xs shrink-0">
+                      {movement.status?.name || 'N/A'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate mb-1">
+                    {movement.description || 'Nessuna descrizione'}
                   </p>
-                  <p className="text-xs text-gray-500">
-                    {format(new Date(movement.flowDate), 'dd MMM yyyy', { locale: it })}
-                  </p>
+                  <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                    <span className="flex items-center space-x-1">
+                      <span>📅</span>
+                      <span>{format(new Date(movement.flowDate), 'dd MMM yyyy', { locale: it })}</span>
+                    </span>
+                    {movement.documentNumber && (
+                      <span className="flex items-center space-x-1">
+                        <span>📄</span>
+                        <span>#{movement.documentNumber}</span>
+                      </span>
+                    )}
+                    {movement.core?.name && (
+                      <span className="flex items-center space-x-1">
+                        <span>🏢</span>
+                        <span className="truncate">{movement.core.name}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="text-right space-y-1">
-                <p className={`font-medium ${
+              <div className="text-right space-y-1 shrink-0 ml-4">
+                <p className={`font-bold text-sm ${
                   movement.type === 'income' ? 'text-green-600' : 'text-red-600'
                 }`}>
                   {movement.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(parseFloat(movement.amount)))}
                 </p>
-                <Badge variant={getStatusBadgeVariant(movement.status?.name)} className="text-xs">
-                  {movement.status?.name || 'N/A'}
-                </Badge>
+                {movement.vatAmount && parseFloat(movement.vatAmount) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    IVA: {formatCurrency(parseFloat(movement.vatAmount))}
+                  </p>
+                )}
+                {movement.resource?.name && (
+                  <p className="text-xs text-muted-foreground">
+                    👤 {movement.resource.name}
+                  </p>
+                )}
               </div>
             </div>
           ))}

@@ -238,28 +238,48 @@ function TrendChartWidget({ data, loading, timeRange }: { data: any; loading: bo
   );
 }
 
-// Quick actions widget
+// Quick actions widget - Enhanced with better mobile support
 function QuickActionsWidget() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
+    <Card className="h-fit">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center space-x-2 text-lg">
           <Target className="w-5 h-5 text-green-600" />
           <span>Azioni Rapide</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Button size="sm" className="w-full justify-start" variant="outline">
+        <Button 
+          size="sm" 
+          className="w-full justify-start hover:scale-[1.02] transition-all duration-200" 
+          variant="outline"
+        >
           <DollarSign className="w-4 h-4 mr-2" />
-          Nuovo Movimento
+          <span className="flex-1 text-left">Nuovo Movimento</span>
         </Button>
-        <Button size="sm" className="w-full justify-start" variant="outline">
+        <Button 
+          size="sm" 
+          className="w-full justify-start hover:scale-[1.02] transition-all duration-200" 
+          variant="outline"
+        >
           <RefreshCw className="w-4 h-4 mr-2" />
-          Aggiorna Dati
+          <span className="flex-1 text-left">Aggiorna Dati</span>
         </Button>
-        <Button size="sm" className="w-full justify-start" variant="outline">
+        <Button 
+          size="sm" 
+          className="w-full justify-start hover:scale-[1.02] transition-all duration-200" 
+          variant="outline"
+        >
           <Calendar className="w-4 h-4 mr-2" />
-          Report Mensile
+          <span className="flex-1 text-left">Report Mensile</span>
+        </Button>
+        <Button 
+          size="sm" 
+          className="w-full justify-start hover:scale-[1.02] transition-all duration-200" 
+          variant="outline"
+        >
+          <Filter className="w-4 h-4 mr-2" />
+          <span className="flex-1 text-left">Filtri Avanzati</span>
         </Button>
       </CardContent>
     </Card>
@@ -314,19 +334,25 @@ export default function DynamicDashboard({ className }: DynamicDashboardProps) {
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 ${className} px-4 sm:px-6 lg:px-8`}>
       {/* Dashboard Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Dashboard Dinamica</h2>
-          <p className="text-sm text-muted-foreground">
-            Aggiornamento in tempo reale • {format(new Date(), 'HH:mm:ss')}
-          </p>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0 bg-card/50 backdrop-blur-sm p-4 rounded-xl border">
+        <div className="space-y-1">
+          <h2 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center space-x-2">
+            <Zap className="w-6 h-6 lg:w-8 lg:h-8 text-primary" />
+            <span>Dashboard Dinamica</span>
+          </h2>
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span>Aggiornamento in tempo reale</span>
+            <span>•</span>
+            <span>{format(new Date(), 'HH:mm:ss')}</span>
+          </div>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -336,19 +362,20 @@ export default function DynamicDashboard({ className }: DynamicDashboardProps) {
             </SelectContent>
           </Select>
           
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 bg-muted/50 rounded-lg p-1">
             {Object.entries(visibleWidgets).map(([key, visible]) => (
               <Button
                 key={key}
                 size="sm"
-                variant="ghost"
+                variant={visible ? "default" : "ghost"}
                 onClick={() => toggleWidget(key)}
-                className="p-2"
+                className="h-8 w-8 p-0"
+                title={`${visible ? 'Nascondi' : 'Mostra'} ${key}`}
               >
                 {visible ? (
-                  <Eye className="w-4 h-4 text-green-600" />
+                  <Eye className="w-4 h-4" />
                 ) : (
-                  <EyeOff className="w-4 h-4 text-gray-400" />
+                  <EyeOff className="w-4 h-4" />
                 )}
               </Button>
             ))}
@@ -358,27 +385,116 @@ export default function DynamicDashboard({ className }: DynamicDashboardProps) {
 
       {/* Real-time Stats */}
       {visibleWidgets.stats && (
-        <RealtimeStatsWidget data={realTimeData} loading={realTimeLoading} />
+        <div className="animate-in fade-in-0 duration-500">
+          <RealtimeStatsWidget data={realTimeData} loading={realTimeLoading} />
+        </div>
       )}
 
-      {/* Main Charts and Actions Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Charts and Actions Grid - Responsive */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {visibleWidgets.trends && (
-          <TrendChartWidget 
-            data={trendData} 
-            loading={trendLoading} 
-            timeRange={timeRange}
-          />
+          <div className="xl:col-span-3 animate-in slide-in-from-left-5 duration-500">
+            <TrendChartWidget 
+              data={trendData} 
+              loading={trendLoading} 
+              timeRange={timeRange}
+            />
+          </div>
         )}
         
-        {visibleWidgets.actions && <QuickActionsWidget />}
+        {visibleWidgets.actions && (
+          <div className="xl:col-span-1 animate-in slide-in-from-right-5 duration-500">
+            <QuickActionsWidget />
+          </div>
+        )}
       </div>
 
-      {/* Live Update Indicator */}
-      <div className="flex items-center justify-center py-2">
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span>Aggiornamento automatico attivo</span>
+      {/* Additional Widgets Row for better space utilization */}
+      {visibleWidgets.distribution && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in-0 duration-700">
+          {/* Performance Indicators */}
+          <Card className="group hover:shadow-lg transition-all duration-300">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Target className="w-5 h-5 text-blue-600" />
+                <span>Indicatori Chiave</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center p-2 bg-muted/30 rounded-lg">
+                <span className="text-sm font-medium">Liquidità</span>
+                <Badge variant="outline" className="text-green-600">Ottima</Badge>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-muted/30 rounded-lg">
+                <span className="text-sm font-medium">Trend</span>
+                <Badge variant="outline" className="text-blue-600">In crescita</Badge>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-muted/30 rounded-lg">
+                <span className="text-sm font-medium">Previsioni</span>
+                <Badge variant="outline" className="text-purple-600">Positive</Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity */}
+          <Card className="group hover:shadow-lg transition-all duration-300">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Activity className="w-5 h-5 text-orange-600" />
+                <span>Attività Recente</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  <span>Nuova fattura registrata</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                  <span>Pagamento elaborato</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                  <span>Promemoria scadenza</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Stats */}
+          <Card className="group hover:shadow-lg transition-all duration-300">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Clock className="w-5 h-5 text-indigo-600" />
+                <span>Statistiche Veloci</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-center p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg">
+                <p className="text-2xl font-bold text-blue-600">87%</p>
+                <p className="text-xs text-muted-foreground">Efficienza operativa</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="p-2 bg-muted/30 rounded">
+                  <p className="font-bold text-green-600">+12.5%</p>
+                  <p className="text-xs text-muted-foreground">vs mese scorso</p>
+                </div>
+                <div className="p-2 bg-muted/30 rounded">
+                  <p className="font-bold text-blue-600">94%</p>
+                  <p className="text-xs text-muted-foreground">Accuratezza</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Live Update Indicator - More subtle */}
+      <div className="flex items-center justify-center py-4">
+        <div className="flex items-center space-x-2 text-xs text-muted-foreground bg-muted/30 px-3 py-1 rounded-full">
+          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+          <span>Sistema sincronizzato</span>
         </div>
       </div>
     </div>

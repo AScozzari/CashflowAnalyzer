@@ -146,61 +146,67 @@ export default function Analytics() {
   }, [error, toast]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header 
         title="Analytics" 
         subtitle="Analisi approfondite dei flussi finanziari con filtri avanzati"
       />
       
-      <div className="p-6 space-y-6">
-        {/* Advanced Filters */}
-        <AdvancedFilters
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onApplyFilters={handleApplyFilters}
-          onResetFilters={handleResetFilters}
-          isLoading={isLoading}
-        />
+      <div className="p-4 lg:p-6 space-y-6">
+        {/* Advanced Filters - Responsive */}
+        <div className="bg-card rounded-lg shadow-sm border p-4 lg:p-6">
+          <AdvancedFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onApplyFilters={handleApplyFilters}
+            onResetFilters={handleResetFilters}
+            isLoading={isLoading}
+          />
+        </div>
 
         {/* Results Section */}
         {movementsData && (
           <>
-            {/* Analytics Charts */}
-            <AnalyticsCharts 
-              movements={(movementsData as any)?.data || []}
-              isLoading={isLoading}
-            />
+            {/* Analytics Charts - Responsive */}
+            <div className="bg-card rounded-lg shadow-sm border p-4 lg:p-6">
+              <AnalyticsCharts 
+                movements={(movementsData as any)?.data || []}
+                isLoading={isLoading}
+              />
+            </div>
 
-            {/* Data Table */}
-            <AnalyticsTable
-              movements={(movementsData as any)?.data || []}
-              isLoading={isLoading}
-              totalCount={(movementsData as any)?.totalCount || 0}
-              currentPage={currentPage}
-              pageSize={pageSize}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-              onExportData={handleExportData}
-            />
+            {/* Data Table - Responsive */}
+            <div className="bg-card rounded-lg shadow-sm border">
+              <AnalyticsTable
+                movements={(movementsData as any)?.data || []}
+                isLoading={isLoading}
+                totalCount={(movementsData as any)?.totalCount || 0}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                onExportData={handleExportData}
+              />
+            </div>
           </>
         )}
 
-        {/* No data state */}
+        {/* No data state - Responsive */}
         {!isLoading && !movementsData && hasActiveFilters && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg mb-4">
+          <div className="text-center py-12 px-4">
+            <p className="text-muted-foreground text-base lg:text-lg mb-4">
               Applica i filtri per visualizzare i risultati dell'analisi
             </p>
-            <p className="text-gray-400 text-sm">
+            <p className="text-muted-foreground/70 text-sm">
               Seleziona i criteri di filtro desiderati e clicca "Applica Filtri"
             </p>
           </div>
         )}
 
-        {/* Initial state */}
+        {/* Initial state - Responsive */}
         {!hasActiveFilters && !movementsData && (
-          <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
-            <div className="max-w-md mx-auto">
+          <div className="text-center py-12 bg-card rounded-lg border-2 border-dashed border-border/50">
+            <div className="max-w-md mx-auto px-4">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
                 Benvenuto nelle Analytics Avanzate
               </h3>

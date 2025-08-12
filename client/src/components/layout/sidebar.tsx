@@ -28,15 +28,15 @@ export default function Sidebar() {
   const navigation = getNavigationItems();
 
   return (
-    <aside className="w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col">
-      <div className="p-6 border-b border-gray-200">
+    <aside className="w-64 bg-sidebar shadow-lg border-r border-sidebar-border flex flex-col dark:shadow-black/20">
+      <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <BarChart3 className="text-white text-lg" />
+          <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
+            <BarChart3 className="text-sidebar-primary-foreground text-lg" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">CashFlow</h1>
-            <p className="text-sm text-gray-500">Management System</p>
+            <h1 className="text-xl font-bold text-sidebar-foreground">CashFlow</h1>
+            <p className="text-sm text-sidebar-foreground/60">Management System</p>
           </div>
         </div>
       </div>
@@ -52,14 +52,14 @@ export default function Sidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center space-x-3 p-3 rounded-lg transition-colors",
+                    "flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 hover:scale-[1.02]",
                     isActive
-                      ? "bg-primary text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
                   <Icon className="h-5 w-5" />
-                  <span>{item.name}</span>
+                  <span className="font-medium">{item.name}</span>
                 </Link>
               </li>
             );
@@ -67,10 +67,10 @@ export default function Sidebar() {
         </ul>
       </nav>
       
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-2">
-          <Calendar className="h-4 w-4 text-gray-400" />
-          <span className="text-sm text-gray-600">
+      <div className="p-4 border-t border-sidebar-border">
+        <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-sidebar-accent/50">
+          <Calendar className="h-4 w-4 text-sidebar-accent-foreground" />
+          <span className="text-sm text-sidebar-accent-foreground font-medium">
             {format(new Date(), 'dd MMMM yyyy', { locale: it })}
           </span>
         </div>

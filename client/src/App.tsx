@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import { SimpleThemeProvider } from "@/contexts/simple-theme-context";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Sidebar from "@/components/layout/sidebar";
+import { BottomNavigation } from "@/components/mobile/mobile-navigation";
 import Dashboard from "@/pages/dashboard-new";
 import Movements from "@/pages/movements";
 import Analytics from "@/pages/analytics";
@@ -26,40 +27,52 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
       
-      {/* Route protette con layout */}
+      {/* Route protette con layout responsive */}
       <ProtectedRoute path="/" component={() => (
         <div className="flex min-h-screen bg-background transition-colors">
-          <Sidebar />
-          <main className="flex-1 overflow-auto">
+          <div className="hidden lg:block">
+            <Sidebar />
+          </div>
+          <main className="flex-1 overflow-auto pb-20 lg:pb-0">
             <Dashboard />
           </main>
+          <BottomNavigation />
         </div>
       )} />
       
       <ProtectedRoute path="/dashboard" component={() => (
         <div className="flex min-h-screen bg-background transition-colors">
-          <Sidebar />
-          <main className="flex-1 overflow-auto">
+          <div className="hidden lg:block">
+            <Sidebar />
+          </div>
+          <main className="flex-1 overflow-auto pb-20 lg:pb-0">
             <Dashboard />
           </main>
+          <BottomNavigation />
         </div>
       )} />
       
       <ProtectedRoute path="/movements" component={() => (
         <div className="flex min-h-screen bg-background transition-colors">
-          <Sidebar />
-          <main className="flex-1 overflow-auto">
+          <div className="hidden lg:block">
+            <Sidebar />
+          </div>
+          <main className="flex-1 overflow-auto pb-20 lg:pb-0">
             <Movements />
           </main>
+          <BottomNavigation />
         </div>
       )} />
       
       <ProtectedRoute path="/analytics" component={() => (
         <div className="flex min-h-screen bg-background transition-colors">
-          <Sidebar />
-          <main className="flex-1 overflow-auto">
+          <div className="hidden lg:block">
+            <Sidebar />
+          </div>
+          <main className="flex-1 overflow-auto pb-20 lg:pb-0">
             <Analytics />
           </main>
+          <BottomNavigation />
         </div>
       )} />
       
@@ -69,10 +82,13 @@ function Router() {
         allowedRoles={["admin", "finance"]}
         component={() => (
           <div className="flex min-h-screen bg-background transition-colors">
-            <Sidebar />
-            <main className="flex-1 overflow-auto">
+            <div className="hidden lg:block">
+              <Sidebar />
+            </div>
+            <main className="flex-1 overflow-auto pb-20 lg:pb-0">
               <Settings />
             </main>
+            <BottomNavigation />
           </div>
         )}
       />

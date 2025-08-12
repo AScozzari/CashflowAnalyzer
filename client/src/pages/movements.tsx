@@ -117,7 +117,7 @@ export default function Movements() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header 
         title="Movimenti" 
         subtitle="Gestione dei flussi finanziari"

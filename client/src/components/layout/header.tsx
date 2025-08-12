@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { LogOut, User, Shield, CreditCard } from "lucide-react";
 import { NotificationsBell } from "./notifications-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { MobileNavigation } from "@/components/mobile/mobile-navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -61,21 +62,22 @@ export default function Header({ title, subtitle, action }: HeaderProps) {
   };
 
   return (
-    <header className="bg-background border-b border-border p-6 transition-colors">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">{title}</h2>
-          {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
+    <header className="bg-background border-b border-border p-4 lg:p-6 transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
+        <div className="min-w-0">
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground truncate">{title}</h2>
+          {subtitle && <p className="text-muted-foreground text-sm lg:text-base truncate">{subtitle}</p>}
         </div>
-        <div className="flex items-center space-x-4">
-          {action}
+        <div className="flex items-center justify-end space-x-2 lg:space-x-4 shrink-0">
+          <MobileNavigation />
+          {action && <div className="hidden sm:block">{action}</div>}
           <ThemeToggle />
           <NotificationsBell />
           
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full shrink-0">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-primary text-white">
                       {getInitials(user.firstName, user.lastName)}
@@ -106,6 +108,13 @@ export default function Header({ title, subtitle, action }: HeaderProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
+          
+          {/* Mobile action button */}
+          {action && (
+            <div className="sm:hidden">
+              {action}
+            </div>
           )}
         </div>
       </div>
