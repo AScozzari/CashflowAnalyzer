@@ -69,6 +69,7 @@ export default function EntityConfig() {
   };
 
   const sidebarWidth = isCollapsed && !isHovered ? "w-16" : "w-64";
+  const shouldShowText = !isCollapsed || isHovered;
 
   return (
     <div className="flex h-[600px] md:h-[600px] min-h-[400px]">
@@ -110,11 +111,14 @@ export default function EntityConfig() {
                 >
                   <Icon className="h-4 w-4 flex-shrink-0" />
                   <span 
-                    className={`text-sm transition-all duration-200 ${
-                      isCollapsed && !isHovered 
-                        ? 'opacity-0 w-0 overflow-hidden' 
-                        : 'opacity-100 w-auto'
+                    className={`text-sm transition-all duration-300 ${
+                      shouldShowText
+                        ? 'opacity-100 translate-x-0' 
+                        : 'opacity-0 -translate-x-2'
                     }`}
+                    style={{
+                      display: shouldShowText ? 'block' : 'none'
+                    }}
                   >
                     {tab.label}
                   </span>

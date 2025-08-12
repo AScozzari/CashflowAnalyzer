@@ -28,14 +28,157 @@ import {
   ArrowDownLeft,
   MoreHorizontal,
   Download,
-  Filter
+  Filter,
+  PieChart
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import type { MovementWithRelations } from "@shared/schema";
 
+// Colors for charts
+const CHART_COLORS = {
+  "Saldato": "#10B981",
+  "Da Saldare": "#F59E0B", 
+  "In Lavorazione": "#2563EB",
+  "Saldato Parziale": "#8B5CF6",
+  "Annullato": "#EF4444",
+  "Sospeso": "#6B7280",
+};
+
+// Dashboard Chart Component
+function DashboardChart({ title, subtitle, movements, isLoading, type }: {
+  title: string;
+  subtitle: string;
+  movements: MovementWithRelations[];
+  isLoading: boolean;
+  type: 'cashflow' | 'status';
+}) {
+  const chartData = useMemo(() => {
+    if (!movements.length) return [];
+    
+    if (type === 'cashflow') {
+      // Group by date for cash flow chart
+      const groupedByDate = movements.reduce((acc, movement) => {
+        const date = format(new Date(movement.flowDate || movement.insertDate), 'dd/MM', { locale: it });
+        if (!acc[date]) {
+          acc[date] = { date, entrate: 0, uscite: 0 };
+        }
+        
+        const amount = parseFloat(movement.amount);
+        if (movement.type === 'income') {
+          acc[date].entrate += amount;
+        } else {
+          acc[date].uscite += amount;
+        }
+        
+        return acc;
+      }, {} as Record<string, any>);
+      
+      return Object.values(groupedByDate).slice(-7); // Last 7 days
+    } else {
+      // Group by status for pie chart
+      const statusCount = movements.reduce((acc, movement) => {
+        const status = movement.status?.name || 'Da Saldare';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      return Object.entries(statusCount).map(([name, value]) => ({
+        name,
+        value,
+        fill: CHART_COLORS[name as keyof typeof CHART_COLORS] || '#6B7280'
+      }));
+    }
+  }, [movements, type]);
+
+  if (isLoading) {
+    return (
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <PieChart className="h-5 w-5" />
+            <span>{title}</span>
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 flex items-center justify-center">
+            <div className="space-y-3 w-full">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-0 shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          {type === 'cashflow' ? <BarChart3 className="h-5 w-5" /> : <PieChart className="h-5 w-5" />}
+          <span>{title}</span>
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">{subtitle}</p>
+      </CardHeader>
+      <CardContent>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            {type === 'cashflow' ? (
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value: number) => [
+                    new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value),
+                    ''
+                  ]}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="entrate" 
+                  stroke="#10B981" 
+                  strokeWidth={3}
+                  name="Entrate"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="uscite" 
+                  stroke="#EF4444" 
+                  strokeWidth={3}
+                  name="Uscite"
+                />
+              </LineChart>
+            ) : (
+              <RechartsPieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </RechartsPieChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // Enhanced Stats Cards with gradients and animations
-function EnhancedStatsGrid({ data, isLoading }: { data: any; isLoading: boolean }) {
+function EnhancedStatsGrid({ data, isLoading, movements }: { data: any; isLoading: boolean; movements: MovementWithRelations[] }) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
@@ -62,10 +205,20 @@ function EnhancedStatsGrid({ data, isLoading }: { data: any; isLoading: boolean 
     );
   }
 
+  // Calculate current month stats from filtered movements
+  const currentMonthStats = useMemo(() => {
+    const income = movements.filter(m => m.type === 'income').reduce((sum, m) => sum + parseFloat(m.amount), 0);
+    const expenses = movements.filter(m => m.type === 'expense').reduce((sum, m) => sum + parseFloat(m.amount), 0);
+    const netFlow = income - expenses;
+    const movementCount = movements.length;
+    
+    return { income, expenses, netFlow, movementCount };
+  }, [movements]);
+
   const stats = [
     {
-      title: "Entrate Totali",
-      value: data?.totalIncome || 0,
+      title: "Entrate Mese Corrente",
+      value: currentMonthStats.income,
       icon: TrendingUp,
       change: "+12.5%",
       changeType: "positive",
@@ -75,8 +228,8 @@ function EnhancedStatsGrid({ data, isLoading }: { data: any; isLoading: boolean 
       progress: 85
     },
     {
-      title: "Uscite Totali", 
-      value: data?.totalExpenses || 0,
+      title: "Uscite Mese Corrente", 
+      value: currentMonthStats.expenses,
       icon: TrendingDown,
       change: "-3.2%",
       changeType: "positive",
@@ -87,7 +240,7 @@ function EnhancedStatsGrid({ data, isLoading }: { data: any; isLoading: boolean 
     },
     {
       title: "Cash Flow Netto",
-      value: (data?.totalIncome || 0) - (data?.totalExpenses || 0),
+      value: currentMonthStats.netFlow,
       icon: DollarSign,
       change: "+8.1%",
       changeType: "positive",
@@ -97,8 +250,8 @@ function EnhancedStatsGrid({ data, isLoading }: { data: any; isLoading: boolean 
       progress: 92
     },
     {
-      title: "Transazioni",
-      value: data?.movementCount || 0,
+      title: "Movimenti del Mese",
+      value: currentMonthStats.movementCount,
       icon: Activity,
       change: "+15.3%",
       changeType: "positive",
@@ -479,6 +632,11 @@ function QuickActionsWidget() {
 export default function DashboardProfessional() {
   const [, setLocation] = useLocation();
   
+  // Get current month and year for filtering
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  
   // Fetch analytics data
   const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/analytics/stats"],
@@ -498,26 +656,54 @@ export default function DashboardProfessional() {
     gcTime: 5 * 60 * 1000,
   });
 
-  // Process movements for display
+  // Process movements for display - filter by current month
   const movements = useMemo(() => {
     if (!movementsData || !Array.isArray(movementsData.data)) return [];
-    return movementsData.data.slice(0, 10); // Show more movements
-  }, [movementsData]);
+    
+    // Filter movements to show only current month
+    const currentMonthMovements = movementsData.data.filter((movement: MovementWithRelations) => {
+      const movementDate = new Date(movement.flowDate || movement.insertDate);
+      return movementDate.getMonth() === currentMonth && movementDate.getFullYear() === currentYear;
+    });
+    
+    return currentMonthMovements.slice(0, 10); // Show top 10 current month movements
+  }, [movementsData, currentMonth, currentYear]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-blue-950/30 dark:to-indigo-950/20">
       <Header 
-        title="Dashboard Professionale" 
-        subtitle="Centro di controllo avanzato per la gestione finanziaria aziendale"
+        title={`Dashboard Professionale - ${format(currentDate, 'MMMM yyyy', { locale: it })}`}
+        subtitle={`Centro di controllo per i movimenti finanziari del mese corrente (${movements.length} movimenti)`}
       />
       
       <div className="container mx-auto px-4 lg:px-6 py-6 space-y-8">
         {/* PWA Install Prompt */}
         <InstallPrompt />
         
-        {/* Enhanced Stats Grid */}
-        <EnhancedStatsGrid data={statsData} isLoading={statsLoading} />
+        {/* Enhanced Stats Grid - Current Month Only */}
+        <EnhancedStatsGrid data={statsData} isLoading={statsLoading} movements={movements} />
         
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Cash Flow Chart */}
+          <DashboardChart
+            title="Andamento Cash Flow"
+            subtitle="Entrate e uscite degli ultimi 30 giorni"
+            movements={movements}
+            isLoading={movementsLoading}
+            type="cashflow"
+          />
+          
+          {/* Status Distribution Chart */}
+          <DashboardChart
+            title="Distribuzione per Stato"
+            subtitle="Ripartizione movimenti per stato"
+            movements={movements}
+            isLoading={movementsLoading}
+            type="status"
+          />
+        </div>
+
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Recent Movements - Takes 2 columns on XL screens */}
