@@ -6,10 +6,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSimpleTheme } from "@/contexts/simple-theme-context";
+import { useTheme } from "@/lib/theme-provider";
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useSimpleTheme();
+  const { theme, setTheme } = useTheme();
 
   return (
     <DropdownMenu>

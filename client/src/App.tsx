@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
-import { SimpleThemeProvider } from "@/contexts/simple-theme-context";
+import { ThemeProvider } from "@/lib/theme-provider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Sidebar from "@/components/layout/sidebar";
 import { BottomNavigation } from "@/components/mobile/mobile-navigation";
@@ -99,21 +99,19 @@ function Router() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <ErrorBoundary>
-      <SimpleThemeProvider>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="light" storageKey="easycashflow-theme">
           <AuthProvider>
             <TooltipProvider>
-              <Toaster />
               <Router />
+              <Toaster />
             </TooltipProvider>
           </AuthProvider>
-        </QueryClientProvider>
-      </SimpleThemeProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }
-
-export default App;

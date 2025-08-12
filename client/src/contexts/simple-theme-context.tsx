@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -54,11 +54,7 @@ export function SimpleThemeProvider({ children }: { children: ReactNode }) {
 export function useSimpleTheme() {
   const context = useContext(SimpleThemeContext);
   if (!context) {
-    // Return default values instead of throwing
-    return {
-      theme: "light" as Theme,
-      setTheme: () => {}
-    };
+    throw new Error("useSimpleTheme must be used within a SimpleThemeProvider");
   }
   return context;
 }
