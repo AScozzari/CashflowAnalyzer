@@ -1,0 +1,56 @@
+COMANDI PER INSTALLARE NEON SUL SERVER DI PRODUZIONE
+=====================================================
+
+1. CONNESSIONE AL SERVER:
+   ssh antonio@217.64.206.247
+
+2. ENTRA NELLA DIRECTORY DELL'APP:
+   cd /var/www/cashflows
+
+3. FERMA L'APPLICAZIONE ATTUALE:
+   pkill -f tsx
+   pkill -f node
+
+4. INSTALLA I PACCHETTI NEON:
+   npm install @neondatabase/serverless ws
+
+5. AGGIORNA IL FILE .env:
+   nano .env
+
+   Sostituisci tutto il contenuto con:
+   NODE_ENV=development
+   PORT=5000
+   DATABASE_URL=postgresql://neondb_owner:npg_XqL8CYMYnWN7@ep-steep-cloud-a2twvhhe.eu-central-1.aws.neon.tech/neondb?sslmode=require
+   SESSION_SECRET=super-secret-key-change-in-production
+
+6. CARICA LE VARIABILI D'AMBIENTE:
+   source .env
+
+7. AGGIORNA LO SCHEMA DATABASE (opzionale, dovrebbe essere già aggiornato):
+   npm run db:push
+
+8. AVVIA L'APPLICAZIONE:
+   nohup npx tsx server/index.ts > /var/log/easycashflows.log 2>&1 &
+   echo $! > easycashflows.pid
+
+9. VERIFICA CHE SIA ATTIVA:
+   curl http://localhost:5000/
+
+10. TESTA IL LOGIN:
+    curl -X POST http://localhost:5000/api/auth/login \
+      -H 'Content-Type: application/json' \
+      -d '{"username":"admin","password":"admin123"}'
+
+11. MONITORA I LOG:
+    tail -f /var/log/easycashflows.log
+
+RISULTATO ATTESO:
+=================
+- Il login dovrebbe funzionare immediatamente
+- Stessi dati del database Replit
+- Zero problemi di configurazione PostgreSQL locale
+- API routing funzionante al 100%
+
+VERIFICA FINALE:
+================
+Apri http://217.64.206.247 nel browser e prova il login con admin/admin123

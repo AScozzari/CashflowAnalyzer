@@ -1,0 +1,74 @@
+DIAGNOSI E FIX COMPLETO DEL SERVER
+==================================
+
+Il server non si sta avviando. Ecco la procedura completa per risolvere:
+
+1. VERIFICA STATO ATTUALE:
+   ps aux | grep tsx
+   ps aux | grep node
+   netstat -tlnp | grep 5000
+
+2. CONTROLLA I LOG DI ERRORE:
+   tail -50 /var/log/easycashflows.log
+
+3. VERIFICA DIPENDENZE NEON:
+   cd /var/www/cashflows
+   npm list @neondatabase/serverless
+   npm list ws
+
+4. SE MANCANO DIPENDENZE, REINSTALLA:
+   npm install @neondatabase/serverless ws --save
+
+5. VERIFICA FILE .env:
+   cat .env
+
+6. TESTA LA CONNESSIONE NEON:
+   node -e "
+   import { Pool, neonConfig } from '@neondatabase/serverless';
+   import ws from 'ws';
+   neonConfig.webSocketConstructor = ws;
+   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+   console.log('Testing Neon connection...');
+   pool.query('SELECT NOW()').then(r => console.log('✓ Neon OK:', r.rows[0])).catch(e => console.error('✗ Neon Error:', e.message));
+   "
+
+7. SE NEON NON FUNZIONA, USA TEST SEMPLIFICATO:
+   node -e "console.log('Node.js funziona')"
+
+8. AVVIA CON DEBUG MASSIMO:
+   export NODE_ENV=development
+   export PORT=5000
+   export DATABASE_URL=postgresql://neondb_owner:npg_XqL8CYMYnWN7@ep-steep-cloud-a2twvhhe.eu-central-1.aws.neon.tech/neondb?sslmode=require
+   export SESSION_SECRET=super-secret-key-change-in-production
+   
+   npx tsx server/index.ts
+
+9. SE NON PARTE, PROVA VERSIONE SEMPLIFICATA:
+   node -r esbuild-register server/index.ts
+
+10. SE ANCORA NON FUNZIONA, REINSTALLA NODE MODULES:
+    rm -rf node_modules package-lock.json
+    npm install
+
+11. VERIFICA CHE TSX SIA INSTALLATO:
+    npm install tsx --save-dev
+    npx tsx --version
+
+ERRORI COMUNI DA VERIFICARE:
+===========================
+- Missing Neon packages
+- Wrong DATABASE_URL format
+- TSX not installed or corrupted
+- Port già in uso
+- Errori di sintassi nel codice
+- Missing environment variables
+
+SOLUZIONE ALTERNATIVA (se tutto fallisce):
+=========================================
+Torna alla configurazione PostgreSQL locale originale:
+export DATABASE_URL=postgresql://easycashflows:EasyFlows2025@localhost:5432/easycashflows
+
+COMANDO DI EMERGENZA:
+====================
+Se niente funziona, usa questo per avviare una versione base:
+PORT=5000 node -e "require('express')().get('/', (req,res) => res.send('Server alive')).listen(5000, () => console.log('Emergency server on 5000'))"

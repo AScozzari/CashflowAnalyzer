@@ -1,0 +1,56 @@
+# Trasferimento Diretto Progetto - Da Replit a Server
+
+# METODO 1: Crea archivio in Replit e trasferisci
+
+# 1. Nella shell Replit, crea archivio del progetto
+cd /home/runner/workspace
+tar -czf easycashflows-complete.tar.gz \
+  --exclude='node_modules' \
+  --exclude='.git' \
+  --exclude='uploads' \
+  --exclude='*.log' \
+  --exclude='.env' \
+  .
+
+# 2. Verifica archivio creato
+ls -lh easycashflows-complete.tar.gz
+
+# Ora hai l'archivio. Puoi trasferirlo via:
+# - SCP se hai client SSH locale
+# - Download dall'interfaccia Replit e upload via FTP
+# - Copiare il contenuto file per file
+
+# METODO 2: Copia manuale file principali
+
+# Sul server, ricrea la struttura:
+cd /var/www/cashflows
+rm -rf *
+
+# Crea le directory principali
+mkdir -p client/src/{components,pages,hooks,lib,data}
+mkdir -p client/src/components/{ui,dashboard,movements,settings,analytics,layout}
+mkdir -p server
+mkdir -p shared
+mkdir -p uploads
+
+# Poi copia i file principali uno per uno:
+# package.json, tsconfig.json, vite.config.ts, etc.
+
+echo "=== File da copiare manualmente ==="
+echo "1. package.json"
+echo "2. tsconfig.json" 
+echo "3. vite.config.ts"
+echo "4. drizzle.config.ts"
+echo "5. tailwind.config.ts"
+echo "6. postcss.config.js"
+echo "7. components.json"
+echo "8. Tutti i file in server/"
+echo "9. Tutti i file in client/src/"
+echo "10. Tutti i file in shared/"
+
+# METODO 3: Git diretto sul server
+# Sul server, clona direttamente da un repository funzionante
+cd /var/www
+rm -rf cashflows
+# Se hai un backup o fork del repository che funziona
+git clone <URL_REPOSITORY_FUNZIONANTE> cashflows

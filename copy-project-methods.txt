@@ -1,0 +1,115 @@
+# Metodi per Copiare il Progetto sul Server
+
+## METODO 1: Git Clone (RACCOMANDATO)
+# Sul server, rimuovi la directory attuale e clona da zero
+
+cd /var/www
+rm -rf cashflows
+git clone https://github.com/AScozzari/EasyCashFlows.git cashflows
+cd cashflows
+ls -la
+
+## METODO 2: Download ZIP da GitHub
+# Sul server, scarica e estrai il ZIP
+
+cd /var/www
+rm -rf cashflows
+wget https://github.com/AScozzari/EasyCashFlows/archive/refs/heads/main.zip
+unzip main.zip
+mv EasyCashFlows-main cashflows
+cd cashflows
+ls -la
+
+## METODO 3: Upload manuale
+# Se hai accesso FTP/SFTP, comprimi il progetto e caricalo
+
+# Prima crea un archivio del progetto:
+# Sul tuo computer locale o qui in Replit:
+tar -czf easycashflows.tar.gz --exclude='node_modules' --exclude='.git' .
+
+# Poi carica sul server e estrai:
+cd /var/www
+rm -rf cashflows
+mkdir cashflows
+cd cashflows
+# Carica easycashflows.tar.gz qui
+tar -xzf easycashflows.tar.gz
+rm easycashflows.tar.gz
+
+## DOPO QUALSIASI METODO:
+# Setup finale
+
+cd /var/www/cashflows
+
+# Ferma PM2
+pm2 stop all
+pm2 delete all
+
+# Crea file .env
+cat > .env << 'EOF'
+DATABASE_URL="postgresql://easycashflows_user:EasyFlows2025!@localhost:5432/easycashflows"
+NODE_ENV=production
+PORT=5000
+HOST=0.0.0.0
+SESSION_SECRET="EasyCashFlows2025SuperSecretSessionKey123456789"
+SENDGRID_API_KEY=""
+FROM_EMAIL="noreply@easycashflows.com"
+FROM_NAME="EasyCashFlows"
+ALLOWED_ORIGINS="http://217.64.206.247:5000"
+LOG_LEVEL=info
+MAX_FILE_SIZE=10485760
+UPLOAD_PATH=/var/www/cashflows/uploads
+BCRYPT_ROUNDS=12
+JWT_EXPIRE=24h
+EOF
+
+# Installa dipendenze
+npm install --omit=dev
+
+# Crea directory uploads
+mkdir -p uploads
+chmod 755 uploads
+
+# Crea script manage.sh
+cat > manage.sh << 'EOF'
+#!/bin/bash
+case $1 in
+  start)
+    cd /var/www/cashflows
+    pm2 start npm --name cashflows -- start
+    echo 'Applicazione avviata'
+    ;;
+  stop)
+    pm2 stop cashflows
+    echo 'Applicazione fermata'
+    ;;
+  restart)
+    pm2 restart cashflows
+    echo 'Applicazione riavviata'
+    ;;
+  status)
+    pm2 status
+    ;;
+  logs)
+    pm2 logs cashflows
+    ;;
+  *)
+    echo 'Uso: ./manage.sh {start|stop|restart|status|logs}'
+    ;;
+esac
+EOF
+
+chmod +x manage.sh
+
+# Configura permessi
+chown -R antonio:antonio /var/www/cashflows
+
+# Setup database
+npm run db:push
+npm run seed:admin
+
+# Avvia applicazione
+./manage.sh start
+
+echo "=== Setup Completato ==="
+echo "URL: http://217.64.206.247:5000"

@@ -1,0 +1,49 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Log files
+*.log
+*.pid
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Build artifacts
+build/
+.cache/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+
+# Deployment files
+*.sh
+production*
+deploy*
+nginx-*
+test-*
+fix-*
+debug-*
+server-*
+manual-*
+emergency-*
+quick-*
+*.tar.gz
+*.zip
+
+# Development artifacts
+cookies*.txt
+*.conf
