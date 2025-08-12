@@ -156,20 +156,18 @@ export default function ModularDashboard({
     localStorage.setItem("dashboard-layout", JSON.stringify(widgets));
   }, [widgets]);
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-
-    const items = Array.from(widgets);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    const updatedWidgets = items.map((item, index) => ({
-      ...item,
-      order: index
-    }));
-
-    setWidgets(updatedWidgets);
-  };
+  // Drag and drop functionality temporarily disabled
+  // const handleDragEnd = (result: any) => {
+  //   if (!result.destination) return;
+  //   const items = Array.from(widgets);
+  //   const [reorderedItem] = items.splice(result.source.index, 1);
+  //   items.splice(result.destination.index, 0, reorderedItem);
+  //   const updatedWidgets = items.map((item, index) => ({
+  //     ...item,
+  //     order: index
+  //   }));
+  //   setWidgets(updatedWidgets);
+  // };
 
   const toggleWidgetVisibility = (widgetId: string) => {
     setWidgets(prev => prev.map(widget => 
