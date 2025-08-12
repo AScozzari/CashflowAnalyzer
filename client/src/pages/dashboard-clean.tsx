@@ -363,7 +363,14 @@ function RecentMovements() {
                 <div className="flex-1">
                   <div className="font-medium">{movement.description || 'Movimento senza descrizione'}</div>
                   <div className="text-sm text-muted-foreground">
-                    {movement.companyName || 'N/A'} • {format(new Date(movement.date), 'dd/MM/yyyy', { locale: it })}
+                    {movement.companyName || 'N/A'} • {(() => {
+                      try {
+                        const date = movement.flowDate || movement.insertDate;
+                        return date ? format(new Date(date), 'dd/MM/yyyy', { locale: it }) : 'Data non disponibile';
+                      } catch (error) {
+                        return 'Data non disponibile';
+                      }
+                    })()}
                   </div>
                 </div>
                 <div className={`font-bold ${movement.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
