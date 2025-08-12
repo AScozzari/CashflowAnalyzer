@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import App from "./App"; // App originale completa
+import App from "./App-clean"; // App pulita senza problemi drag&drop
 import "./index.css"; // CSS originale
 
 // Service Worker temporaneamente disabilitato per debug
