@@ -1,9 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Calendar } from "lucide-react";
+import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Calendar, Pin, PinOff, ChevronLeft } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function Sidebar() {
   const [location] = useLocation();
