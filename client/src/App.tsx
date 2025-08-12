@@ -25,13 +25,13 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   
   return (
     <div className="flex min-h-screen bg-background transition-colors">
-      <div className="hidden lg:block">
+      <div className="hidden lg:block flex-shrink-0">
         <Sidebar 
           isCollapsed={sidebarCollapsed} 
           onCollapsedChange={setSidebarCollapsed}
         />
       </div>
-      <main className="flex-1 overflow-auto pb-20 lg:pb-0 transition-all duration-300">
+      <main className="flex-1 min-h-screen overflow-auto pb-20 lg:pb-0 transition-all duration-300">
         {children}
       </main>
       <BottomNavigation />

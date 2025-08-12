@@ -73,7 +73,7 @@ export default function Sidebar({ isCollapsed: externalCollapsed, onCollapsedCha
 
   return (
     <aside 
-      className={`${sidebarWidth} bg-sidebar shadow-lg border-r border-sidebar-border flex flex-col dark:shadow-black/20 transition-all duration-300 ease-in-out relative overflow-hidden`}
+      className={`${sidebarWidth} h-screen bg-sidebar shadow-lg border-r border-sidebar-border flex flex-col dark:shadow-black/20 transition-all duration-300 ease-in-out relative overflow-hidden sticky top-0`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
