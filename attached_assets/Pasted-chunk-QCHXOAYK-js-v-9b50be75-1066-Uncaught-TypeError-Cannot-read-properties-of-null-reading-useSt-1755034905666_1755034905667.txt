@@ -1,0 +1,85 @@
+chunk-QCHXOAYK.js?v=9b50be75:1066 Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at useState (chunk-QCHXOAYK.js?v=9b50be75:1066:29)
+    at ThemeProvider (theme-context.tsx:14:29)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=72f68957:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=72f68957:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=72f68957:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=72f68957:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=72f68957:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=72f68957:3733:39)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=72f68957:19765:15)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=72f68957:19198:20)
+useState @ chunk-QCHXOAYK.js?v=9b50be75:1066
+ThemeProvider @ theme-context.tsx:14
+renderWithHooks @ chunk-RPCDYKBN.js?v=72f68957:11548
+mountIndeterminateComponent @ chunk-RPCDYKBN.js?v=72f68957:14926
+beginWork @ chunk-RPCDYKBN.js?v=72f68957:15914
+callCallback2 @ chunk-RPCDYKBN.js?v=72f68957:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=72f68957:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=72f68957:3733
+beginWork$1 @ chunk-RPCDYKBN.js?v=72f68957:19765
+performUnitOfWork @ chunk-RPCDYKBN.js?v=72f68957:19198
+workLoopSync @ chunk-RPCDYKBN.js?v=72f68957:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=72f68957:19116
+recoverFromConcurrentError @ chunk-RPCDYKBN.js?v=72f68957:18736
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=72f68957:18684
+workLoop @ chunk-RPCDYKBN.js?v=72f68957:197
+flushWork @ chunk-RPCDYKBN.js?v=72f68957:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=72f68957:384Understand this error
+hook.js:608 The above error occurred in the <ThemeProvider> component:
+
+    at ThemeProvider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/contexts/theme-context.tsx:20:33)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-RPCDYKBN.js?v=72f68957:14032
+update.callback @ chunk-RPCDYKBN.js?v=72f68957:14052
+callCallback @ chunk-RPCDYKBN.js?v=72f68957:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=72f68957:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=72f68957:17093
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=72f68957:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=72f68957:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=72f68957:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=72f68957:19353
+commitRoot @ chunk-RPCDYKBN.js?v=72f68957:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=72f68957:18760
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=72f68957:18718
+workLoop @ chunk-RPCDYKBN.js?v=72f68957:197
+flushWork @ chunk-RPCDYKBN.js?v=72f68957:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=72f68957:384Understand this error
+chunk-RPCDYKBN.js?v=72f68957:19413 Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at useState (chunk-QCHXOAYK.js?v=9b50be75:1066:29)
+    at ThemeProvider (theme-context.tsx:14:29)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=72f68957:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=72f68957:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=72f68957:15914:22)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=72f68957:19753:22)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=72f68957:19198:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=72f68957:19137:13)
+    at renderRootSync (chunk-RPCDYKBN.js?v=72f68957:19116:15)
+    at recoverFromConcurrentError (chunk-RPCDYKBN.js?v=72f68957:18736:28)
+useState @ chunk-QCHXOAYK.js?v=9b50be75:1066
+ThemeProvider @ theme-context.tsx:14
+renderWithHooks @ chunk-RPCDYKBN.js?v=72f68957:11548
+mountIndeterminateComponent @ chunk-RPCDYKBN.js?v=72f68957:14926
+beginWork @ chunk-RPCDYKBN.js?v=72f68957:15914
+beginWork$1 @ chunk-RPCDYKBN.js?v=72f68957:19753
+performUnitOfWork @ chunk-RPCDYKBN.js?v=72f68957:19198
+workLoopSync @ chunk-RPCDYKBN.js?v=72f68957:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=72f68957:19116
+recoverFromConcurrentError @ chunk-RPCDYKBN.js?v=72f68957:18736
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=72f68957:18684
+workLoop @ chunk-RPCDYKBN.js?v=72f68957:197
+flushWork @ chunk-RPCDYKBN.js?v=72f68957:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=72f68957:384Understand this error
+main.tsx:10 SW registered:  ServiceWorkerRegistration {installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager, scope: 'https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/', …}
+3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">Understand this warning
+client:536 WebSocket connection to 'wss://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/?token=4FZtSjHuOzxH' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=4FZtSjHuOzxH' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
