@@ -105,8 +105,7 @@ export function ResponsiveLayout({
       <GestureNavigation
         onSwipeLeft={canGoNext ? navigateToNext : undefined}
         onSwipeRight={canGoPrevious ? navigateToPrevious : undefined}
-        threshold={80}
-        className="min-h-screen"
+        enableNavigation={true}
       >
         {content}
       </GestureNavigation>

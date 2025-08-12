@@ -1,14 +1,8 @@
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface MovementStatusChartProps {
-  data?: Array<{
-    statusName: string;
-    count: number;
-  }>;
-  isLoading: boolean;
-}
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart } from "lucide-react";
 
 const COLORS = {
   "Saldato": "#10B981",
@@ -19,80 +13,84 @@ const COLORS = {
   "Sospeso": "#6B7280",
 };
 
-export default function MovementStatusChart({ data, isLoading }: MovementStatusChartProps) {
+interface StatusData {
+  statusName: string;
+  count: number;
+  totalAmount: number;
+}
+
+interface MovementStatusChartProps {
+  data: StatusData[];
+  isLoading: boolean;
+}
+
+export default function DashboardMovementStatusChart({ data, isLoading }: MovementStatusChartProps) {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Stati Movimenti</CardTitle>
+          <div className="flex items-center space-x-2">
+            <PieChart className="h-5 w-5 text-purple-600" />
+            <CardTitle>Distribuzione per Status</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-[300px] w-full" />
         </CardContent>
       </Card>
     );
   }
 
-  if (!data || data.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Stati Movimenti</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center text-gray-500">
-            Nessun movimento disponibile
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const chartData = data.map(item => ({
+    ...item,
+    fill: COLORS[item.statusName as keyof typeof COLORS] || "#6B7280"
+  }));
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Stati Movimenti</CardTitle>
+        <div className="flex items-center space-x-2">
+          <PieChart className="h-5 w-5 text-purple-600" />
+          <CardTitle>Distribuzione per Status</CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={5}
-                dataKey="count"
-                nameKey="statusName"
-              >
-                {data.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={COLORS[entry.statusName as keyof typeof COLORS] || "#8B5CF6"} 
-                  />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: number) => [value, 'Movimenti']} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="mt-6 space-y-2">
-          {data.map((item) => (
-            <div key={item.statusName} className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: COLORS[item.statusName as keyof typeof COLORS] || "#8B5CF6" }}
-                ></div>
-                <span className="text-sm text-gray-600">{item.statusName}</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900">{item.count}</span>
-            </div>
-          ))}
-        </div>
+        <ResponsiveContainer width="100%" height={300}>
+          <RechartsPieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ statusName, count, percent }) => 
+                `${statusName}: ${count} (${(percent * 100).toFixed(0)}%)`
+              }
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="count"
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <Tooltip 
+              formatter={(value: number, name: string, props: any) => [
+                `${value} movimenti`,
+                `${formatCurrency(props.payload.totalAmount)}`
+              ]}
+            />
+            <Legend />
+          </RechartsPieChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );

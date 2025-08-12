@@ -1,140 +1,107 @@
-import { ReactNode, useRef, useEffect } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
 interface GestureNavigationProps {
   children: ReactNode;
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
-  onSwipeUp?: () => void;
-  onSwipeDown?: () => void;
-  threshold?: number;
-  className?: string;
+  enableNavigation?: boolean;
 }
 
-export function GestureNavigation({
-  children,
-  onSwipeLeft,
-  onSwipeRight,
-  onSwipeUp,
-  onSwipeDown,
-  threshold = 50,
-  className
-}: GestureNavigationProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    let startTime: number;
-    const maxTime = 300; // Max time for a swipe gesture
-    const minDistance = threshold;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-      startTime = Date.now();
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (!touchStartRef.current) return;
-
-      const touch = e.changedTouches[0];
-      const deltaX = touch.clientX - touchStartRef.current.x;
-      const deltaY = touch.clientY - touchStartRef.current.y;
-      const deltaTime = Date.now() - startTime;
-
-      // Check if it's a valid swipe gesture
-      if (deltaTime > maxTime) return;
-
-      const absDeltaX = Math.abs(deltaX);
-      const absDeltaY = Math.abs(deltaY);
-
-      // Determine swipe direction
-      if (absDeltaX > absDeltaY && absDeltaX > minDistance) {
-        // Horizontal swipe
-        if (deltaX > 0) {
-          onSwipeRight?.();
-        } else {
-          onSwipeLeft?.();
-        }
-      } else if (absDeltaY > absDeltaX && absDeltaY > minDistance) {
-        // Vertical swipe
-        if (deltaY > 0) {
-          onSwipeDown?.();
-        } else {
-          onSwipeUp?.();
-        }
-      }
-
-      touchStartRef.current = null;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      // Prevent default scrolling during gesture detection
-      if (touchStartRef.current) {
-        const touch = e.touches[0];
-        const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
-        const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
-        
-        // If horizontal movement is greater, prevent vertical scroll
-        if (deltaX > deltaY && deltaX > 10) {
-          e.preventDefault();
-        }
-      }
-    };
-
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchend', handleTouchEnd);
-      container.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, threshold]);
-
-  return (
-    <div ref={containerRef} className={className}>
-      {children}
-    </div>
-  );
-}
-
-// Hook for gesture navigation between pages
 export function useGestureNavigation() {
   const [location, setLocation] = useLocation();
-
-  const pages = [
-    "/",
-    "/movements",
-    "/analytics",
-    "/settings"
-  ];
-
-  const currentIndex = pages.indexOf(location) || 0;
-
+  
+  const routes = ["/dashboard", "/movements", "/analytics", "/settings"];
+  const currentIndex = routes.indexOf(location);
+  
   const navigateToNext = () => {
-    const nextIndex = (currentIndex + 1) % pages.length;
-    setLocation(pages[nextIndex]);
+    if (currentIndex < routes.length - 1) {
+      setLocation(routes[currentIndex + 1]);
+    }
   };
-
+  
   const navigateToPrevious = () => {
-    const prevIndex = currentIndex === 0 ? pages.length - 1 : currentIndex - 1;
-    setLocation(pages[prevIndex]);
+    if (currentIndex > 0) {
+      setLocation(routes[currentIndex - 1]);
+    }
   };
-
-  const canGoNext = currentIndex < pages.length - 1;
-  const canGoPrevious = currentIndex > 0;
-
+  
   return {
     navigateToNext,
     navigateToPrevious,
-    canGoNext,
-    canGoPrevious,
-    currentPage: pages[currentIndex],
-    currentIndex
+    canGoNext: currentIndex < routes.length - 1,
+    canGoPrevious: currentIndex > 0,
+    currentRoute: routes[currentIndex]
   };
+}
+
+export function GestureNavigation({ 
+  children, 
+  onSwipeLeft, 
+  onSwipeRight, 
+  enableNavigation = true 
+}: GestureNavigationProps) {
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const elementRef = useRef<HTMLDivElement>(null);
+  const { navigateToNext, navigateToPrevious, canGoNext, canGoPrevious } = useGestureNavigation();
+
+  const handleTouchStart = (e: TouchEvent) => {
+    if (!enableNavigation) return;
+    
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (!enableNavigation || touchStartX.current === null || touchStartY.current === null) {
+      return;
+    }
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const deltaX = touchEndX - touchStartX.current;
+    const deltaY = touchEndY - touchStartY.current;
+    
+    const minSwipeDistance = 100;
+    const maxVerticalDistance = 150;
+
+    // Check if it's a horizontal swipe (not vertical scroll)
+    if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaY) < maxVerticalDistance) {
+      if (deltaX > 0) {
+        // Swipe right - go to previous page
+        if (canGoPrevious) {
+          onSwipeRight ? onSwipeRight() : navigateToPrevious();
+        }
+      } else {
+        // Swipe left - go to next page
+        if (canGoNext) {
+          onSwipeLeft ? onSwipeLeft() : navigateToNext();
+        }
+      }
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    element.addEventListener('touchstart', handleTouchStart, { passive: true });
+    element.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [enableNavigation, canGoNext, canGoPrevious]);
+
+  return (
+    <div ref={elementRef} className="w-full h-full touch-pan-y">
+      {children}
+    </div>
+  );
 }

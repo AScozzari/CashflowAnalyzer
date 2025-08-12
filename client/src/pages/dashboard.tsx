@@ -12,6 +12,8 @@ import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, 
 import DashboardCashFlowChart from "@/components/dashboard/cash-flow-chart";
 import DashboardMovementStatusChart from "@/components/dashboard/movement-status-chart";
 import DashboardRecentMovements from "@/components/dashboard/recent-movements";
+import DynamicDashboard from "@/components/dashboard/dynamic-dashboard";
+import { PWAInstallPrompt, PWAFeatures } from "@/components/pwa/pwa-features";
 
 const COLORS = {
   "Saldato": "#10B981",
@@ -378,8 +380,8 @@ export default function Dashboard() {
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <DashboardCashFlowChart data={memoizedCashFlowData as any} isLoading={cashFlowLoading} />
-            <DashboardMovementStatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
-            <DashboardRecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
+            <DashboardMovementStatusChart data={memoizedStatusDistribution || []} isLoading={statusLoading} />
+            <DashboardRecentMovements movements={memoizedRecentMovements || []} isLoading={movementsLoading} />
           </div>
           
           <InstallPrompt />
@@ -390,7 +392,7 @@ export default function Dashboard() {
     );
   }
 
-  // Mobile layout
+  // Mobile layout - Dynamic Dashboard
   return (
     <ResponsiveLayout
       title="Dashboard"
@@ -398,15 +400,23 @@ export default function Dashboard() {
       enableGestures={true}
     >
       <div className="space-y-4">
-        <InstallPrompt />
+        <PWAInstallPrompt />
         
-        <StatsCards stats={memoizedStats} isLoading={statsLoading} />
+        {/* Dynamic Dashboard for mobile */}
+        <DynamicDashboard className="lg:hidden" />
         
-        <div className="space-y-4">
-          <DashboardCashFlowChart data={memoizedCashFlowData as any} isLoading={cashFlowLoading} />
-          <DashboardMovementStatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
-          <DashboardRecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
+        {/* Traditional layout for larger screens in mobile view */}
+        <div className="hidden lg:block space-y-4">
+          <StatsCards stats={memoizedStats} isLoading={statsLoading} />
+          
+          <div className="space-y-4">
+            <DashboardCashFlowChart data={memoizedCashFlowData as any} isLoading={cashFlowLoading} />
+            <DashboardMovementStatusChart data={memoizedStatusDistribution || []} isLoading={statusLoading} />
+            <DashboardRecentMovements movements={memoizedRecentMovements || []} isLoading={movementsLoading} />
+          </div>
         </div>
+        
+        <PWAFeatures className="mt-4" />
       </div>
     </ResponsiveLayout>
   );
