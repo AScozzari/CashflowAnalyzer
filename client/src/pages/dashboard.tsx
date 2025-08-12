@@ -9,6 +9,9 @@ import FooterSignature from "@/components/layout/footer-signature";
 import { InstallPrompt } from "@/components/ui/install-prompt";
 import { ResponsiveLayout, useScreenSize } from "@/components/responsive/responsive-layout";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import CashFlowChart from "@/components/dashboard/cash-flow-chart";
+import MovementStatusChart from "@/components/dashboard/movement-status-chart";
+import RecentMovements from "@/components/dashboard/recent-movements";
 
 const COLORS = {
   "Saldato": "#10B981",
@@ -252,11 +255,6 @@ export default function Dashboard() {
     refetchOnMount: true,
     refetchOnReconnect: false,
     retry: 1,
-    onError: (error: any) => {
-      if (error.message.includes('401')) {
-        setLocation('/auth');
-      }
-    },
   });
 
   // Only fetch dashboard data if user is authenticated
@@ -268,11 +266,6 @@ export default function Dashboard() {
     refetchOnReconnect: false,
     enabled: !!user && !authLoading,
     retry: 1,
-    onError: (error: any) => {
-      if (error.message.includes('401')) {
-        setLocation('/auth');
-      }
-    },
   });
 
   const { data: cashFlowData, isLoading: cashFlowLoading, error: cashFlowError } = useQuery({
@@ -283,11 +276,6 @@ export default function Dashboard() {
     refetchOnReconnect: false,
     enabled: !!user && !authLoading,
     retry: 1,
-    onError: (error: any) => {
-      if (error.message.includes('401')) {
-        setLocation('/auth');
-      }
-    },
   });
 
   const { data: statusDistribution, isLoading: statusLoading, error: statusError } = useQuery({
@@ -298,11 +286,6 @@ export default function Dashboard() {
     refetchOnReconnect: false,
     enabled: !!user && !authLoading,
     retry: 1,
-    onError: (error: any) => {
-      if (error.message.includes('401')) {
-        setLocation('/auth');
-      }
-    },
   });
 
   const { data: recentMovements, isLoading: movementsLoading, error: movementsError } = useQuery({
@@ -326,19 +309,17 @@ export default function Dashboard() {
     refetchOnReconnect: false,
     enabled: !!user && !authLoading,
     retry: 1,
-    onError: (error: any) => {
-      if (error.message.includes('401')) {
-        setLocation('/auth');
-      }
-    },
   });
 
   // Redirect to auth if not authenticated
   useEffect(() => {
-    if (!authLoading && authError && authError.message.includes('401')) {
+    const errors = [authError, statsError, cashFlowError, statusError, movementsError];
+    const hasUnauthorizedError = errors.some(error => error?.message?.includes('401'));
+    
+    if (!authLoading && hasUnauthorizedError) {
       setLocation('/auth');
     }
-  }, [authLoading, authError, setLocation]);
+  }, [authLoading, authError, statsError, cashFlowError, statusError, movementsError, setLocation]);
 
   // Show loading while checking authentication
   if (authLoading) {
@@ -399,7 +380,7 @@ export default function Dashboard() {
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <CashFlowChart data={memoizedCashFlowData} isLoading={cashFlowLoading} />
-            <StatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
+            <MovementStatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
             <RecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
           </div>
         </div>
