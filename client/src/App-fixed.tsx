@@ -12,7 +12,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { lazy, Suspense } from "react";
 
 const Sidebar = lazy(() => import("@/components/layout/sidebar"));
-const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Dashboard = lazy(() => import("@/pages/dashboard-simple"));
 const Movements = lazy(() => import("@/pages/movements"));
 const Analytics = lazy(() => import("@/pages/analytics"));
 const Settings = lazy(() => import("@/pages/settings"));

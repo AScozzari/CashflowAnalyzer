@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import App from "./App-fixed"; // App con error boundaries e lazy loading
+import App from "./App-ultra-stable"; // App ultra-stabile senza lazy loading e drag&drop
 import "./index-fixed.css"; // CSS Tailwind sistemato
 
 // Service Worker temporaneamente disabilitato per debug
