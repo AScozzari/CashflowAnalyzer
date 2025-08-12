@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "system";
 
 interface SimpleThemeContextType {
   theme: Theme;
@@ -14,7 +14,7 @@ export function SimpleThemeProvider({ children }: { children: ReactNode }) {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const stored = localStorage.getItem("easycashflow-theme");
-        return (stored === "dark" ? "dark" : "light") as Theme;
+        return (stored as Theme) || "light";
       }
     } catch (error) {
       console.warn('Could not access localStorage:', error);
@@ -26,7 +26,14 @@ export function SimpleThemeProvider({ children }: { children: ReactNode }) {
     try {
       if (typeof window !== 'undefined' && document.documentElement) {
         const root = document.documentElement;
-        root.classList.toggle("dark", theme === "dark");
+        
+        // Determine effective theme
+        let effectiveTheme = theme;
+        if (theme === "system") {
+          effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        
+        root.classList.toggle("dark", effectiveTheme === "dark");
         
         if (window.localStorage) {
           localStorage.setItem("easycashflow-theme", theme);

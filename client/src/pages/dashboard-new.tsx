@@ -23,10 +23,11 @@ import {
   Zap,
   Activity
 } from "lucide-react";
-import { Link } from "wouter";
 
 // Widget Azioni Rapide migliorato
 function QuickActionsWidget() {
+  const [, setLocation] = useLocation();
+  
   return (
     <Card>
       <CardHeader>
@@ -39,7 +40,7 @@ function QuickActionsWidget() {
         <Button 
           className="w-full justify-start" 
           size="sm"
-          onClick={() => window.location.href = '/movements'}
+          onClick={() => setLocation('/movements')}
         >
           <Plus className="w-4 h-4 mr-2" />
           Nuovo Movimento
@@ -49,7 +50,7 @@ function QuickActionsWidget() {
           variant="outline" 
           className="w-full justify-start" 
           size="sm"
-          onClick={() => window.location.href = '/analytics'}
+          onClick={() => setLocation('/analytics')}
         >
           <BarChart3 className="w-4 h-4 mr-2" />
           Visualizza Analytics
@@ -59,7 +60,7 @@ function QuickActionsWidget() {
           variant="outline" 
           className="w-full justify-start" 
           size="sm"
-          onClick={() => window.location.href = '/settings'}
+          onClick={() => setLocation('/settings')}
         >
           <Settings className="w-4 h-4 mr-2" />
           Impostazioni

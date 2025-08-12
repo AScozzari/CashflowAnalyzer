@@ -29,9 +29,9 @@ export function ThemeToggle() {
           <Moon className="mr-2 h-4 w-4" />
           <span>Scuro</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+        <DropdownMenuItem onClick={() => setTheme("system")}>
           <Monitor className="mr-2 h-4 w-4" />
-          <span>Auto</span>
+          <span>Sistema</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ interface DashboardRecentMovementsProps {
 }
 
 export default function DashboardRecentMovements({ movements, isLoading, className }: DashboardRecentMovementsProps) {
+  const [, setLocation] = useLocation();
   const formatCurrency = (amount: string | number, type: string) => {
     const formatted = new Intl.NumberFormat('it-IT', {
       style: 'currency',
@@ -107,7 +108,7 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
             </p>
             <Button 
               variant="outline"
-              onClick={() => window.location.href = '/movements'}
+              onClick={() => setLocation('/movements')}
             >
               <Plus className="w-4 h-4 mr-2" />
               Aggiungi Movimento
@@ -132,7 +133,7 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => window.location.href = '/movements'}
+            onClick={() => setLocation('/movements')}
           >
             <Eye className="w-4 h-4 mr-2" />
             Visualizza Tutti
@@ -277,7 +278,7 @@ export default function DashboardRecentMovements({ movements, isLoading, classNa
             <Button 
               variant="link" 
               size="sm"
-              onClick={() => window.location.href = '/movements'}
+              onClick={() => setLocation('/movements')}
               className="text-primary"
             >
               Gestisci Tutti i Movimenti →
