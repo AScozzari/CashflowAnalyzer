@@ -42,7 +42,8 @@ export function setupAuth(app: Express) {
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 ore
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Disabled for Replit development
+      sameSite: 'lax', // Allow cross-site cookies for Replit
     },
   };
 
