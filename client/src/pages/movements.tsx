@@ -29,12 +29,15 @@ export default function Movements() {
     queryKey: ["/api/movements"],
     queryFn: async () => {
       const response = await fetch("/api/movements");
+      if (!response.ok) {
+        throw new Error('Failed to fetch movements');
+      }
       const result = await response.json();
-      return result.data; // Extract the data array from paginated response
+      return result.data || []; // Extract the data array from paginated response
     },
   });
 
-  const movements = movementsData || [];
+  const movements = Array.isArray(movementsData) ? movementsData : [];
 
   // Delete movement mutation
   const deleteMutation = useMutation({
