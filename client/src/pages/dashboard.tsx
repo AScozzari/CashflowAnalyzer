@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, Activity, FileText, PieChart, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -242,14 +243,26 @@ function RecentMovements({ movements, isLoading }: { movements: any; isLoading: 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/analytics/stats"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const { data: cashFlowData, isLoading: cashFlowLoading } = useQuery({
     queryKey: ["/api/analytics/cash-flow"],
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const { data: statusDistribution, isLoading: statusLoading } = useQuery({
     queryKey: ["/api/analytics/status-distribution"],
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const { data: recentMovements, isLoading: movementsLoading } = useQuery({
@@ -259,10 +272,25 @@ export default function Dashboard() {
       const result = await response.json();
       return result.data;
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const { isMobile } = useScreenSize();
-  const isLoading = statsLoading || cashFlowLoading || statusLoading || movementsLoading;
+  
+  // Memoize loading state to prevent unnecessary re-renders
+  const isLoading = useMemo(() => 
+    statsLoading || cashFlowLoading || statusLoading || movementsLoading,
+    [statsLoading, cashFlowLoading, statusLoading, movementsLoading]
+  );
+
+  // Memoize data to prevent unnecessary re-renders
+  const memoizedStats = useMemo(() => stats, [stats]);
+  const memoizedCashFlowData = useMemo(() => cashFlowData, [cashFlowData]);
+  const memoizedStatusDistribution = useMemo(() => statusDistribution, [statusDistribution]);
+  const memoizedRecentMovements = useMemo(() => recentMovements, [recentMovements]);
 
   // Desktop layout
   if (!isMobile) {
@@ -276,12 +304,12 @@ export default function Dashboard() {
         <div className="p-6 space-y-6">
           <InstallPrompt />
           
-          <StatsCards stats={stats} isLoading={statsLoading} />
+          <StatsCards stats={memoizedStats} isLoading={statsLoading} />
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <CashFlowChart data={cashFlowData} isLoading={cashFlowLoading} />
-            <StatusChart data={statusDistribution} isLoading={statusLoading} />
-            <RecentMovements movements={recentMovements} isLoading={movementsLoading} />
+            <CashFlowChart data={memoizedCashFlowData} isLoading={cashFlowLoading} />
+            <StatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
+            <RecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
           </div>
         </div>
         
@@ -300,12 +328,12 @@ export default function Dashboard() {
       <div className="space-y-4">
         <InstallPrompt />
         
-        <StatsCards stats={stats} isLoading={statsLoading} />
+        <StatsCards stats={memoizedStats} isLoading={statsLoading} />
         
         <div className="space-y-4">
-          <CashFlowChart data={cashFlowData} isLoading={cashFlowLoading} />
-          <StatusChart data={statusDistribution} isLoading={statusLoading} />
-          <RecentMovements movements={recentMovements} isLoading={movementsLoading} />
+          <CashFlowChart data={memoizedCashFlowData} isLoading={cashFlowLoading} />
+          <StatusChart data={memoizedStatusDistribution} isLoading={statusLoading} />
+          <RecentMovements movements={memoizedRecentMovements} isLoading={movementsLoading} />
         </div>
       </div>
     </ResponsiveLayout>
