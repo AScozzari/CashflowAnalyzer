@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
-import App from "./App-ultra-stable"; // App ultra-stabile senza lazy loading e drag&drop
-import "./index-fixed.css"; // CSS Tailwind sistemato
+import App from "./App"; // App originale completa
+import "./index.css"; // CSS originale
 
 // Service Worker temporaneamente disabilitato per debug
 // Register Service Worker for PWA functionality
