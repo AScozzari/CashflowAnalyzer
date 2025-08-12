@@ -9,6 +9,26 @@ if (!process.env.NODE_ENV) {
 }
 
 const app = express();
+
+// CORS e Security Headers per Replit
+app.use((req, res, next) => {
+  // Permetti tutte le origini per Replit
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+  
+  // Rimuovi headers restrictive per development
+  res.removeHeader('X-Frame-Options');
+  res.removeHeader('X-Robots-Tag');
+  
+  // Gestisci preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
