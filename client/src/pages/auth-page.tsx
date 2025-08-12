@@ -201,124 +201,116 @@ export default function AuthPage() {
               </p>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-1">
-                <TabsTrigger value="login">Accedi</TabsTrigger>
-              </TabsList>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LogIn className="h-5 w-5" />
+                  Accesso
+                </CardTitle>
+                <CardDescription>
+                  Inserisci le tue credenziali per accedere al sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      type="text"
+                      placeholder="Inserisci il tuo username"
+                      {...loginForm.register("username")}
+                    />
+                    {loginForm.formState.errors.username && (
+                      <p className="text-sm text-destructive">
+                        {loginForm.formState.errors.username.message}
+                      </p>
+                    )}
+                  </div>
 
-              <TabsContent value="login" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <LogIn className="h-5 w-5" />
-                      Accesso
-                    </CardTitle>
-                    <CardDescription>
-                      Inserisci le tue credenziali per accedere al sistema
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="username">Username</Label>
-                        <Input
-                          id="username"
-                          type="text"
-                          placeholder="Inserisci il tuo username"
-                          {...loginForm.register("username")}
-                        />
-                        {loginForm.formState.errors.username && (
-                          <p className="text-sm text-destructive">
-                            {loginForm.formState.errors.username.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <div className="relative">
-                          <Input
-                            id="password"
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Inserisci la tua password"
-                            {...loginForm.register("password")}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </Button>
-                        </div>
-                        {loginForm.formState.errors.password && (
-                          <p className="text-sm text-destructive">
-                            {loginForm.formState.errors.password.message}
-                          </p>
-                        )}
-                      </div>
-
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Inserisci la tua password"
+                        {...loginForm.register("password")}
+                      />
                       <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={loginMutation.isPending || isBlocked}
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
                       >
-                        {loginMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Accesso in corso...
-                          </>
-                        ) : isBlocked ? (
-                          <>
-                            <Lock className="mr-2 h-4 w-4" />
-                            Bloccato ({Math.floor(blockTimeLeft / 60)}:{(blockTimeLeft % 60).toString().padStart(2, '0')})
-                          </>
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                          <>
-                            <LogIn className="mr-2 h-4 w-4" />
-                            Accedi
-                          </>
+                          <Eye className="h-4 w-4 text-muted-foreground" />
                         )}
                       </Button>
-                      
-                      {loginAttempts > 0 && !isBlocked && (
-                        <div className="text-center mt-2">
-                          <p className="text-sm text-yellow-600">
-                            Tentativo {loginAttempts}/5. Attenzione: dopo 5 tentativi falliti l'account verrà temporaneamente bloccato.
-                          </p>
-                        </div>
-                      )}
-                      
-                      <div className="text-center mt-4">
-                        <Link href="/forgot-password">
-                          <span className="text-sm text-muted-foreground hover:text-primary cursor-pointer">
-                            Password dimenticata?
-                          </span>
-                        </Link>
-                      </div>
-                    </form>
-
-                    {loginMutation.isError && (
-                      <Alert className="mt-4" variant={isBlocked ? "destructive" : "default"}>
-                        <Shield className="h-4 w-4" />
-                        <AlertDescription>
-                          {isBlocked 
-                            ? `Account temporaneamente bloccato per sicurezza. Riprova tra ${Math.floor(blockTimeLeft / 60)} minuti e ${blockTimeLeft % 60} secondi.`
-                            : "Credenziali non valide. Verifica username e password."
-                          }
-                        </AlertDescription>
-                      </Alert>
+                    </div>
+                    {loginForm.formState.errors.password && (
+                      <p className="text-sm text-destructive">
+                        {loginForm.formState.errors.password.message}
+                      </p>
                     )}
-                  </CardContent>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={loginMutation.isPending || isBlocked}
+                  >
+                    {loginMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Accesso in corso...
+                      </>
+                    ) : isBlocked ? (
+                      <>
+                        <Lock className="mr-2 h-4 w-4" />
+                        Bloccato ({Math.floor(blockTimeLeft / 60)}:{(blockTimeLeft % 60).toString().padStart(2, '0')})
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Accedi
+                      </>
+                    )}
+                  </Button>
+                  
+                  {loginAttempts > 0 && !isBlocked && (
+                    <div className="text-center mt-2">
+                      <p className="text-sm text-yellow-600">
+                        Tentativo {loginAttempts}/5. Attenzione: dopo 5 tentativi falliti l'account verrà temporaneamente bloccato.
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="text-center mt-4">
+                    <Link href="/forgot-password">
+                      <span className="text-sm text-muted-foreground hover:text-primary cursor-pointer">
+                        Password dimenticata?
+                      </span>
+                    </Link>
+                  </div>
+                </form>
+
+                {loginMutation.isError && (
+                  <Alert className="mt-4" variant={isBlocked ? "destructive" : "default"}>
+                    <Shield className="h-4 w-4" />
+                    <AlertDescription>
+                      {isBlocked 
+                        ? `Account temporaneamente bloccato per sicurezza. Riprova tra ${Math.floor(blockTimeLeft / 60)} minuti e ${blockTimeLeft % 60} secondi.`
+                        : "Credenziali non valide. Verifica username e password."
+                      }
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
                 </Card>
-              </TabsContent>
-            </Tabs>
           </div>
         </div>
 
