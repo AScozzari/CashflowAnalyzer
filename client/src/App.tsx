@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -19,6 +19,26 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
+// Layout wrapper component
+function AppLayout({ children }: { children: React.ReactNode }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  
+  return (
+    <div className="flex min-h-screen bg-background transition-colors">
+      <div className="hidden lg:block">
+        <Sidebar 
+          isCollapsed={sidebarCollapsed} 
+          onCollapsedChange={setSidebarCollapsed}
+        />
+      </div>
+      <main className="flex-1 overflow-auto pb-20 lg:pb-0 transition-all duration-300">
+        {children}
+      </main>
+      <BottomNavigation />
+    </div>
+  );
+}
+
 function Router() {
   return (
     <Switch>
@@ -29,51 +49,27 @@ function Router() {
       
       {/* Route protette con layout responsive */}
       <ProtectedRoute path="/" component={() => (
-        <div className="flex min-h-screen bg-background transition-colors">
-          <div className="hidden lg:block">
-            <Sidebar />
-          </div>
-          <main className="flex-1 overflow-auto pb-20 lg:pb-0">
-            <Dashboard />
-          </main>
-          <BottomNavigation />
-        </div>
+        <AppLayout>
+          <Dashboard />
+        </AppLayout>
       )} />
       
       <ProtectedRoute path="/dashboard" component={() => (
-        <div className="flex min-h-screen bg-background transition-colors">
-          <div className="hidden lg:block">
-            <Sidebar />
-          </div>
-          <main className="flex-1 overflow-auto pb-20 lg:pb-0">
-            <Dashboard />
-          </main>
-          <BottomNavigation />
-        </div>
+        <AppLayout>
+          <Dashboard />
+        </AppLayout>
       )} />
       
       <ProtectedRoute path="/movements" component={() => (
-        <div className="flex min-h-screen bg-background transition-colors">
-          <div className="hidden lg:block">
-            <Sidebar />
-          </div>
-          <main className="flex-1 overflow-auto pb-20 lg:pb-0">
-            <Movements />
-          </main>
-          <BottomNavigation />
-        </div>
+        <AppLayout>
+          <Movements />
+        </AppLayout>
       )} />
       
       <ProtectedRoute path="/analytics" component={() => (
-        <div className="flex min-h-screen bg-background transition-colors">
-          <div className="hidden lg:block">
-            <Sidebar />
-          </div>
-          <main className="flex-1 overflow-auto pb-20 lg:pb-0">
-            <Analytics />
-          </main>
-          <BottomNavigation />
-        </div>
+        <AppLayout>
+          <Analytics />
+        </AppLayout>
       )} />
       
       {/* Settings accessibile solo ad Admin e Finance */}
@@ -81,15 +77,9 @@ function Router() {
         path="/settings" 
         allowedRoles={["admin", "finance"]}
         component={() => (
-          <div className="flex min-h-screen bg-background transition-colors">
-            <div className="hidden lg:block">
-              <Sidebar />
-            </div>
-            <main className="flex-1 overflow-auto pb-20 lg:pb-0">
-              <Settings />
-            </main>
-            <BottomNavigation />
-          </div>
+          <AppLayout>
+            <Settings />
+          </AppLayout>
         )}
       />
       
