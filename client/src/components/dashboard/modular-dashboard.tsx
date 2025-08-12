@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+// import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -314,71 +314,46 @@ export default function ModularDashboard({
       </div>
 
       {/* Dashboard Grid */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="dashboard" direction="vertical">
-          {(provided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-            >
-              {visibleWidgets.map((widget, index) => (
-                <Draggable
-                  key={widget.id}
-                  draggableId={widget.id}
-                  index={index}
-                  isDragDisabled={!editMode}
-                >
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className={`${getGridClasses(widget.size)} ${
-                        snapshot.isDragging ? "opacity-75 rotate-2" : ""
-                      } ${editMode ? "ring-2 ring-blue-200 dark:ring-blue-800" : ""}`}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {visibleWidgets.map((widget, index) => (
+          <div
+            key={widget.id}
+            className={`${getGridClasses(widget.size)} ${editMode ? "ring-2 ring-blue-200 dark:ring-blue-800" : ""}`}
+          >
+            <Card className={`h-full ${editMode ? "cursor-move" : ""}`}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {editMode && (
+                      <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+                    )}
+                    <widget.icon className="h-4 w-4" />
+                    <CardTitle className="text-lg">{widget.name}</CardTitle>
+                  </div>
+                  
+                  {editMode && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleWidgetVisibility(widget.id)}
                     >
-                      <Card className={`h-full ${editMode ? "cursor-move" : ""}`}>
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              {editMode && (
-                                <div {...provided.dragHandleProps}>
-                                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                                </div>
-                              )}
-                              <widget.icon className="h-4 w-4" />
-                              <CardTitle className="text-lg">{widget.name}</CardTitle>
-                            </div>
-                            
-                            {editMode && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleWidgetVisibility(widget.id)}
-                              >
-                                {widget.visible ? (
-                                  <Eye className="h-4 w-4" />
-                                ) : (
-                                  <EyeOff className="h-4 w-4" />
-                                )}
-                              </Button>
-                            )}
-                          </div>
-                        </CardHeader>
-                        
-                        <CardContent className="pt-0">
-                          <widget.component {...getWidgetProps(widget)} />
-                        </CardContent>
-                      </Card>
-                    </div>
+                      {widget.visible ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                    </Button>
                   )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="pt-0">
+                <widget.component {...getWidgetProps(widget)} />
+              </CardContent>
+            </Card>
+          </div>
+        ))}
+      </div>
 
       {/* Empty State */}
       {visibleWidgets.length === 0 && (
