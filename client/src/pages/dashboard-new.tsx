@@ -132,7 +132,14 @@ export default function DashboardNew() {
   const { isMobile } = useScreenSize();
 
   // Carica i movimenti per il widget recenti
-  const { data: movementsData, isLoading: movementsLoading } = useQuery({
+  const { data: movementsData, isLoading: movementsLoading } = useQuery<{
+    data: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+    };
+  }>({
     queryKey: ["/api/movements"],
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
