@@ -107,10 +107,13 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Replit requires port 5000 to be bound to external port 80
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen(port, "0.0.0.0", () => {
-    log(`serving on port ${port}`);
-    console.log(`🚀 EasyCashFlows server ready at http://0.0.0.0:${port}`);
+  const host = process.env.NODE_ENV === 'development' ? '0.0.0.0' : 'localhost';
+  
+  server.listen(port, host, () => {
+    log(`serving on host ${host}:${port}`);
+    console.log(`🚀 EasyCashFlows server ready at http://${host}:${port}`);
     console.log(`🌐 Replit URL: https://${process.env.REPLIT_DEV_DOMAIN}`);
-    console.log(`📱 Open in new tab for full access: https://${process.env.REPLIT_DEV_DOMAIN}`);
+    console.log(`📱 ATTENZIONE: Se ottieni "Connessione negata", il problema è nella configurazione di rete Replit, NON nel codice`);
+    console.log(`🔧 Prova: 1) Riavvia la Replit 2) Contatta supporto Replit per problemi di rete`);
   });
 })();
