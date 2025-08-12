@@ -6,10 +6,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useTheme } from "@/contexts/theme-context";
+import { useSimpleTheme } from "@/contexts/simple-theme-context";
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useSimpleTheme();
 
   return (
     <DropdownMenu>
@@ -29,9 +29,9 @@ export function ThemeToggle() {
           <Moon className="mr-2 h-4 w-4" />
           <span>Scuro</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
+        <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
           <Monitor className="mr-2 h-4 w-4" />
-          <span>Sistema</span>
+          <span>Auto</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
