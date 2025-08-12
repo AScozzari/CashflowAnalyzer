@@ -1,35 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
-import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
-// Assicura che NODE_ENV sia impostato correttamente per Replit
-if (!process.env.NODE_ENV) {
-  process.env.NODE_ENV = 'development';
-}
-
 const app = express();
-
-// CORS e Security Headers per Replit
-app.use((req, res, next) => {
-  // Permetti tutte le origini per Replit
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-  
-  // Headers per Replit webview compatibility
-  res.removeHeader('X-Frame-Options');
-  res.removeHeader('X-Robots-Tag');
-  res.header('X-Frame-Options', 'SAMEORIGIN');
-  
-  // Gestisci preflight requests
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -74,9 +47,6 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Serve static test files from public directory
-  app.use(express.static(path.resolve(import.meta.dirname, "..", "client", "public")));
-  
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
@@ -105,14 +75,13 @@ app.use((req, res, next) => {
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Replit requires port 5000 to be bound to external port 80
+  // Other ports are firewalled. Default to 5000 if not specified.
+  // this serves both the API and the client.
+  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  const host = process.env.NODE_ENV === 'development' ? '0.0.0.0' : 'localhost';
-  
-  server.listen(port, host, () => {
-    log(`serving on host ${host}:${port}`);
-    console.log(`🚀 EasyCashFlows server ready at http://${host}:${port}`);
-    console.log(`🌐 Replit URL: https://${process.env.REPLIT_DEV_DOMAIN}`);
-    console.log(`📱 Open in new tab for full access: https://${process.env.REPLIT_DEV_DOMAIN}`);
+  server.listen(port, "0.0.0.0", () => {
+    log(`serving on port ${port}`);
+    console.log(`🚀 EasyCashFlows server ready at http://0.0.0.0:${port}`);
+    console.log(`🌐 Replit URL: https://${process.env.REPLIT_DEV_DOMAIN || process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'}`);
   });
 })();

@@ -61,9 +61,10 @@ function Router() {
         </div>
       )} />
       
-      {/* Settings accessibile a tutti gli utenti autenticati */}
+      {/* Settings accessibile solo ad Admin e Finance */}
       <ProtectedRoute 
         path="/settings" 
+        allowedRoles={["admin", "finance"]}
         component={() => (
           <div className="flex min-h-screen bg-background transition-colors">
             <Sidebar />
