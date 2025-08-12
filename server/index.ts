@@ -113,7 +113,6 @@ app.use((req, res, next) => {
     log(`serving on host ${host}:${port}`);
     console.log(`🚀 EasyCashFlows server ready at http://${host}:${port}`);
     console.log(`🌐 Replit URL: https://${process.env.REPLIT_DEV_DOMAIN}`);
-    console.log(`📱 ATTENZIONE: Se ottieni "Connessione negata", il problema è nella configurazione di rete Replit, NON nel codice`);
-    console.log(`🔧 Prova: 1) Riavvia la Replit 2) Contatta supporto Replit per problemi di rete`);
+    console.log(`📱 Open in new tab for full access: https://${process.env.REPLIT_DEV_DOMAIN}`);
   });
 })();
