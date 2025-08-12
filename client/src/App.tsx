@@ -7,7 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { ThemeProvider } from "@/contexts/theme-context";
 import Sidebar from "@/components/layout/sidebar";
-import Dashboard from "@/pages/dashboard";
+import Dashboard from "@/pages/dashboard-new";
 import Movements from "@/pages/movements";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";

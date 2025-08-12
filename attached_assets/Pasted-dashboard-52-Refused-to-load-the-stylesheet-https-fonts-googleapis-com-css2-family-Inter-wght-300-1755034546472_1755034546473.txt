@@ -1,0 +1,31 @@
+dashboard:52 Refused to load the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' because it violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline'". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback.
+Understand this error
+main.tsx:10 SW registered:  ServiceWorkerRegistration {installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager, scope: 'https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/', …}
+queryClient.ts:32  GET https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/auth/user 401 (Unauthorized)
+(anonymous) @ queryClient.ts:32
+fetchFn @ @tanstack_react-query.js?v=72f68957:840
+run @ @tanstack_react-query.js?v=72f68957:494
+start @ @tanstack_react-query.js?v=72f68957:536
+fetch @ @tanstack_react-query.js?v=72f68957:926
+executeFetch_fn @ @tanstack_react-query.js?v=72f68957:2211
+onSubscribe @ @tanstack_react-query.js?v=72f68957:1898
+subscribe @ @tanstack_react-query.js?v=72f68957:24
+(anonymous) @ @tanstack_react-query.js?v=72f68957:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=72f68957:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=72f68957:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=72f68957:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=72f68957:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=72f68957:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=72f68957:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=72f68957:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=72f68957:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=72f68957:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=72f68957:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=72f68957:19432
+commitRoot @ chunk-RPCDYKBN.js?v=72f68957:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=72f68957:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=72f68957:18718
+workLoop @ chunk-RPCDYKBN.js?v=72f68957:197
+flushWork @ chunk-RPCDYKBN.js?v=72f68957:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=72f68957:384Understand this error
+auth:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
