@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import FooterSignature from "@/components/layout/footer-signature";
-import MovementFormNew from "@/components/movements/movement-form-new";
+import MovementFormNew from "@/components/movements/movement-form-new-fixed";
 import MovementFilters from "@/components/movements/movement-filters";
 
 import { Button } from "@/components/ui/button";
