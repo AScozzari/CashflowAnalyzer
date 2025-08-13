@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode } from "react";
 
 type Theme = "dark" | "light" | "system";
 
@@ -14,7 +14,7 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-  theme: "system",
+  theme: "light",
   setTheme: () => null,
 };
 
@@ -22,77 +22,43 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "light",
   storageKey = "easycashflow-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  // CRITICAL FIX: Ensure useState is available before using it
-  if (!React || !React.useState) {
-    console.error('[THEME] React.useState not available, falling back to simple provider');
-    return (
-      <ThemeProviderContext.Provider value={{ theme: defaultTheme, setTheme: () => {} }}>
-        <div className={defaultTheme === 'dark' ? 'dark' : 'light'}>
-          {children}
-        </div>
-      </ThemeProviderContext.Provider>
-    );
-  }
-
-  console.log('[THEME] ThemeProvider initializing with hooks...');
-  const [theme, setTheme] = React.useState<Theme>(() => {
-    try {
-      if (typeof window !== "undefined" && window.localStorage) {
-        return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
-      }
-    } catch (error) {
-      console.warn('[THEME] localStorage not available:', error);
+  console.log('[THEME] Simplified ThemeProvider - no hooks, static theme');
+  
+  // SIMPLIFIED: No useState hooks, just static theme
+  const currentTheme = defaultTheme;
+  
+  // Apply theme immediately to document without useEffect
+  React.useLayoutEffect(() => {
+    if (typeof window !== "undefined" && window.document) {
+      const root = window.document.documentElement;
+      root.classList.remove("light", "dark");
+      root.classList.add(currentTheme);
+      console.log('[THEME] Applied theme:', currentTheme);
     }
-    return defaultTheme;
   });
 
-  React.useEffect(() => {
-    try {
-      if (typeof window === "undefined" || !window.document) return;
-      
-      const root = window.document.documentElement;
-      if (!root) return;
-
-      root.classList.remove("light", "dark");
-
-      if (theme === "system") {
-        const systemTheme = window.matchMedia?.("(prefers-color-scheme: dark)")
-          ?.matches
-          ? "dark"
-          : "light";
-
-        root.classList.add(systemTheme);
-        return;
-      }
-
-      root.classList.add(theme);
-    } catch (error) {
-      console.warn('Error applying theme:', error);
-    }
-  }, [theme]);
-
   const value = {
-    theme,
+    theme: currentTheme,
     setTheme: (newTheme: Theme) => {
-      try {
-        if (typeof window !== "undefined" && window.localStorage) {
-          localStorage.setItem(storageKey, newTheme);
-        }
-        setTheme(newTheme);
-      } catch (error) {
-        console.warn('Error setting theme:', error);
-        setTheme(newTheme);
+      console.log('[THEME] Theme change requested:', newTheme);
+      // Apply directly to DOM without state management
+      if (typeof window !== "undefined" && window.document) {
+        const root = window.document.documentElement;
+        root.classList.remove("light", "dark");
+        root.classList.add(newTheme);
       }
     },
   };
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
+      <div className={currentTheme}>
+        {children}
+      </div>
     </ThemeProviderContext.Provider>
   );
 }

@@ -104,8 +104,8 @@ export default function App() {
     );
   }
   
-  // Safety check: ensure React is properly loaded
-  if (!React || typeof React.useState !== 'function') {
+  // Safety check: ensure React is properly loaded  
+  if (!React || typeof useState !== 'function') {
     console.error('[APP] React hooks not available!', { React, useState: React?.useState });
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
