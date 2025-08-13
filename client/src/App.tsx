@@ -92,6 +92,17 @@ function Router() {
 export default function App() {
   console.log('[APP] EasyCashFlows starting...');
   
+  // IMMEDIATE TEST: Return simple UI first
+  if (window.location.search.includes('test=immediate')) {
+    return (
+      <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+        <h1 style={{ color: 'green' }}>✅ React App Funziona!</h1>
+        <p>Caricamento immediato senza dipendenze</p>
+        <button onClick={() => window.location.href = '/'}>App Normale</button>
+      </div>
+    );
+  }
+  
   // CRASH-PROOF: Error boundary fallback
   const [hasError, setHasError] = useState(false);
   const [errorInfo, setErrorInfo] = useState<string>("");
@@ -150,16 +161,20 @@ export default function App() {
 
   console.log('[APP] Rendering main app structure...');
   
+  // SAFETY: Try minimal render first
   try {
+    console.log('[APP] Attempting full app render...');
     return (
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="easycashflow-theme">
-          <AuthProvider>
-            <TooltipProvider>
-              <Router />
-              <Toaster />
-            </TooltipProvider>
-          </AuthProvider>
+          <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+            <AuthProvider>
+              <TooltipProvider>
+                <Router />
+                <Toaster />
+              </TooltipProvider>
+            </AuthProvider>
+          </div>
         </ThemeProvider>
       </QueryClientProvider>
     );

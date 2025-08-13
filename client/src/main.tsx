@@ -1,6 +1,5 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App";
 import "./index.css";
 
 console.log('[MAIN] EasyCashFlows initializing... v2024.08.13.CRASH-PROOF');
@@ -16,8 +15,8 @@ window.addEventListener('unhandledrejection', (event) => {
   event.preventDefault();
 });
 
-// INITIALIZATION: Robust app startup
-const initializeApp = () => {
+// DYNAMIC APP LOADING: Load appropriate app version
+const initializeApp = async () => {
   try {
     console.log('[MAIN] Starting app initialization...');
     
@@ -37,13 +36,27 @@ const initializeApp = () => {
       return;
     }
 
+    // DYNAMIC IMPORT: Choose app version based on URL
+    const useSimpleApp = window.location.search.includes('app=simple') || window.location.search.includes('debug=simple');
+    
+    let AppComponent;
+    if (useSimpleApp) {
+      console.log('[MAIN] Loading simple test app...');
+      const module = await import("./App-simple");
+      AppComponent = module.default;
+    } else {
+      console.log('[MAIN] Loading full app...');
+      const module = await import("./App");
+      AppComponent = module.default;
+    }
+
     console.log('[MAIN] Creating React root...');
     const root = createRoot(container);
     
     console.log('[MAIN] Rendering App component...');
     root.render(
       <React.StrictMode>
-        <App />
+        <AppComponent />
       </React.StrictMode>
     );
     
