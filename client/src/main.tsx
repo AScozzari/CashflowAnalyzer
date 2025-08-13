@@ -31,11 +31,13 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-console.log('[MAIN] Starting app initialization...');
+// VITE CACHE BREAKER - v2024.08.13
+console.log('[MAIN] Starting app initialization... v2024.08.13');
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
   console.error('[MAIN] Root element not found!');
+  document.body.innerHTML = '<h1 style="color:red">ROOT NOT FOUND!</h1>';
 } else {
   console.log('[MAIN] Root element found, creating React root...');
   try {

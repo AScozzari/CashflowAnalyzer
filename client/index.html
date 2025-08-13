@@ -35,8 +35,45 @@
       // CRITICAL: Prevent reload crashes in iframe context
       if (window.self !== window.top) {
         console.log('[IFRAME] Replit preview detected - applying stability fixes');
-        // Longer initialization delays for iframe context
         window.__IFRAME_CONTEXT__ = true;
+        
+        // DIRECT IFRAME FALLBACK: immediate execution without waiting
+        const showIframeFallback = () => {
+          const rootEl = document.getElementById('root');
+          if (rootEl) {
+            console.log('[IFRAME] Applying direct fallback UI');
+            rootEl.innerHTML = `
+              <div style="padding: 20px; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; box-sizing: border-box;">
+                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); border-radius: 20px; padding: 50px; max-width: 600px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);">
+                  <div style="font-size: 4em; margin-bottom: 20px;">🏦</div>
+                  <h1 style="margin: 0 0 15px 0; font-size: 2.8em; font-weight: 300;">EasyCashFlows</h1>
+                  <p style="margin: 0 0 20px 0; font-size: 1.3em; opacity: 0.9; font-weight: 200;">Sistema di Gestione Finanziaria</p>
+                  <div style="margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #4CAF50;">
+                    <p style="margin: 0; opacity: 0.8; line-height: 1.6;">Per accedere a tutte le funzionalità professionali dell'applicazione, aprire in una nuova scheda del browser</p>
+                  </div>
+                  <button onclick="window.open(window.location.href, '_blank')" style="background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border: none; padding: 18px 35px; border-radius: 30px; font-size: 1.2em; cursor: pointer; box-shadow: 0 6px 20px rgba(76,175,80,0.3); transition: all 0.3s ease; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(76,175,80,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(76,175,80,0.3)'">
+                    🚀 Apri Applicazione Completa
+                  </button>
+                  <div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.2); display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; font-size: 0.95em; opacity: 0.7;">
+                    <div>📊 Dashboard Analytics</div>
+                    <div>💼 Gestione Movimenti</div>
+                    <div>📋 Report Finanziari</div>
+                    <div>⚙️ Configurazioni</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        };
+        
+        // Multiple execution strategies for maximum compatibility
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', showIframeFallback);
+        } else {
+          showIframeFallback();
+        }
+        setTimeout(showIframeFallback, 100);
+        setTimeout(showIframeFallback, 500);
       }
     </script>
   </head>
