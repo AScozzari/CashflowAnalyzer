@@ -90,20 +90,7 @@ function Router() {
 }
 
 export default function App() {
-  console.log('[APP] App component starting...', { React: !!React, useState: !!React?.useState });
-  
-  // IMMEDIATE TEST RENDER - bypass all providers
-  if (window.location.search.includes('test=immediate')) {
-    console.log('[APP] Immediate test mode - rendering simple UI');
-    return (
-      <div style={{ padding: '20px', fontFamily: 'Arial', backgroundColor: '#f0f0f0' }}>
-        <h1 style={{ color: 'green' }}>✅ REACT APP WORKS!</h1>
-        <p>Timestamp: {new Date().toISOString()}</p>
-        <p>Location: {window.location.href}</p>
-        <button onClick={() => window.location.href = '/'}>Go to Main App</button>
-      </div>
-    );
-  }
+  console.log('[APP] EasyCashFlows starting...');
   
   // Minimal test render first
   if (window.location.search.includes('debug=simple')) {

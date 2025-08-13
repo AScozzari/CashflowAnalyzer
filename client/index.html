@@ -32,11 +32,8 @@
       console.log('[IFRAME CHECK] In iframe:', window.self !== window.top);
       console.log('[IFRAME CHECK] Parent origin:', document.referrer);
       
-      // TEMPORARY: Disable iframe fallback to test React app directly
-      const DISABLE_IFRAME_FALLBACK = true;
-      
-      // CRITICAL: Prevent reload crashes in iframe context
-      if (window.self !== window.top && !DISABLE_IFRAME_FALLBACK) {
+      // CRITICAL: Prevent reload crashes in iframe context  
+      if (window.self !== window.top) {
         console.log('[IFRAME] Replit preview detected - applying stability fixes');
         window.__IFRAME_CONTEXT__ = true;
         
@@ -82,18 +79,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      // FORCE IMMEDIATE DEBUG - executes before main.tsx
-      console.log('🔥 HTML SCRIPT EXECUTING - Before main.tsx load');
-      document.addEventListener('DOMContentLoaded', () => {
-        console.log('🔥 DOM READY - main.tsx should execute next');
-        const root = document.getElementById('root');
-        if (root) {
-          root.style.border = '3px solid red';
-          root.innerHTML = '<div style="padding:20px;color:blue;font-family:Arial;">🔥 DOM READY - Waiting for main.tsx...</div>';
-        }
-      });
-    </script>
+
     <script type="module" src="/src/main.tsx"></script>
     <!-- Replit development banner removed to fix connection issues -->
   </body>

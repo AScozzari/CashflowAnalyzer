@@ -31,13 +31,8 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// VITE CACHE BREAKER - v2024.08.13.fix
-console.log('[MAIN] Starting app initialization... v2024.08.13.fix');
-
-// CRITICAL DEBUG: Test basic React rendering first
-console.log('[MAIN] React available:', !!React);
-console.log('[MAIN] createRoot available:', !!createRoot);
-console.log('[MAIN] App component available:', !!App);
+// VITE CACHE BREAKER - v2024.08.13.WORKING
+console.log('[MAIN] EasyCashFlows initializing... v2024.08.13.WORKING');
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -46,13 +41,8 @@ if (!rootElement) {
 } else {
   console.log('[MAIN] Root element found, creating React root...');
   try {
-    // Test minimal render first
-    rootElement.innerHTML = '<div style="padding:20px;color:green;font-family:Arial;">🟢 MAIN.TSX LOADED - Creating React Root...</div>';
-    
     const root = createRoot(rootElement);
     console.log('[MAIN] React root created, rendering App...');
-    
-    // Clear test content and render React app
     root.render(<App />);
     console.log('[MAIN] App render called successfully');
   } catch (error) {
