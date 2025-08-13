@@ -192,6 +192,31 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
     }
   }, [watchedType, form]);
 
+  // Reset resource when customer or supplier is selected (mutual exclusion)
+  useEffect(() => {
+    if (watchedCustomerId && watchedResourceId) {
+      form.setValue("resourceId", "");
+    }
+  }, [watchedCustomerId, form]);
+
+  useEffect(() => {
+    if (watchedSupplierId && watchedResourceId) {
+      form.setValue("resourceId", "");
+    }
+  }, [watchedSupplierId, form]);
+
+  // Reset customer/supplier when resource is selected
+  useEffect(() => {
+    if (watchedResourceId) {
+      if (watchedCustomerId) {
+        form.setValue("customerId", "");
+      }
+      if (watchedSupplierId) {
+        form.setValue("supplierId", "");
+      }
+    }
+  }, [watchedResourceId, form]);
+
   // Reset dependent fields when changing company
   useEffect(() => {
     if (watchedCompanyId !== movement?.companyId) {
@@ -562,149 +587,190 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   {watchedType === "income" ? <User className="h-5 w-5" /> : <Truck className="h-5 w-5" />}
-                  {watchedType === "income" ? "Cliente e Risorsa" : "Fornitore e Risorsa"}
+                  Entità Associate
                 </CardTitle>
                 <CardDescription>
                   {watchedType === "income" 
-                    ? "Seleziona il cliente e/o la risorsa associata al movimento di entrata"
-                    : "Seleziona il fornitore e/o la risorsa associata al movimento di uscita"
+                    ? "Per le entrate: seleziona CLIENTE oppure RISORSA (non entrambi)"
+                    : "Per le uscite: seleziona FORNITORE oppure RISORSA (non entrambi)"
                   }
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {watchedType === "income" ? (
-                  <FormField
-                    control={form.control}
-                    name="customerId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          Cliente
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {/* TODO: Aprire modal nuovo cliente */}}
+              <CardContent className="space-y-6">
+                {/* Opzione 1: Cliente/Fornitore */}
+                <div className="space-y-4">
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Opzione 1: {watchedType === "income" ? "Cliente" : "Fornitore"}
+                  </div>
+                  {watchedType === "income" ? (
+                    <FormField
+                      control={form.control}
+                      name="customerId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            Cliente
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {/* TODO: Aprire modal nuovo cliente */}}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Nuovo
+                            </Button>
+                          </FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                            disabled={!!watchedResourceId}
                           >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Nuovo
-                          </Button>
-                        </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona cliente (opzionale)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {customers.map((customer) => (
-                              <SelectItem key={customer.id} value={customer.id}>
-                                {customer.type === 'private' 
-                                  ? `${customer.firstName} ${customer.lastName}`.trim()
-                                  : customer.name
-                                }
-                                {customer.type === 'business' && customer.vatNumber && (
-                                  <span className="text-gray-500 ml-2">({customer.vatNumber})</span>
-                                )}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ) : (
-                  <FormField
-                    control={form.control}
-                    name="supplierId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          Fornitore
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {/* TODO: Aprire modal nuovo fornitore */}}
+                            <FormControl>
+                              <SelectTrigger className={watchedResourceId ? "opacity-50" : ""}>
+                                <SelectValue placeholder="Seleziona cliente" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {customers.map((customer) => (
+                                <SelectItem key={customer.id} value={customer.id}>
+                                  {customer.type === 'private' 
+                                    ? `${customer.firstName} ${customer.lastName}`.trim()
+                                    : customer.name
+                                  }
+                                  {customer.type === 'business' && customer.vatNumber && (
+                                    <span className="text-gray-500 ml-2">({customer.vatNumber})</span>
+                                  )}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {watchedResourceId && (
+                            <p className="text-xs text-gray-500">Disabilitato: risorsa già selezionata</p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <FormField
+                      control={form.control}
+                      name="supplierId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            Fornitore
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {/* TODO: Aprire modal nuovo fornitore */}}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Nuovo
+                            </Button>
+                          </FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                            disabled={!!watchedResourceId}
                           >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Nuovo
-                          </Button>
-                        </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona fornitore (opzionale)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {suppliers.map((supplier) => (
-                              <SelectItem key={supplier.id} value={supplier.id}>
-                                {supplier.name}
-                                {supplier.vatNumber && (
-                                  <span className="text-gray-500 ml-2">({supplier.vatNumber})</span>
-                                )}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+                            <FormControl>
+                              <SelectTrigger className={watchedResourceId ? "opacity-50" : ""}>
+                                <SelectValue placeholder="Seleziona fornitore" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {suppliers.map((supplier) => (
+                                <SelectItem key={supplier.id} value={supplier.id}>
+                                  {supplier.name}
+                                  {supplier.vatNumber && (
+                                    <span className="text-gray-500 ml-2">({supplier.vatNumber})</span>
+                                  )}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {watchedResourceId && (
+                            <p className="text-xs text-gray-500">Disabilitato: risorsa già selezionata</p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
 
-                {/* Resource and Office */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="resourceId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Risorsa</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona risorsa (opzionale)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {filteredResources.map((resource) => (
-                              <SelectItem key={resource.id} value={resource.id}>
-                                {resource.firstName} {resource.lastName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="officeId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sede Operativa</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona sede (opzionale)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {filteredOffices.map((office) => (
-                              <SelectItem key={office.id} value={office.id}>
-                                {office.name} - {office.city}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Separatore OPPURE */}
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400 px-3">OPPURE</span>
+                  <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+                </div>
+
+                {/* Opzione 2: Risorsa + Sede */}
+                <div className="space-y-4">
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Opzione 2: Risorsa + Sede Operativa
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="resourceId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Risorsa</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                            disabled={!!watchedCustomerId || !!watchedSupplierId}
+                          >
+                            <FormControl>
+                              <SelectTrigger className={(watchedCustomerId || watchedSupplierId) ? "opacity-50" : ""}>
+                                <SelectValue placeholder="Seleziona risorsa" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {filteredResources.map((resource) => (
+                                <SelectItem key={resource.id} value={resource.id}>
+                                  {resource.firstName} {resource.lastName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {(watchedCustomerId || watchedSupplierId) && (
+                            <p className="text-xs text-gray-500">
+                              Disabilitato: {watchedType === "income" ? "cliente" : "fornitore"} già selezionato
+                            </p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="officeId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sede Operativa</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleziona sede (opzionale)" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {filteredOffices.map((office) => (
+                                <SelectItem key={office.id} value={office.id}>
+                                  {office.name} - {office.city}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 {/* Entity Details Cards */}
