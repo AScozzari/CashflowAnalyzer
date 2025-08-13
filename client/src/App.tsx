@@ -98,7 +98,7 @@ export default function App() {
       <div style={{ padding: '20px', fontFamily: 'Arial' }}>
         <h1>🟢 App funziona!</h1>
         <p>React: {React ? '✅' : '❌'}</p>
-        <p>useState: {React?.useState ? '✅' : '❌'}</p>
+        <p>useState: {typeof React?.useState === 'function' ? '✅' : '❌'}</p>
         <button onClick={() => window.location.reload()}>Ricarica</button>
       </div>
     );
