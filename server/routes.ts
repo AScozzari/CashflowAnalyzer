@@ -5,7 +5,7 @@ import {
   insertCompanySchema, insertCoreSchema, insertResourceSchema,
   insertIbanSchema, insertOfficeSchema, insertTagSchema,
   insertMovementStatusSchema, insertMovementReasonSchema, insertMovementSchema,
-  insertNotificationSchema, insertSupplierSchema, insertEmailSettingsSchema,
+  insertNotificationSchema, insertSupplierSchema, insertCustomerSchema, insertEmailSettingsSchema,
   passwordResetSchema, resetPasswordSchema
 } from "@shared/schema";
 import { emailService } from './email-service';
@@ -1056,6 +1056,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "Fornitore non trovato" });
     }
     res.json(supplier);
+  }));
+
+  // Customers API routes
+  app.get('/api/customers', requireRole("admin", "finance", "user"), handleAsyncErrors(async (req: any, res: any) => {
+    const customers = await storage.getCustomers();
+    res.json(customers);
+  }));
+
+  app.post('/api/customers', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    const parsedData = insertCustomerSchema.parse(req.body);
+    const customer = await storage.createCustomer(parsedData);
+    res.status(201).json(customer);
+  }));
+
+  app.put('/api/customers/:id', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    const parsedData = insertCustomerSchema.parse(req.body);
+    const customer = await storage.updateCustomer(req.params.id, parsedData);
+    res.json(customer);
+  }));
+
+  app.delete('/api/customers/:id', requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    await storage.deleteCustomer(req.params.id);
+    res.status(204).send();
+  }));
+
+  app.get('/api/customers/by-vat/:vatNumber', requireRole("admin", "finance", "user"), handleAsyncErrors(async (req: any, res: any) => {
+    const customer = await storage.getCustomerByVatNumber(req.params.vatNumber);
+    if (!customer) {
+      return res.status(404).json({ error: "Cliente non trovato" });
+    }
+    res.json(customer);
+  }));
+
+  app.get('/api/customers/by-tax-code/:taxCode', requireRole("admin", "finance", "user"), handleAsyncErrors(async (req: any, res: any) => {
+    const customer = await storage.getCustomerByTaxCode(req.params.taxCode);
+    if (!customer) {
+      return res.status(404).json({ error: "Cliente non trovato" });
+    }
+    res.json(customer);
   }));
 
   // API per l'upload e parsing dei file XML delle fatture elettroniche

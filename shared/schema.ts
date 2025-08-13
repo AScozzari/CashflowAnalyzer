@@ -138,6 +138,40 @@ export const suppliers = pgTable("suppliers", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Clienti (Customers)
+export const customers = pgTable("customers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull(), // 'private' or 'business'
+  
+  // Campi comuni
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  zipCode: text("zip_code"),
+  city: text("city"),
+  country: text("country").default('Italia'),
+  notes: text("notes"),
+  
+  // Campi per persona fisica (type = 'private')
+  firstName: text("first_name"), // Solo per privati
+  lastName: text("last_name"), // Solo per privati
+  taxCode: text("tax_code"), // Per privati è obbligatorio, per business opzionale
+  
+  // Campi per business (type = 'business')
+  name: text("name"), // Ragione sociale per business
+  legalForm: text("legal_form"), // Solo per business
+  vatNumber: text("vat_number"), // Solo per business
+  website: text("website"), // Solo per business
+  contactPerson: text("contact_person"), // Solo per business
+  pec: text("pec"), // Solo per business
+  sdi: text("sdi"), // Solo per business
+  iban: text("iban"), // Solo per business
+  bankName: text("bank_name"), // Solo per business
+  
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Causali dei movimenti
 export const movementReasons = pgTable("movement_reasons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -316,6 +350,10 @@ export const suppliersRelations = relations(suppliers, ({ many }) => ({
   movements: many(movements),
 }));
 
+export const customersRelations = relations(customers, ({ many }) => ({
+  movements: many(movements),
+}));
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -420,6 +458,35 @@ export const insertSupplierSchema = createInsertSchema(suppliers).omit({
   isActive: z.boolean().optional().default(true),
 });
 
+export const insertCustomerSchema = createInsertSchema(customers).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  type: z.enum(["private", "business"]),
+  // Campi comuni
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  zipCode: z.string().optional(),
+  city: z.string().optional(),
+  country: z.string().optional().default("Italia"),
+  notes: z.string().optional(),
+  // Campi condizionali - validati nel frontend
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  taxCode: z.string().optional(),
+  name: z.string().optional(),
+  legalForm: z.string().optional(),
+  vatNumber: z.string().optional(),
+  website: z.string().url().optional().or(z.literal("")),
+  contactPerson: z.string().optional(),
+  pec: z.string().email().optional().or(z.literal("")),
+  sdi: z.string().optional(),
+  iban: z.string().optional(),
+  bankName: z.string().optional(),
+  isActive: z.boolean().optional().default(true),
+});
+
 // Password Reset Tokens
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -521,6 +588,9 @@ export type InsertMovement = z.infer<typeof insertMovementSchema>;
 
 export type Supplier = typeof suppliers.$inferSelect;
 export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
+
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 
 export type EmailSettings = typeof emailSettings.$inferSelect;
 export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;

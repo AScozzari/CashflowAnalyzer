@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, Users, CreditCard, MapPin, Tags, Flag, Target, FileText, Truck, Mail, Pin, PinOff } from "lucide-react";
+import { Building, Users, CreditCard, MapPin, Tags, Flag, Target, FileText, Truck, UserCheck, Mail, Pin, PinOff } from "lucide-react";
 import CompanyManagement from "./company-management";
 import CoreManagement from "./core-management";
 import ResourceManagement from "./resource-management";
@@ -12,6 +12,7 @@ import OfficeManagement from "./office-management";
 import TagManagement from "./tag-management";
 import MovementStatusManagement from "./movement-status-management";
 import SupplierManagement from "./supplier-management";
+import { CustomerManagement } from "./customer-management";
 import EmailSettings from "./email-settings";
 
 export default function EntityConfig() {
@@ -23,6 +24,7 @@ export default function EntityConfig() {
   const tabs = [
     { id: "companies", label: "Ragioni Sociali", icon: Building },
     { id: "suppliers", label: "Fornitori", icon: Truck },
+    { id: "customers", label: "Clienti", icon: UserCheck },
     { id: "offices", label: "Sedi Operative", icon: MapPin },
     { id: "resources", label: "Risorse", icon: Users },
     { id: "cores", label: "Core Business", icon: Target },
@@ -135,6 +137,8 @@ export default function EntityConfig() {
           {activeTab === "companies" && <CompanyManagement />}
 
           {activeTab === "suppliers" && <SupplierManagement />}
+
+          {activeTab === "customers" && <CustomerManagement />}
 
           {activeTab === "offices" && <OfficeManagement />}
 

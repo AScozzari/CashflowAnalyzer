@@ -1,5 +1,5 @@
 import {
-  companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, emailSettings, passwordResetTokens,
+  companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens,
   type Company, type InsertCompany,
   type Core, type InsertCore,
   type Resource, type InsertResource,
@@ -14,6 +14,7 @@ import {
   type User, type InsertUser,
   type Notification, type InsertNotification,
   type Supplier, type InsertSupplier,
+  type Customer, type InsertCustomer,
   type EmailSettings, type InsertEmailSettings
 } from "@shared/schema";
 import crypto from 'crypto';
@@ -86,6 +87,15 @@ export interface IStorage {
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
   updateSupplier(id: string, supplier: Partial<InsertSupplier>): Promise<Supplier>;
   deleteSupplier(id: string): Promise<void>;
+
+  // Customers
+  getCustomers(): Promise<Customer[]>;
+  getCustomer(id: string): Promise<Customer | undefined>;
+  getCustomerByVatNumber(vatNumber: string): Promise<Customer | undefined>;
+  getCustomerByTaxCode(taxCode: string): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer>;
+  deleteCustomer(id: string): Promise<void>;
 
   // Movements
   getMovements(filters?: {
@@ -1089,6 +1099,105 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error deleting supplier:', error);
       throw error instanceof Error ? error : new Error('Failed to delete supplier');
+    }
+  }
+
+  // Customers
+  async getCustomers(): Promise<Customer[]> {
+    try {
+      return await db.select().from(customers).where(eq(customers.isActive, true)).orderBy(customers.name);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      throw new Error('Failed to fetch customers');
+    }
+  }
+
+  async getCustomer(id: string): Promise<Customer | undefined> {
+    try {
+      const [customer] = await db
+        .select()
+        .from(customers)
+        .where(and(eq(customers.id, id), eq(customers.isActive, true)));
+      
+      return customer;
+    } catch (error) {
+      console.error('Error fetching customer:', error);
+      throw new Error('Failed to fetch customer');
+    }
+  }
+
+  async getCustomerByVatNumber(vatNumber: string): Promise<Customer | undefined> {
+    try {
+      const [customer] = await db
+        .select()
+        .from(customers)
+        .where(and(eq(customers.vatNumber, vatNumber), eq(customers.isActive, true)));
+      
+      return customer;
+    } catch (error) {
+      console.error('Error fetching customer by VAT number:', error);
+      throw new Error('Failed to fetch customer by VAT number');
+    }
+  }
+
+  async getCustomerByTaxCode(taxCode: string): Promise<Customer | undefined> {
+    try {
+      const [customer] = await db
+        .select()
+        .from(customers)
+        .where(and(eq(customers.taxCode, taxCode), eq(customers.isActive, true)));
+      
+      return customer;
+    } catch (error) {
+      console.error('Error fetching customer by tax code:', error);
+      throw new Error('Failed to fetch customer by tax code');
+    }
+  }
+
+  async createCustomer(customer: InsertCustomer): Promise<Customer> {
+    try {
+      const [newCustomer] = await db.insert(customers).values(customer).returning();
+      return newCustomer;
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      throw new Error('Failed to create customer');
+    }
+  }
+
+  async updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer> {
+    try {
+      const [updatedCustomer] = await db
+        .update(customers)
+        .set(customer)
+        .where(eq(customers.id, id))
+        .returning();
+      
+      if (!updatedCustomer) {
+        throw new Error('Customer not found');
+      }
+      
+      return updatedCustomer;
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      throw new Error('Failed to update customer');
+    }
+  }
+
+  async deleteCustomer(id: string): Promise<void> {
+    try {
+      // Soft delete - set isActive to false instead of actually deleting
+      const [updatedCustomer] = await db
+        .update(customers)
+        .set({ isActive: false })
+        .where(eq(customers.id, id))
+        .returning();
+      
+      if (!updatedCustomer) {
+        throw new Error('Customer not found');
+      }
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      throw error instanceof Error ? error : new Error('Failed to delete customer');
     }
   }
 
