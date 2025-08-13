@@ -6,6 +6,10 @@
     <title>EasyCashFlows - Gestione Flussi Finanziari</title>
     <meta name="description" content="Sistema avanzato di gestione flussi finanziari per PMI italiane con analytics predittive e integrazione FatturaPA" />
     
+    <!-- IFRAME COMPATIBILITY for Replit preview -->
+    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' *.replit.dev *.repl.co">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#1e40af" />
@@ -19,6 +23,21 @@
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
     
     <!-- Fonts moved to CSS to avoid CSP issues -->
+    
+    <!-- React/Hook stability script -->
+    <script>
+      // CRITICAL: Ensure React context is stable for iframe/reload scenarios
+      window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
+      window.__REACT_STRICT_MODE__ = false; // Prevent double-rendering that causes hook errors
+      
+      // Hook availability check
+      window.checkReactReady = function() {
+        return window.React && typeof window.React.useState === 'function';
+      };
+      
+      console.log('[IFRAME CHECK] In iframe:', window.self !== window.top);
+      console.log('[IFRAME CHECK] Parent origin:', document.referrer);
+    </script>
   </head>
   <body>
     <div id="root"></div>

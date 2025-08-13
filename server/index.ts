@@ -4,25 +4,31 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
-// CORS configuration for Replit
+// IFRAME-SAFE HEADERS for Replit preview
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const allowedOrigins = [
-    'https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev',
-    'http://localhost:5000',
-    'http://127.0.0.1:5000'
-  ];
+  const host = req.headers.host;
+  const userAgent = req.headers['user-agent'];
+  const isIframe = req.headers['sec-fetch-dest'] === 'iframe' || req.headers['x-frame-options'];
   
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else if (!origin) {
-    // Same-origin requests
-    res.header('Access-Control-Allow-Origin', '*');
+  // Log connection attempts for debugging
+  if (req.path === '/' || req.path.startsWith('/api')) {
+    console.log(`[NETWORK] ${req.method} ${req.path} from ${origin || 'same-origin'} via ${host} ${isIframe ? '(IFRAME)' : '(DIRECT)'}`);
   }
   
+  // CRITICAL: Allow iframe embedding for Replit preview
+  res.header('X-Frame-Options', 'SAMEORIGIN');
+  res.header('Content-Security-Policy', "frame-ancestors 'self' *.replit.dev *.repl.co");
+  
+  // CORS for both iframe and direct access
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie, X-Frame-Options, Sec-Fetch-Dest');
+  
+  // Additional headers for iframe compatibility
+  res.header('X-Content-Type-Options', 'nosniff');
+  res.header('Referrer-Policy', 'same-origin');
   
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
