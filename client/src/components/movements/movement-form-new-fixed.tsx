@@ -134,21 +134,22 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
     reason.type === watchedType || reason.type === "both"
   );
 
-  // Auto-calculate VAT
+  // Auto-calculate VAT (IVA inclusa nell'importo totale)
   useEffect(() => {
     if (watchedAmount && watchedVatType) {
-      const amount = parseFloat(watchedAmount);
+      const totalAmount = parseFloat(watchedAmount);
       let vatAmount = 0;
       
+      // Calcolo IVA inclusa: IVA = (Totale * Aliquota) / (100 + Aliquota)
       switch (watchedVatType) {
         case "22%":
-          vatAmount = amount * 0.22;
+          vatAmount = (totalAmount * 22) / 122;
           break;
         case "10%":
-          vatAmount = amount * 0.10;
+          vatAmount = (totalAmount * 10) / 110;
           break;
         case "4%":
-          vatAmount = amount * 0.04;
+          vatAmount = (totalAmount * 4) / 104;
           break;
         default:
           vatAmount = 0;
@@ -183,10 +184,16 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
         formData.append("file", uploadedFile);
       }
       
-      return apiRequest("/api/movements", {
+      const response = await fetch("/api/movements", {
         method: "POST",
         body: formData,
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/movements"] });
@@ -220,10 +227,16 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
         formData.append("file", uploadedFile);
       }
       
-      return apiRequest(`/api/movements/${movement?.id}`, {
+      const response = await fetch(`/api/movements/${movement?.id}`, {
         method: "PUT",
         body: formData,
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/movements"] });
@@ -774,12 +787,12 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="notes"
+                    name="documentNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Note</FormLabel>
+                        <FormLabel>Numero Documento</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Note aggiuntive..." {...field} />
+                          <Input placeholder="Es. FAT-2024/001" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -787,12 +800,12 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                   />
                   <FormField
                     control={form.control}
-                    name="documentNumber"
+                    name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Numero Documento</FormLabel>
+                        <FormLabel>Note</FormLabel>
                         <FormControl>
-                          <Input placeholder="Es. FAT-2024/001" {...field} />
+                          <Textarea placeholder="Note aggiuntive (opzionale)..." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

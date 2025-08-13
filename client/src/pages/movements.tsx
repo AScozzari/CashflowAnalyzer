@@ -136,7 +136,7 @@ export default function Movements() {
       
       {/* Professional Movement Form Modal */}
       <MovementFormNew
-        movement={editingMovement}
+        movement={editingMovement || undefined}
         isOpen={isFormOpen}
         onClose={() => {
           setIsFormOpen(false);
@@ -220,21 +220,8 @@ export default function Movements() {
                               <div className="font-medium text-sm">{movement.supplier.name}</div>
                               <div className="text-xs text-gray-500">{movement.supplier.vatNumber}</div>
                             </div>
-                          ) : movement.customer ? (
-                            <div>
-                              <div className="font-medium text-sm">
-                                {movement.customer.type === 'private' 
-                                  ? `${movement.customer.firstName} ${movement.customer.lastName}`.trim()
-                                  : movement.customer.name
-                                }
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {movement.customer.type === 'business' && movement.customer.vatNumber 
-                                  ? movement.customer.vatNumber
-                                  : 'Cliente privato'
-                                }
-                              </div>
-                            </div>
+                          ) : movement.customerId ? (
+                            <div className="font-medium text-sm">Cliente (ID: {movement.customerId})</div>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
