@@ -2,6 +2,13 @@
 
 EasyCashFlows is a comprehensive financial management system designed for Italian small and medium enterprises (SMEs). It provides advanced cash flow tracking, analytics, and integrations with Italian fiscal requirements including FatturaPA (electronic invoicing). The application features a React-based frontend with a modern dashboard, authentication system, file upload capabilities, and comprehensive financial movement tracking with predictive analytics.
 
+## Recent Status Update (2025-08-13)
+- **PWA System Removed**: Completely eliminated PWA implementation that was causing app crashes and stability issues
+- **Clean React Setup**: Restored pure React 18 without service workers, manifests, or complex iframe detection
+- **Iframe Logic Disabled**: Server no longer intercepts iframe requests with static HTML fallback
+- **App Status**: Fully functional in new tab/window, preview iframe shows blank (expected behavior)
+- **Authentication**: Working with proper 401 handling for non-authenticated users
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -9,13 +16,13 @@ Preferred communication style: Simple, everyday language.
 # System Architecture
 
 ## Frontend Architecture
-- **Framework**: React 18 with TypeScript
+- **Framework**: React 18 with TypeScript (Clean setup without PWA complexity)
 - **Build Tool**: Vite with custom configuration for Replit deployment
 - **UI Library**: Radix UI components with shadcn/ui design system
 - **Styling**: Tailwind CSS with custom theme variables and responsive design
 - **State Management**: TanStack Query for server state and React hooks for local state
 - **Routing**: Wouter for lightweight client-side routing
-- **PWA Features**: Service worker registration and offline capabilities
+- **Deployment**: Works in new tab/window, iframe preview limited by security restrictions
 
 ## Backend Architecture
 - **Runtime**: Node.js with Express.js framework
