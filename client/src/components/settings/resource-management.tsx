@@ -280,7 +280,7 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
             )}
           />
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="city"
@@ -301,20 +301,6 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
             
             <FormField
               control={form.control}
-              name="zipCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CAP</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="es. 00100" value={field.value || ""} className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
               name="country"
               render={({ field }) => (
                 <FormItem>
@@ -327,6 +313,20 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
               )}
             />
           </div>
+
+          <FormField
+            control={form.control}
+            name="zipCode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>CAP</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="00000" value={field.value || ""} className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
 
         </div>

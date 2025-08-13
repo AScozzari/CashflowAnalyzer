@@ -168,21 +168,7 @@ function SupplierForm({ supplier, onClose }: SupplierFormProps) {
           )}
         />
 
-        <div className="grid grid-cols-3 gap-4">
-          <FormField
-            control={form.control}
-            name="zipCode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>CAP</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="20100" value={field.value || ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="city"
@@ -212,6 +198,20 @@ function SupplierForm({ supplier, onClose }: SupplierFormProps) {
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="zipCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CAP</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="00000" value={field.value || ""} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <FormField

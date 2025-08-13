@@ -85,12 +85,23 @@ const customerFormSchema = z.object({
 type CustomerFormData = z.infer<typeof customerFormSchema>;
 
 const ITALIAN_CITIES = [
-  "Roma", "Milano", "Napoli", "Torino", "Palermo", "Genova", "Bologna", "Firenze",
-  "Bari", "Catania", "Venezia", "Verona", "Messina", "Padova", "Trieste", "Brescia",
-  "Taranto", "Prato", "Reggio Calabria", "Modena", "Reggio Emilia", "Perugia",
-  "Livorno", "Ravenna", "Cagliari", "Foggia", "Rimini", "Salerno", "Ferrara",
-  "Sassari", "Monza", "Pescara", "Bergamo", "Forlì", "Trento", "Vicenza", "Terni",
-  "Bolzano", "Novara", "Piacenza", "Ancona", "Andria", "Arezzo", "Udine", "Cesena"
+  "Agrigento", "Alessandria", "Ancona", "Andria", "Arezzo", "Ascoli Piceno", "Asti", "Avellino",
+  "Bari", "Barletta", "Belluno", "Benevento", "Bergamo", "Biella", "Bologna", "Bolzano", "Brescia", "Brindisi",
+  "Cagliari", "Caltanissetta", "Campobasso", "Caserta", "Catania", "Catanzaro", "Cesena", "Chieti", "Como", "Cosenza", "Cremona", "Crotone", "Cuneo",
+  "Enna",
+  "Fermo", "Ferrara", "Firenze", "Foggia", "Forlì", "Frosinone",
+  "Genova", "Gorizia", "Grosseto",
+  "Imperia", "Isernia",
+  "L'Aquila", "La Spezia", "Latina", "Lecce", "Lecco", "Livorno", "Lodi", "Lucca",
+  "Macerata", "Mantova", "Massa", "Matera", "Messina", "Milano", "Modena", "Monza",
+  "Napoli", "Novara", "Nuoro",
+  "Oristano",
+  "Padova", "Palermo", "Parma", "Pavia", "Perugia", "Pesaro", "Pescara", "Piacenza", "Pisa", "Pistoia", "Pordenone", "Potenza", "Prato",
+  "Ragusa", "Ravenna", "Reggio Calabria", "Reggio Emilia", "Rieti", "Rimini", "Roma", "Rovigo",
+  "Salerno", "Sassari", "Savona", "Siena", "Siracusa", "Sondrio",
+  "Taranto", "Teramo", "Terni", "Torino", "Trapani", "Trento", "Treviso", "Trieste",
+  "Udine",
+  "Varese", "Venezia", "Verbania", "Vercelli", "Verona", "Vibo Valentia", "Vicenza", "Viterbo"
 ];
 
 export function CustomerManagement() {
@@ -342,9 +353,9 @@ export function CustomerManagement() {
 
       {/* Dialog per creazione/modifica */}
       <Dialog open={isCreateDialogOpen || isEditDialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-gray-900 dark:text-white">
               {selectedCustomer ? "Modifica Cliente" : "Nuovo Cliente"}
             </DialogTitle>
           </DialogHeader>
@@ -374,10 +385,10 @@ export function CustomerManagement() {
               />
 
               <Tabs defaultValue="main" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="main">Dati Principali</TabsTrigger>
-                  <TabsTrigger value="contact">Contatti</TabsTrigger>
-                  <TabsTrigger value="additional">Aggiuntive</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-700">
+                  <TabsTrigger value="main" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:text-gray-900 dark:data-[state=active]:text-white">Dati Principali</TabsTrigger>
+                  <TabsTrigger value="contact" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:text-gray-900 dark:data-[state=active]:text-white">Contatti</TabsTrigger>
+                  <TabsTrigger value="additional" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:text-gray-900 dark:data-[state=active]:text-white">Aggiuntive</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="main" className="space-y-4">
@@ -600,24 +611,7 @@ export function CustomerManagement() {
                     )}
                   />
 
-                  <div className="grid grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="zipCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>CAP</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              value={field.value || ""}
-                              data-testid="input-zip-code"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="city"
@@ -630,17 +624,17 @@ export function CustomerManagement() {
                                 <SelectValue placeholder="Seleziona città" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                               <div className="p-2">
                                 <Input
                                   placeholder="Cerca città..."
                                   value={cityFilter}
                                   onChange={(e) => setCityFilter(e.target.value)}
-                                  className="mb-2"
+                                  className="mb-2 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
                                 />
                               </div>
                               {filteredCities.map((city) => (
-                                <SelectItem key={city} value={city}>
+                                <SelectItem key={city} value={city} className="focus:bg-gray-100 dark:focus:bg-gray-700">
                                   {city}
                                 </SelectItem>
                               ))}
@@ -668,6 +662,25 @@ export function CustomerManagement() {
                       )}
                     />
                   </div>
+
+                  <FormField
+                    control={form.control}
+                    name="zipCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CAP</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-zip-code"
+                            placeholder="00000"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </TabsContent>
 
                 <TabsContent value="additional" className="space-y-4">
@@ -798,10 +811,10 @@ export function CustomerManagement() {
 
       {/* Dialog di conferma eliminazione */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-gray-900 dark:text-white">Conferma eliminazione</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
               Sei sicuro di voler eliminare il cliente{" "}
               <strong>{selectedCustomer ? getCustomerDisplayName(selectedCustomer) : ""}</strong>?
               Questa azione non può essere annullata.

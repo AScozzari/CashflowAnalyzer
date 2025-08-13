@@ -128,7 +128,7 @@ function OfficeForm({ office, onClose }: OfficeFormProps) {
           )}
         />
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="city"
@@ -149,20 +149,6 @@ function OfficeForm({ office, onClose }: OfficeFormProps) {
           
           <FormField
             control={form.control}
-            name="zipCode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>CAP *</FormLabel>
-                <FormControl>
-                  <Input {...field} className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
             name="country"
             render={({ field }) => (
               <FormItem>
@@ -175,6 +161,20 @@ function OfficeForm({ office, onClose }: OfficeFormProps) {
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="zipCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CAP *</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="00000" className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
