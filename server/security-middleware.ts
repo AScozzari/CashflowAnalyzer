@@ -55,7 +55,6 @@ export const securityLogger = (req: Request, res: Response, next: NextFunction) 
 export const securityHeaders = (req: Request, res: Response, next: NextFunction) => {
   // Prevenzione XSS
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   
   // HSTS (solo in produzione con HTTPS)
@@ -63,8 +62,10 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
   
-  // CSP basic
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;");
+  // CSP basic - iframe compatibility handled in main middleware
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'self' *.replit.dev *.repl.co");
+  
+  // X-Frame-Options NOT set here - handled in main index.ts for iframe compatibility
   
   next();
 };

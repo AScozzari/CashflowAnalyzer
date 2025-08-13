@@ -17,8 +17,7 @@ app.use((req, res, next) => {
   }
   
   // CRITICAL: Allow iframe embedding for Replit preview
-  res.header('X-Frame-Options', 'SAMEORIGIN');
-  res.header('Content-Security-Policy', "frame-ancestors 'self' *.replit.dev *.repl.co");
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   
   // CORS for both iframe and direct access
   res.header('Access-Control-Allow-Origin', '*');

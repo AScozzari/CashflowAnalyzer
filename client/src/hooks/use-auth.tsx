@@ -24,30 +24,16 @@ type ChangePasswordData = z.infer<typeof changePasswordSchema>;
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // CRITICAL FIX: Wrap hooks in try-catch to prevent crashes
-  let user, error, isLoading, toast;
+  const { toast } = useToast();
   
-  try {
-    const toastHook = useToast();
-    toast = toastHook.toast;
-    
-    const queryResult = useQuery<User | undefined, Error>({
-      queryKey: ["/api/auth/user"],
-      queryFn: getQueryFn({ on401: "returnNull" }),
-    });
-    
-    user = queryResult.data;
-    error = queryResult.error;
-    isLoading = queryResult.isLoading;
-  } catch (hookError) {
-    console.error('React hooks error in AuthProvider:', hookError);
-    // Fallback for initial load without hooks
-    return (
-      <AuthContext.Provider value={null}>
-        {children}
-      </AuthContext.Provider>
-    );
-  }
+  const {
+    data: user,
+    error,
+    isLoading,
+  } = useQuery<User | undefined, Error>({
+    queryKey: ["/api/auth/user"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+  });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {

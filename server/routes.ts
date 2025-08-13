@@ -97,7 +97,23 @@ async function createMovementNotifications(movementId: string, type: 'new_moveme
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Security middleware globali
-  app.use(securityHeaders);
+  // Security headers applied selectively (X-Frame-Options handled in main index.ts)
+  app.use((req, res, next) => {
+    // Prevenzione XSS
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    
+    // HSTS (solo in produzione con HTTPS)
+    if (process.env.NODE_ENV === 'production') {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+    
+    // CSP with iframe support
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'self' *.replit.dev *.repl.co");
+    
+    // X-Frame-Options NOT set here - handled in main index.ts
+    next();
+  });
   app.use(securityLogger);
   app.use(sanitizeInput);
   app.use(sessionSecurity);
