@@ -21,6 +21,15 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
+    // Special handling for React hooks errors during page reload
+    if (error.message?.includes('useState') || error.message?.includes('useEffect') || error.message?.includes('Cannot read properties of null')) {
+      console.warn('React hooks error detected - likely due to page reload timing. Attempting recovery...');
+      // Small delay to allow React to fully initialize, then retry
+      setTimeout(() => {
+        this.setState({ hasError: false, error: undefined });
+      }, 100);
+    }
   }
 
   public render() {

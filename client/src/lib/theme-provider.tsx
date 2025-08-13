@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 type Theme = "dark" | "light" | "system";
 
@@ -26,36 +26,60 @@ export function ThemeProvider({
   storageKey = "easycashflow-ui-theme",
   ...props
 }: ThemeProviderProps) {
+  // Safety check: ensure React hooks are available
+  if (!React || typeof React.useState !== 'function') {
+    console.error('React hooks not available in ThemeProvider');
+    return <div>{children}</div>;
+  }
+
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+      }
+    } catch (error) {
+      console.warn('localStorage not available:', error);
     }
     return defaultTheme;
   });
 
   useEffect(() => {
-    const root = window.document.documentElement;
+    try {
+      if (typeof window === "undefined" || !window.document) return;
+      
+      const root = window.document.documentElement;
+      if (!root) return;
 
-    root.classList.remove("light", "dark");
+      root.classList.remove("light", "dark");
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
+      if (theme === "system") {
+        const systemTheme = window.matchMedia?.("(prefers-color-scheme: dark)")
+          ?.matches
+          ? "dark"
+          : "light";
 
-      root.classList.add(systemTheme);
-      return;
+        root.classList.add(systemTheme);
+        return;
+      }
+
+      root.classList.add(theme);
+    } catch (error) {
+      console.warn('Error applying theme:', error);
     }
-
-    root.classList.add(theme);
   }, [theme]);
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
+    setTheme: (newTheme: Theme) => {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          localStorage.setItem(storageKey, newTheme);
+        }
+        setTheme(newTheme);
+      } catch (error) {
+        console.warn('Error setting theme:', error);
+        setTheme(newTheme);
+      }
     },
   };
 

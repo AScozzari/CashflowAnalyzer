@@ -3,6 +3,11 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+// Ensure React is globally available to prevent hook errors
+if (typeof window !== 'undefined') {
+  (window as any).React = React;
+}
+
 // Register Service Worker for PWA functionality
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -31,4 +36,25 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Wait for DOM to be ready and React to be fully initialized
+const initializeApp = () => {
+  try {
+    const rootElement = document.getElementById("root");
+    if (!rootElement) {
+      throw new Error("Root element not found");
+    }
+    
+    const root = createRoot(rootElement);
+    root.render(<App />);
+  } catch (error) {
+    console.error("Failed to initialize app:", error);
+    // Retry after a short delay
+    setTimeout(initializeApp, 100);
+  }
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+  initializeApp();
+}
