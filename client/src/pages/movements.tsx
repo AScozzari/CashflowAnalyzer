@@ -179,7 +179,7 @@ export default function Movements() {
                       <TableHead>Importo IVA</TableHead>
                       <TableHead>Stato</TableHead>
                       <TableHead>File</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead className="text-center">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -233,8 +233,18 @@ export default function Movements() {
                         
                         {/* Cliente */}
                         <TableCell>
-                          {movement.customerId ? (
-                            <div className="font-medium text-sm">Cliente (ID: {movement.customerId})</div>
+                          {movement.customer ? (
+                            <div>
+                              <div className="font-medium text-sm">
+                                {movement.customer.type === 'private' 
+                                  ? `${movement.customer.firstName} ${movement.customer.lastName}`.trim()
+                                  : movement.customer.name
+                                }
+                              </div>
+                              {movement.customer.type === 'business' && movement.customer.vatNumber && (
+                                <div className="text-xs text-gray-500">{movement.customer.vatNumber}</div>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
@@ -311,8 +321,8 @@ export default function Movements() {
                             <span className="text-gray-400">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end space-x-2">
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center space-x-2">
                             {movement.documentPath && (
                               <Button 
                                 variant="ghost" 
