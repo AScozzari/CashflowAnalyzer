@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CitySelect } from "@/components/ui/city-select";
+import { CitySelectWithCap } from "@/components/shared/city-select-with-cap";
 import { useToast } from "@/hooks/use-toast";
 import { insertOfficeSchema, type Office, type InsertOffice, type Company } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -136,9 +137,10 @@ function OfficeForm({ office, onClose }: OfficeFormProps) {
               <FormItem>
                 <FormLabel>Città *</FormLabel>
                 <FormControl>
-                  <CitySelect 
-                    value={field.value || ""} 
+                  <CitySelectWithCap
+                    value={field.value || ""}
                     onValueChange={field.onChange}
+                    onCapChange={(cap) => form.setValue("zipCode", cap)}
                     placeholder="Seleziona città..."
                   />
                 </FormControl>

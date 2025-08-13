@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { CitySelect } from "@/components/ui/city-select";
+import { CitySelectWithCap } from "@/components/shared/city-select-with-cap";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { insertCompanySchema, type Company, type InsertCompany } from "@shared/schema";
@@ -169,9 +170,10 @@ function CompanyForm({ company, onClose }: CompanyFormProps) {
               <FormItem>
                 <FormLabel>Città</FormLabel>
                 <FormControl>
-                  <CitySelect 
-                    value={field.value || ""} 
+                  <CitySelectWithCap
+                    value={field.value || ""}
                     onValueChange={field.onChange}
+                    onCapChange={(cap) => form.setValue("zipCode", cap)}
                     placeholder="Seleziona città..."
                   />
                 </FormControl>

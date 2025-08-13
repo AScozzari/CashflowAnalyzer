@@ -40,6 +40,7 @@ CashFlow Management System is a production-ready full-stack financial movement t
 - **CAP Field Standardization**: Systematically repositioned CAP (postal code) field after city field on separate row across ALL entity forms (customers, suppliers, companies, offices, resources) for consistent user experience and logical data flow. (August 13, 2025)
 - **Enhanced City Selection**: Expanded Italian municipalities list to include all major cities and provincial capitals for comprehensive geographical coverage. Updated dropdown selection across all entity forms. (August 13, 2025)
 - **Dark/Light Theme Modal Fix**: Improved all modal components with proper dark/light theme support including dialogs, alert dialogs, tabs, and select components. Enhanced contrast and readability in both themes. (August 13, 2025)
+- **CAP Auto-Population System**: Implemented comprehensive automatic postal code (CAP) population when selecting cities across ALL entity forms. Created shared CitySelectWithCap component with extensive Italian municipalities database (100+ cities including Fiumicino, Civitavecchia, and all provincial capitals). System automatically fills CAP field when user selects a city, improving data entry efficiency and accuracy. Applied to customers, suppliers, companies, offices, and resources management. (August 13, 2025)
 
 # User Preferences
 

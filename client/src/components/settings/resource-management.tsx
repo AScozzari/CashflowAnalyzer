@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { CitySelect } from "@/components/ui/city-select";
+import { CitySelectWithCap } from "@/components/shared/city-select-with-cap";
 import type { UploadResult } from '@uppy/core';
 import { insertResourceSchema, type Resource, type InsertResource, type Company, type Office } from "@shared/schema";
 import { z } from "zod";
@@ -288,9 +289,10 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
                 <FormItem>
                   <FormLabel>Città</FormLabel>
                   <FormControl>
-                    <CitySelect 
-                      value={field.value || ""} 
+                    <CitySelectWithCap
+                      value={field.value || ""}
                       onValueChange={field.onChange}
+                      onCapChange={(cap) => form.setValue("zipCode", cap)}
                       placeholder="Seleziona città..."
                     />
                   </FormControl>

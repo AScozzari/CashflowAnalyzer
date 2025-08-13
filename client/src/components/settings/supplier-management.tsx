@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { CitySelect } from "@/components/ui/city-select";
+import { CitySelectWithCap } from "@/components/shared/city-select-with-cap";
 import { useToast } from "@/hooks/use-toast";
 import { insertSupplierSchema, type Supplier, type InsertSupplier } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -175,10 +176,14 @@ function SupplierForm({ supplier, onClose }: SupplierFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Città</FormLabel>
-                <CitySelect 
-                  value={field.value || ""} 
-                  onValueChange={field.onChange}
-                />
+                <FormControl>
+                  <CitySelectWithCap
+                    value={field.value || ""}
+                    onValueChange={field.onChange}
+                    onCapChange={(cap) => form.setValue("zipCode", cap)}
+                    placeholder="Seleziona città"
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
