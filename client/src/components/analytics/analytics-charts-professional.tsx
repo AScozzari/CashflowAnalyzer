@@ -105,39 +105,54 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
       a.month.localeCompare(b.month)
     );
 
-    // 2. Top ragioni sociali con analisi dettagliata
-    const companyData = movements.reduce((acc, movement) => {
-      const company = movement.company?.name || 'Senza Ragione Sociale';
-      if (!acc[company]) {
-        acc[company] = { 
-          name: company.length > 20 ? company.substring(0, 20) + '...' : company,
-          fullName: company,
-          income: 0, 
-          expense: 0, 
-          total: 0, 
-          count: 0,
-          net: 0
-        };
-      }
-      
-      const amount = parseFloat(movement.amount);
-      acc[company].total += amount;
-      acc[company].count += 1;
-      
-      if (movement.type === 'income') {
-        acc[company].income += amount;
-        acc[company].net += amount;
-      } else {
-        acc[company].expense += amount;
-        acc[company].net -= amount;
-      }
-      
-      return acc;
-    }, {} as Record<string, any>);
+    // 2. Analisi ragioni sociali - separata per entrate e uscite
+    const companyIncomeData = movements
+      .filter(m => m.type === 'income')
+      .reduce((acc, movement) => {
+        const company = movement.company?.name || 'Senza Ragione Sociale';
+        const companyKey = company.length > 15 ? company.substring(0, 15) + '...' : company;
+        
+        if (!acc[companyKey]) {
+          acc[companyKey] = { 
+            name: companyKey,
+            fullName: company,
+            amount: 0,
+            count: 0
+          };
+        }
+        
+        acc[companyKey].amount += parseFloat(movement.amount);
+        acc[companyKey].count += 1;
+        return acc;
+      }, {} as Record<string, any>);
 
-    const topCompanies = Object.values(companyData)
-      .sort((a: any, b: any) => b.total - a.total)
-      .slice(0, 8);
+    const companyExpenseData = movements
+      .filter(m => m.type === 'expense')
+      .reduce((acc, movement) => {
+        const company = movement.company?.name || 'Senza Ragione Sociale';
+        const companyKey = company.length > 15 ? company.substring(0, 15) + '...' : company;
+        
+        if (!acc[companyKey]) {
+          acc[companyKey] = { 
+            name: companyKey,
+            fullName: company,
+            amount: 0,
+            count: 0
+          };
+        }
+        
+        acc[companyKey].amount += parseFloat(movement.amount);
+        acc[companyKey].count += 1;
+        return acc;
+      }, {} as Record<string, any>);
+
+    const topIncomeCompanies = Object.values(companyIncomeData)
+      .sort((a: any, b: any) => b.count - a.count)
+      .slice(0, 6);
+
+    const topExpenseCompanies = Object.values(companyExpenseData)
+      .sort((a: any, b: any) => b.count - a.count)
+      .slice(0, 6);
 
     // 3. Distribuzione stati con percentuali
     const statusData = movements.reduce((acc, movement) => {
@@ -269,7 +284,8 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
 
     return {
       monthly: sortedMonthlyData,
-      companies: topCompanies,
+      incomeCompanies: topIncomeCompanies,
+      expenseCompanies: topExpenseCompanies,
       status: statusChartData,
       vat: vatChartData,
       suppliers: topSuppliers,
@@ -479,16 +495,28 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
             <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">IVA Totale</p>
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {formatCurrency(stats.totalVat)}
+                  <p className="text-sm font-medium text-muted-foreground">Bilancio Netto</p>
+                  <p className={`text-2xl font-bold ${
+                    stats.net >= 0 
+                      ? 'text-green-600 dark:text-green-400' 
+                      : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    {formatCurrency(stats.net)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {stats.vatPercentage.toFixed(0)}% movimenti con IVA
+                    Profitto: {stats.profitMargin.toFixed(1)}%
                   </p>
                 </div>
-                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                  <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className={`p-3 rounded-full ${
+                  stats.net >= 0 
+                    ? 'bg-green-100 dark:bg-green-900/30' 
+                    : 'bg-red-100 dark:bg-red-900/30'
+                }`}>
+                  <Euro className={`h-6 w-6 ${
+                    stats.net >= 0 
+                      ? 'text-green-600 dark:text-green-400' 
+                      : 'text-red-600 dark:text-red-400'
+                  }`} />
                 </div>
               </div>
             </div>
@@ -498,108 +526,165 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
 
       {/* Professional Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Trend Mensile Avanzato */}
+        {/* Trend Mensile Professionale */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Analisi Trend Mensile
+              Trend Finanziario Mensile
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={chartData.monthly} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <LineChart data={chartData.monthly} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={PROFESSIONAL_COLORS.success} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={PROFESSIONAL_COLORS.success} stopOpacity={0.1}/>
+                  <linearGradient id="incomeLineGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={PROFESSIONAL_COLORS.success} stopOpacity={0.8}/>
+                    <stop offset="100%" stopColor={PROFESSIONAL_COLORS.success} stopOpacity={0.2}/>
                   </linearGradient>
-                  <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={PROFESSIONAL_COLORS.danger} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={PROFESSIONAL_COLORS.danger} stopOpacity={0.1}/>
+                  <linearGradient id="expenseLineGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={PROFESSIONAL_COLORS.danger} stopOpacity={0.8}/>
+                    <stop offset="100%" stopColor={PROFESSIONAL_COLORS.danger} stopOpacity={0.2}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid 
-                  strokeDasharray="3 3" 
+                  strokeDasharray="2 2" 
                   stroke="hsl(var(--muted-foreground))" 
-                  opacity={0.3}
+                  opacity={0.2}
                 />
                 <XAxis 
                   dataKey="month" 
                   tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
+                  tickLine={{ stroke: 'hsl(var(--border))' }}
                 />
                 <YAxis 
                   tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
+                  tickLine={{ stroke: 'hsl(var(--border))' }}
                   tickFormatter={formatCompactCurrency}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="income"
                   name="Entrate"
                   stroke={PROFESSIONAL_COLORS.success}
-                  fill="url(#incomeGradient)"
-                  strokeWidth={2}
+                  strokeWidth={3}
+                  dot={{ fill: PROFESSIONAL_COLORS.success, strokeWidth: 2, r: 6 }}
+                  activeDot={{ r: 8, stroke: PROFESSIONAL_COLORS.success, strokeWidth: 2 }}
                 />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="expense"
                   name="Uscite"
                   stroke={PROFESSIONAL_COLORS.danger}
-                  fill="url(#expenseGradient)"
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="net"
-                  name="Saldo Netto"
-                  stroke={PROFESSIONAL_COLORS.info}
                   strokeWidth={3}
-                  dot={{ fill: PROFESSIONAL_COLORS.info, strokeWidth: 2, r: 4 }}
+                  dot={{ fill: PROFESSIONAL_COLORS.danger, strokeWidth: 2, r: 6 }}
+                  activeDot={{ r: 8, stroke: PROFESSIONAL_COLORS.danger, strokeWidth: 2 }}
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Top Ragioni Sociali */}
+        {/* Top Ragioni Sociali - Entrate */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Top Ragioni Sociali
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              Top Ragioni Sociali - Entrate
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={chartData.companies} layout="horizontal" margin={{ top: 5, right: 30, left: 120, bottom: 5 }}>
+              <BarChart data={chartData.incomeCompanies} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid 
-                  strokeDasharray="3 3" 
+                  strokeDasharray="2 2" 
                   stroke="hsl(var(--muted-foreground))" 
-                  opacity={0.3}
+                  opacity={0.2}
                 />
                 <XAxis 
-                  type="number" 
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  tickFormatter={formatCompactCurrency}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <YAxis 
-                  type="category" 
                   dataKey="name" 
                   tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                  width={120}
+                  interval={0}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  height={50}
+                />
+                <YAxis 
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg p-3">
+                        <p className="font-medium text-foreground mb-2">{label}</p>
+                        <p className="text-sm text-green-600">
+                          <span className="font-medium">Operazioni:</span> {payload[0].value}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }} />
                 <Bar 
-                  dataKey="total" 
-                  fill={PROFESSIONAL_COLORS.info} 
-                  radius={[0, 4, 4, 0]}
-                  name="Volume Totale"
+                  dataKey="count" 
+                  fill={PROFESSIONAL_COLORS.success} 
+                  radius={[4, 4, 0, 0]}
+                  name="N° Operazioni Entrate"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Top Ragioni Sociali - Uscite */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-red-600" />
+              Top Ragioni Sociali - Uscite
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={chartData.expenseCompanies} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid 
+                  strokeDasharray="2 2" 
+                  stroke="hsl(var(--muted-foreground))" 
+                  opacity={0.2}
+                />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  interval={0}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  height={50}
+                />
+                <YAxis 
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <Tooltip content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg p-3">
+                        <p className="font-medium text-foreground mb-2">{label}</p>
+                        <p className="text-sm text-red-600">
+                          <span className="font-medium">Operazioni:</span> {payload[0].value}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }} />
+                <Bar 
+                  dataKey="count" 
+                  fill={PROFESSIONAL_COLORS.danger} 
+                  radius={[4, 4, 0, 0]}
+                  name="N° Operazioni Uscite"
                 />
               </BarChart>
             </ResponsiveContainer>
