@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { ThemeProvider } from "@/lib/theme-provider";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
+// ErrorBoundary removed - using try-catch instead
 import Sidebar from "@/components/layout/sidebar";
 import { BottomNavigation } from "@/components/mobile/mobile-navigation";
 import Dashboard from "@/pages/dashboard-professional";
@@ -90,8 +90,23 @@ function Router() {
 }
 
 export default function App() {
+  console.log('[APP] App component starting...', { React: !!React, useState: !!React?.useState });
+  
+  // Minimal test render first
+  if (window.location.search.includes('debug=simple')) {
+    return (
+      <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+        <h1>🟢 App funziona!</h1>
+        <p>React: {React ? '✅' : '❌'}</p>
+        <p>useState: {React?.useState ? '✅' : '❌'}</p>
+        <button onClick={() => window.location.reload()}>Ricarica</button>
+      </div>
+    );
+  }
+  
   // Safety check: ensure React is properly loaded
   if (!React || typeof React.useState !== 'function') {
+    console.error('[APP] React hooks not available!', { React, useState: React?.useState });
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -102,8 +117,10 @@ export default function App() {
     );
   }
 
-  return (
-    <ErrorBoundary>
+  console.log('[APP] Rendering main app structure...');
+  
+  try {
+    return (
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="easycashflow-theme">
           <AuthProvider>
@@ -114,6 +131,22 @@ export default function App() {
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
-    </ErrorBoundary>
-  );
+    );
+  } catch (error) {
+    console.error('[APP] Fatal rendering error:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-red-50">
+        <div className="text-center p-6 bg-white rounded-lg shadow-lg">
+          <h2 className="text-xl font-semibold mb-2 text-red-600">Errore dell'applicazione</h2>
+          <p className="text-gray-600 mb-4">Si è verificato un errore durante il caricamento</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Ricarica pagina
+          </button>
+        </div>
+      </div>
+    );
+  }
 }

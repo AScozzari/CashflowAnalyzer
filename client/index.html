@@ -6,9 +6,7 @@
     <title>EasyCashFlows - Gestione Flussi Finanziari</title>
     <meta name="description" content="Sistema avanzato di gestione flussi finanziari per PMI italiane con analytics predittive e integrazione FatturaPA" />
     
-    <!-- IFRAME COMPATIBILITY for Replit preview -->
-    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' *.replit.dev *.repl.co">
-    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <!-- Meta CSP not needed - handled in server headers -->
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -26,17 +24,20 @@
     
     <!-- React/Hook stability script -->
     <script>
-      // CRITICAL: Ensure React context is stable for iframe/reload scenarios
+      // CRITICAL: Ensure React context is stable for iframe/reload scenarios  
       window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
-      window.__REACT_STRICT_MODE__ = false; // Prevent double-rendering that causes hook errors
+      window.__REACT_STRICT_MODE__ = false; // Prevent double-rendering
       
-      // Hook availability check
-      window.checkReactReady = function() {
-        return window.React && typeof window.React.useState === 'function';
-      };
-      
+      // Iframe detection and logging
       console.log('[IFRAME CHECK] In iframe:', window.self !== window.top);
       console.log('[IFRAME CHECK] Parent origin:', document.referrer);
+      
+      // CRITICAL: Prevent reload crashes in iframe context
+      if (window.self !== window.top) {
+        console.log('[IFRAME] Replit preview detected - applying stability fixes');
+        // Longer initialization delays for iframe context
+        window.__IFRAME_CONTEXT__ = true;
+      }
     </script>
   </head>
   <body>

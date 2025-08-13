@@ -31,4 +31,26 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+console.log('[MAIN] Starting app initialization...');
+
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  console.error('[MAIN] Root element not found!');
+} else {
+  console.log('[MAIN] Root element found, creating React root...');
+  try {
+    const root = createRoot(rootElement);
+    console.log('[MAIN] React root created, rendering App...');
+    root.render(<App />);
+    console.log('[MAIN] App render called successfully');
+  } catch (error) {
+    console.error('[MAIN] Error creating/rendering app:', error);
+    rootElement.innerHTML = `
+      <div style="padding: 20px; text-align: center; font-family: Arial;">
+        <h2 style="color: red;">Errore di inizializzazione</h2>
+        <p>Errore: ${error.message}</p>
+        <button onclick="window.location.reload()">Ricarica</button>
+      </div>
+    `;
+  }
+}

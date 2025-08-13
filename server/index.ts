@@ -16,8 +16,18 @@ app.use((req, res, next) => {
     console.log(`[NETWORK] ${req.method} ${req.path} from ${origin || 'same-origin'} via ${host} ${isIframe ? '(IFRAME)' : '(DIRECT)'}`);
   }
   
-  // CRITICAL: Allow iframe embedding for Replit preview
+  // CRITICAL: Allow iframe embedding for Replit preview - MUST override later headers
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  
+  // Override any later X-Frame-Options by monitoring response
+  const originalSetHeader = res.setHeader;
+  res.setHeader = function(name: string, value: any) {
+    if (name.toLowerCase() === 'x-frame-options' && value === 'DENY') {
+      console.log('[IFRAME] Blocking X-Frame-Options DENY - keeping SAMEORIGIN');
+      return originalSetHeader.call(this, name, 'SAMEORIGIN');
+    }
+    return originalSetHeader.call(this, name, value);
+  };
   
   // CORS for both iframe and direct access
   res.header('Access-Control-Allow-Origin', '*');
