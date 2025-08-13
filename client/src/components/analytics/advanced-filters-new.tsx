@@ -206,7 +206,7 @@ export default function AdvancedFiltersNew({
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="px-4 pb-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {children}
         </div>
       </CollapsibleContent>
@@ -214,10 +214,10 @@ export default function AdvancedFiltersNew({
   );
 
   // Count active filters per section
-  const organizationFilters = [filters.companyId, filters.coreId, filters.resourceId, filters.officeId].filter(Boolean).length;
-  const financialFilters = [filters.type, filters.amountFrom, filters.amountTo, filters.statusId, filters.reasonId].filter(Boolean).length;
-  const externalFilters = [filters.supplierId, filters.customerId, filters.ibanId].filter(Boolean).length;
-  const advancedFilters = [filters.vatType, filters.hasVat, filters.hasDocument, ...(filters.tagIds || [])].filter(Boolean).length;
+  const organizationFilters = [filters.companyId, filters.coreId, filters.officeId].filter(Boolean).length;
+  const financialFilters = [filters.type, filters.amountFrom, filters.amountTo, filters.ibanId].filter(Boolean).length;
+  const externalFilters = [filters.supplierId, filters.resourceId, filters.customerId].filter(Boolean).length;
+  const advancedFilters = [filters.statusId, filters.reasonId, filters.vatType, filters.hasVat, filters.hasDocument, ...(filters.tagIds || [])].filter(Boolean).length;
 
   return (
     <Card>
@@ -353,37 +353,19 @@ export default function AdvancedFiltersNew({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Risorsa</Label>
-              <Select 
-                value={filters.resourceId || 'all'} 
-                onValueChange={(value) => updateFilter('resourceId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tutte le risorse" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le risorse</SelectItem>
-                  {(resources as any[])?.map((resource: any) => (
-                    <SelectItem key={resource.id} value={resource.id}>
-                      {resource.firstName} {resource.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
 
             <div className="space-y-2">
-              <Label>Ufficio Operativo</Label>
+              <Label>Sede Operativa</Label>
               <Select 
                 value={filters.officeId || 'all'} 
                 onValueChange={(value) => updateFilter('officeId', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Tutti gli uffici" />
+                  <SelectValue placeholder="Tutte le sedi" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti gli uffici</SelectItem>
+                  <SelectItem value="all">Tutte le sedi</SelectItem>
                   {(offices as any[])?.map((office: any) => (
                     <SelectItem key={office.id} value={office.id}>
                       {office.name}
@@ -440,6 +422,107 @@ export default function AdvancedFiltersNew({
             </div>
 
             <div className="space-y-2">
+              <Label>IBAN</Label>
+              <Select 
+                value={filters.ibanId || 'all'} 
+                onValueChange={(value) => updateFilter('ibanId', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Tutti gli IBAN" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti gli IBAN</SelectItem>
+                  {(ibans as any[])?.map((iban: any) => (
+                    <SelectItem key={iban.id} value={iban.id}>
+                      {iban.bankName} - {iban.iban.slice(-4)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </FilterSection>
+
+          {/* External Relations Section */}
+          <FilterSection
+            title="Relazioni Esterne"
+            icon={Users}
+            isExpanded={sectionsExpanded.external}
+            onToggle={() => toggleSection('external')}
+            activeCount={externalFilters}
+          >
+            <div className="space-y-2">
+              <Label>Fornitore</Label>
+              <Select 
+                value={filters.supplierId || 'all'} 
+                onValueChange={(value) => updateFilter('supplierId', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Tutti i fornitori" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i fornitori</SelectItem>
+                  {(suppliers as any[])?.map((supplier: any) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Risorsa</Label>
+              <Select 
+                value={filters.resourceId || 'all'} 
+                onValueChange={(value) => updateFilter('resourceId', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Tutte le risorse" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le risorse</SelectItem>
+                  {(resources as any[])?.map((resource: any) => (
+                    <SelectItem key={resource.id} value={resource.id}>
+                      {resource.firstName} {resource.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Cliente</Label>
+              <Select 
+                value={filters.customerId || 'all'} 
+                onValueChange={(value) => updateFilter('customerId', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Tutti i clienti" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i clienti</SelectItem>
+                  {(customers as any[])?.map((customer: any) => (
+                    <SelectItem key={customer.id} value={customer.id}>
+                      {customer.type === 'private' 
+                        ? `${customer.firstName} ${customer.lastName}`.trim()
+                        : customer.name
+                      }
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </FilterSection>
+
+          {/* Advanced Section */}
+          <FilterSection
+            title="Filtri Avanzati"
+            icon={FileText}
+            isExpanded={sectionsExpanded.advanced}
+            onToggle={() => toggleSection('advanced')}
+            activeCount={advancedFilters}
+          >
+            <div className="space-y-2">
               <Label>Stato</Label>
               <Select 
                 value={filters.statusId || 'all'} 
@@ -478,88 +561,7 @@ export default function AdvancedFiltersNew({
                 </SelectContent>
               </Select>
             </div>
-          </FilterSection>
 
-          {/* External Relations Section */}
-          <FilterSection
-            title="Relazioni Esterne"
-            icon={Users}
-            isExpanded={sectionsExpanded.external}
-            onToggle={() => toggleSection('external')}
-            activeCount={externalFilters}
-          >
-            <div className="space-y-2">
-              <Label>Fornitore</Label>
-              <Select 
-                value={filters.supplierId || 'all'} 
-                onValueChange={(value) => updateFilter('supplierId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tutti i fornitori" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti i fornitori</SelectItem>
-                  {(suppliers as any[])?.map((supplier: any) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Cliente</Label>
-              <Select 
-                value={filters.customerId || 'all'} 
-                onValueChange={(value) => updateFilter('customerId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tutti i clienti" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti i clienti</SelectItem>
-                  {(customers as any[])?.map((customer: any) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.type === 'private' 
-                        ? `${customer.firstName} ${customer.lastName}`.trim()
-                        : customer.name
-                      }
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>IBAN</Label>
-              <Select 
-                value={filters.ibanId || 'all'} 
-                onValueChange={(value) => updateFilter('ibanId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tutti gli IBAN" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti gli IBAN</SelectItem>
-                  {(ibans as any[])?.map((iban: any) => (
-                    <SelectItem key={iban.id} value={iban.id}>
-                      {iban.bankName} - {iban.iban.slice(-4)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </FilterSection>
-
-          {/* Advanced Section */}
-          <FilterSection
-            title="Filtri Avanzati"
-            icon={FileText}
-            isExpanded={sectionsExpanded.advanced}
-            onToggle={() => toggleSection('advanced')}
-            activeCount={advancedFilters}
-          >
             <div className="space-y-2">
               <Label>Tipo IVA</Label>
               <Select 

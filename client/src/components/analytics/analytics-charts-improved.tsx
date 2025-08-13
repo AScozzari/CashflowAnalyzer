@@ -398,14 +398,7 @@ export default function AnalyticsChartsImproved({ movements, isLoading }: Analyt
                   fill="#ef4444"
                   fillOpacity={0.6}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="net"
-                  name="Saldo Netto"
-                  stroke="#3b82f6"
-                  strokeWidth={3}
-                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                />
+
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
