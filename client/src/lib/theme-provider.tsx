@@ -26,18 +26,31 @@ export function ThemeProvider({
   storageKey = "easycashflow-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
+  // CRITICAL FIX: Ensure useState is available before using it
+  if (!React || !React.useState) {
+    console.error('[THEME] React.useState not available, falling back to simple provider');
+    return (
+      <ThemeProviderContext.Provider value={{ theme: defaultTheme, setTheme: () => {} }}>
+        <div className={defaultTheme === 'dark' ? 'dark' : 'light'}>
+          {children}
+        </div>
+      </ThemeProviderContext.Provider>
+    );
+  }
+
+  console.log('[THEME] ThemeProvider initializing with hooks...');
+  const [theme, setTheme] = React.useState<Theme>(() => {
     try {
       if (typeof window !== "undefined" && window.localStorage) {
         return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
       }
     } catch (error) {
-      console.warn('localStorage not available:', error);
+      console.warn('[THEME] localStorage not available:', error);
     }
     return defaultTheme;
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     try {
       if (typeof window === "undefined" || !window.document) return;
       
