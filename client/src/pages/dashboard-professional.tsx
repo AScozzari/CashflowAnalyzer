@@ -55,40 +55,57 @@ function DashboardChart({ title, subtitle, movements, isLoading, type }: {
   type: 'cashflow' | 'status';
 }) {
   const chartData = useMemo(() => {
-    if (!movements.length) return [];
+    // Safety check: ensure movements is an array
+    if (!Array.isArray(movements) || movements.length === 0) return [];
     
-    if (type === 'cashflow') {
-      // Group by date for cash flow chart
-      const groupedByDate = movements.reduce((acc, movement) => {
-        const date = format(new Date(movement.flowDate || movement.insertDate), 'dd/MM', { locale: it });
-        if (!acc[date]) {
-          acc[date] = { date, entrate: 0, uscite: 0 };
-        }
+    try {
+      if (type === 'cashflow') {
+        // Group by date for cash flow chart with error handling
+        const groupedByDate = movements.reduce((acc, movement) => {
+          if (!movement || !movement.flowDate) return acc;
+          
+          try {
+            const date = format(new Date(movement.flowDate), 'dd/MM', { locale: it });
+            if (!acc[date]) {
+              acc[date] = { date, entrate: 0, uscite: 0 };
+            }
+            
+            const amount = parseFloat(movement.amount || '0');
+            if (isNaN(amount)) return acc;
+            
+            if (movement.type === 'income') {
+              acc[date].entrate += amount;
+            } else if (movement.type === 'expense') {
+              acc[date].uscite += amount;
+            }
+            
+            return acc;
+          } catch (error) {
+            console.warn('Error processing movement for chart:', error);
+            return acc;
+          }
+        }, {} as Record<string, any>);
         
-        const amount = parseFloat(movement.amount);
-        if (movement.type === 'income') {
-          acc[date].entrate += amount;
-        } else {
-          acc[date].uscite += amount;
-        }
+        return Object.values(groupedByDate).slice(-7); // Last 7 days
+      } else {
+        // Group by status for pie chart with error handling
+        const statusCount = movements.reduce((acc, movement) => {
+          if (!movement) return acc;
+          
+          const status = movement.status?.name || 'Da Saldare';
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
         
-        return acc;
-      }, {} as Record<string, any>);
-      
-      return Object.values(groupedByDate).slice(-7); // Last 7 days
-    } else {
-      // Group by status for pie chart
-      const statusCount = movements.reduce((acc, movement) => {
-        const status = movement.status?.name || 'Da Saldare';
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      return Object.entries(statusCount).map(([name, value]) => ({
-        name,
-        value,
-        fill: CHART_COLORS[name as keyof typeof CHART_COLORS] || '#6B7280'
-      }));
+        return Object.entries(statusCount).map(([name, value]) => ({
+          name,
+          value,
+          fill: CHART_COLORS[name as keyof typeof CHART_COLORS] || '#6B7280'
+        }));
+      }
+    } catch (error) {
+      console.error('Error generating chart data:', error);
+      return [];
     }
   }, [movements, type]);
 
@@ -205,14 +222,36 @@ function EnhancedStatsGrid({ data, isLoading, movements }: { data: any; isLoadin
     );
   }
 
-  // Calculate current month stats from filtered movements
+  // Calculate current month stats from filtered movements with safety checks
   const currentMonthStats = useMemo(() => {
-    const income = movements.filter(m => m.type === 'income').reduce((sum, m) => sum + parseFloat(m.amount), 0);
-    const expenses = movements.filter(m => m.type === 'expense').reduce((sum, m) => sum + parseFloat(m.amount), 0);
-    const netFlow = income - expenses;
-    const movementCount = movements.length;
+    // Safety check: ensure movements is an array
+    if (!Array.isArray(movements) || movements.length === 0) {
+      return { income: 0, expenses: 0, netFlow: 0, movementCount: 0 };
+    }
     
-    return { income, expenses, netFlow, movementCount };
+    try {
+      const income = movements
+        .filter(m => m && m.type === 'income' && m.amount)
+        .reduce((sum, m) => {
+          const amount = parseFloat(m.amount);
+          return isNaN(amount) ? sum : sum + amount;
+        }, 0);
+        
+      const expenses = movements
+        .filter(m => m && m.type === 'expense' && m.amount)
+        .reduce((sum, m) => {
+          const amount = parseFloat(m.amount);
+          return isNaN(amount) ? sum : sum + amount;
+        }, 0);
+        
+      const netFlow = income - expenses;
+      const movementCount = movements.length;
+      
+      return { income, expenses, netFlow, movementCount };
+    } catch (error) {
+      console.error('Error calculating current month stats:', error);
+      return { income: 0, expenses: 0, netFlow: 0, movementCount: 0 };
+    }
   }, [movements]);
 
   const stats = [
@@ -404,7 +443,7 @@ function ProfessionalRecentMovements({ movements, isLoading }: { movements: Move
         </div>
       </CardHeader>
       <CardContent>
-        {movements.length === 0 ? (
+        {!Array.isArray(movements) || movements.length === 0 ? (
           <div className="text-center py-12">
             <div className="p-4 rounded-full bg-muted/30 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <FileText className="w-8 h-8 text-muted-foreground/50" />
@@ -656,17 +695,40 @@ export default function DashboardProfessional() {
     gcTime: 5 * 60 * 1000,
   });
 
-  // Process movements for display - filter by current month
+  // Process movements for display - filter by current month with safety checks
   const movements = useMemo(() => {
-    if (!movementsData || !Array.isArray(movementsData.data)) return [];
+    // Safety check: ensure movementsData exists and has proper structure
+    if (!movementsData || typeof movementsData !== 'object') {
+      return [];
+    }
     
-    // Filter movements to show only current month
-    const currentMonthMovements = movementsData.data.filter((movement: MovementWithRelations) => {
-      const movementDate = new Date(movement.flowDate || movement.insertDate);
-      return movementDate.getMonth() === currentMonth && movementDate.getFullYear() === currentYear;
-    });
+    // Safety check: ensure data property exists and is an array
+    if (!movementsData.data || !Array.isArray(movementsData.data)) {
+      return [];
+    }
     
-    return currentMonthMovements.slice(0, 10); // Show top 10 current month movements
+    try {
+      // Filter movements to show only current month with error handling
+      const currentMonthMovements = movementsData.data.filter((movement: MovementWithRelations) => {
+        if (!movement || !movement.flowDate) return false;
+        
+        try {
+          const movementDate = new Date(movement.flowDate);
+          // Validate date is valid
+          if (isNaN(movementDate.getTime())) return false;
+          
+          return movementDate.getMonth() === currentMonth && movementDate.getFullYear() === currentYear;
+        } catch (error) {
+          console.warn('Error processing movement date:', error);
+          return false;
+        }
+      });
+      
+      return currentMonthMovements.slice(0, 10); // Show top 10 current month movements
+    } catch (error) {
+      console.error('Error filtering movements:', error);
+      return [];
+    }
   }, [movementsData, currentMonth, currentYear]);
 
   return (
