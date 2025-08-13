@@ -166,20 +166,20 @@ export default function Movements() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Data Inserimento</TableHead>
-                      <TableHead>Data Flusso</TableHead>
-                      <TableHead>Ragione Sociale</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Core</TableHead>
-                      <TableHead>Risorsa</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Fornitore</TableHead>
-                      <TableHead>Causale</TableHead>
-                      <TableHead>Importo Totale</TableHead>
-                      <TableHead>Importo IVA</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead>File</TableHead>
-                      <TableHead className="text-center">Azioni</TableHead>
+                      <TableHead className="w-20">Data Inserimento</TableHead>
+                      <TableHead className="w-20">Data Flusso</TableHead>
+                      <TableHead className="w-40">Ragione Sociale</TableHead>
+                      <TableHead className="w-16">Tipo</TableHead>
+                      <TableHead className="w-24">Core</TableHead>
+                      <TableHead className="w-28">Risorsa</TableHead>
+                      <TableHead className="w-28">Cliente</TableHead>
+                      <TableHead className="w-28">Fornitore</TableHead>
+                      <TableHead className="w-32">Causale</TableHead>
+                      <TableHead className="w-24">Importo Totale</TableHead>
+                      <TableHead className="w-20">Importo IVA</TableHead>
+                      <TableHead className="w-20">Stato</TableHead>
+                      <TableHead className="w-12">File</TableHead>
+                      <TableHead className="w-16 text-center">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -309,32 +309,30 @@ export default function Movements() {
                         </TableCell>
                         
                         {/* File */}
-                        <TableCell>
-                          {movement.fileName ? (
-                            <div className="flex items-center gap-1">
-                              <Paperclip className="h-3 w-3" />
-                              <span className="text-xs truncate max-w-20" title={movement.fileName}>
-                                {movement.fileName}
-                              </span>
+                        <TableCell className="w-20">
+                          {movement.fileName || movement.documentPath ? (
+                            <div className="flex items-center justify-center">
+                              {movement.documentPath ? (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  title={`Scarica: ${movement.fileName || 'documento'}`}
+                                  onClick={() => {
+                                    window.open(`/api/movements/${movement.id}/document`, '_blank');
+                                  }}
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <Paperclip className="h-4 w-4 text-gray-500" />
+                              )}
                             </div>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-400 text-center block">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center space-x-2">
-                            {movement.documentPath && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                title="Scarica documento allegato"
-                                onClick={() => {
-                                  window.open(`/api/movements/${movement.id}/document`, '_blank');
-                                }}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            )}
+                        <TableCell className="text-center w-24">
+                          <div className="flex items-center justify-center space-x-1">
                             <Button 
                               variant="ghost" 
                               size="sm"
@@ -345,16 +343,6 @@ export default function Movements() {
                               }}
                             >
                               <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => {
-                                setEditingMovement(movement);
-                                setIsFormOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
