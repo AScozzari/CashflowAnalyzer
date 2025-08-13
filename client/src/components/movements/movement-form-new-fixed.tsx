@@ -172,16 +172,17 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
     mutationFn: async (data: MovementFormData) => {
       const formData = new FormData();
       
-      // Add form data
+      // Add form data (excluding file-related fields)
       Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined && value !== "") {
+        if (key !== 'fileName' && value !== undefined && value !== "") {
           formData.append(key, value.toString());
         }
       });
       
       // Add file if uploaded
       if (uploadedFile) {
-        formData.append("file", uploadedFile);
+        formData.append("document", uploadedFile);
+        formData.append("fileName", uploadedFile.name);
       }
       
       const response = await fetch("/api/movements", {
@@ -218,13 +219,14 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
       const formData = new FormData();
       
       Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined && value !== "") {
+        if (key !== 'fileName' && value !== undefined && value !== "") {
           formData.append(key, value.toString());
         }
       });
       
       if (uploadedFile) {
-        formData.append("file", uploadedFile);
+        formData.append("document", uploadedFile);
+        formData.append("fileName", uploadedFile.name);
       }
       
       const response = await fetch(`/api/movements/${movement?.id}`, {
@@ -511,12 +513,13 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                             Cliente
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
                               onClick={() => {/* TODO: Aprire modal nuovo cliente */}}
+                              className="h-6 w-6 p-0"
+                              title="Crea nuovo cliente"
                             >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Nuovo
+                              <Plus className="h-3 w-3" />
                             </Button>
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
@@ -555,12 +558,13 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                             Fornitore
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
                               onClick={() => {/* TODO: Aprire modal nuovo fornitore */}}
+                              className="h-6 w-6 p-0"
+                              title="Crea nuovo fornitore"
                             >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Nuovo
+                              <Plus className="h-3 w-3" />
                             </Button>
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
@@ -813,6 +817,13 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                   />
                 </div>
 
+                {/* XML Upload - Solo per spese, in alto */}
+                {watchedType === "expense" && (
+                  <div className="flex justify-end mb-4">
+                    <CompactXMLUploader onDataParsed={handleXMLDataParsed} />
+                  </div>
+                )}
+
                 {/* File Upload */}
                 <div className="space-y-2">
                   <FormLabel>Documenti</FormLabel>
@@ -823,9 +834,6 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                       onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
                       className="flex-1"
                     />
-                    {watchedType === "expense" && (
-                      <CompactXMLUploader onDataParsed={handleXMLDataParsed} />
-                    )}
                   </div>
                   {uploadedFile && (
                     <p className="text-xs text-muted-foreground">
