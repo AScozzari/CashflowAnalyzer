@@ -92,7 +92,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// IFRAME SPECIFIC ROUTING: Must be before general routing
+// REMOVED: No iframe specific routing - serve React app always
+/*
 app.get('/', (req, res, next) => {
   if ((req as any).isIframe) {
     console.log('[IFRAME] Serving direct HTML response');
@@ -193,6 +194,7 @@ app.get('/', (req, res, next) => {
   }
   next(); // Continue to normal flow for non-iframe requests
 });
+*/
 
 (async () => {
   const server = await registerRoutes(app);
