@@ -142,13 +142,13 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
       
       // Calcolo IVA inclusa: IVA = (Totale * Aliquota) / (100 + Aliquota)
       switch (watchedVatType) {
-        case "22%":
+        case "iva_22":
           vatAmount = (totalAmount * 22) / 122;
           break;
-        case "10%":
+        case "iva_10":
           vatAmount = (totalAmount * 10) / 110;
           break;
-        case "4%":
+        case "iva_4":
           vatAmount = (totalAmount * 4) / 104;
           break;
         default:
@@ -274,7 +274,16 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
   const handleXMLDataParsed = (data: any) => {
     if (data.importo) form.setValue("amount", data.importo.toString());
     if (data.documento) form.setValue("documentNumber", data.documento);
-    if (data.iva) form.setValue("vatType", data.iva);
+    if (data.iva) {
+      // Mappatura da percentuale a enum
+      const vatMapping: Record<string, string> = {
+        "22%": "iva_22",
+        "10%": "iva_10", 
+        "4%": "iva_4",
+        "0%": "esente"
+      };
+      form.setValue("vatType", vatMapping[data.iva] || "iva_22");
+    }
     if (data.fornitore && suppliers.length > 0) {
       const supplier = suppliers.find(s => 
         s.name?.toLowerCase().includes(data.fornitore.toLowerCase()) ||
@@ -762,10 +771,10 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="22%">22% (Standard)</SelectItem>
-                            <SelectItem value="10%">10% (Ridotta)</SelectItem>
-                            <SelectItem value="4%">4% (Super ridotta)</SelectItem>
-                            <SelectItem value="0%">0% (Esente)</SelectItem>
+                            <SelectItem value="iva_22">22% (Standard)</SelectItem>
+                            <SelectItem value="iva_10">10% (Ridotta)</SelectItem>
+                            <SelectItem value="iva_4">4% (Super ridotta)</SelectItem>
+                            <SelectItem value="esente">0% (Esente)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
