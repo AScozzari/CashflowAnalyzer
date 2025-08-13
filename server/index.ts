@@ -107,9 +107,35 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
+  
+  // Enhanced server startup with network diagnostics
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
     console.log(`🚀 EasyCashFlows server ready at http://0.0.0.0:${port}`);
-    console.log(`🌐 Replit URL: https://${process.env.REPLIT_DEV_DOMAIN || process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'}`);
+    
+    // Construct Replit URL properly
+    let replitUrl = '';
+    if (process.env.REPLIT_DEV_DOMAIN) {
+      replitUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+    } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+      replitUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+    } else {
+      replitUrl = `http://localhost:${port}`;
+    }
+    
+    console.log(`🌐 Replit URL: ${replitUrl}`);
+    console.log(`📡 Server listening on all interfaces (0.0.0.0:${port})`);
+    console.log(`🔒 CORS configured for Replit domain`);
+    
+    // Health check endpoint response
+    console.log(`💚 Health check: GET ${replitUrl}/api/auth/user`);
+    
+    // Network debugging information
+    console.log(`[NETWORK DEBUG] Environment variables:`);
+    console.log(`  - REPLIT_DEV_DOMAIN: ${process.env.REPLIT_DEV_DOMAIN}`);
+    console.log(`  - REPL_SLUG: ${process.env.REPL_SLUG}`);
+    console.log(`  - REPL_OWNER: ${process.env.REPL_OWNER}`);
+    console.log(`  - PORT: ${process.env.PORT}`);
+    console.log(`[NETWORK DEBUG] Server binding check completed successfully`);
   });
 })();
