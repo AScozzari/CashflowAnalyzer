@@ -89,12 +89,11 @@ function Router() {
   );
 }
 
-export default function App() {
+function App() {
   console.log('[APP] EasyCashFlows starting - CLEAN VERSION...');
   
   // SIMPLIFIED: No complex error handling initially
   try {
-
     console.log('[APP] Rendering main app structure...');
     return (
       <QueryClientProvider client={queryClient}>
@@ -119,3 +118,5 @@ export default function App() {
     );
   }
 }
+
+export default App;
