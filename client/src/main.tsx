@@ -36,25 +36,38 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Wait for DOM to be ready and React to be fully initialized
+// CRITICAL FIX: Ensure React and hooks are ready before rendering
 const initializeApp = () => {
   try {
+    // Validate React is fully loaded with hooks
+    if (!React.useState || !React.useEffect || !React.createContext) {
+      console.warn('React hooks not ready, retrying...');
+      setTimeout(initializeApp, 50);
+      return;
+    }
+    
     const rootElement = document.getElementById("root");
     if (!rootElement) {
       throw new Error("Root element not found");
     }
     
+    console.log('React hooks validated, initializing app...');
     const root = createRoot(rootElement);
     root.render(<App />);
   } catch (error) {
     console.error("Failed to initialize app:", error);
-    // Retry after a short delay
-    setTimeout(initializeApp, 100);
+    // Retry with longer delay to allow React to fully load
+    setTimeout(initializeApp, 200);
   }
 };
 
+// Enhanced initialization sequence
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeApp);
+  document.addEventListener('DOMContentLoaded', () => {
+    // Add extra delay for React to be ready
+    setTimeout(initializeApp, 100);
+  });
 } else {
-  initializeApp();
+  // Document ready, but still wait for React
+  setTimeout(initializeApp, 50);
 }

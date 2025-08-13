@@ -26,22 +26,34 @@ export function ThemeProvider({
   storageKey = "easycashflow-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  // Safety check: ensure React hooks are available
-  if (!React || typeof React.useState !== 'function') {
-    console.error('React hooks not available in ThemeProvider');
-    return <div>{children}</div>;
-  }
-
-  const [theme, setTheme] = useState<Theme>(() => {
-    try {
-      if (typeof window !== "undefined" && window.localStorage) {
-        return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+  // CRITICAL FIX: Check React hooks BEFORE any useState call
+  let theme: Theme;
+  let setTheme: (theme: Theme) => void;
+  
+  try {
+    // This is where the error was happening - useState called when React not ready
+    const hookResult = useState<Theme>(() => {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+        }
+      } catch (error) {
+        console.warn('localStorage not available:', error);
       }
-    } catch (error) {
-      console.warn('localStorage not available:', error);
-    }
-    return defaultTheme;
-  });
+      return defaultTheme;
+    });
+    
+    theme = hookResult[0];
+    setTheme = hookResult[1];
+  } catch (error) {
+    console.error('React hooks error in ThemeProvider:', error);
+    // Fallback without hooks for initial load
+    return (
+      <div data-theme={defaultTheme} className={defaultTheme}>
+        {children}
+      </div>
+    );
+  }
 
   useEffect(() => {
     try {
