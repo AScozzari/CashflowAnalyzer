@@ -5,9 +5,9 @@ import { it } from "date-fns/locale";
 
 import Header from "@/components/layout/header";
 import FooterSignature from "@/components/layout/footer-signature";
-import AdvancedFilters, { type AnalyticsFilters } from "@/components/analytics/advanced-filters";
+import AdvancedFiltersNew, { type AnalyticsFilters } from "@/components/analytics/advanced-filters-new";
 import AnalyticsTable from "@/components/analytics/analytics-table";
-import AnalyticsCharts from "@/components/analytics/analytics-charts";
+import AnalyticsChartsImproved from "@/components/analytics/analytics-charts-improved";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Analytics() {
@@ -154,22 +154,20 @@ export default function Analytics() {
       
       <div className="p-4 lg:p-6 space-y-6">
         {/* Advanced Filters - Responsive */}
-        <div className="bg-card rounded-lg shadow-sm border p-4 lg:p-6">
-          <AdvancedFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onApplyFilters={handleApplyFilters}
-            onResetFilters={handleResetFilters}
-            isLoading={isLoading}
-          />
-        </div>
+        <AdvancedFiltersNew
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onApplyFilters={handleApplyFilters}
+          onResetFilters={handleResetFilters}
+          isLoading={isLoading}
+        />
 
         {/* Results Section */}
         {movementsData && (
           <>
             {/* Analytics Charts - Responsive */}
             <div className="bg-card rounded-lg shadow-sm border p-4 lg:p-6">
-              <AnalyticsCharts 
+              <AnalyticsChartsImproved 
                 movements={(movementsData as any)?.data || []}
                 isLoading={isLoading}
               />
