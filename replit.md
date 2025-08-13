@@ -1,6 +1,6 @@
 # Overview
 
-The CashFlow Management System is a production-ready, full-stack financial tracking application designed for Italian businesses. It enables comprehensive management and tracking of financial flows (income/expenses) and related entities such as companies, business cores, resources, IBANs, operational offices, tags, and movement statuses. Key capabilities include a dashboard with analytics, robust movement management with file and XML invoice uploads, and configurable entities via a settings interface. The system supports multi-role authentication (Admin, Finance, User) and integrates VAT handling. The project's ambition is to provide a comprehensive, intuitive, and secure solution for financial oversight, enhancing business efficiency and compliance.
+EasyCashFlows is a comprehensive financial management system designed for Italian small and medium enterprises (SMEs). It provides advanced cash flow tracking, analytics, and integrations with Italian fiscal requirements including FatturaPA (electronic invoicing). The application features a React-based frontend with a modern dashboard, authentication system, file upload capabilities, and comprehensive financial movement tracking with predictive analytics.
 
 # User Preferences
 
@@ -9,46 +9,69 @@ Preferred communication style: Simple, everyday language.
 # System Architecture
 
 ## Frontend Architecture
-- **Framework**: React 18 with TypeScript and Vite.
-- **Routing**: Wouter for client-side routing.
-- **State Management**: TanStack Query (React Query) for server state management and API caching.
-- **UI Components**: Radix UI primitives and shadcn/ui for a consistent design system.
-- **Styling**: Tailwind CSS with CSS variables for theming and responsive design, supporting dark/light themes.
-- **Forms**: React Hook Form with Zod for validation and type safety.
-- **Charts**: Recharts for data visualization.
-- **UI/UX Decisions**: Professional dashboard redesign with enhanced responsiveness, gradient stats cards, detailed movement cards, and quick actions. Modals are responsive and support dark themes. Settings page features horizontal navigation and tabbed interfaces. CAP (postal code) fields are standardized and auto-populated based on city selection across all entity forms, utilizing an extensive Italian municipalities database. Movement modal UI/UX is redesigned with dynamic sections based on income/expense selection, including Base Information, Entity Association (customer/supplier, resource/office), and Financial Details (IBAN, status, amounts, VAT, documents).
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite with custom configuration for Replit deployment
+- **UI Library**: Radix UI components with shadcn/ui design system
+- **Styling**: Tailwind CSS with custom theme variables and responsive design
+- **State Management**: TanStack Query for server state and React hooks for local state
+- **Routing**: Wouter for lightweight client-side routing
+- **PWA Features**: Service worker registration and offline capabilities
 
 ## Backend Architecture
-- **Framework**: Express.js with TypeScript.
-- **Database**: PostgreSQL with Drizzle ORM.
-- **File Handling**: Multer for file uploads (PDF, DOC, images up to 10MB).
-- **Error Handling**: Centralized middleware for structured error responses.
+- **Runtime**: Node.js with Express.js framework
+- **Language**: TypeScript with ES modules
+- **Authentication**: Passport.js with local strategy and session-based auth
+- **Session Storage**: Custom session store integrated with database
+- **File Processing**: Multer for uploads, XML parsing for FatturaPA invoices
+- **Security**: Helmet for security headers, CORS configuration for cross-origin requests
 
-## Data Storage Solutions
-- **Primary Database**: PostgreSQL via Neon serverless with connection pooling.
-- **ORM**: Drizzle ORM with schema definitions for type safety.
-- **Schema Structure**: Includes core business entities (cores, companies, resources, ibans, offices, tags, movement statuses) and financial movements with foreign key relationships.
-- **Validation**: Drizzle-Zod integration.
-- **Migrations**: Drizzle Kit for database migrations and schema management.
+## Database Layer
+- **Database**: PostgreSQL via Neon serverless platform
+- **ORM**: Drizzle ORM with type-safe queries
+- **Schema**: Comprehensive financial data model including users, movements, companies, resources, and settings
+- **Connection**: Connection pooling with WebSocket support for serverless environment
 
-## Authentication and Authorization
-- **Authentication**: JWT-based with secure password hashing (bcrypt).
-- **Role-based Access Control**: Three user roles: Admin (full access), Finance (access to movements and analytics, create/edit entities), and User (limited to viewing movements assigned to their resource).
-- **Protected Routes**: All API endpoints secured with authentication middleware.
-- **Session Storage**: PostgreSQL session store with connect-pg-simple.
-- **Password Recovery**: Email-based password reset system.
+## File Storage
+- **Cloud Storage**: Google Cloud Storage for document and invoice storage
+- **File Upload**: Uppy.js integration for drag-and-drop file uploads
+- **File Processing**: XML parsing for Italian electronic invoices (FatturaPA format)
 
-## Deployment Architecture
-- **Development**: Replit environment with hot reload.
-- **Production**: Ubuntu server with automated SSH deployment pipeline.
-- **Process Management**: PM2 for production process monitoring and auto-restart.
-- **Port Standardization**: Application standardized on port 5000.
+## Key Features
+- **Financial Movement Tracking**: Complete CRUD operations for financial transactions
+- **Multi-entity Management**: Support for companies, operational sites, resources (employees), and IBAN accounts
+- **Analytics Dashboard**: Interactive charts and financial insights
+- **Italian Compliance**: FatturaPA electronic invoice parsing and integration
+- **Role-based Access**: User authentication with session management
+- **Responsive Design**: Mobile-first PWA with offline capabilities
+
+## Design Patterns
+- **Component Composition**: Reusable UI components with consistent props interface
+- **Custom Hooks**: Centralized business logic in custom React hooks
+- **Error Boundaries**: Graceful error handling throughout the application
+- **Type Safety**: Full TypeScript implementation with shared schema definitions
 
 # External Dependencies
 
-- **Database**: Neon PostgreSQL serverless database.
-- **UI Library**: Radix UI.
-- **Date Handling**: date-fns.
-- **Validation**: Zod.
-- **Email Service**: SendGrid.
-- **Version Control**: GitHub.
+## Core Infrastructure
+- **Neon Database**: PostgreSQL serverless platform for data persistence
+- **Google Cloud Storage**: Object storage for file and document management
+- **Replit**: Development and hosting platform with custom deployment configuration
+
+## Email Services
+- **SendGrid**: Transactional email service for password resets and notifications
+- **Email Templates**: HTML email templates for user communications
+
+## Development Tools
+- **ESBuild**: Fast bundling for production builds
+- **PM2**: Process management for production deployment (via ecosystem.config.js)
+- **Drizzle Kit**: Database migration and schema management
+
+## Third-party Libraries
+- **File Upload**: Uppy.js ecosystem for advanced file handling
+- **XML Processing**: xml2js for parsing Italian FatturaPA invoices
+- **Charts**: Chart.js integration for financial analytics
+- **UI Components**: Extensive Radix UI ecosystem for accessible components
+
+## Italian Business Integration
+- **FatturaPA**: XML invoice format parsing and validation
+- **Financial Compliance**: Italian tax and accounting standards support

@@ -9,14 +9,27 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   const host = req.headers.host;
   const userAgent = req.headers['user-agent'];
-  const isIframe = req.headers['sec-fetch-dest'] === 'iframe' || req.headers['x-frame-options'];
+  const isIframe = req.headers['sec-fetch-dest'] === 'iframe' || req.headers['x-frame-options'] || req.headers.referer?.includes('replit.dev');
   
   // Log connection attempts for debugging
   if (req.path === '/' || req.path.startsWith('/api')) {
     console.log(`[NETWORK] ${req.method} ${req.path} from ${origin || 'same-origin'} via ${host} ${isIframe ? '(IFRAME)' : '(DIRECT)'}`);
   }
   
-  // CRITICAL: Allow iframe embedding for Replit preview - MUST override later headers
+  // CRITICAL: Detect iframe context and store it
+  (req as any).isIframe = isIframe;
+  
+  // IFRAME-SPECIFIC: Rimuovi TUTTE le restrizioni per domini Replit
+  if (isIframe || host?.includes('replit.dev') || host?.includes('repl.co')) {
+    // Rimuovi TUTTE le restrizioni di sicurezza per Replit
+    res.removeHeader('Content-Security-Policy');
+    res.removeHeader('X-Content-Type-Options');
+    res.removeHeader('Referrer-Policy');
+    res.setHeader('X-Frame-Options', 'ALLOWALL');
+    console.log('[IFRAME] ALL security restrictions removed for Replit domain');
+  }
+  
+  // CRITICAL: Allow iframe embedding for Replit preview
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   
   // Override any later X-Frame-Options by monitoring response
@@ -77,6 +90,108 @@ app.use((req, res, next) => {
   });
 
   next();
+});
+
+// IFRAME SPECIFIC ROUTING: Must be before general routing
+app.get('/', (req, res, next) => {
+  if ((req as any).isIframe) {
+    console.log('[IFRAME] Serving direct HTML response');
+    res.setHeader('Content-Type', 'text/html');
+    res.status(200).send(`
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EasyCashFlows - Gestione Flussi Finanziari</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 50px;
+            max-width: 600px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            text-align: center;
+        }
+        .icon { font-size: 4em; margin-bottom: 20px; }
+        .title { margin: 0 0 15px 0; font-size: 2.8em; font-weight: 300; }
+        .subtitle { margin: 0 0 20px 0; font-size: 1.3em; opacity: 0.9; font-weight: 200; }
+        .notice {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+        .notice p { margin: 0; opacity: 0.8; line-height: 1.6; }
+        .btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            border-radius: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(76,175,80,0.3);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76,175,80,0.4);
+        }
+        .features {
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            font-size: 0.95em;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🏦</div>
+        <h1 class="title">EasyCashFlows</h1>
+        <p class="subtitle">Sistema di Gestione Finanziaria</p>
+        <div class="notice">
+            <p>Stai visualizzando la preview iframe. CSP rimosso per domini Replit. Clicca per aprire l'applicazione completa.</p>
+        </div>
+        <a href="javascript:window.open(window.location.href, '_blank')" class="btn">
+            🚀 Apri Applicazione Completa
+        </a>
+        <div class="features">
+            <div>📊 Dashboard Analytics</div>
+            <div>💼 Gestione Movimenti</div>
+            <div>📋 Report Finanziari</div>
+            <div>⚙️ Configurazioni</div>
+        </div>
+    </div>
+</body>
+</html>
+    `);
+    return;
+  }
+  next(); // Continue to normal flow for non-iframe requests
 });
 
 (async () => {

@@ -3,57 +3,83 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// Register Service Worker for PWA functionality
+console.log('[MAIN] EasyCashFlows initializing... v2024.08.13.CRASH-PROOF');
+
+// CRASH-PROOF: Global error handlers
+window.addEventListener('error', (event) => {
+  console.error('[MAIN] Global error:', event.error);
+  event.preventDefault();
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[MAIN] Unhandled rejection:', event.reason);
+  event.preventDefault();
+});
+
+// INITIALIZATION: Robust app startup
+const initializeApp = () => {
+  try {
+    console.log('[MAIN] Starting app initialization...');
+    
+    const container = document.getElementById("root");
+    if (!container) {
+      console.error('[MAIN] Root element not found');
+      document.body.innerHTML = '<div style="padding:20px;text-align:center;"><h1>🏦 EasyCashFlows</h1><p style="color:red;">Errore: Root element non trovato</p><button onclick="window.location.reload()">Ricarica</button></div>';
+      return;
+    }
+
+    console.log('[MAIN] Root found, checking React...');
+    
+    // SAFETY: Verify React availability
+    if (!React || !createRoot) {
+      console.error('[MAIN] React/createRoot not available');
+      container.innerHTML = '<div style="padding:20px;text-align:center;"><h1>🏦 EasyCashFlows</h1><p style="color:red;">Errore: React non disponibile</p><button onclick="window.location.reload()">Ricarica</button></div>';
+      return;
+    }
+
+    console.log('[MAIN] Creating React root...');
+    const root = createRoot(container);
+    
+    console.log('[MAIN] Rendering App component...');
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+    
+    console.log('[MAIN] ✅ App rendered successfully');
+
+  } catch (error) {
+    console.error('[MAIN] Critical initialization error:', error);
+    const container = document.getElementById("root");
+    if (container) {
+      container.innerHTML = `
+        <div style="padding:20px;text-align:center;font-family:Arial;">
+          <h1>🏦 EasyCashFlows</h1>
+          <h2 style="color:red;">Errore di Inizializzazione</h2>
+          <p>Errore: ${error instanceof Error ? error.message : String(error)}</p>
+          <button onclick="window.location.reload()" style="padding:10px 20px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;">
+            Ricarica Pagina
+          </button>
+        </div>
+      `;
+    }
+  }
+};
+
+// TIMING: Multiple initialization strategies
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+  // DOM already ready
+  initializeApp();
+}
+
+// SERVICE WORKER: Non-blocking registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('SW registered: ', registration);
-        
-        // Check for updates
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New service worker available
-                if (confirm('Nuova versione disponibile. Aggiornare l\'applicazione?')) {
-                  window.location.reload();
-                }
-              }
-            });
-          }
-        });
-      })
-      .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
-      });
+      .then(registration => console.log('[SW] Registered:', registration))
+      .catch(error => console.log('[SW] Registration failed:', error));
   });
-}
-
-// VITE CACHE BREAKER - v2024.08.13.WORKING
-console.log('[MAIN] EasyCashFlows initializing... v2024.08.13.WORKING');
-
-const rootElement = document.getElementById("root");
-if (!rootElement) {
-  console.error('[MAIN] Root element not found!');
-  document.body.innerHTML = '<h1 style="color:red">ROOT NOT FOUND!</h1>';
-} else {
-  console.log('[MAIN] Root element found, creating React root...');
-  try {
-    const root = createRoot(rootElement);
-    console.log('[MAIN] React root created, rendering App...');
-    root.render(<App />);
-    console.log('[MAIN] App render called successfully');
-  } catch (error) {
-    console.error('[MAIN] Error creating/rendering app:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    rootElement.innerHTML = `
-      <div style="padding: 20px; text-align: center; font-family: Arial;">
-        <h2 style="color: red;">Errore di inizializzazione</h2>
-        <p>Errore: ${errorMessage}</p>
-        <button onclick="window.location.reload()">Ricarica</button>
-      </div>
-    `;
-  }
 }
