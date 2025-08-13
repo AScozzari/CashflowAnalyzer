@@ -391,11 +391,11 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                     name="companyId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Azienda *</FormLabel>
+                        <FormLabel>Ragione Sociale *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Seleziona azienda" />
+                              <SelectValue placeholder="Seleziona ragione sociale" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>

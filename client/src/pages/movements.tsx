@@ -233,18 +233,8 @@ export default function Movements() {
                         
                         {/* Cliente */}
                         <TableCell>
-                          {movement.customer ? (
-                            <div>
-                              <div className="font-medium text-sm">
-                                {movement.customer.type === 'private' 
-                                  ? `${movement.customer.firstName} ${movement.customer.lastName}`.trim()
-                                  : movement.customer.name
-                                }
-                              </div>
-                              {movement.customer.type === 'business' && movement.customer.vatNumber && (
-                                <div className="text-xs text-gray-500">{movement.customer.vatNumber}</div>
-                              )}
-                            </div>
+                          {movement.customerId ? (
+                            <div className="font-medium text-sm">Cliente (ID: {movement.customerId})</div>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
