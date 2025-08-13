@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import FooterSignature from "@/components/layout/footer-signature";
-import MovementForm from "@/components/movements/movement-form";
+import MovementFormNew from "@/components/movements/movement-form-new";
 import MovementFilters from "@/components/movements/movement-filters";
 
 import { Button } from "@/components/ui/button";
@@ -124,28 +124,24 @@ export default function Movements() {
         title="Movimenti" 
         subtitle="Gestione dei flussi finanziari"
         action={
-          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuovo Movimento
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card dark:bg-card text-card-foreground dark:text-card-foreground border-border dark:border-border" aria-describedby="movement-form-description">
-              <DialogTitle>{editingMovement ? 'Modifica Movimento' : 'Nuovo Movimento'}</DialogTitle>
-              <div id="movement-form-description" className="sr-only">
-                {editingMovement ? 'Modifica i dati del movimento finanziario selezionato' : 'Crea un nuovo movimento finanziario inserendo tutti i dati richiesti'}
-              </div>
-              <MovementForm 
-                movement={editingMovement}
-                onClose={() => {
-                  setIsFormOpen(false);
-                  setEditingMovement(null);
-                }}
-              />
-            </DialogContent>
-          </Dialog>
+          <Button 
+            onClick={() => setIsFormOpen(true)}
+            className="bg-primary hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuovo Movimento
+          </Button>
         }
+      />
+      
+      {/* Professional Movement Form Modal */}
+      <MovementFormNew
+        movement={editingMovement}
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setEditingMovement(null);
+        }}
       />
       
       <div className="p-4 md:p-6">
@@ -175,7 +171,7 @@ export default function Movements() {
                       <TableHead>Core</TableHead>
                       <TableHead>Risorsa</TableHead>
                       <TableHead>Causale</TableHead>
-                      <TableHead>Fornitore</TableHead>
+                      <TableHead>Cliente/Fornitore</TableHead>
                       <TableHead>Importo</TableHead>
                       <TableHead>IVA</TableHead>
                       <TableHead>Stato</TableHead>
@@ -223,6 +219,21 @@ export default function Movements() {
                             <div>
                               <div className="font-medium text-sm">{movement.supplier.name}</div>
                               <div className="text-xs text-gray-500">{movement.supplier.vatNumber}</div>
+                            </div>
+                          ) : movement.customer ? (
+                            <div>
+                              <div className="font-medium text-sm">
+                                {movement.customer.type === 'private' 
+                                  ? `${movement.customer.firstName} ${movement.customer.lastName}`.trim()
+                                  : movement.customer.name
+                                }
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {movement.customer.type === 'business' && movement.customer.vatNumber 
+                                  ? movement.customer.vatNumber
+                                  : 'Cliente privato'
+                                }
+                              </div>
                             </div>
                           ) : (
                             <span className="text-gray-400">-</span>

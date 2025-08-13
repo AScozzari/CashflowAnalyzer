@@ -220,6 +220,7 @@ export const movements = pgTable("movements", {
   ibanId: varchar("iban_id"),
   tagId: varchar("tag_id"),
   supplierId: varchar("supplier_id"), // Riferimento al fornitore (per le spese)
+  customerId: varchar("customer_id"), // Riferimento al cliente (per le entrate)
   
   // Campi per integrazione XML fatture
   xmlData: text("xml_data"), // Dati XML della fattura originale (se presente)
@@ -335,6 +336,10 @@ export const movementsRelations = relations(movements, ({ one }) => ({
   supplier: one(suppliers, {
     fields: [movements.supplierId],
     references: [suppliers.id],
+  }),
+  customer: one(customers, {
+    fields: [movements.customerId],
+    references: [customers.id],
   }),
 }));
 

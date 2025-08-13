@@ -19,6 +19,8 @@ export default function MovementFilters({ onFiltersChange }: MovementFiltersProp
     coreId: "",
     type: "",
     statusId: "",
+    customerId: "",
+    supplierId: "",
     startDate: undefined as Date | undefined,
     endDate: undefined as Date | undefined,
   });
@@ -35,6 +37,14 @@ export default function MovementFilters({ onFiltersChange }: MovementFiltersProp
     queryKey: ["/api/movement-statuses"],
   });
 
+  const { data: customers } = useQuery({
+    queryKey: ["/api/customers"],
+  });
+
+  const { data: suppliers } = useQuery({
+    queryKey: ["/api/suppliers"],
+  });
+
   const handleFilterChange = (key: string, value: any) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
@@ -47,6 +57,8 @@ export default function MovementFilters({ onFiltersChange }: MovementFiltersProp
       coreId: "",
       type: "",
       statusId: "",
+      customerId: "",
+      supplierId: "",
       startDate: undefined,
       endDate: undefined,
     };
@@ -73,7 +85,7 @@ export default function MovementFilters({ onFiltersChange }: MovementFiltersProp
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <div className="space-y-2">
             <Label>Ragione Sociale</Label>
             <Select value={filters.companyId} onValueChange={(value) => handleFilterChange("companyId", value)}>
@@ -118,6 +130,43 @@ export default function MovementFilters({ onFiltersChange }: MovementFiltersProp
                 <SelectItem value="">Tutti i tipi</SelectItem>
                 <SelectItem value="income">Entrata</SelectItem>
                 <SelectItem value="expense">Uscita</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Cliente</Label>
+            <Select value={filters.customerId} onValueChange={(value) => handleFilterChange("customerId", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Tutti i clienti" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tutti i clienti</SelectItem>
+                {(customers as any[])?.map((customer: any) => (
+                  <SelectItem key={customer.id} value={customer.id}>
+                    {customer.type === 'private' 
+                      ? `${customer.firstName} ${customer.lastName}`.trim()
+                      : customer.name
+                    }
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Fornitore</Label>
+            <Select value={filters.supplierId} onValueChange={(value) => handleFilterChange("supplierId", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Tutti i fornitori" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tutti i fornitori</SelectItem>
+                {(suppliers as any[])?.map((supplier: any) => (
+                  <SelectItem key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
