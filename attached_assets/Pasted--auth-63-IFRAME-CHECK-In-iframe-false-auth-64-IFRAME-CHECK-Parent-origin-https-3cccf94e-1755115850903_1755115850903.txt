@@ -1,0 +1,61 @@
+
+﻿
+auth:63 [IFRAME CHECK] In iframe: false
+auth:64 [IFRAME CHECK] Parent origin: https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/auth
+client:536 WebSocket connection to 'wss://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/?token=6JR4NbATW1gx' failed: 
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=6JR4NbATW1gx' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+
+main.tsx:35 [MAIN] Starting app initialization... v2024.08.13
+main.tsx:42 [MAIN] Root element found, creating React root...
+main.tsx:45 [MAIN] React root created, rendering App...
+main.tsx:47 [MAIN] App render called successfully
+App.tsx:93 [APP] App component starting... 
+{React: true, useState: true}
+App.tsx:120 [APP] Rendering main app structure...
+theme-provider.tsx:29 Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem. Error Component Stack
+    at ThemeProvider (theme-provider.tsx:24:3)
+theme-provider.tsx:29 Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem. Error Component Stack
+    at ThemeProvider (theme-provider.tsx:24:3)
+chunk-QCHXOAYK.js?v=7d65949a:1066 Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at ThemeProvider (theme-provider.tsx:29:29)
+App.tsx:93 [APP] App component starting... 
+{React: true, useState: true}
+App.tsx:120 [APP] Rendering main app structure...
+theme-provider.tsx:29 Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem. Error Component Stack
+    at ThemeProvider (theme-provider.tsx:24:3)
+theme-provider.tsx:29 Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem. Error Component Stack
+    at ThemeProvider (theme-provider.tsx:24:3)
+chunk-QCHXOAYK.js?v=7d65949a:1066 Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at ThemeProvider (theme-provider.tsx:29:29)
+hook.js:608 The above error occurred in the <ThemeProvider> component:
+
+    at ThemeProvider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/lib/theme-provider.tsx:25:3)
+    at QueryClientProvider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=f41d8f37:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-RPCDYKBN.js?v=f41d8f37:19413 Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at ThemeProvider (theme-provider.tsx:29:29)
+main.tsx:11 SW registered:  
+ServiceWorkerRegistration {installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager, scope: 'https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/', …}
+auth:1 Error while trying to use the following icon from the Manifest: https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/icon-144x144.png (Download error or resource isn't a valid image)

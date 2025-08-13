@@ -93,7 +93,23 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  
+  // CRITICAL FIX: Check NODE_ENV directly, not app.get("env")
+  const isProduction = process.env.NODE_ENV === "production";
+  console.log(`[ENV DEBUG] NODE_ENV: "${process.env.NODE_ENV}", isProduction: ${isProduction}`);
+  
+  if (!isProduction) {
+    console.log('[VITE] Setting up Vite development server...');
+    
+    // PATCH: Handle Vite plugin errors gracefully
+    process.on('uncaughtException', (error) => {
+      if (error.message.includes('@react-refresh') || error.message.includes('ENOENT')) {
+        console.log('[VITE] Handled plugin error:', error.message.split('\n')[0]);
+        return;
+      }
+      throw error;
+    });
+    
     await setupVite(app, server);
   } else {
     // Serve solo le API, frontend su Replit

@@ -47,10 +47,11 @@ if (!rootElement) {
     console.log('[MAIN] App render called successfully');
   } catch (error) {
     console.error('[MAIN] Error creating/rendering app:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     rootElement.innerHTML = `
       <div style="padding: 20px; text-align: center; font-family: Arial;">
         <h2 style="color: red;">Errore di inizializzazione</h2>
-        <p>Errore: ${error.message}</p>
+        <p>Errore: ${errorMessage}</p>
         <button onclick="window.location.reload()">Ricarica</button>
       </div>
     `;
