@@ -2,144 +2,17 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EasyCashFlows - Gestione Flussi Finanziari</title>
-    <meta name="description" content="Sistema avanzato di gestione flussi finanziari per PMI italiane con analytics predittive e integrazione FatturaPA" />
-    
-    <!-- Meta CSP not needed - handled in server headers -->
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#1e40af" />
-    <meta name="background-color" content="#ffffff" />
-    
-    <!-- iOS PWA support -->
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="EasyCashFlows" />
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-    
-    <!-- Fonts moved to CSS to avoid CSP issues -->
-    
-    <!-- React/Hook stability script -->
-    <script>
-      // CRITICAL: Ensure React context is stable for iframe/reload scenarios  
-      window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
-      window.__REACT_STRICT_MODE__ = false; // Prevent double-rendering
-      
-      // Iframe detection and logging
-      console.log('[IFRAME CHECK] In iframe:', window.self !== window.top);
-      console.log('[IFRAME CHECK] Parent origin:', document.referrer);
-      
-      // CRITICAL: Prevent reload crashes in iframe context  
-      if (window.self !== window.top) {
-        console.log('[IFRAME] Replit preview detected - applying stability fixes');
-        window.__IFRAME_CONTEXT__ = true;
-        
-        // IMMEDIATE FALLBACK: Execute right now without any delays
-        document.body.innerHTML = `
-          <div style="padding: 20px; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; box-sizing: border-box;">
-            <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); border-radius: 20px; padding: 50px; max-width: 600px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);">
-              <div style="font-size: 4em; margin-bottom: 20px;">🏦</div>
-              <h1 style="margin: 0 0 15px 0; font-size: 2.8em; font-weight: 300;">EasyCashFlows</h1>
-              <p style="margin: 0 0 20px 0; font-size: 1.3em; opacity: 0.9; font-weight: 200;">Sistema di Gestione Finanziaria</p>
-              <div style="margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #4CAF50;">
-                <p style="margin: 0; opacity: 0.8; line-height: 1.6;">Preview iframe limitata. Per accedere a tutte le funzionalità professionali dell'applicazione, aprire in una nuova scheda del browser</p>
-              </div>
-              <button onclick="window.open(window.location.href, '_blank')" style="background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border: none; padding: 18px 35px; border-radius: 30px; font-size: 1.2em; cursor: pointer; box-shadow: 0 6px 20px rgba(76,175,80,0.3); transition: all 0.3s ease; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(76,175,80,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(76,175,80,0.3)'">
-                🚀 Apri Applicazione Completa
-              </button>
-              <div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.2); display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; font-size: 0.95em; opacity: 0.7;">
-                <div>📊 Dashboard Analytics</div>
-                <div>💼 Gestione Movimenti</div>
-                <div>📋 Report Finanziari</div>
-                <div>⚙️ Configurazioni</div>
-              </div>
-            </div>
-          </div>
-        `;
-        console.log('[IFRAME] Immediate fallback UI applied');
-        
-        // DIRECT IFRAME FALLBACK: immediate execution without waiting
-        const showIframeFallback = () => {
-          const rootEl = document.getElementById('root');
-          if (rootEl) {
-            console.log('[IFRAME] Applying direct fallback UI');
-            // Clear any existing content first
-            rootEl.innerHTML = '';
-            rootEl.innerHTML = `
-              <div style="padding: 20px; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; box-sizing: border-box;">
-                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); border-radius: 20px; padding: 50px; max-width: 600px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);">
-                  <div style="font-size: 4em; margin-bottom: 20px;">🏦</div>
-                  <h1 style="margin: 0 0 15px 0; font-size: 2.8em; font-weight: 300;">EasyCashFlows</h1>
-                  <p style="margin: 0 0 20px 0; font-size: 1.3em; opacity: 0.9; font-weight: 200;">Sistema di Gestione Finanziaria</p>
-                  <div style="margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #4CAF50;">
-                    <p style="margin: 0; opacity: 0.8; line-height: 1.6;">Per accedere a tutte le funzionalità professionali dell'applicazione, aprire in una nuova scheda del browser</p>
-                  </div>
-                  <button onclick="window.open(window.location.href, '_blank')" style="background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border: none; padding: 18px 35px; border-radius: 30px; font-size: 1.2em; cursor: pointer; box-shadow: 0 6px 20px rgba(76,175,80,0.3); transition: all 0.3s ease; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(76,175,80,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(76,175,80,0.3)'">
-                    🚀 Apri Applicazione Completa
-                  </button>
-                  <div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.2); display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; font-size: 0.95em; opacity: 0.7;">
-                    <div>📊 Dashboard Analytics</div>
-                    <div>💼 Gestione Movimenti</div>
-                    <div>📋 Report Finanziari</div>
-                    <div>⚙️ Configurazioni</div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-        };
-        
-        // Multiple execution strategies for maximum compatibility
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', showIframeFallback);
-        } else {
-          showIframeFallback();
-        }
-        setTimeout(showIframeFallback, 50);
-        setTimeout(showIframeFallback, 200);
-        setTimeout(showIframeFallback, 1000);
-        setTimeout(showIframeFallback, 2000);
-      }
-    </script>
+    <meta name="description" content="Sistema avanzato di gestione flussi finanziari per PMI italiane" />
   </head>
   <body>
     <div id="root">
-      <!-- Static fallback for iframe preview -->
-      <div id="iframe-fallback" style="display: none; padding: 20px; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; align-items: center; justify-content: center; margin: 0; box-sizing: border-box;">
-        <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); border-radius: 20px; padding: 50px; max-width: 600px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); margin: 0 auto; margin-top: 10vh;">
-          <div style="font-size: 4em; margin-bottom: 20px;">🏦</div>
-          <h1 style="margin: 0 0 15px 0; font-size: 2.8em; font-weight: 300;">EasyCashFlows</h1>
-          <p style="margin: 0 0 20px 0; font-size: 1.3em; opacity: 0.9; font-weight: 200;">Sistema di Gestione Finanziaria</p>
-          <div style="margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #4CAF50;">
-            <p style="margin: 0; opacity: 0.8; line-height: 1.6;">Preview iframe limitata. Per esperienza completa, aprire in nuova scheda del browser</p>
-          </div>
-          <button onclick="window.open(window.location.href, '_blank')" style="background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border: none; padding: 18px 35px; border-radius: 30px; font-size: 1.2em; cursor: pointer; box-shadow: 0 6px 20px rgba(76,175,80,0.3); font-weight: 500; text-transform: uppercase; letter-spacing: 1px;">
-            🚀 Apri Applicazione Completa
-          </button>
-          <div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.2); display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; font-size: 0.95em; opacity: 0.7;">
-            <div>📊 Dashboard Analytics</div>
-            <div>💼 Gestione Movimenti</div>
-            <div>📋 Report Finanziari</div>
-            <div>⚙️ Configurazioni</div>
-          </div>
-        </div>
+      <div style="padding: 20px; text-align: center; font-family: Arial;">
+        <h1>🏦 EasyCashFlows</h1>
+        <p>Caricamento...</p>
       </div>
     </div>
-
-    <script type="module" src="/src/main.tsx"></script>
-    
-    <script>
-      // Immediate iframe detection and fallback activation
-      if (window.self !== window.top) {
-        console.log('[IFRAME] Preview detected - showing fallback');
-        document.getElementById('iframe-fallback').style.display = 'flex';
-        // Prevent React from loading in iframe
-        const scripts = document.querySelectorAll('script[type="module"]');
-        scripts.forEach(script => script.remove());
-      }
-    </script>
+    <script type="module" src="/src/main-clean.tsx"></script>
   </body>
 </html>
