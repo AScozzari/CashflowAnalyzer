@@ -31,15 +31,13 @@ export function ThemeProvider({
   // SIMPLIFIED: No useState hooks, just static theme
   const currentTheme = defaultTheme;
   
-  // Apply theme immediately to document without useEffect
-  React.useLayoutEffect(() => {
-    if (typeof window !== "undefined" && window.document) {
-      const root = window.document.documentElement;
-      root.classList.remove("light", "dark");
-      root.classList.add(currentTheme);
-      console.log('[THEME] Applied theme:', currentTheme);
-    }
-  });
+  // Apply theme immediately to document - NO HOOKS
+  if (typeof window !== "undefined" && window.document) {
+    const root = window.document.documentElement;
+    root.classList.remove("light", "dark");
+    root.classList.add(currentTheme);
+    console.log('[THEME] Applied theme directly:', currentTheme);
+  }
 
   const value = {
     theme: currentTheme,
