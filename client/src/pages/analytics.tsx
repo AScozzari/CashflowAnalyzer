@@ -7,7 +7,7 @@ import Header from "@/components/layout/header";
 import FooterSignature from "@/components/layout/footer-signature";
 import AdvancedFiltersNew, { type AnalyticsFilters } from "@/components/analytics/advanced-filters-new";
 import AnalyticsTable from "@/components/analytics/analytics-table";
-import AnalyticsChartsImproved from "@/components/analytics/analytics-charts-improved";
+import AnalyticsChartsProfessional from "@/components/analytics/analytics-charts-professional";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Analytics() {
@@ -165,9 +165,9 @@ export default function Analytics() {
         {/* Results Section */}
         {movementsData && (
           <>
-            {/* Analytics Charts - Responsive */}
+            {/* Analytics Charts - Professional & Responsive */}
             <div className="bg-card rounded-lg shadow-sm border p-4 lg:p-6">
-              <AnalyticsChartsImproved 
+              <AnalyticsChartsProfessional 
                 movements={(movementsData as any)?.data || []}
                 isLoading={isLoading}
               />
