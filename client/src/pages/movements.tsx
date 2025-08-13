@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Eye, Edit, Upload, Trash2, Download } from "lucide-react";
+import { Plus, Eye, Edit, Upload, Trash2, Download, Paperclip } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { MovementWithRelations } from "@shared/schema";
@@ -166,24 +166,36 @@ export default function Movements() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Data</TableHead>
+                      <TableHead>Data Inserimento</TableHead>
+                      <TableHead>Data Flusso</TableHead>
                       <TableHead>Ragione Sociale</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Core</TableHead>
                       <TableHead>Risorsa</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Fornitore</TableHead>
                       <TableHead>Causale</TableHead>
-                      <TableHead>Cliente/Fornitore</TableHead>
-                      <TableHead>Importo</TableHead>
-                      <TableHead>IVA</TableHead>
+                      <TableHead>Importo Totale</TableHead>
+                      <TableHead>Importo IVA</TableHead>
                       <TableHead>Stato</TableHead>
+                      <TableHead>File</TableHead>
                       <TableHead className="text-right">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {movements.map((movement: MovementWithRelations) => (
                       <TableRow key={movement.id}>
+                        {/* Data Inserimento */}
+                        <TableCell>
+                          {format(new Date(movement.insertDate), 'dd/MM/yyyy', { locale: it })}
+                        </TableCell>
+                        
+                        {/* Data Flusso */}
                         <TableCell>
                           {format(new Date(movement.flowDate), 'dd/MM/yyyy', { locale: it })}
                         </TableCell>
+                        
+                        {/* Ragione Sociale */}
                         <TableCell>
                           {movement.company ? (
                             <>
@@ -194,9 +206,20 @@ export default function Movements() {
                             <span className="text-gray-500">Nessuna ragione sociale</span>
                           )}
                         </TableCell>
+                        
+                        {/* Tipo */}
+                        <TableCell>
+                          <Badge variant={movement.type === 'income' ? 'default' : 'destructive'}>
+                            {movement.type === 'income' ? 'Entrata' : 'Uscita'}
+                          </Badge>
+                        </TableCell>
+                        
+                        {/* Core */}
                         <TableCell>
                           {movement.core ? movement.core.name : <span className="text-gray-500">Nessun core</span>}
                         </TableCell>
+                        
+                        {/* Risorsa */}
                         <TableCell>
                           {movement.resource ? (
                             <div>
@@ -207,6 +230,29 @@ export default function Movements() {
                             <span className="text-gray-400">Non assegnata</span>
                           )}
                         </TableCell>
+                        
+                        {/* Cliente */}
+                        <TableCell>
+                          {movement.customerId ? (
+                            <div className="font-medium text-sm">Cliente (ID: {movement.customerId})</div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        
+                        {/* Fornitore */}
+                        <TableCell>
+                          {movement.supplier?.name ? (
+                            <div>
+                              <div className="font-medium text-sm">{movement.supplier.name}</div>
+                              <div className="text-xs text-gray-500">{movement.supplier.vatNumber}</div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        
+                        {/* Causale */}
                         <TableCell>
                           {movement.reason ? (
                             <div className="text-sm">{movement.reason.name}</div>
@@ -214,23 +260,15 @@ export default function Movements() {
                             <span className="text-gray-400">-</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          {movement.supplier?.name ? (
-                            <div>
-                              <div className="font-medium text-sm">{movement.supplier.name}</div>
-                              <div className="text-xs text-gray-500">{movement.supplier.vatNumber}</div>
-                            </div>
-                          ) : movement.customerId ? (
-                            <div className="font-medium text-sm">Cliente (ID: {movement.customerId})</div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </TableCell>
+                        
+                        {/* Importo Totale */}
                         <TableCell>
                           <span className={`font-medium ${getAmountColor(movement.type)}`}>
                             {formatAmount(movement.amount, movement.type)}
                           </span>
                         </TableCell>
+                        
+                        {/* Importo IVA */}
                         <TableCell>
                           {movement.vatAmount && movement.vatType ? (
                             <div>
@@ -248,6 +286,8 @@ export default function Movements() {
                             <span className="text-gray-400">-</span>
                           )}
                         </TableCell>
+                        
+                        {/* Stato */}
                         <TableCell>
                           {movement.status ? (
                             <Badge variant={getStatusBadge(movement.status.name)}>
@@ -255,6 +295,20 @@ export default function Movements() {
                             </Badge>
                           ) : (
                             <Badge variant="secondary">Nessuno stato</Badge>
+                          )}
+                        </TableCell>
+                        
+                        {/* File */}
+                        <TableCell>
+                          {movement.fileName ? (
+                            <div className="flex items-center gap-1">
+                              <Paperclip className="h-3 w-3" />
+                              <span className="text-xs truncate max-w-20" title={movement.fileName}>
+                                {movement.fileName}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
