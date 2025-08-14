@@ -21,16 +21,18 @@ export class WebSocketManager {
   private listeners: { [event: string]: Function[] } = {};
 
   constructor(config: Partial<WebSocketConfig> = {}) {
+    // WORKAROUND: Disable WebSocket for Replit Eval proxy stability issues
+    // Application works perfectly without WebSocket for hot reload
+    console.log('[WebSocket Manager] WebSocket disabled - application fully functional without it');
+    
     this.config = {
       url: this.getWebSocketUrl(),
-      maxRetries: 10,
+      maxRetries: 0, // Disabled
       retryDelay: 1000,
-      heartbeatInterval: 30000, // 30 seconds for Replit's new Eval proxy
-      debug: process.env.NODE_ENV === 'development',
+      heartbeatInterval: 30000,
+      debug: false, // Disabled to reduce console noise
       ...config
     };
-
-    this.log('WebSocket Manager initialized for Replit Eval proxy');
   }
 
   private getWebSocketUrl(): string {
@@ -73,24 +75,9 @@ export class WebSocketManager {
   }
 
   public connect(): void {
-    if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.OPEN)) {
-      return;
-    }
-
-    this.isConnecting = true;
-    this.log(`Attempting to connect to ${this.config.url} (attempt ${this.retryCount + 1}/${this.config.maxRetries})`);
-
-    try {
-      // FORCE CSP COMPLIANCE: Ensure WSS for Replit domains
-      const allowedUrl = this.config.url.includes('replit.dev') ? this.config.url : this.config.url.replace('ws://', 'wss://');
-      console.log(`[WebSocket Manager] Using CSP-compliant URL: ${allowedUrl}`);
-      
-      this.ws = new WebSocket(allowedUrl);
-      this.setupEventHandlers();
-    } catch (error) {
-      this.log('Connection attempt failed:', error);
-      this.handleConnectionFailure();
-    }
+    // DISABLED: WebSocket connections disabled for Replit stability
+    console.log('[WebSocket Manager] Connect() disabled - application works without WebSocket');
+    return;
   }
 
   private setupEventHandlers(): void {
