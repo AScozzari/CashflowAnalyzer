@@ -45,8 +45,8 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Headers', '*');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     
-    // STEP 3: NO CSP per test completo
-    // CSP completamente disabilitata per debug Connection Denied
+    // STEP 3: CSP permissiva che supporta WebSocket
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: ws: *.replit.dev *.repl.co; frame-ancestors 'self' *.replit.dev *.repl.co");
     
     console.log('[DEBUG] ALL security headers disabled for Connection Denied troubleshooting');
   } else {
