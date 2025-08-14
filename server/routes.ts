@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { aiService } from "./ai-service";
 import { 
   insertCompanySchema, insertCoreSchema, insertResourceSchema,
   insertIbanSchema, insertOfficeSchema, insertTagSchema,
@@ -1412,6 +1413,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ success: false, message: "Errore nel test della connessione email" });
     }
   });
+
+  // ===================
+  // AI ENDPOINTS
+  // ===================
+
+  // AI Settings
+  app.get("/api/ai/settings", requireAuth, handleAsyncErrors(async (req, res) => {
+    try {
+      const settings = await storage.getAiSettings(req.user.id);
+      if (settings) {
+        // Don't expose OpenAI API key
+        const { openaiApiKey, ...safeSettings } = settings;
+        res.json({ 
+          ...safeSettings,
+          openaiApiKey: openaiApiKey ? '***CONFIGURED***' : null
+        });
+      } else {
+        res.json(null);
+      }
+    } catch (error) {
+      console.error('Error getting AI settings:', error);
+      res.status(500).json({ error: "Errore nel recupero delle impostazioni AI" });
+    }
+  }));
+
+  app.post("/api/ai/settings", requireAuth, handleAsyncErrors(async (req, res) => {
+    try {
+      const { openaiApiKey, ...otherSettings } = req.body;
+      
+      // Check if settings exist
+      const existingSettings = await storage.getAiSettings(req.user.id);
+      
+      let savedSettings;
+      if (existingSettings) {
+        // Update existing settings
+        const updateData = { ...otherSettings };
+        // Only update API key if provided
+        if (openaiApiKey && openaiApiKey !== '***CONFIGURED***') {
+          updateData.openaiApiKey = openaiApiKey;
+        }
+        savedSettings = await storage.updateAiSettings(req.user.id, updateData);
+      } else {
+        // Create new settings
+        const createData = { 
+          userId: req.user.id, 
+          ...otherSettings 
+        };
+        if (openaiApiKey && openaiApiKey !== '***CONFIGURED***') {
+          createData.openaiApiKey = openaiApiKey;
+        }
+        savedSettings = await storage.createAiSettings(createData);
+      }
+      
+      res.json({ success: true, message: "Impostazioni AI salvate con successo" });
+    } catch (error) {
+      console.error('Error saving AI settings:', error);
+      res.status(500).json({ error: "Errore nel salvataggio delle impostazioni AI" });
+    }
+  }));
+
+  app.post("/api/ai/test-connection", requireAuth, handleAsyncErrors(async (req, res) => {
+    try {
+      const result = await aiService.testConnection();
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing AI connection:', error);
+      res.status(500).json({ success: false, error: "Errore nel test della connessione AI" });
+    }
+  }));
+
+  // AI Chat
+  app.post("/api/ai/chat", requireAuth, handleAsyncErrors(async (req, res) => {
+    try {
+      const { message, sessionId, context } = req.body;
+      
+      if (!message || !sessionId) {
+        return res.status(400).json({ error: "Messaggio e sessionId sono richiesti" });
+      }
+
+      const result = await aiService.chatCompletion(
+        req.user.id,
+        message,
+        sessionId,
+        context
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error in AI chat:', error);
+      res.status(500).json({ error: error.message || "Errore nella chat AI" });
+    }
+  }));
+
+  app.get("/api/ai/chat/history/:sessionId?", requireAuth, handleAsyncErrors(async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const history = await storage.getAiChatHistory(req.user.id, sessionId);
+      res.json(history);
+    } catch (error) {
+      console.error('Error getting chat history:', error);
+      res.status(500).json({ error: "Errore nel recupero dello storico chat" });
+    }
+  }));
+
+  app.delete("/api/ai/chat/:sessionId", requireAuth, handleAsyncErrors(async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      await storage.deleteAiChatSession(req.user.id, sessionId);
+      res.json({ success: true, message: "Sessione chat eliminata" });
+    } catch (error) {
+      console.error('Error deleting chat session:', error);
+      res.status(500).json({ error: "Errore nell'eliminazione della sessione chat" });
+    }
+  }));
+
+  // AI Document Analysis
+  app.post("/api/ai/analyze-document", requireAuth, upload.single('document'), handleAsyncErrors(async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Nessun documento fornito" });
+      }
+
+      const fileContent = fs.readFileSync(req.file.path, 'utf8');
+      const result = await aiService.analyzeDocument(
+        req.user.id,
+        fileContent,
+        req.file.mimetype || 'unknown'
+      );
+
+      // Clean up uploaded file
+      fs.unlinkSync(req.file.path);
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error analyzing document:', error);
+      
+      // Clean up uploaded file if it exists
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      res.status(500).json({ error: error.message || "Errore nell'analisi del documento" });
+    }
+  }));
+
+  // AI Financial Insights
+  app.post("/api/ai/insights", requireAuth, handleAsyncErrors(async (req, res) => {
+    try {
+      const { financialData } = req.body;
+      
+      if (!financialData) {
+        return res.status(400).json({ error: "Dati finanziari richiesti" });
+      }
+
+      const result = await aiService.generateFinancialInsights(
+        req.user.id,
+        financialData
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating insights:', error);
+      res.status(500).json({ error: error.message || "Errore nella generazione degli insights" });
+    }
+  }));
 
   const httpServer = createServer(app);
   return httpServer;

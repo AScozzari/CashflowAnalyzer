@@ -1,5 +1,6 @@
 import {
   companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens,
+  aiSettings, aiChatHistory, aiDocumentJobs,
   type Company, type InsertCompany,
   type Core, type InsertCore,
   type Resource, type InsertResource,
@@ -15,7 +16,10 @@ import {
   type Notification, type InsertNotification,
   type Supplier, type InsertSupplier,
   type Customer, type InsertCustomer,
-  type EmailSettings, type InsertEmailSettings
+  type EmailSettings, type InsertEmailSettings,
+  type AiSettings, type InsertAiSettings,
+  type AiChatHistory, type InsertAiChatHistory,
+  type AiDocumentJob, type InsertAiDocumentJob
 } from "@shared/schema";
 import crypto from 'crypto';
 import { db } from "./db";
@@ -161,6 +165,25 @@ export interface IStorage {
   markNotificationAsRead(id: string): Promise<void>;
   markAllNotificationsAsRead(userId: string): Promise<void>;
   deleteNotification(id: string): Promise<void>;
+
+  // AI Settings
+  getAiSettings(userId: string): Promise<AiSettings | undefined>;
+  createAiSettings(settings: InsertAiSettings): Promise<AiSettings>;
+  updateAiSettings(userId: string, settings: Partial<InsertAiSettings>): Promise<AiSettings>;
+  deleteAiSettings(userId: string): Promise<void>;
+
+  // AI Chat History
+  getAiChatHistory(userId: string, sessionId?: string): Promise<AiChatHistory[]>;
+  createAiChatMessage(message: InsertAiChatHistory): Promise<AiChatHistory>;
+  deleteAiChatSession(userId: string, sessionId: string): Promise<void>;
+  deleteAllAiChatHistory(userId: string): Promise<void>;
+
+  // AI Document Jobs
+  getAiDocumentJobs(userId: string): Promise<AiDocumentJob[]>;
+  getAiDocumentJob(id: string): Promise<AiDocumentJob | undefined>;
+  createAiDocumentJob(job: InsertAiDocumentJob): Promise<AiDocumentJob>;
+  updateAiDocumentJob(id: string, job: Partial<AiDocumentJob>): Promise<AiDocumentJob>;
+  deleteAiDocumentJob(id: string): Promise<void>;
 
   // Session store per autenticazione
   sessionStore: session.Store;
@@ -1788,6 +1811,148 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error exporting filtered movements:', error);
       throw new Error('Failed to export filtered movements');
+    }
+  }
+
+  // AI Settings Methods
+  async getAiSettings(userId: string): Promise<AiSettings | undefined> {
+    try {
+      const result = await db.select().from(aiSettings).where(eq(aiSettings.userId, userId)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching AI settings:', error);
+      return undefined;
+    }
+  }
+
+  async createAiSettings(settings: InsertAiSettings): Promise<AiSettings> {
+    try {
+      const result = await db.insert(aiSettings).values(settings).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating AI settings:', error);
+      throw new Error('Failed to create AI settings');
+    }
+  }
+
+  async updateAiSettings(userId: string, settings: Partial<InsertAiSettings>): Promise<AiSettings> {
+    try {
+      const result = await db.update(aiSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(aiSettings.userId, userId))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating AI settings:', error);
+      throw new Error('Failed to update AI settings');
+    }
+  }
+
+  async deleteAiSettings(userId: string): Promise<void> {
+    try {
+      await db.delete(aiSettings).where(eq(aiSettings.userId, userId));
+    } catch (error) {
+      console.error('Error deleting AI settings:', error);
+      throw new Error('Failed to delete AI settings');
+    }
+  }
+
+  // AI Chat History Methods
+  async getAiChatHistory(userId: string, sessionId?: string): Promise<AiChatHistory[]> {
+    try {
+      let query = db.select().from(aiChatHistory).where(eq(aiChatHistory.userId, userId));
+      
+      if (sessionId) {
+        query = query.where(eq(aiChatHistory.sessionId, sessionId));
+      }
+      
+      return await query.orderBy(desc(aiChatHistory.createdAt));
+    } catch (error) {
+      console.error('Error fetching AI chat history:', error);
+      return [];
+    }
+  }
+
+  async createAiChatMessage(message: InsertAiChatHistory): Promise<AiChatHistory> {
+    try {
+      const result = await db.insert(aiChatHistory).values(message).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating AI chat message:', error);
+      throw new Error('Failed to create AI chat message');
+    }
+  }
+
+  async deleteAiChatSession(userId: string, sessionId: string): Promise<void> {
+    try {
+      await db.delete(aiChatHistory)
+        .where(and(eq(aiChatHistory.userId, userId), eq(aiChatHistory.sessionId, sessionId)));
+    } catch (error) {
+      console.error('Error deleting AI chat session:', error);
+      throw new Error('Failed to delete AI chat session');
+    }
+  }
+
+  async deleteAllAiChatHistory(userId: string): Promise<void> {
+    try {
+      await db.delete(aiChatHistory).where(eq(aiChatHistory.userId, userId));
+    } catch (error) {
+      console.error('Error deleting all AI chat history:', error);
+      throw new Error('Failed to delete AI chat history');
+    }
+  }
+
+  // AI Document Jobs Methods
+  async getAiDocumentJobs(userId: string): Promise<AiDocumentJob[]> {
+    try {
+      return await db.select().from(aiDocumentJobs)
+        .where(eq(aiDocumentJobs.userId, userId))
+        .orderBy(desc(aiDocumentJobs.createdAt));
+    } catch (error) {
+      console.error('Error fetching AI document jobs:', error);
+      return [];
+    }
+  }
+
+  async getAiDocumentJob(id: string): Promise<AiDocumentJob | undefined> {
+    try {
+      const result = await db.select().from(aiDocumentJobs).where(eq(aiDocumentJobs.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching AI document job:', error);
+      return undefined;
+    }
+  }
+
+  async createAiDocumentJob(job: InsertAiDocumentJob): Promise<AiDocumentJob> {
+    try {
+      const result = await db.insert(aiDocumentJobs).values(job).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating AI document job:', error);
+      throw new Error('Failed to create AI document job');
+    }
+  }
+
+  async updateAiDocumentJob(id: string, job: Partial<AiDocumentJob>): Promise<AiDocumentJob> {
+    try {
+      const result = await db.update(aiDocumentJobs)
+        .set(job)
+        .where(eq(aiDocumentJobs.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating AI document job:', error);
+      throw new Error('Failed to update AI document job');
+    }
+  }
+
+  async deleteAiDocumentJob(id: string): Promise<void> {
+    try {
+      await db.delete(aiDocumentJobs).where(eq(aiDocumentJobs.id, id));
+    } catch (error) {
+      console.error('Error deleting AI document job:', error);
+      throw new Error('Failed to delete AI document job');
     }
   }
 }

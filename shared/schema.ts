@@ -232,6 +232,53 @@ export const movements = pgTable("movements", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// AI Settings per OpenAI integration
+export const aiSettings = pgTable("ai_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(), // Collegamento all'utente
+  openaiApiKey: text("openai_api_key"), // Opzionale per override dell'environment key
+  defaultModel: text("default_model").notNull().default('gpt-4o'), // gpt-4o, gpt-4-turbo, gpt-3.5-turbo
+  chatEnabled: boolean("chat_enabled").notNull().default(true),
+  documentProcessingEnabled: boolean("document_processing_enabled").notNull().default(true),
+  analyticsEnabled: boolean("analytics_enabled").notNull().default(true),
+  predictionsEnabled: boolean("predictions_enabled").notNull().default(true),
+  maxTokens: integer("max_tokens").notNull().default(2000),
+  temperature: decimal("temperature", { precision: 3, scale: 2 }).notNull().default('0.7'),
+  privacyMode: text("privacy_mode").notNull().default('standard'), // 'strict', 'standard', 'relaxed'
+  dataRetention: text("data_retention").notNull().default('none'), // 'none', '30days', '90days'
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// AI Chat History per mantenere le conversazioni
+export const aiChatHistory = pgTable("ai_chat_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  sessionId: varchar("session_id").notNull(), // Raggruppa messaggi della stessa conversazione
+  role: text("role").notNull(), // 'user', 'assistant', 'system'
+  content: text("content").notNull(),
+  metadata: text("metadata"), // JSON string per token usage, model used, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// AI Document Processing Jobs
+export const aiDocumentJobs = pgTable("ai_document_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileType: text("file_type").notNull(), // 'pdf', 'image', 'xml', etc.
+  status: text("status").notNull().default('pending'), // 'pending', 'processing', 'completed', 'failed'
+  extractedData: text("extracted_data"), // JSON string with extracted information
+  aiAnalysis: text("ai_analysis"), // AI interpretation and suggestions
+  errorMessage: text("error_message"),
+  tokensUsed: integer("tokens_used"),
+  processingTimeMs: integer("processing_time_ms"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   cores: many(cores),
@@ -357,6 +404,27 @@ export const suppliersRelations = relations(suppliers, ({ many }) => ({
 
 export const customersRelations = relations(customers, ({ many }) => ({
   movements: many(movements),
+}));
+
+export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [aiSettings.userId],
+    references: [users.id],
+  }),
+}));
+
+export const aiChatHistoryRelations = relations(aiChatHistory, ({ one }) => ({
+  user: one(users, {
+    fields: [aiChatHistory.userId],
+    references: [users.id],
+  }),
+}));
+
+export const aiDocumentJobsRelations = relations(aiDocumentJobs, ({ one }) => ({
+  user: one(users, {
+    fields: [aiDocumentJobs.userId],
+    references: [users.id],
+  }),
 }));
 
 // Insert schemas
@@ -554,6 +622,52 @@ export const changePasswordSchema = z.object({
   message: "Le password non corrispondono",
   path: ["confirmPassword"],
 });
+
+// AI Insert Schemas
+export const insertAiSettingsSchema = createInsertSchema(aiSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.string(),
+  defaultModel: z.enum(['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo']).default('gpt-4o'),
+  maxTokens: z.number().min(100).max(4000).default(2000),
+  temperature: z.number().min(0).max(2).default(0.7),
+  privacyMode: z.enum(['strict', 'standard', 'relaxed']).default('standard'),
+  dataRetention: z.enum(['none', '30days', '90days']).default('none'),
+});
+
+export const insertAiChatHistorySchema = createInsertSchema(aiChatHistory).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  userId: z.string(),
+  sessionId: z.string(),
+  role: z.enum(['user', 'assistant', 'system']),
+  content: z.string().min(1),
+});
+
+export const insertAiDocumentJobSchema = createInsertSchema(aiDocumentJobs).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+}).extend({
+  userId: z.string(),
+  fileName: z.string().min(1),
+  filePath: z.string().min(1),
+  fileType: z.string().min(1),
+  status: z.enum(['pending', 'processing', 'completed', 'failed']).default('pending'),
+});
+
+// AI Types per TypeScript
+export type AiSettings = typeof aiSettings.$inferSelect;
+export type InsertAiSettings = z.infer<typeof insertAiSettingsSchema>;
+
+export type AiChatHistory = typeof aiChatHistory.$inferSelect;
+export type InsertAiChatHistory = z.infer<typeof insertAiChatHistorySchema>;
+
+export type AiDocumentJob = typeof aiDocumentJobs.$inferSelect;
+export type InsertAiDocumentJob = z.infer<typeof insertAiDocumentJobSchema>;
 
 
 
