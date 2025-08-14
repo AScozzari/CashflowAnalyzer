@@ -1,6 +1,3 @@
-// IMPORT HMR DISABLE FIRST
-import "./hmr-disable";
-
 import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
@@ -23,70 +20,46 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
-// HMR SAFETY: Ensure all refresh functions are disabled in App component too
+// WEBSOCKET AND CACHE FIX - Address the real root cause
 if (typeof window !== 'undefined') {
-  (window as any).$RefreshReg$ = () => () => {};
-  (window as any).$RefreshSig$ = () => (type: any) => type;
-  (window as any).__vite_plugin_react_preamble_installed__ = true;
-}
-
-// REPLIT CRITICAL FIXES - TypeScript-safe version
-if (typeof window !== 'undefined') {
-  console.log('[REPLIT FIXES] Applying comprehensive fixes...');
+  console.log('[WEBSOCKET] Fixing WebSocket and cache issues...');
   
-  // 1. HMR WebSocket fix con proper typing - DISABLED
-  console.log('[REPLIT] WebSocket fixes disabled to prevent conflicts');
-  
-  // 2. Fetch retry mechanism con cache bypass per reload
-  const originalFetch = window.fetch;
-  window.fetch = async function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    const maxRetries = 3;
-    
-    // Force cache bypass on development reload to prevent cache crashes
-    if (process.env.NODE_ENV === 'development') {
-      init = { 
-        ...init, 
-        cache: 'no-cache',
-        headers: {
-          ...init?.headers,
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+  // 1. Clear problematic cache on load
+  if ('caches' in window) {
+    caches.keys().then(cacheNames => {
+      cacheNames.forEach(cacheName => {
+        if (cacheName.includes('vite') || cacheName.includes('workbox')) {
+          console.log('[CACHE] Clearing problematic cache:', cacheName);
+          caches.delete(cacheName);
         }
-      };
-    }
-    
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        const response = await originalFetch(input, init);
-        if (response.ok || response.status === 401) return response;
-        if (i === maxRetries - 1) throw new Error(`HTTP ${response.status}`);
-      } catch (error) {
-        if (i === maxRetries - 1) {
-          console.error('[REPLIT FETCH] Max retries raggiunto per:', input, error);
-          throw error;
-        }
-        console.log(`[REPLIT FETCH] Retry ${i + 1}/${maxRetries} per:`, input);
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-      }
-    }
-    throw new Error('Unreachable code');
-  };
-  
-  // 3. iframe detection e document.domain fix
-  try {
-    const isIframe = window.self !== window.top;
-    if (isIframe && window.location.hostname.includes('replit.dev')) {
-      document.domain = 'replit.dev';
-      console.log('[REPLIT] document.domain impostato per iframe');
-    }
-  } catch (e) {
-    const error = e as Error;
-    console.log('[REPLIT] Domain fix non necessario:', error.message);
+      });
+    });
   }
   
-  // 4. React Refresh completamente disabilitato nel main.tsx
+  // 2. Fix WebSocket connection issues
+  const originalWebSocket = window.WebSocket;
+  window.WebSocket = class extends originalWebSocket {
+    constructor(url: string | URL, protocols?: string | string[]) {
+      let finalUrl = url.toString();
+      
+      // Fix WebSocket URL for Replit environment
+      if (finalUrl.includes('localhost:undefined') || finalUrl.includes('ws://localhost')) {
+        const domain = window.location.hostname;
+        finalUrl = finalUrl.replace('ws://localhost:undefined', `wss://${domain}`);
+        finalUrl = finalUrl.replace('ws://localhost', `wss://${domain}`);
+        console.log('[WEBSOCKET] Fixed URL:', finalUrl);
+      }
+      
+      super(finalUrl, protocols);
+      
+      // Add error handling
+      this.addEventListener('error', (event) => {
+        console.log('[WEBSOCKET] Connection error handled:', event);
+      });
+    }
+  } as typeof WebSocket;
   
-  console.log('[REPLIT FIXES] ✅ Tutti i fix applicati per Connection Denied + Hot Reload');
+  console.log('[WEBSOCKET] ✅ WebSocket and cache fixes applied');
 }
 
 // Layout wrapper component

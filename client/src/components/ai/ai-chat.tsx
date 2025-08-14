@@ -1,6 +1,3 @@
-// IMPORT HMR DISABLE FIRST
-import "../../hmr-disable";
-
 import { useState, useRef, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

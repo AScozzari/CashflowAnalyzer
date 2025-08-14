@@ -1,6 +1,3 @@
-// IMPORT HMR DISABLE FIRST
-import "../hmr-disable";
-
 import { AiChat } from "@/components/ai/ai-chat";
 import Header from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
