@@ -6,15 +6,17 @@ import AiSettings from "@/components/settings/ai-settings";
 import { WebSocketStatus } from "@/components/debug/websocket-status";
 import { EmailSettings } from "@/components/settings/email-settings";
 import { OpenAIDiagnostic } from "@/components/debug/openai-diagnostic";
+import CacheDebugPanel from "@/components/cache/cache-debug";
 
 export default function Settings() {
   return (
     <div className="container mx-auto py-6">
       <Tabs defaultValue="entities" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="entities">Entity Management</TabsTrigger>
           <TabsTrigger value="ai">AI Assistant</TabsTrigger>
           <TabsTrigger value="system">System Settings</TabsTrigger>
+          <TabsTrigger value="cache">Cache Manager</TabsTrigger>
           <TabsTrigger value="debug">Connection Debug</TabsTrigger>
         </TabsList>
 
@@ -41,6 +43,17 @@ export default function Settings() {
             
             <EmailSettings />
           </div>
+        </TabsContent>
+
+        <TabsContent value="cache">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cache Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CacheDebugPanel />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="debug">
