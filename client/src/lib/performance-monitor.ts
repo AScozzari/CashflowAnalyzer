@@ -111,7 +111,7 @@ class PerformanceMonitor {
       contentDownload: navigation.responseEnd - navigation.responseStart,
       domParsing: navigation.domContentLoadedEventStart - navigation.responseEnd,
       resourceLoading: navigation.loadEventStart - navigation.domContentLoadedEventStart,
-      totalPageLoad: navigation.loadEventEnd - navigation.navigationStart
+      totalPageLoad: navigation.loadEventEnd - navigation.fetchStart
     };
   }
 
@@ -253,8 +253,8 @@ class PerformanceMonitor {
       const navigationObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           const nav = entry as PerformanceNavigationTiming;
-          this.record('navigation.domContentLoaded', nav.domContentLoadedEventEnd - nav.navigationStart, 'timer');
-          this.record('navigation.loadComplete', nav.loadEventEnd - nav.navigationStart, 'timer');
+          this.record('navigation.domContentLoaded', nav.domContentLoadedEventEnd - nav.fetchStart, 'timer');
+          this.record('navigation.loadComplete', nav.loadEventEnd - nav.fetchStart, 'timer');
         }
       });
       navigationObserver.observe({ entryTypes: ['navigation'] });
@@ -291,6 +291,8 @@ class PerformanceMonitor {
 export const performanceMonitor = new PerformanceMonitor();
 
 // Utility functions for React components
+import React from 'react';
+
 export const withPerformanceMonitoring = <P extends object>(
   Component: React.ComponentType<P>,
   componentName: string

@@ -1,21 +1,20 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
+// import './lib/reload-fix'; // Temporarily disabled due to TypeScript errors
 
-console.log('[MAIN] EasyCashFlows initializing... v2024.08.14.CACHE-FIXED');
+console.log('[MAIN] EasyCashFlows initializing... v2024.08.14.SIMPLE-FIX');
 
-// CACHE-PROOF: Global error handlers and cache management
+// SIMPLE ERROR HANDLERS
 window.addEventListener('error', (event) => {
   console.error('[MAIN] Global error:', event.error);
-  event.preventDefault();
 });
 
 window.addEventListener('unhandledrejection', (event) => {
   console.error('[MAIN] Unhandled rejection:', event.reason);
-  event.preventDefault();
 });
 
-// Clear problematic caches that cause reload issues
+// SIMPLE CACHE CLEANUP
 if ('caches' in window) {
   caches.keys().then(cacheNames => {
     cacheNames.forEach(cacheName => {
@@ -24,7 +23,7 @@ if ('caches' in window) {
         console.log('[CACHE] Cleaned problematic cache:', cacheName);
       }
     });
-  }).catch(err => console.log('[CACHE] Cache cleanup skipped:', err.message));
+  });
 }
 
 // DYNAMIC APP LOADING: Load appropriate app version
@@ -48,19 +47,10 @@ const initializeApp = async () => {
       return;
     }
 
-    // DYNAMIC IMPORT: Choose app version based on URL
-    const useSimpleApp = window.location.search.includes('app=simple') || window.location.search.includes('debug=simple');
-    
-    let AppComponent;
-    if (useSimpleApp) {
-      console.log('[MAIN] Loading simple test app...');
-      const module = await import("./App-simple");
-      AppComponent = module.default;
-    } else {
-      console.log('[MAIN] Loading full app...');
-      const module = await import("./App");
-      AppComponent = module.default;
-    }
+    // FORCE SIMPLE APP for debugging
+    console.log('[MAIN] Loading simple test app for debugging...');
+    const module = await import("./App-simple");
+    const AppComponent = module.default;
 
     console.log('[MAIN] Creating React root...');
     const root = createRoot(container);
