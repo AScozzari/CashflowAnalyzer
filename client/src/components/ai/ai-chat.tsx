@@ -1,4 +1,11 @@
 import { useState, useRef, useEffect } from "react";
+
+// HMR SAFETY: Disable refresh functions in this component too
+if (typeof window !== 'undefined') {
+  (window as any).$RefreshReg$ = () => () => {};
+  (window as any).$RefreshSig$ = () => (type: any) => type;
+  (window as any).__vite_plugin_react_preamble_installed__ = true;
+}
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

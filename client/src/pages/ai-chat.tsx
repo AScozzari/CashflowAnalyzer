@@ -1,3 +1,10 @@
+// HMR SAFETY: Disable refresh functions before any imports
+if (typeof window !== 'undefined') {
+  (window as any).$RefreshReg$ = () => () => {};
+  (window as any).$RefreshSig$ = () => (type: any) => type;
+  (window as any).__vite_plugin_react_preamble_installed__ = true;
+}
+
 import { AiChat } from "@/components/ai/ai-chat";
 import Header from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
