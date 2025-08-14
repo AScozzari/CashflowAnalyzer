@@ -61,11 +61,18 @@ app.use((req, res, next) => {
     return originalSetHeader.call(this, name, value);
   };
   
-  // CORS for both iframe and direct access
-  res.header('Access-Control-Allow-Origin', '*');
+  // REPLIT-OPTIMIZED CORS: Allow all origins for Replit iframe embedding
+  const requestOrigin = req.headers.origin;
+  
+  res.header('Access-Control-Allow-Origin', requestOrigin || '*');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie, X-Frame-Options, Sec-Fetch-Dest');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie, X-Frame-Options, Sec-Fetch-Dest, X-CSRF-Token');
+  
+  // Additional Replit-specific headers
+  res.header('Access-Control-Expose-Headers', 'Set-Cookie, X-CSRF-Token');
+  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
   
   // Additional security headers optimized for Replit
   res.header('X-Content-Type-Options', 'nosniff');
