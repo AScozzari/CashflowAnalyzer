@@ -4,12 +4,13 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
-// IFRAME-SAFE HEADERS for Replit preview
+// REPLIT-OPTIMIZED HEADERS with proper CSP
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const host = req.headers.host;
   const userAgent = req.headers['user-agent'];
   const isIframe = req.headers['sec-fetch-dest'] === 'iframe' || req.headers['x-frame-options'] || req.headers.referer?.includes('replit.dev');
+  const isReplit = host?.includes('replit.dev') || host?.includes('repl.co');
   
   // Log connection attempts for debugging
   if (req.path === '/' || req.path.startsWith('/api')) {
@@ -19,18 +20,27 @@ app.use((req, res, next) => {
   // CRITICAL: Detect iframe context and store it
   (req as any).isIframe = isIframe;
   
-  // IFRAME-SPECIFIC: Rimuovi TUTTE le restrizioni per domini Replit
-  if (isIframe || host?.includes('replit.dev') || host?.includes('repl.co')) {
-    // Rimuovi TUTTE le restrizioni di sicurezza per Replit
-    res.removeHeader('Content-Security-Policy');
-    res.removeHeader('X-Content-Type-Options');
-    res.removeHeader('Referrer-Policy');
-    res.setHeader('X-Frame-Options', 'ALLOWALL');
-    console.log('[IFRAME] ALL security restrictions removed for Replit domain');
+  // REPLIT-OPTIMIZED CSP: Set proper Content Security Policy via HTTP headers
+  if (isReplit) {
+    const cspValue = [
+      "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "connect-src 'self' *.replit.dev *.repl.co wss: ws: https:",
+      "font-src 'self' fonts.googleapis.com fonts.gstatic.com data:",
+      "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "img-src 'self' data: blob: https:",
+      "frame-ancestors 'self' *.replit.dev *.repl.co",
+      "object-src 'none'",
+      "base-uri 'self'"
+    ].join('; ');
+    
+    res.setHeader('Content-Security-Policy', cspValue);
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    console.log('[CSP] Replit-optimized CSP headers applied');
+  } else {
+    // Standard CSP for non-Replit environments
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   }
-  
-  // CRITICAL: Allow iframe embedding for Replit preview
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   
   // Override any later X-Frame-Options by monitoring response
   const originalSetHeader = res.setHeader;
@@ -48,9 +58,9 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie, X-Frame-Options, Sec-Fetch-Dest');
   
-  // Additional headers for iframe compatibility
+  // Additional security headers optimized for Replit
   res.header('X-Content-Type-Options', 'nosniff');
-  res.header('Referrer-Policy', 'same-origin');
+  res.header('Referrer-Policy', 'strict-origin-when-cross-origin');
   
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);

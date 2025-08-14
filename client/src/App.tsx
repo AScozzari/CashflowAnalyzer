@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Sidebar from "@/components/layout/sidebar";
 import { BottomNavigation } from "@/components/mobile/mobile-navigation";
 import Dashboard from "@/pages/dashboard-professional";
@@ -93,21 +94,29 @@ function Router() {
   );
 }
 
-// MAIN APP COMPONENT - ARROW FUNCTION WITHOUT HMR SIGNATURE
+// MAIN APP COMPONENT - ARROW FUNCTION WITH ERROR BOUNDARIES
 const App = () => {
-  console.log('[APP] EasyCashFlows starting - CLEAN VERSION...');
+  console.log('[APP] EasyCashFlows starting - REPLIT-OPTIMIZED with Error Boundaries...');
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="easycashflow-theme">
-        <AuthProvider>
-          <TooltipProvider>
-            <Router />
-            <Toaster />
-          </TooltipProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary>
+          <ThemeProvider defaultTheme="light" storageKey="easycashflow-theme">
+            <ErrorBoundary>
+              <AuthProvider>
+                <TooltipProvider>
+                  <ErrorBoundary>
+                    <Router />
+                  </ErrorBoundary>
+                  <Toaster />
+                </TooltipProvider>
+              </AuthProvider>
+            </ErrorBoundary>
+          </ThemeProvider>
+        </ErrorBoundary>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
