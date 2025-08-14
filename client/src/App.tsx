@@ -20,6 +20,13 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
+// HMR SAFETY: Ensure all refresh functions are disabled in App component too
+if (typeof window !== 'undefined') {
+  (window as any).$RefreshReg$ = () => () => {};
+  (window as any).$RefreshSig$ = () => (type: any) => type;
+  (window as any).__vite_plugin_react_preamble_installed__ = true;
+}
+
 // REPLIT CRITICAL FIXES - TypeScript-safe version
 if (typeof window !== 'undefined') {
   console.log('[REPLIT FIXES] Applying comprehensive fixes...');
@@ -86,22 +93,7 @@ if (typeof window !== 'undefined') {
     console.log('[REPLIT] Domain fix non necessario:', error.message);
   }
   
-  // 4. React Refresh fix con proper typing
-  const windowWithRefresh = window as any;
-  if (windowWithRefresh.__reactRefreshInjected) {
-    const originalRefresh = windowWithRefresh.$RefreshSig$;
-    if (originalRefresh) {
-      windowWithRefresh.$RefreshSig$ = function() {
-        try {
-          return originalRefresh.apply(this, arguments);
-        } catch (error) {
-          const err = error as Error;
-          console.log('[REPLIT REFRESH] Errore gestito:', err.message);
-          return function() { return null; };
-        }
-      };
-    }
-  }
+  // 4. React Refresh completamente disabilitato nel main.tsx
   
   console.log('[REPLIT FIXES] ✅ Tutti i fix applicati per Connection Denied + Hot Reload');
 }
