@@ -39,10 +39,24 @@ if (typeof window !== 'undefined') {
     }
   } as typeof WebSocket;
   
-  // 2. Fetch retry mechanism con proper typing
+  // 2. Fetch retry mechanism con cache bypass per reload
   const originalFetch = window.fetch;
   window.fetch = async function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const maxRetries = 3;
+    
+    // Force cache bypass on development reload to prevent cache crashes
+    if (process.env.NODE_ENV === 'development') {
+      init = { 
+        ...init, 
+        cache: 'no-cache',
+        headers: {
+          ...init?.headers,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      };
+    }
+    
     for (let i = 0; i < maxRetries; i++) {
       try {
         const response = await originalFetch(input, init);

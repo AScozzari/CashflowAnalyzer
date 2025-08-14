@@ -2,9 +2,9 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 
-console.log('[MAIN] EasyCashFlows initializing... v2024.08.13.CRASH-PROOF');
+console.log('[MAIN] EasyCashFlows initializing... v2024.08.14.CACHE-FIXED');
 
-// CRASH-PROOF: Global error handlers
+// CACHE-PROOF: Global error handlers and cache management
 window.addEventListener('error', (event) => {
   console.error('[MAIN] Global error:', event.error);
   event.preventDefault();
@@ -14,6 +14,18 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('[MAIN] Unhandled rejection:', event.reason);
   event.preventDefault();
 });
+
+// Clear problematic caches that cause reload issues
+if ('caches' in window) {
+  caches.keys().then(cacheNames => {
+    cacheNames.forEach(cacheName => {
+      if (cacheName.includes('workbox') || cacheName.includes('sw-')) {
+        caches.delete(cacheName);
+        console.log('[CACHE] Cleaned problematic cache:', cacheName);
+      }
+    });
+  }).catch(err => console.log('[CACHE] Cache cleanup skipped:', err.message));
+}
 
 // DYNAMIC APP LOADING: Load appropriate app version
 const initializeApp = async () => {
@@ -88,11 +100,6 @@ if (document.readyState === 'loading') {
   initializeApp();
 }
 
-// SERVICE WORKER: Non-blocking registration
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(registration => console.log('[SW] Registered:', registration))
-      .catch(error => console.log('[SW] Registration failed:', error));
-  });
-}
+// SERVICE WORKER: DISABLED - Causing cache crash on reload
+// TODO: Re-implement service worker when needed for offline functionality
+console.log('[SW] Service Worker disabled to prevent cache crashes');
