@@ -138,8 +138,8 @@ function Router() {
         </AppLayout>
       )} />
       
-      {/* Fallback */}
-      <Route component={NotFound} />
+      {/* Fallback - TEMPORANEAMENTE DISATTIVATO */}
+      {/* <Route component={NotFound} /> */}
     </Switch>
   );
 }
