@@ -1,0 +1,43 @@
+[WebSocket Manager] WebSocket Manager initialized for Replit Eval proxy 
+websocket-manager.ts:52 [WebSocket Manager] Attempting to connect to wss://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.replit.dev (attempt 1/10) 
+websocket-manager.ts:86 [WebSocket Manager] Using CSP-compliant URL: wss://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.replit.dev
+websocket-manager.ts:88 Refused to connect to 'wss://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.replit.dev/' because it violates the following Content Security Policy directive: "default-src 'self'". Note that 'connect-src' was not explicitly set, so 'default-src' is used as a fallback.
+
+connect @ websocket-manager.ts:88
+(anonymous) @ websocket-manager.ts:213Understand this error
+App.tsx:25 [REPLIT FIXES] Applying comprehensive fixes...
+App.tsx:92 [REPLIT FIXES] ✅ Tutti i fix applicati per Connection Denied + Hot Reload
+main-clean.tsx:5 [MAIN-CLEAN] Starting clean React app without PWA...
+main-clean.tsx:29 [MAIN-CLEAN] ✅ Clean app rendered successfully
+websocket-manager.ts:52 [WebSocket Manager] WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+App.tsx:178 [APP] EasyCashFlows starting - REPLIT-OPTIMIZED with Error Boundaries...
+theme-provider.tsx:29 [THEME] Simplified ThemeProvider - no hooks, static theme
+theme-provider.tsx:39 [THEME] Applied theme directly: light
+App.tsx:48  GET https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/auth/user 401 (Unauthorized)
+window.fetch @ App.tsx:48
+(anonymous) @ queryClient.ts:32
+fetchFn @ @tanstack_react-query.js?v=fcde4dae:840
+run @ @tanstack_react-query.js?v=fcde4dae:494
+start @ @tanstack_react-query.js?v=fcde4dae:536
+fetch @ @tanstack_react-query.js?v=fcde4dae:926
+executeFetch_fn @ @tanstack_react-query.js?v=fcde4dae:2211
+onSubscribe @ @tanstack_react-query.js?v=fcde4dae:1898
+subscribe @ @tanstack_react-query.js?v=fcde4dae:24
+(anonymous) @ @tanstack_react-query.js?v=fcde4dae:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=fcde4dae:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=fcde4dae:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=fcde4dae:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=fcde4dae:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=fcde4dae:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=fcde4dae:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=fcde4dae:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=fcde4dae:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=fcde4dae:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=fcde4dae:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=fcde4dae:19432
+commitRoot @ chunk-RPCDYKBN.js?v=fcde4dae:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=fcde4dae:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=fcde4dae:18718
+workLoop @ chunk-RPCDYKBN.js?v=fcde4dae:197
+flushWork @ chunk-RPCDYKBN.js?v=fcde4dae:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=fcde4dae:384Understand this error

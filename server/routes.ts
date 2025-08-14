@@ -110,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     // CSP with iframe support
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'self' *.replit.dev *.repl.co");
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: ws: *.replit.dev *.repl.co; frame-ancestors 'self' *.replit.dev *.repl.co");
     
     // X-Frame-Options NOT set here - handled in main index.ts
     next();
