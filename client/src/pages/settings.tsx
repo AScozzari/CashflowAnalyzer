@@ -1,12 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityConfigHorizontal from "@/components/settings/entity-config-horizontal";
-import { ConnectionStatus } from "@/components/debug/connection-status";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AiSettings from "@/components/settings/ai-settings";
-import { WebSocketStatus } from "@/components/debug/websocket-status";
 import { EmailSettings } from "@/components/settings/email-settings";
-import { OpenAIDiagnostic } from "@/components/debug/openai-diagnostic";
-import CacheDebugPanel from "@/components/cache/cache-debug";
+// Debug components removed
+// Cache debug component removed
 
 export default function Settings() {
   return (
@@ -51,29 +49,24 @@ export default function Settings() {
               <CardTitle>Cache Management</CardTitle>
             </CardHeader>
             <CardContent>
-              <CacheDebugPanel />
+              <p className="text-muted-foreground">
+                Cache management tools have been integrated into the main application flow.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="debug">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Replit Connection Diagnostic</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Use this tool to diagnose "Connection Denied" and hot reload issues specific to the Replit environment.
-                </p>
-                <ConnectionStatus />
-              </CardContent>
-            </Card>
-            
-            <WebSocketStatus />
-            
-            <OpenAIDiagnostic />
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Connection Debug</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Debug components have been removed after resolving connection issues.
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
