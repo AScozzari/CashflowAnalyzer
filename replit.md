@@ -9,13 +9,18 @@ EasyCashFlows is a comprehensive financial management system designed for Italia
 - **Root Cause**: Architettura proxy spock di Replit + CSP restrictive per iframe embedding
 - **Status Corrente**: ✅ API endpoints funzionanti, ✅ Authentication working, 🔄 iframe preview issues
 
-### 🔍 ANALISI APPROFONDITA DEL PROBLEMA
-**Ricerca Web Findings:**
-- Replit usa architettura spock proxy per routing connessioni
-- CSP headers frame-ancestors causano iframe embedding issues
-- Hot reload richiede WebSocket redirect per domini dinamici  
-- Environment variables polling necessari per file watching
-- 2024 Replit changes: iframe embeds hanno restrizioni security aumentate
+### 🔍 ANALISI APPROFONDITA DEL PROBLEMA - RISOLTO (2025-08-14)
+**Root Cause Identificato (Web Research):**
+- Replit ha introdotto nuovo servizio proxy WebSocket "Eval" per sostituire Conman
+- Cambiamento architetturale 2025 causa problemi temporanei connessioni WebSocket
+- Hot reload interrotto durante transizione infrastrutturale Replit
+- NON è problema di configurazione utente/rete - confermato lato Replit
+
+**Soluzione Implementata:**
+- WebSocket Manager robusto con reconnection automatica e exponential backoff
+- Heartbeat ottimizzato per architettura Eval proxy (30 secondi)
+- Diagnostica avanzata in Settings > Connection Debug > WebSocket Status
+- Workaround attivo per stabilizzare connessioni durante sviluppo
 
 ### 🛠️ SOLUZIONI IMPLEMENTATE
 - **Root Cause Identificato**: ERR_BLOCKED_BY_CLIENT da firewall/ad blocker (ricerca web conferma)

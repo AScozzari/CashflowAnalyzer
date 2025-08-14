@@ -3,6 +3,7 @@ import EntityConfigHorizontal from "@/components/settings/entity-config-horizont
 import { ConnectionStatus } from "@/components/debug/connection-status";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AiSettings from "@/components/settings/ai-settings";
+import { WebSocketStatus } from "@/components/debug/websocket-status";
 
 export default function Settings() {
   return (
@@ -49,6 +50,8 @@ export default function Settings() {
                 <ConnectionStatus />
               </CardContent>
             </Card>
+            
+            <WebSocketStatus />
           </div>
         </TabsContent>
       </Tabs>
