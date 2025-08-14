@@ -29,25 +29,35 @@ app.use((req, res, next) => {
   // CRITICAL: Detect iframe context and store it
   (req as any).isIframe = isIframe;
   
-  // REPLIT SUPER-PERMISSIVE CSP: Risoluzione completa Connection Denied
+  // REPLIT IFRAME COMPATIBILITY: Basato su documentazione ufficiale
   if (isReplit) {
-    // CSP ULTRA-PERMISSIVO per risolvere problemi spock proxy
+    // STEP 1: Remove ALL frame restrictions
+    res.removeHeader('X-Frame-Options');
+    res.removeHeader('X-Frame-Ancestors');
+    
+    // STEP 2: CSP completo per iframe embedding + spock proxy
     const cspValue = [
       "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:",
-      "connect-src * wss: ws: data: blob:",
-      "font-src * data:",
-      "style-src * 'unsafe-inline'",
+      "connect-src * wss: ws: data: blob: *.replit.dev *.repl.co",
+      "font-src * data: fonts.googleapis.com fonts.gstatic.com",
+      "style-src * 'unsafe-inline' fonts.googleapis.com",
       "script-src * 'unsafe-inline' 'unsafe-eval'",
       "img-src * data: blob:",
-      "frame-ancestors *",
-      "object-src *",
-      "base-uri *",
-      "form-action *"
+      "frame-ancestors * *.replit.dev *.repl.co", // Specifico per Replit
+      "child-src * *.replit.dev *.repl.co",
+      "frame-src * *.replit.dev *.repl.co",
+      "object-src 'none'", // Sicurezza
+      "base-uri 'self'"
     ].join('; ');
     
     res.setHeader('Content-Security-Policy', cspValue);
-    res.removeHeader('X-Frame-Options'); // REMOVE completamente per iframe
-    console.log('[CSP] Ultra-permissive CSP per Connection Denied fix');
+    
+    // STEP 3: Headers specifici per iframe Replit
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'same-origin');
+    res.setHeader('Permissions-Policy', 'fullscreen=*');
+    
+    console.log('[CSP] Replit iframe compatibility + Connection Denied fix');
   } else {
     // Standard CSP for non-Replit environments
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');

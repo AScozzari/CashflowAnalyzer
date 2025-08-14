@@ -19,41 +19,44 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
-// REPLIT CRITICAL FIXES - Soluzione basata su ricerca web approfondita
-// Fix per: Connection Denied + Hot Reload non funzionante
+// REPLIT CRITICAL FIXES - TypeScript-safe version
 if (typeof window !== 'undefined') {
   console.log('[REPLIT FIXES] Applying comprehensive fixes...');
   
-  // 1. HMR WebSocket fix per architettura spock proxy
+  // 1. HMR WebSocket fix con proper typing
   const originalWebSocket = window.WebSocket;
-  window.WebSocket = function(url, protocols) {
-    if (url.includes('/@vite/client') || url.includes('hmr') || url.includes('ws://')) {
-      const replitDomain = window.location.hostname;
-      url = url.replace('ws://localhost', `wss://${replitDomain}`);
-      url = url.replace('ws://', 'wss://');
-      console.log('[REPLIT HMR] WebSocket redirect per spock proxy:', url);
+  window.WebSocket = class extends originalWebSocket {
+    constructor(url: string | URL, protocols?: string | string[]) {
+      let finalUrl = url.toString();
+      if (finalUrl.includes('/@vite/client') || finalUrl.includes('hmr') || finalUrl.includes('ws://')) {
+        const replitDomain = window.location.hostname;
+        finalUrl = finalUrl.replace('ws://localhost', `wss://${replitDomain}`);
+        finalUrl = finalUrl.replace('ws://', 'wss://');
+        console.log('[REPLIT HMR] WebSocket redirect per spock proxy:', finalUrl);
+      }
+      super(finalUrl, protocols);
     }
-    return new originalWebSocket(url, protocols);
-  };
+  } as typeof WebSocket;
   
-  // 2. Fetch retry mechanism per Connection Denied
+  // 2. Fetch retry mechanism con proper typing
   const originalFetch = window.fetch;
-  window.fetch = async function(url, options = {}) {
+  window.fetch = async function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const maxRetries = 3;
     for (let i = 0; i < maxRetries; i++) {
       try {
-        const response = await originalFetch(url, options);
+        const response = await originalFetch(input, init);
         if (response.ok || response.status === 401) return response;
         if (i === maxRetries - 1) throw new Error(`HTTP ${response.status}`);
       } catch (error) {
         if (i === maxRetries - 1) {
-          console.error('[REPLIT FETCH] Max retries raggiunto per:', url, error);
+          console.error('[REPLIT FETCH] Max retries raggiunto per:', input, error);
           throw error;
         }
-        console.log(`[REPLIT FETCH] Retry ${i + 1}/${maxRetries} per:`, url);
+        console.log(`[REPLIT FETCH] Retry ${i + 1}/${maxRetries} per:`, input);
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
+    throw new Error('Unreachable code');
   };
   
   // 3. iframe detection e document.domain fix
@@ -64,18 +67,21 @@ if (typeof window !== 'undefined') {
       console.log('[REPLIT] document.domain impostato per iframe');
     }
   } catch (e) {
-    console.log('[REPLIT] Domain fix non necessario:', e.message);
+    const error = e as Error;
+    console.log('[REPLIT] Domain fix non necessario:', error.message);
   }
   
-  // 4. React Refresh fix per ambiente Replit
-  if (window.__reactRefreshInjected) {
-    const originalRefresh = window.$RefreshSig$;
+  // 4. React Refresh fix con proper typing
+  const windowWithRefresh = window as any;
+  if (windowWithRefresh.__reactRefreshInjected) {
+    const originalRefresh = windowWithRefresh.$RefreshSig$;
     if (originalRefresh) {
-      window.$RefreshSig$ = function() {
+      windowWithRefresh.$RefreshSig$ = function() {
         try {
           return originalRefresh.apply(this, arguments);
         } catch (error) {
-          console.log('[REPLIT REFRESH] Errore gestito:', error.message);
+          const err = error as Error;
+          console.log('[REPLIT REFRESH] Errore gestito:', err.message);
           return function() { return null; };
         }
       };

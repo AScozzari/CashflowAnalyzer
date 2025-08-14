@@ -2,14 +2,27 @@
 
 EasyCashFlows is a comprehensive financial management system designed for Italian small and medium enterprises (SMEs). It provides advanced cash flow tracking, analytics, and integrations with Italian fiscal requirements including FatturaPA (electronic invoicing). The application features a React-based frontend with a modern dashboard, authentication system, file upload capabilities, and comprehensive financial movement tracking with predictive analytics.
 
-## Recent Status Update (2025-08-14) - ✅ ENTERPRISE-LEVEL COMPLETION
-### 🚀 MAJOR MILESTONE: Full Enterprise-Level Application Successfully Deployed
-- **Status**: ✅ FULLY FUNCTIONAL - User authenticated, all APIs working, dashboard loading
-- **Authentication**: ✅ Working perfectly (admin/admin123 login successful)
-- **Data Loading**: ✅ All endpoints responding (movements, companies, resources, analytics)
-- **Performance**: ✅ Enterprise-level optimization package with monitoring system
-- **Security**: ✅ CSRF protection, rate limiting (100 req/15min), XSS prevention
-- **Replit Compatibility**: ✅ Full iframe support, CSP headers optimized for Replit domains
+## Recent Status Update (2025-08-14) - 🔄 REPLIT CONNECTION ISSUES RESOLUTION IN PROGRESS
+### 🎯 CURRENT FOCUS: Risoluzione Problemi "Connessione Negata" e Hot Reload
+- **Issue**: Persistenti errori "Connection Denied" dal dominio spock.replit.dev
+- **Hot Reload**: ✅ FIXED - HMR ora funziona correttamente (visto nel log)
+- **Root Cause**: Architettura proxy spock di Replit + CSP restrictive per iframe embedding
+- **Status Corrente**: ✅ API endpoints funzionanti, ✅ Authentication working, 🔄 iframe preview issues
+
+### 🔍 ANALISI APPROFONDITA DEL PROBLEMA
+**Ricerca Web Findings:**
+- Replit usa architettura spock proxy per routing connessioni
+- CSP headers frame-ancestors causano iframe embedding issues
+- Hot reload richiede WebSocket redirect per domini dinamici  
+- Environment variables polling necessari per file watching
+- 2024 Replit changes: iframe embeds hanno restrizioni security aumentate
+
+### 🛠️ SOLUZIONI IMPLEMENTATE
+- **WebSocket HMR Fix**: Redirect automatico per spock proxy architecture
+- **CSP Headers**: Ultra-permissive per iframe compatibility
+- **Fetch Retry Mechanism**: Handle Connection Denied con retry logic
+- **TypeScript Safety**: Proper typing per tutti i fix applicati
+- **Environment Variables**: Polling configuration per hot reload
 
 ### 🏗️ ARCHITECTURE COMPLETION
 - **Performance Monitoring**: Custom hooks for debouncing, lazy loading, memory management
