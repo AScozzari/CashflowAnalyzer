@@ -81,7 +81,11 @@ export class WebSocketManager {
     this.log(`Attempting to connect to ${this.config.url} (attempt ${this.retryCount + 1}/${this.config.maxRetries})`);
 
     try {
-      this.ws = new WebSocket(this.config.url);
+      // FORCE CSP COMPLIANCE: Ensure WSS for Replit domains
+      const allowedUrl = this.config.url.includes('replit.dev') ? this.config.url : this.config.url.replace('ws://', 'wss://');
+      console.log(`[WebSocket Manager] Using CSP-compliant URL: ${allowedUrl}`);
+      
+      this.ws = new WebSocket(allowedUrl);
       this.setupEventHandlers();
     } catch (error) {
       this.log('Connection attempt failed:', error);
