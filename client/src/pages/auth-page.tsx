@@ -17,8 +17,11 @@ type LoginFormData = z.infer<typeof loginSchema>;
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
 export default function AuthPage() {
+  console.log('[AUTH PAGE] AuthPage component rendering...');
+  
   const [, setLocation] = useLocation();
   const { user, loginMutation, changePasswordMutation } = useAuth();
+  console.log('[AUTH PAGE] User state:', user?.username || 'null');
   const [activeTab, setActiveTab] = useState("login");
   const [requirePasswordChange, setRequirePasswordChange] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

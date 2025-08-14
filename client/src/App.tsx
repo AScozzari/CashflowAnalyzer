@@ -91,7 +91,12 @@ function Router() {
   return (
     <Switch>
       {/* Public routes */}
-      <Route path="/auth" component={AuthPage} />
+      <Route path="/auth">
+        {() => {
+          console.log('[ROUTER] Loading AuthPage...');
+          return <AuthPage />;
+        }}
+      </Route>
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
       
