@@ -3,11 +3,14 @@
 EasyCashFlows is a comprehensive financial management system designed for Italian small and medium enterprises (SMEs). It provides advanced cash flow tracking, analytics, and integrations with Italian fiscal requirements including FatturaPA (electronic invoicing). The application features a React-based frontend with a modern dashboard, authentication system, file upload capabilities, and comprehensive financial movement tracking with predictive analytics.
 
 ## Recent Status Update (2025-08-14)
-- **RefreshSig Error Resolved**: Fixed React Hot Module Reload `$RefreshSig$ is not a function` error that occurred on page reload
-- **App.tsx Refactored**: Changed from function declaration to arrow function to avoid HMR conflicts
-- **Service Workers Removed**: Eliminated all remaining service worker files causing CSP violations
+- **RefreshSig Error Resolved**: Fixed React Hot Module Reload `$RefreshSig$ is not a function` error with manual HMR initialization
+- **File Structure Cleaned**: Major cleanup of duplicate dashboard files - removed dashboard-old.tsx, dashboard-clean.tsx, dashboard-new.tsx, dashboard.tsx
+- **Dashboard Components Optimized**: Removed unused dashboard components (interactive-dashboard.tsx, dynamic-dashboard.tsx, enhanced-recent-movements.tsx)
+- **Analytics Files Cleaned**: Removed duplicate analytics files, keeping only analytics-charts-professional.tsx
+- **Movement Forms Streamlined**: Removed old movement-form variants, keeping movement-form-new-fixed.tsx as primary
+- **Test Files Removed**: Cleaned up debug files, test HTML files, and other development artifacts
+- **Single Dashboard Version**: Using dashboard-professional.tsx as the sole dashboard implementation
 - **Stable React 18**: App now loads and reloads without errors in both development and production
-- **Clean Architecture**: Removed all temporary files and maintained single App.tsx with proper HMR compatibility
 - **Authentication**: Working with proper 401 handling for non-authenticated users
 
 # User Preferences
