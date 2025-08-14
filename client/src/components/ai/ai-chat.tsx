@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Send, Bot, User, Loader2, Trash2, Settings } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Send, Bot, User, Loader2, Trash2, Settings, Plus, MoreHorizontal, Copy, ThumbsUp, ThumbsDown, Zap, MessageSquare } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface ChatMessage {
   id: string;
@@ -155,48 +157,86 @@ export function AiChat() {
   }, [sessions, currentSessionId]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[600px]">
-      {/* Sessions Sidebar */}
-      <Card className="lg:col-span-1">
-        <CardHeader className="pb-3">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[700px]">
+      {/* Sessions Sidebar - ChatGPT Style */}
+      <Card className="lg:col-span-1 bg-muted/20 border-muted">
+        <CardHeader className="pb-3 bg-muted/30">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Chat Sessions</CardTitle>
-            <Button onClick={startNewSession} size="sm" variant="outline">
-              Nuova Chat
+            <CardTitle className="text-base font-medium">Conversazioni</CardTitle>
+            <Button 
+              onClick={startNewSession} 
+              size="sm" 
+              variant="ghost"
+              className="h-8 w-8 p-0 hover:bg-background"
+            >
+              <Plus className="w-4 h-4" />
             </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="h-[480px]">
-            <div className="space-y-2 p-4">
+          <ScrollArea className="h-[580px]">
+            <div className="p-2">
               {sessions.map((session) => (
                 <div
                   key={session.id}
                   onClick={() => setCurrentSessionId(session.id)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                  className={cn(
+                    "group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 mb-1",
                     currentSessionId === session.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted hover:bg-muted/80'
-                  }`}
+                      ? 'bg-primary/10 border border-primary/20 shadow-sm'
+                      : 'hover:bg-background/80'
+                  )}
                 >
-                  <div className="font-medium text-sm truncate">{session.title}</div>
-                  <div className="text-xs opacity-70 mt-1">
-                    {session.messageCount} messaggi
+                  <div className="flex-shrink-0">
+                    <div className={cn(
+                      "w-6 h-6 rounded-full flex items-center justify-center",
+                      currentSessionId === session.id 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted-foreground/20'
+                    )}>
+                      <MessageSquare className="w-3 h-3" />
+                    </div>
                   </div>
-                  <div className="text-xs opacity-50">
-                    {session.createdAt && !isNaN(new Date(session.createdAt).getTime())
-                      ? format(new Date(session.createdAt), 'dd/MM HH:mm')
-                      : 'Data non disponibile'
-                    }
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate mb-1">
+                      {session.title}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{session.messageCount} msg</span>
+                      <span>•</span>
+                      <span>
+                        {session.createdAt && !isNaN(new Date(session.createdAt).getTime())
+                          ? format(new Date(session.createdAt), 'dd/MM')
+                          : 'N/D'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearSessionMutation.mutate(session.id);
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </div>
                 </div>
               ))}
               
               {sessions.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
-                  <Bot className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Nessuna chat iniziata</p>
-                  <p className="text-xs">Inizia una nuova conversazione</p>
+                <div className="text-center text-muted-foreground py-12">
+                  <div className="w-12 h-12 mx-auto mb-4 bg-muted/30 rounded-full flex items-center justify-center">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-medium mb-1">Nessuna conversazione</p>
+                  <p className="text-xs">Clicca + per iniziare</p>
                 </div>
               )}
             </div>
@@ -204,26 +244,30 @@ export function AiChat() {
         </CardContent>
       </Card>
 
-      {/* Chat Area */}
-      <Card className="lg:col-span-3 flex flex-col">
-        <CardHeader className="pb-3">
+      {/* Chat Area - Enhanced Design */}
+      <Card className="lg:col-span-3 flex flex-col bg-background border shadow-lg">
+        <CardHeader className="pb-3 border-b bg-muted/20">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Bot className="w-5 h-5" />
-              AI Assistant
-            </CardTitle>
-            <div className="flex gap-2">
-              {currentSessionId && (
-                <Button
-                  onClick={() => clearSessionMutation.mutate(currentSessionId)}
-                  size="sm"
-                  variant="outline"
-                  disabled={clearSessionMutation.isPending}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
-              <Badge variant="secondary">GPT-4o-mini</Badge>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center">
+                <Bot className="w-4 h-4" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold">EasyCashFlows AI</CardTitle>
+                <p className="text-xs text-muted-foreground">Assistente finanziario intelligente</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+                GPT-4o-mini
+              </Badge>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -237,14 +281,19 @@ export function AiChat() {
                 <span className="ml-2">Caricamento messaggi...</span>
               </div>
             ) : messages.length === 0 ? (
-              <div className="flex items-center justify-center h-32 text-muted-foreground">
-                <div className="text-center">
-                  <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="font-medium mb-2">Inizia una conversazione</h3>
-                  <p className="text-sm">
-                    Chiedi al tuo assistente AI analisi finanziarie, consigli sui flussi di cassa,
-                    o qualsiasi domanda sulla gestione aziendale.
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <div className="text-center max-w-md mx-auto p-8">
+                  <div className="w-16 h-16 mx-auto mb-6 bg-green-500/10 rounded-full flex items-center justify-center">
+                    <Bot className="w-8 h-8 text-green-500" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-3 text-foreground">Benvenuto in EasyCashFlows AI</h3>
+                  <p className="text-sm mb-6 leading-relaxed">
+                    Il tuo assistente intelligente per analisi finanziarie avanzate, 
+                    gestione del flusso di cassa e consigli strategici aziendali.
                   </p>
+                  <div className="text-xs text-muted-foreground">
+                    Inizia una conversazione utilizzando uno dei suggerimenti qui sotto
+                  </div>
                 </div>
               </div>
             ) : (
@@ -252,20 +301,18 @@ export function AiChat() {
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex gap-3 ${
-                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                    className={`group flex gap-4 px-4 py-6 ${
+                      message.role === 'user' 
+                        ? 'bg-background' 
+                        : 'bg-muted/30'
                     }`}
                   >
-                    <div
-                      className={`flex gap-3 max-w-[80%] ${
-                        message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                      }`}
-                    >
+                    <div className="flex-shrink-0">
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center ${
                           message.role === 'user'
                             ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
+                            : 'bg-green-500 text-white'
                         }`}
                       >
                         {message.role === 'user' ? (
@@ -274,39 +321,77 @@ export function AiChat() {
                           <Bot className="w-4 h-4" />
                         )}
                       </div>
-                      <div
-                        className={`rounded-lg p-3 ${
-                          message.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-xs opacity-70">
-                            {message.timestamp && !isNaN(new Date(message.timestamp).getTime()) 
-                              ? format(new Date(message.timestamp), 'HH:mm')
-                              : 'Ora non disponibile'
-                            }
-                          </span>
-                          {message.tokensUsed && (
-                            <Badge variant="outline" className="text-xs">
-                              {message.tokensUsed} token
-                            </Badge>
-                          )}
-                        </div>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-semibold text-sm">
+                          {message.role === 'user' ? 'Tu' : 'EasyCashFlows AI'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {message.timestamp && !isNaN(new Date(message.timestamp).getTime()) 
+                            ? format(new Date(message.timestamp), 'HH:mm')
+                            : 'Ora non disponibile'
+                          }
+                        </span>
+                        {message.tokensUsed && (
+                          <Badge variant="outline" className="text-xs">
+                            {message.tokensUsed} token
+                          </Badge>
+                        )}
                       </div>
+                      
+                      <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                        {message.content}
+                      </div>
+                      
+                      {/* Action buttons for AI messages */}
+                      {message.role === 'assistant' && (
+                        <div className="flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 px-2 text-xs"
+                            onClick={() => navigator.clipboard.writeText(message.content)}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copia
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 px-2 text-xs"
+                          >
+                            <ThumbsUp className="w-3 h-3 mr-1" />
+                            Utile
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 px-2 text-xs"
+                          >
+                            <ThumbsDown className="w-3 h-3 mr-1" />
+                            Migliora
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
                 
-                {/* Typing Indicator */}
+                {/* Typing Indicator - ChatGPT Style */}
                 {isTyping && (
-                  <div className="flex gap-3 justify-start">
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      <Bot className="w-4 h-4" />
+                  <div className="flex gap-4 px-4 py-6 bg-muted/30">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center">
+                        <Bot className="w-4 h-4" />
+                      </div>
                     </div>
-                    <div className="bg-muted rounded-lg p-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-semibold text-sm">EasyCashFlows AI</span>
+                        <span className="text-xs text-muted-foreground">sta scrivendo...</span>
+                      </div>
                       <div className="flex gap-1">
                         <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
                         <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
@@ -321,63 +406,92 @@ export function AiChat() {
             )}
           </ScrollArea>
 
-          {/* Input Area */}
-          <Separator />
-          <div className="p-4">
-            <div className="flex gap-2">
-              <Input
-                value={currentMessage}
-                onChange={(e) => setCurrentMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Scrivi un messaggio al tuo assistente AI..."
-                disabled={sendMessageMutation.isPending || isTyping}
-                className="flex-1"
-                data-testid="input-chat-message"
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={!currentMessage.trim() || sendMessageMutation.isPending || isTyping}
-                size="sm"
-                data-testid="button-send-message"
-              >
-                {sendMessageMutation.isPending || isTyping ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
+          {/* Input Area - ChatGPT Style */}
+          <div className="p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="relative max-w-4xl mx-auto">
+              <div className="relative flex items-end gap-3 bg-muted/50 rounded-3xl p-2 border shadow-sm">
+                <Textarea
+                  value={currentMessage}
+                  onChange={(e) => setCurrentMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder="Messaggio per EasyCashFlows AI..."
+                  disabled={sendMessageMutation.isPending || isTyping}
+                  className="flex-1 min-h-[24px] max-h-32 resize-none border-0 bg-transparent px-3 py-3 text-sm placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+                  rows={1}
+                  data-testid="input-chat-message"
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!currentMessage.trim() || sendMessageMutation.isPending || isTyping}
+                  size="sm"
+                  className="rounded-full w-8 h-8 p-0 shrink-0"
+                  data-testid="button-send-message"
+                >
+                  {sendMessageMutation.isPending || isTyping ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
             </div>
             
-            {/* Quick Actions */}
-            <div className="flex gap-2 mt-3">
-              <Button
-                onClick={() => setCurrentMessage("Analizza i miei flussi di cassa degli ultimi 3 mesi")}
-                size="sm"
-                variant="outline"
-                className="text-xs"
-                disabled={sendMessageMutation.isPending}
-              >
-                Analisi Flussi
-              </Button>
-              <Button
-                onClick={() => setCurrentMessage("Suggerisci strategie per migliorare la liquidità")}
-                size="sm"
-                variant="outline"
-                className="text-xs"
-                disabled={sendMessageMutation.isPending}
-              >
-                Consigli Liquidità
-              </Button>
-              <Button
-                onClick={() => setCurrentMessage("Prevedi i flussi di cassa per i prossimi 6 mesi")}
-                size="sm"
-                variant="outline"
-                className="text-xs"
-                disabled={sendMessageMutation.isPending}
-              >
-                Previsioni
-              </Button>
-            </div>
+            {/* Quick Suggestions - ChatGPT Style */}
+            {messages.length === 0 && !isTyping && (
+              <div className="max-w-4xl mx-auto mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <Button
+                    onClick={() => setCurrentMessage("Fammi un riassunto della situazione finanziaria attuale con dati del database")}
+                    variant="ghost"
+                    className="h-auto p-3 text-left justify-start bg-muted/30 hover:bg-muted/50 rounded-2xl border"
+                    disabled={sendMessageMutation.isPending}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-blue-500" />
+                      <span>Riassunto situazione finanziaria</span>
+                    </div>
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentMessage("Analizza gli ultimi movimenti e mostrami i trend più importanti")}
+                    variant="ghost"
+                    className="h-auto p-3 text-left justify-start bg-muted/30 hover:bg-muted/50 rounded-2xl border"
+                    disabled={sendMessageMutation.isPending}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-green-500" />
+                      <span>Analisi movimenti recenti</span>
+                    </div>
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentMessage("Suggerisci strategie per ottimizzare il flusso di cassa aziendale")}
+                    variant="ghost"
+                    className="h-auto p-3 text-left justify-start bg-muted/30 hover:bg-muted/50 rounded-2xl border"
+                    disabled={sendMessageMutation.isPending}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-purple-500" />
+                      <span>Consigli ottimizzazione</span>
+                    </div>
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentMessage("Prevedi l'andamento finanziario per i prossimi 6 mesi")}
+                    variant="ghost"
+                    className="h-auto p-3 text-left justify-start bg-muted/30 hover:bg-muted/50 rounded-2xl border"
+                    disabled={sendMessageMutation.isPending}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-orange-500" />
+                      <span>Previsioni future</span>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
