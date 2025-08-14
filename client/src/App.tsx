@@ -96,12 +96,6 @@ function Router() {
       <Route path="/reset-password" component={ResetPasswordPage} />
       
       {/* Protected routes con layout */}
-      <ProtectedRoute path="/" component={() => (
-        <AppLayout>
-          <Dashboard />
-        </AppLayout>
-      )} />
-      
       <ProtectedRoute path="/dashboard" component={() => (
         <AppLayout>
           <Dashboard />
@@ -136,6 +130,13 @@ function Router() {
           </AppLayout>
         )}
       />
+      
+      {/* Default route - redirect to dashboard or auth */}
+      <ProtectedRoute path="/" component={() => (
+        <AppLayout>
+          <Dashboard />
+        </AppLayout>
+      )} />
       
       {/* Fallback */}
       <Route component={NotFound} />
