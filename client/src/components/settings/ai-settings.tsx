@@ -67,15 +67,15 @@ export default function AiSettings() {
   useEffect(() => {
     if (aiSettings) {
       form.reset({
-        defaultModel: aiSettings.defaultModel || 'gpt-4o',
-        chatEnabled: aiSettings.chatEnabled ?? true,
-        documentProcessingEnabled: aiSettings.documentProcessingEnabled ?? true,
-        analyticsEnabled: aiSettings.analyticsEnabled ?? true,
-        predictionsEnabled: aiSettings.predictionsEnabled ?? true,
-        maxTokens: aiSettings.maxTokens || 2000,
-        temperature: aiSettings.temperature || 0.7,
-        privacyMode: aiSettings.privacyMode || 'standard',
-        dataRetention: aiSettings.dataRetention || 'none',
+        defaultModel: (aiSettings as any).defaultModel || 'gpt-4o',
+        chatEnabled: (aiSettings as any).chatEnabled ?? true,
+        documentProcessingEnabled: (aiSettings as any).documentProcessingEnabled ?? true,
+        analyticsEnabled: (aiSettings as any).analyticsEnabled ?? true,
+        predictionsEnabled: (aiSettings as any).predictionsEnabled ?? true,
+        maxTokens: (aiSettings as any).maxTokens || 2000,
+        temperature: (aiSettings as any).temperature || 0.7,
+        privacyMode: (aiSettings as any).privacyMode || 'standard',
+        dataRetention: (aiSettings as any).dataRetention || 'none',
         openaiApiKey: '', // Don't pre-fill for security
       });
     }
@@ -84,10 +84,7 @@ export default function AiSettings() {
   // Save settings mutation
   const saveSettingsMutation = useMutation({
     mutationFn: async (data: AiSettingsFormData) => {
-      const response = await apiRequest('/api/ai/settings', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest('POST', '/api/ai/settings', data);
       return response;
     },
     onSuccess: () => {
@@ -109,9 +106,7 @@ export default function AiSettings() {
   // Test connection mutation
   const testConnectionMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('/api/ai/test-connection', {
-        method: 'POST',
-      });
+      const response = await apiRequest('POST', '/api/ai/test-connection');
       return response;
     },
     onSuccess: () => {
@@ -380,7 +375,7 @@ export default function AiSettings() {
                     name="temperature"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Creatività Risposte: {temperatureValue.toFixed(1)}</FormLabel>
+                        <FormLabel>Creatività Risposte: {Number(temperatureValue).toFixed(1)}</FormLabel>
                         <FormControl>
                           <Slider
                             value={[field.value]}
