@@ -18,8 +18,8 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('[MAIN-SAFE] Rejection:', event.reason);
 });
 
-// DIRECT APP IMPORT - NO DYNAMIC LOADING
-import App from "./App";
+// DIRECT APP IMPORT - USE WORKING VERSION
+import App from "./App-working";
 
 const container = document.getElementById("root");
 if (!container) {
