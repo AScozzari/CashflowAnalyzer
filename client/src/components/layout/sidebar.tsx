@@ -29,7 +29,6 @@ export default function Sidebar({ isCollapsed: externalCollapsed, onCollapsedCha
       { name: "Dashboard", href: "/dashboard", icon: Home },
       { name: "Movimenti", href: "/movements", icon: RefreshCw },
       { name: "Analytics", href: "/analytics", icon: TrendingUp },
-      { name: "AI Assistant", href: "/ai-chat", icon: Bot },
     ];
 
     // Solo Admin e Finance possono accedere alle impostazioni

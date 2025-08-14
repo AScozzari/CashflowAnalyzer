@@ -23,7 +23,6 @@ export function MobileNavigation({ className }: MobileNavigationProps) {
       { name: "Dashboard", href: "/dashboard", icon: Home },
       { name: "Movimenti", href: "/movements", icon: RefreshCw },
       { name: "Analytics", href: "/analytics", icon: TrendingUp },
-      { name: "AI Assistant", href: "/ai-chat", icon: Bot },
     ];
 
     // Solo Admin e Finance possono accedere alle impostazioni
@@ -68,6 +67,20 @@ export function MobileNavigation({ className }: MobileNavigationProps) {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+            </div>
+            
+            {/* AI Assistant Quick Access */}
+            <div className="p-4 border-b border-sidebar-border">
+              <Link href="/ai-chat" onClick={() => setIsOpen(false)}>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start space-x-2 hover:bg-primary/10 hover:text-primary"
+                  data-testid="button-mobile-ai-assistant"
+                >
+                  <Bot className="h-4 w-4" />
+                  <span>AI Assistant</span>
+                </Button>
+              </Link>
             </div>
             
             {/* Navigation */}

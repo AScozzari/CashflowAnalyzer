@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { LogOut, User, Shield, CreditCard } from "lucide-react";
+import { LogOut, User, Shield, CreditCard, Bot } from "lucide-react";
+import { Link } from "wouter";
 import { NotificationsBell } from "./notifications-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MobileNavigation } from "@/components/mobile/mobile-navigation";
@@ -72,6 +73,20 @@ export default function Header({ title, subtitle, action }: HeaderProps) {
           <MobileNavigation />
           {action && <div className="hidden sm:block">{action}</div>}
           <ThemeToggle />
+          
+          {/* AI Assistant Button */}
+          <Link href="/ai-chat">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative hover:bg-primary/10 hover:text-primary transition-colors"
+              title="AI Assistant"
+              data-testid="button-ai-assistant"
+            >
+              <Bot className="h-5 w-5" />
+            </Button>
+          </Link>
+          
           <NotificationsBell />
           
           {user && (
