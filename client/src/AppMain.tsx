@@ -93,9 +93,9 @@ function Router() {
   );
 }
 
-// MAIN APP COMPONENT - ARROW FUNCTION WITHOUT HMR SIGNATURE
-const App = () => {
-  console.log('[APP] EasyCashFlows starting - CLEAN VERSION...');
+// MAIN APP COMPONENT - NUOVO NOME FILE = NUOVA CACHE
+const AppMain = () => {
+  console.log('[APP-MAIN] EasyCashFlows starting - NO REFRESH SIG...');
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -111,4 +111,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default AppMain;
