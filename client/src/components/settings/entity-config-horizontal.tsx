@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, Users, CreditCard, MapPin, Tags, Flag, Target, FileText, Truck, UserCheck, Mail } from "lucide-react";
+import { Building, Users, CreditCard, MapPin, Tags, Flag, Target, FileText, Truck, UserCheck } from "lucide-react";
 import CompanyManagement from "./company-management";
 import CoreManagement from "./core-management";
 import ResourceManagement from "./resource-management";
@@ -12,7 +12,6 @@ import TagManagement from "./tag-management";
 import MovementStatusManagement from "./movement-status-management";
 import SupplierManagement from "./supplier-management";
 import { CustomerManagement } from "./customer-management";
-import EmailSettings from "./email-settings";
 
 export default function EntityConfigHorizontal() {
   const [activeTab, setActiveTab] = useState("companies");
@@ -28,7 +27,6 @@ export default function EntityConfigHorizontal() {
     { id: "tags", label: "Tags", icon: Tags, color: "bg-pink-500" },
     { id: "reasons", label: "Causali", icon: FileText, color: "bg-indigo-500" },
     { id: "statuses", label: "Stati Movimento", icon: Flag, color: "bg-amber-500" },
-    { id: "email", label: "Email", icon: Mail, color: "bg-teal-500" },
   ];
 
   return (
@@ -100,7 +98,6 @@ export default function EntityConfigHorizontal() {
               {activeTab === "tags" && <TagManagement />}
               {activeTab === "reasons" && <MovementReasonManagement />}
               {activeTab === "statuses" && <MovementStatusManagement />}
-              {activeTab === "email" && <EmailSettings />}
             </CardContent>
           </Card>
         </div>

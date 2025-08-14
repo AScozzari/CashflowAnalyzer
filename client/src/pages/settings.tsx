@@ -4,6 +4,7 @@ import { ConnectionStatus } from "@/components/debug/connection-status";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AiSettings from "@/components/settings/ai-settings";
 import { WebSocketStatus } from "@/components/debug/websocket-status";
+import { EmailSettings } from "@/components/settings/email-settings";
 
 export default function Settings() {
   return (
@@ -25,16 +26,20 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="system">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Configuration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                System settings and configuration options will be available here.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>System Configuration</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  General system settings and configuration options.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <EmailSettings />
+          </div>
         </TabsContent>
 
         <TabsContent value="debug">
