@@ -17,7 +17,7 @@ export function OpenAIDiagnostic() {
   const [results, setResults] = useState<DiagnosticResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
-  const updateResult = (step: string, status: 'success' | 'error', message: string, details?: string) => {
+  const updateResult = (step: string, status: 'pending' | 'success' | 'error', message: string, details?: string) => {
     setResults(prev => [
       ...prev.filter(r => r.step !== step),
       { step, status, message, details }
