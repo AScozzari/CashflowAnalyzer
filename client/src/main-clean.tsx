@@ -4,8 +4,8 @@ import "./index.css";
 
 console.log('[MAIN-CLEAN] Starting clean React app without PWA...');
 
-// NUOVO FILE = NUOVA CACHE - EVITA REFRESH SIG
-import App from "./AppMain";
+// SIMPLE DIRECT IMPORT: Back to simple approach
+import App from "./App";
 
 const container = document.getElementById("root");
 if (!container) {
