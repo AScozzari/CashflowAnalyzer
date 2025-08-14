@@ -2,23 +2,20 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 
-// FIX REFRESH RUNTIME ERROR: Disable HMR to prevent crashes
-if (import.meta.hot) {
-  // Disable HMR refresh to prevent RefreshRuntime errors
-  import.meta.hot.accept(() => {
-    // Prevent automatic refresh on changes
-    console.log('[MAIN] HMR change detected but refresh disabled to prevent crashes');
-  });
+// COMPLETE HMR BYPASS: Remove all HMR functionality to prevent errors
+try {
+  // Clear any existing HMR globals that cause issues
+  delete (window as any).$RefreshReg$;
+  delete (window as any).$RefreshSig$;
+  delete (window as any).__vite_plugin_react_preamble_installed__;
   
-  // Override problematic globals
-  try {
-    (window as any).$RefreshReg$ = () => {};
-    (window as any).$RefreshSig$ = () => (type: any) => type;
-    (window as any).__vite_plugin_react_preamble_installed__ = true;
-    console.log('[MAIN] HMR globals overridden safely');
-  } catch (e) {
-    console.log('[MAIN] HMR override failed, continuing without HMR');
-  }
+  // Set safe no-op functions
+  (window as any).$RefreshReg$ = function() { return function() {}; };
+  (window as any).$RefreshSig$ = function() { return function(type: any) { return type; }; };
+  
+  console.log('[MAIN] HMR completely disabled - safe mode active');
+} catch (e) {
+  console.log('[MAIN] HMR cleanup error (non-critical):', e);
 }
 
 console.log('[MAIN] EasyCashFlows initializing... v2024.08.14.HMR-FIXED');
