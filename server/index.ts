@@ -10,6 +10,8 @@ import {
   validateSession,
   securityHeaders
 } from "./middleware/security";
+import { EasyCashFlowsWebSocketHandler } from "./websocket-handler";
+import { createServer } from 'http';
 
 const app = express();
 
@@ -226,7 +228,7 @@ app.get('/', (req, res, next) => {
 */
 
 (async () => {
-  const server = await registerRoutes(app);
+  await registerRoutes(app);
   
   // Applica middleware di sicurezza SOLO per API endpoints
   app.use('/api', securityHeaders);
@@ -255,6 +257,12 @@ app.get('/', (req, res, next) => {
   const isProduction = process.env.NODE_ENV === "production";
   console.log(`[ENV DEBUG] NODE_ENV: "${process.env.NODE_ENV}", isProduction: ${isProduction}`);
   
+  // Create HTTP server for WebSocket upgrade
+  const httpServer = createServer(app);
+  
+  // Initialize WebSocket handler
+  const wsHandler = new EasyCashFlowsWebSocketHandler(httpServer);
+  
   if (!isProduction) {
     console.log('[VITE] Setting up Vite development server...');
     
@@ -267,7 +275,7 @@ app.get('/', (req, res, next) => {
       throw error;
     });
     
-    await setupVite(app, server);
+    await setupVite(app, httpServer);
   } else {
     // Serve solo le API, frontend su Replit
     app.get('*', (req, res) => {
@@ -297,9 +305,10 @@ app.get('/', (req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
   
   // Enhanced server startup with network diagnostics
-  server.listen(port, "0.0.0.0", () => {
+  httpServer.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
     console.log(`🚀 EasyCashFlows server ready at http://0.0.0.0:${port}`);
+    console.log(`🔌 WebSocket endpoint available at ws://0.0.0.0:${port}/ws`);
     
     // Construct Replit URL properly
     let replitUrl = '';

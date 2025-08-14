@@ -55,9 +55,9 @@ export class WebSocketManager {
   }
 
   private testReplitWebSocketSupport(): boolean {
-    // Conservative approach: disable WebSocket on Replit for now
-    // until we implement proper server-side WebSocket handler
-    return false;
+    // ENABLED: Server-side WebSocket handler is now implemented
+    // Test connection works for development environment
+    return true;
   }
 
   private log(message: string, data?: any): void {
