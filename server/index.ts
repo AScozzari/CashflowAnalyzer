@@ -1,6 +1,15 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { 
+  generateCSRFToken, 
+  getCSRFToken, 
+  validateCSRF, 
+  createRateLimit, 
+  sanitizeInput,
+  validateSession,
+  securityHeaders
+} from "./middleware/security";
 
 const app = express();
 
@@ -208,6 +217,17 @@ app.get('/', (req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+  
+  // Applica middleware di sicurezza DOPO l'inizializzazione delle sessioni
+  app.use(securityHeaders);
+  app.use(generateCSRFToken);
+  app.use(sanitizeInput);
+  
+  // Rate limiting per API endpoints
+  app.use('/api', createRateLimit(15 * 60 * 1000, 100)); // 100 richieste per 15 minuti
+  
+  // Route per token CSRF
+  app.get('/api/csrf-token', getCSRFToken);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
