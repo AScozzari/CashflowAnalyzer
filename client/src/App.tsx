@@ -144,10 +144,8 @@ function Router() {
   );
 }
 
-// MAIN EASYCASHFLOWS APP - Now working with HMR fixes
+// MAIN EASYCASHFLOWS APP
 function App() {
-  console.log('[APP] Full EasyCashFlows app rendering...');
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
