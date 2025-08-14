@@ -31,10 +31,10 @@ app.use((req, res, next) => {
   
   // REPLIT CONNECTION DENIED FIX: Disabilita TUTTI i security headers
   if (isReplit) {
-    // STEP 1: Remove TUTTI i frame-related headers
+    // STEP 1: Remove TUTTI i frame-related headers EXCEPT CSP
     res.removeHeader('X-Frame-Options');
     res.removeHeader('X-Frame-Ancestors');
-    res.removeHeader('Content-Security-Policy');
+    // NON rimuovere CSP - lo impostiamo dopo
     res.removeHeader('X-Content-Security-Policy');
     res.removeHeader('X-WebKit-CSP');
     
@@ -48,7 +48,7 @@ app.use((req, res, next) => {
     // STEP 3: CSP permissiva che supporta WebSocket
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: ws: *.replit.dev *.repl.co; frame-ancestors 'self' *.replit.dev *.repl.co");
     
-    console.log('[DEBUG] ALL security headers disabled for Connection Denied troubleshooting');
+    console.log('[DEBUG] CSP with WebSocket support applied for Replit:', res.getHeader('Content-Security-Policy'));
   } else {
     // Standard CSP for non-Replit environments
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
