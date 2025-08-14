@@ -11,6 +11,18 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- REPLIT FIX: Bypass Vite HMR WebSocket issues -->
+    <script type="module">
+      // Prevent Vite HMR WebSocket errors
+      if (window.location.hostname.includes('replit.dev')) {
+        window.addEventListener('error', function(e) {
+          if (e.message && e.message.includes('ERR_NETWORK_CHANGED')) {
+            e.preventDefault();
+            console.log('[REPLIT] Suppressed ERR_NETWORK_CHANGED - app still works');
+          }
+        });
+      }
+    </script>
     <script type="module" src="/src/main-clean.tsx"></script>
   </body>
 </html>
