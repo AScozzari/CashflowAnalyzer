@@ -11,6 +11,21 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main-safe.tsx"></script>
+    <!-- CRITICAL FIX: Override HMR functions BEFORE Vite loads them -->
+    <script>
+      console.log('[HMR-FIX] Pre-emptive HMR override in HTML');
+      window.$RefreshReg$ = function() { return function() {}; };
+      window.$RefreshSig$ = function() { return function(type) { return type; }; };
+      window.__vite_plugin_react_preamble_installed__ = true;
+      
+      // Override RefreshRuntime before it loads
+      window.RefreshRuntime = {
+        injectIntoGlobalHook: function() { console.log('[HMR-FIX] RefreshRuntime.injectIntoGlobalHook blocked'); },
+        register: function() { console.log('[HMR-FIX] RefreshRuntime.register blocked'); }
+      };
+      
+      console.log('[HMR-FIX] All HMR functions pre-emptively overridden');
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
