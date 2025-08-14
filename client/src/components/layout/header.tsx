@@ -95,7 +95,7 @@ export default function Header({ title, subtitle, action }: HeaderProps) {
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full shrink-0">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-primary text-white">
-                      {getInitials(user.firstName, user.lastName)}
+                      {getInitials(user.username, '')}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -104,7 +104,7 @@ export default function Header({ title, subtitle, action }: HeaderProps) {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {user.firstName} {user.lastName}
+                      {user.username}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
