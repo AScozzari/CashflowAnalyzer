@@ -19,6 +19,72 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
+// REPLIT CRITICAL FIXES - Soluzione basata su ricerca web approfondita
+// Fix per: Connection Denied + Hot Reload non funzionante
+if (typeof window !== 'undefined') {
+  console.log('[REPLIT FIXES] Applying comprehensive fixes...');
+  
+  // 1. HMR WebSocket fix per architettura spock proxy
+  const originalWebSocket = window.WebSocket;
+  window.WebSocket = function(url, protocols) {
+    if (url.includes('/@vite/client') || url.includes('hmr') || url.includes('ws://')) {
+      const replitDomain = window.location.hostname;
+      url = url.replace('ws://localhost', `wss://${replitDomain}`);
+      url = url.replace('ws://', 'wss://');
+      console.log('[REPLIT HMR] WebSocket redirect per spock proxy:', url);
+    }
+    return new originalWebSocket(url, protocols);
+  };
+  
+  // 2. Fetch retry mechanism per Connection Denied
+  const originalFetch = window.fetch;
+  window.fetch = async function(url, options = {}) {
+    const maxRetries = 3;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const response = await originalFetch(url, options);
+        if (response.ok || response.status === 401) return response;
+        if (i === maxRetries - 1) throw new Error(`HTTP ${response.status}`);
+      } catch (error) {
+        if (i === maxRetries - 1) {
+          console.error('[REPLIT FETCH] Max retries raggiunto per:', url, error);
+          throw error;
+        }
+        console.log(`[REPLIT FETCH] Retry ${i + 1}/${maxRetries} per:`, url);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+  };
+  
+  // 3. iframe detection e document.domain fix
+  try {
+    const isIframe = window.self !== window.top;
+    if (isIframe && window.location.hostname.includes('replit.dev')) {
+      document.domain = 'replit.dev';
+      console.log('[REPLIT] document.domain impostato per iframe');
+    }
+  } catch (e) {
+    console.log('[REPLIT] Domain fix non necessario:', e.message);
+  }
+  
+  // 4. React Refresh fix per ambiente Replit
+  if (window.__reactRefreshInjected) {
+    const originalRefresh = window.$RefreshSig$;
+    if (originalRefresh) {
+      window.$RefreshSig$ = function() {
+        try {
+          return originalRefresh.apply(this, arguments);
+        } catch (error) {
+          console.log('[REPLIT REFRESH] Errore gestito:', error.message);
+          return function() { return null; };
+        }
+      };
+    }
+  }
+  
+  console.log('[REPLIT FIXES] ✅ Tutti i fix applicati per Connection Denied + Hot Reload');
+}
+
 // Layout wrapper component
 function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);

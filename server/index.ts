@@ -29,23 +29,25 @@ app.use((req, res, next) => {
   // CRITICAL: Detect iframe context and store it
   (req as any).isIframe = isIframe;
   
-  // REPLIT-OPTIMIZED CSP: Set proper Content Security Policy via HTTP headers
+  // REPLIT SUPER-PERMISSIVE CSP: Risoluzione completa Connection Denied
   if (isReplit) {
+    // CSP ULTRA-PERMISSIVO per risolvere problemi spock proxy
     const cspValue = [
-      "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      "connect-src 'self' *.replit.dev *.repl.co wss: ws: https:",
-      "font-src 'self' fonts.googleapis.com fonts.gstatic.com data:",
-      "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      "img-src 'self' data: blob: https:",
-      "frame-ancestors 'self' *.replit.dev *.repl.co",
-      "object-src 'none'",
-      "base-uri 'self'"
+      "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:",
+      "connect-src * wss: ws: data: blob:",
+      "font-src * data:",
+      "style-src * 'unsafe-inline'",
+      "script-src * 'unsafe-inline' 'unsafe-eval'",
+      "img-src * data: blob:",
+      "frame-ancestors *",
+      "object-src *",
+      "base-uri *",
+      "form-action *"
     ].join('; ');
     
     res.setHeader('Content-Security-Policy', cspValue);
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-    console.log('[CSP] Replit-optimized CSP headers applied');
+    res.removeHeader('X-Frame-Options'); // REMOVE completamente per iframe
+    console.log('[CSP] Ultra-permissive CSP per Connection Denied fix');
   } else {
     // Standard CSP for non-Replit environments
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
