@@ -143,8 +143,8 @@ function Router() {
         </AppLayout>
       )} />
       
-      {/* Fallback */}
-      <Route component={NotFound} />
+      {/* Fallback - TEMPORANEO DISABILITATO */}
+      {/* <Route component={NotFound} /> */}
     </Switch>
   );
 }
