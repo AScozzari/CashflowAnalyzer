@@ -1,9 +1,27 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-// import './lib/reload-fix'; // Temporarily disabled due to TypeScript errors
 
-console.log('[MAIN] EasyCashFlows initializing... v2024.08.14.SIMPLE-FIX');
+// FIX REFRESH RUNTIME ERROR: Disable HMR to prevent crashes
+if (import.meta.hot) {
+  // Disable HMR refresh to prevent RefreshRuntime errors
+  import.meta.hot.accept(() => {
+    // Prevent automatic refresh on changes
+    console.log('[MAIN] HMR change detected but refresh disabled to prevent crashes');
+  });
+  
+  // Override problematic globals
+  try {
+    (window as any).$RefreshReg$ = () => {};
+    (window as any).$RefreshSig$ = () => (type: any) => type;
+    (window as any).__vite_plugin_react_preamble_installed__ = true;
+    console.log('[MAIN] HMR globals overridden safely');
+  } catch (e) {
+    console.log('[MAIN] HMR override failed, continuing without HMR');
+  }
+}
+
+console.log('[MAIN] EasyCashFlows initializing... v2024.08.14.HMR-FIXED');
 
 // SIMPLE ERROR HANDLERS
 window.addEventListener('error', (event) => {
@@ -47,9 +65,9 @@ const initializeApp = async () => {
       return;
     }
 
-    // FORCE SIMPLE APP for debugging
-    console.log('[MAIN] Loading simple test app for debugging...');
-    const module = await import("./App-simple");
+    // Switch back to full app now that HMR is fixed
+    console.log('[MAIN] Loading full app with HMR fix...');
+    const module = await import("./App");
     const AppComponent = module.default;
 
     console.log('[MAIN] Creating React root...');
