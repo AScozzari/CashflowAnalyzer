@@ -11,13 +11,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- REDIRECT TO SIMPLE TEST -->
-    <script>
-      console.log('[REDIRECT] Testing simple HTML first...');
-      if (!window.location.search.includes('test=skip')) {
-        window.location.href = '/test-simple.html';
-      }
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
