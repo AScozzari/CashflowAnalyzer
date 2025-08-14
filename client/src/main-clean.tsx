@@ -5,7 +5,7 @@ import "./index.css";
 console.log('[MAIN-CLEAN] Starting clean React app without PWA...');
 
 // SIMPLE DIRECT IMPORT: Back to simple approach
-import App from "./App-new";
+import App from "./App";
 
 const container = document.getElementById("root");
 if (!container) {
