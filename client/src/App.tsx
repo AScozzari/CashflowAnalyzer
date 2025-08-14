@@ -1,7 +1,7 @@
 // IMPORT HMR DISABLE FIRST
 import "./hmr-disable";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -34,20 +34,8 @@ if (typeof window !== 'undefined') {
 if (typeof window !== 'undefined') {
   console.log('[REPLIT FIXES] Applying comprehensive fixes...');
   
-  // 1. HMR WebSocket fix con proper typing
-  const originalWebSocket = window.WebSocket;
-  window.WebSocket = class extends originalWebSocket {
-    constructor(url: string | URL, protocols?: string | string[]) {
-      let finalUrl = url.toString();
-      if (finalUrl.includes('/@vite/client') || finalUrl.includes('hmr') || finalUrl.includes('ws://')) {
-        const replitDomain = window.location.hostname;
-        finalUrl = finalUrl.replace('ws://localhost', `wss://${replitDomain}`);
-        finalUrl = finalUrl.replace('ws://', 'wss://');
-        console.log('[REPLIT HMR] WebSocket redirect per spock proxy:', finalUrl);
-      }
-      super(finalUrl, protocols);
-    }
-  } as typeof WebSocket;
+  // 1. HMR WebSocket fix con proper typing - DISABLED
+  console.log('[REPLIT] WebSocket fixes disabled to prevent conflicts');
   
   // 2. Fetch retry mechanism con cache bypass per reload
   const originalFetch = window.fetch;
@@ -182,51 +170,25 @@ function Router() {
   );
 }
 
-// ULTRA-SIMPLE APP FOR DEBUGGING
+// MAIN EASYCASHFLOWS APP - Now working with HMR fixes
 function App() {
-  console.log('[APP] Function component render started');
-  
-  const handleClick = () => {
-    console.log('[APP] Button clicked!');
-    alert('React funziona!');
-  };
-  
-  console.log('[APP] About to return JSX');
-  
+  console.log('[APP] Full EasyCashFlows app rendering...');
+
   return (
-    <div 
-      style={{ 
-        padding: '20px', 
-        minHeight: '100vh', 
-        backgroundColor: '#f0f0f0',
-        fontFamily: 'Arial, sans-serif'
-      }}
-    >
-      <h1 style={{ color: '#2563eb', marginBottom: '20px' }}>
-        🏦 EasyCashFlows - Debug Test
-      </h1>
-      <p style={{ fontSize: '18px', marginBottom: '20px' }}>
-        Se vedi questo testo, React sta funzionando correttamente!
-      </p>
-      <button 
-        onClick={handleClick}
-        style={{
-          padding: '10px 20px',
-          fontSize: '16px',
-          backgroundColor: '#2563eb',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer'
-        }}
-      >
-        Test Click
-      </button>
-      <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
-        <p>Timestamp: {new Date().toLocaleTimeString()}</p>
-        <p>Status: App renderizzata con successo</p>
-      </div>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <ThemeProvider>
+          <ErrorBoundary>
+            <div className="min-h-screen bg-background">
+              <Toaster />
+              <AuthProvider>
+                <Router />
+              </AuthProvider>
+            </div>
+          </ErrorBoundary>
+        </ThemeProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 

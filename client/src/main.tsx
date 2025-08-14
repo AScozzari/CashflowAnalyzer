@@ -24,14 +24,26 @@ if (typeof window !== 'undefined') {
 
 console.log('[MAIN] EasyCashFlows initializing with HMR disabled...');
 
+// DISABLE SERVICE WORKER immediately
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => {
+      console.log('[MAIN] Unregistering SW:', registration.scope);
+      registration.unregister();
+    });
+  });
+}
+
 // APP INITIALIZATION
 async function initializeApp() {
   try {
     console.log('[MAIN] Starting app initialization...');
     
     // Import App component
+    console.log('[MAIN] About to import App component...');
     const { default: AppComponent } = await import("./App");
     console.log('[MAIN] App component loaded:', typeof AppComponent);
+    console.log('[MAIN] App component name:', AppComponent?.name || 'unnamed');
     
     // Get root container
     const container = document.getElementById("root");
@@ -71,12 +83,14 @@ async function initializeApp() {
     
   } catch (error) {
     console.error('[MAIN] ❌ App initialization failed:', error);
+    console.error('[MAIN] Error stack:', (error as Error)?.stack);
     const container = document.getElementById("root");
     if (container) {
       container.innerHTML = `
         <div style="padding:20px;color:red;font-family:Arial;">
           <h1>Errore di Inizializzazione</h1>
-          <p>Errore: ${String(error)}</p>
+          <p><strong>Errore:</strong> ${String(error)}</p>
+          <p><strong>Dettagli:</strong> ${(error as Error)?.message}</p>
           <button onclick="window.location.reload()" style="padding:10px 20px;background:#dc2626;color:white;border:none;border-radius:5px;">Ricarica Pagina</button>
         </div>
       `;
