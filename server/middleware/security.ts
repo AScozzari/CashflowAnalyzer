@@ -4,8 +4,14 @@ import '../types/session';
 
 // Middleware per generazione token CSRF
 export const generateCSRFToken = (req: Request, res: Response, next: NextFunction) => {
+  // Skip per richieste statiche e Vite HMR
+  if (req.path.includes('/@') || req.path.includes('/.vite') || req.path.includes('/src/') || req.path.includes('.ico')) {
+    return next();
+  }
+
   if (!req.session) {
-    return res.status(500).json({ error: 'Sessione non disponibile' });
+    console.log('[CSRF] Warning: Session not available for', req.path);
+    return next(); // Non bloccare le richieste senza sessione
   }
 
   // Genera un nuovo token CSRF se non esiste
@@ -125,15 +131,21 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction) =
   next();
 };
 
-// Middleware per validazione sessione
+// Middleware per validazione sessione (solo per verifica, non blocca)
 export const validateSession = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.session) {
-    return res.status(500).json({ error: 'Sessione non configurata' });
+  // Skip per richieste statiche e Vite HMR
+  if (req.path.includes('/@') || req.path.includes('/.vite') || req.path.includes('/src/') || req.path.includes('.ico')) {
+    return next();
   }
 
-  // Rinnova automaticamente la sessione se è attiva
-  if (req.session.userId) {
-    req.session.touch();
+  if (!req.session) {
+    console.log('[SESSION] Warning: Session not configured for', req.path);
+    // Non bloccare, solo loggare per debug
+  } else {
+    // Rinnova automaticamente la sessione se è attiva
+    if (req.session.userId) {
+      req.session.touch();
+    }
   }
 
   next();

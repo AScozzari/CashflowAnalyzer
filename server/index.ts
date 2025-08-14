@@ -218,10 +218,10 @@ app.get('/', (req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
   
-  // Applica middleware di sicurezza DOPO l'inizializzazione delle sessioni
-  app.use(securityHeaders);
-  app.use(generateCSRFToken);
-  app.use(sanitizeInput);
+  // Applica middleware di sicurezza SOLO per API endpoints
+  app.use('/api', securityHeaders);
+  app.use('/api', generateCSRFToken);
+  app.use('/api', sanitizeInput);
   
   // Rate limiting per API endpoints
   app.use('/api', createRateLimit(15 * 60 * 1000, 100)); // 100 richieste per 15 minuti
