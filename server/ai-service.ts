@@ -3,7 +3,7 @@ import { storage } from './storage';
 import type { AiSettings, InsertAiChatHistory } from '@shared/schema';
 
 export class AIService {
-  private openai: OpenAI;
+  private openai!: OpenAI;
   private isConfigured: boolean = false;
 
   constructor() {

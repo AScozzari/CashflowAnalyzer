@@ -1419,7 +1419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===================
 
   // AI Settings
-  app.get("/api/ai/settings", requireAuth, handleAsyncErrors(async (req, res) => {
+  app.get("/api/ai/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const settings = await storage.getAiSettings(req.user.id);
       if (settings) {
@@ -1438,7 +1438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/ai/settings", requireAuth, handleAsyncErrors(async (req, res) => {
+  app.post("/api/ai/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { openaiApiKey, ...otherSettings } = req.body;
       
@@ -1473,7 +1473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/ai/test-connection", requireAuth, handleAsyncErrors(async (req, res) => {
+  app.post("/api/ai/test-connection", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const result = await aiService.testConnection();
       res.json(result);
@@ -1484,7 +1484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // AI Chat
-  app.post("/api/ai/chat", requireAuth, handleAsyncErrors(async (req, res) => {
+  app.post("/api/ai/chat", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { message, sessionId, context } = req.body;
       
@@ -1500,13 +1500,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in AI chat:', error);
       res.status(500).json({ error: error.message || "Errore nella chat AI" });
     }
   }));
 
-  app.get("/api/ai/chat/history/:sessionId?", requireAuth, handleAsyncErrors(async (req, res) => {
+  app.get("/api/ai/chat/history/:sessionId?", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { sessionId } = req.params;
       const history = await storage.getAiChatHistory(req.user.id, sessionId);
@@ -1517,7 +1517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.delete("/api/ai/chat/:sessionId", requireAuth, handleAsyncErrors(async (req, res) => {
+  app.delete("/api/ai/chat/:sessionId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { sessionId } = req.params;
       await storage.deleteAiChatSession(req.user.id, sessionId);
@@ -1529,7 +1529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // AI Document Analysis
-  app.post("/api/ai/analyze-document", requireAuth, upload.single('document'), handleAsyncErrors(async (req, res) => {
+  app.post("/api/ai/analyze-document", requireAuth, upload.single('document'), handleAsyncErrors(async (req: any, res: any) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "Nessun documento fornito" });
@@ -1546,7 +1546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       fs.unlinkSync(req.file.path);
 
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing document:', error);
       
       // Clean up uploaded file if it exists
@@ -1559,7 +1559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // AI Financial Insights
-  app.post("/api/ai/insights", requireAuth, handleAsyncErrors(async (req, res) => {
+  app.post("/api/ai/insights", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { financialData } = req.body;
       
@@ -1573,7 +1573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating insights:', error);
       res.status(500).json({ error: error.message || "Errore nella generazione degli insights" });
     }
