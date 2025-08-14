@@ -1,0 +1,60 @@
+ing: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem. Error Component Stack
+    at ThemeProvider (theme-context.tsx:13:33)
+    at ErrorBoundary (error-boundary.tsx:13:8)
+    at App (<anonymous>)
+theme-context.tsx:14 Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem. Error Component Stack
+    at ThemeProvider (theme-context.tsx:13:33)
+    at ErrorBoundary (error-boundary.tsx:13:8)
+    at App (<anonymous>)
+chunk-QCHXOAYK.js?v=9b50be75:1066 Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at ThemeProvider (theme-context.tsx:14:29)
+theme-context.tsx:14 Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem. Error Component Stack
+    at ThemeProvider (theme-context.tsx:13:33)
+    at ErrorBoundary (error-boundary.tsx:13:8)
+    at App (<anonymous>)
+theme-context.tsx:14 Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem. Error Component Stack
+    at ThemeProvider (theme-context.tsx:13:33)
+    at ErrorBoundary (error-boundary.tsx:13:8)
+    at App (<anonymous>)
+chunk-QCHXOAYK.js?v=9b50be75:1066 Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at ThemeProvider (theme-context.tsx:14:29)
+hook.js:608 The above error occurred in the <ThemeProvider> component:
+
+    at ThemeProvider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/contexts/theme-context.tsx:20:33)
+    at ErrorBoundary (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/components/ui/error-boundary.tsx:7:5)
+    at App
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+error-boundary.tsx:23 ErrorBoundary caught an error: TypeError: Cannot read properties of null (reading 'useState')
+    at ThemeProvider (theme-context.tsx:14:29)
+ 
+{componentStack: '\n    at ThemeProvider (https://3cccf94e-2616-47c3-…/components/ui/error-boundary.tsx:7:5)\n    at App'}
+ Error Component Stack
+    at ErrorBoundary (error-boundary.tsx:13:8)
+    at App (<anonymous>)
+main.tsx:11 SW registered:  
+ServiceWorkerRegistration {installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager, scope: 'https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/', …}
+client:536 WebSocket connection to 'wss://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/?token=4FZtSjHuOzxH' failed: 
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=4FZtSjHuOzxH' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+setupWebSocket	@	client:536
+fallback	@	client:509
+(anonymous)	@	client:555

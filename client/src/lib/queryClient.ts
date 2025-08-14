@@ -1,5 +1,4 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { cacheManager, cacheHelpers } from './cache-manager';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -30,17 +29,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const endpoint = queryKey.join("/") as string;
-    
-    // Check cache first for GET requests
-    const cached = cacheHelpers.getCachedApiResponse(endpoint);
-    if (cached) {
-      console.log(`[QUERY CACHE] Hit: ${endpoint}`);
-      return cached;
-    }
-    
-    console.log(`[QUERY CACHE] Miss: ${endpoint}`);
-    const res = await fetch(endpoint, {
+    const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
     });
 
@@ -49,12 +38,7 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    const data = await res.json();
-    
-    // Cache successful responses (5 minutes for API calls)
-    cacheHelpers.cacheApiResponse(endpoint, data, 5 * 60 * 1000);
-    
-    return data;
+    return await res.json();
   };
 
 export const queryClient = new QueryClient({
@@ -63,8 +47,7 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes stale time
-      gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
+      staleTime: Infinity,
       retry: false,
     },
     mutations: {

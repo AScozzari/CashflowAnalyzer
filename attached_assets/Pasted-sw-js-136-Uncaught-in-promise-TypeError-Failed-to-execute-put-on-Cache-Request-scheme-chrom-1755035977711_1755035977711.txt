@@ -1,0 +1,71 @@
+sw.js:136 Uncaught (in promise) TypeError: Failed to execute 'put' on 'Cache': Request scheme 'chrome-extension' is unsupported
+    at sw.js:136:23
+(anonymous) @ sw.js:136Understand this error
+3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/:52 Refused to load the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' because it violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline'". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback.
+Understand this error
+2hook.js:608 Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem. Error Component Stack
+    at ThemeProvider (theme-context.tsx:13:33)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608Understand this error
+chunk-QCHXOAYK.js?v=9b50be75:1066 Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at useState (chunk-QCHXOAYK.js?v=9b50be75:1066:29)
+    at ThemeProvider (theme-context.tsx:14:29)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=72f68957:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=72f68957:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=72f68957:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=72f68957:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=72f68957:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=72f68957:3733:39)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=72f68957:19765:15)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=72f68957:19198:20)Understand this error
+2hook.js:608 Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem. Error Component Stack
+    at ThemeProvider (theme-context.tsx:13:33)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608Understand this error
+chunk-QCHXOAYK.js?v=9b50be75:1066 Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at useState (chunk-QCHXOAYK.js?v=9b50be75:1066:29)
+    at ThemeProvider (theme-context.tsx:14:29)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=72f68957:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=72f68957:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=72f68957:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=72f68957:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=72f68957:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=72f68957:3733:39)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=72f68957:19765:15)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=72f68957:19198:20)Understand this error
+hook.js:608 The above error occurred in the <ThemeProvider> component:
+
+    at ThemeProvider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/contexts/theme-context.tsx:20:33)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608Understand this error
+chunk-RPCDYKBN.js?v=72f68957:19413 Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at useState (chunk-QCHXOAYK.js?v=9b50be75:1066:29)
+    at ThemeProvider (theme-context.tsx:14:29)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=72f68957:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=72f68957:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=72f68957:15914:22)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=72f68957:19753:22)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=72f68957:19198:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=72f68957:19137:13)
+    at renderRootSync (chunk-RPCDYKBN.js?v=72f68957:19116:15)
+    at recoverFromConcurrentError (chunk-RPCDYKBN.js?v=72f68957:18736:28)Understand this error
+main.tsx:10 SW registered:  ServiceWorkerRegistration
+3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">Understand this warning
+client:536 WebSocket connection to 'wss://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/?token=4FZtSjHuOzxH' failed: 
+setupWebSocket @ client:536Understand this error
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=4FZtSjHuOzxH' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)Understand this error
+3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/:1 Refused to load the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' because it violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline'". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback.

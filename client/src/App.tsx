@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -20,46 +20,76 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
-// WEBSOCKET AND CACHE FIX - Address the real root cause
+// REPLIT CRITICAL FIXES - TypeScript-safe version
 if (typeof window !== 'undefined') {
-  console.log('[WEBSOCKET] Fixing WebSocket and cache issues...');
+  console.log('[REPLIT FIXES] Applying comprehensive fixes...');
   
-  // 1. Clear problematic cache on load
-  if ('caches' in window) {
-    caches.keys().then(cacheNames => {
-      cacheNames.forEach(cacheName => {
-        if (cacheName.includes('vite') || cacheName.includes('workbox')) {
-          console.log('[CACHE] Clearing problematic cache:', cacheName);
-          caches.delete(cacheName);
-        }
-      });
-    });
-  }
-  
-  // 2. Fix WebSocket connection issues
+  // 1. HMR WebSocket fix con proper typing
   const originalWebSocket = window.WebSocket;
   window.WebSocket = class extends originalWebSocket {
     constructor(url: string | URL, protocols?: string | string[]) {
       let finalUrl = url.toString();
-      
-      // Fix WebSocket URL for Replit environment
-      if (finalUrl.includes('localhost:undefined') || finalUrl.includes('ws://localhost')) {
-        const domain = window.location.hostname;
-        finalUrl = finalUrl.replace('ws://localhost:undefined', `wss://${domain}`);
-        finalUrl = finalUrl.replace('ws://localhost', `wss://${domain}`);
-        console.log('[WEBSOCKET] Fixed URL:', finalUrl);
+      if (finalUrl.includes('/@vite/client') || finalUrl.includes('hmr') || finalUrl.includes('ws://')) {
+        const replitDomain = window.location.hostname;
+        finalUrl = finalUrl.replace('ws://localhost', `wss://${replitDomain}`);
+        finalUrl = finalUrl.replace('ws://', 'wss://');
+        console.log('[REPLIT HMR] WebSocket redirect per spock proxy:', finalUrl);
       }
-      
       super(finalUrl, protocols);
-      
-      // Add error handling
-      this.addEventListener('error', (event) => {
-        console.log('[WEBSOCKET] Connection error handled:', event);
-      });
     }
   } as typeof WebSocket;
   
-  console.log('[WEBSOCKET] ✅ WebSocket and cache fixes applied');
+  // 2. Fetch retry mechanism con proper typing
+  const originalFetch = window.fetch;
+  window.fetch = async function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    const maxRetries = 3;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const response = await originalFetch(input, init);
+        if (response.ok || response.status === 401) return response;
+        if (i === maxRetries - 1) throw new Error(`HTTP ${response.status}`);
+      } catch (error) {
+        if (i === maxRetries - 1) {
+          console.error('[REPLIT FETCH] Max retries raggiunto per:', input, error);
+          throw error;
+        }
+        console.log(`[REPLIT FETCH] Retry ${i + 1}/${maxRetries} per:`, input);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+    throw new Error('Unreachable code');
+  };
+  
+  // 3. iframe detection e document.domain fix
+  try {
+    const isIframe = window.self !== window.top;
+    if (isIframe && window.location.hostname.includes('replit.dev')) {
+      document.domain = 'replit.dev';
+      console.log('[REPLIT] document.domain impostato per iframe');
+    }
+  } catch (e) {
+    const error = e as Error;
+    console.log('[REPLIT] Domain fix non necessario:', error.message);
+  }
+  
+  // 4. React Refresh fix con proper typing
+  const windowWithRefresh = window as any;
+  if (windowWithRefresh.__reactRefreshInjected) {
+    const originalRefresh = windowWithRefresh.$RefreshSig$;
+    if (originalRefresh) {
+      windowWithRefresh.$RefreshSig$ = function() {
+        try {
+          return originalRefresh.apply(this, arguments);
+        } catch (error) {
+          const err = error as Error;
+          console.log('[REPLIT REFRESH] Errore gestito:', err.message);
+          return function() { return null; };
+        }
+      };
+    }
+  }
+  
+  console.log('[REPLIT FIXES] ✅ Tutti i fix applicati per Connection Denied + Hot Reload');
 }
 
 // Layout wrapper component
@@ -96,6 +126,12 @@ function Router() {
       <Route path="/reset-password" component={ResetPasswordPage} />
       
       {/* Protected routes con layout */}
+      <ProtectedRoute path="/" component={() => (
+        <AppLayout>
+          <Dashboard />
+        </AppLayout>
+      )} />
+      
       <ProtectedRoute path="/dashboard" component={() => (
         <AppLayout>
           <Dashboard />
@@ -131,37 +167,36 @@ function Router() {
         )}
       />
       
-      {/* Default route - redirect to dashboard or auth */}
-      <ProtectedRoute path="/" component={() => (
-        <AppLayout>
-          <Dashboard />
-        </AppLayout>
-      )} />
-      
-      {/* Fallback - TEMPORANEAMENTE DISATTIVATO */}
-      {/* <Route component={NotFound} /> */}
+      {/* Fallback */}
+      <Route component={NotFound} />
     </Switch>
   );
 }
 
-// MAIN EASYCASHFLOWS APP
-function App() {
+// MAIN APP COMPONENT - ARROW FUNCTION WITH ERROR BOUNDARIES
+const App = () => {
+  console.log('[APP] EasyCashFlows starting - REPLIT-OPTIMIZED with Error Boundaries...');
+  
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ThemeProvider>
-          <ErrorBoundary>
-            <div className="min-h-screen bg-background">
-              <Toaster />
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary>
+          <ThemeProvider defaultTheme="light" storageKey="easycashflow-theme">
+            <ErrorBoundary>
               <AuthProvider>
-                <Router />
+                <TooltipProvider>
+                  <ErrorBoundary>
+                    <Router />
+                  </ErrorBoundary>
+                  <Toaster />
+                </TooltipProvider>
               </AuthProvider>
-            </div>
-          </ErrorBoundary>
-        </ThemeProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+            </ErrorBoundary>
+          </ThemeProvider>
+        </ErrorBoundary>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
-}
+};
 
 export default App;

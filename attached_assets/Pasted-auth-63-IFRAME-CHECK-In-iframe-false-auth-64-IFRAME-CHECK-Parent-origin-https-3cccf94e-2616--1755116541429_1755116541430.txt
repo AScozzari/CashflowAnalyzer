@@ -1,0 +1,39 @@
+auth:63 [IFRAME CHECK] In iframe: false
+auth:64 [IFRAME CHECK] Parent origin: https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/auth
+main.tsx:35 [MAIN] EasyCashFlows initializing... v2024.08.13.WORKING
+main.tsx:42 [MAIN] Root element found, creating React root...
+main.tsx:45 [MAIN] React root created, rendering App...
+main.tsx:47 [MAIN] App render called successfully
+App.tsx:93 [APP] EasyCashFlows starting...
+App.tsx:120 [APP] Rendering main app structure...
+theme-provider.tsx:29 [THEME] Simplified ThemeProvider - no hooks, static theme
+theme-provider.tsx:40 [THEME] Applied theme: light
+main.tsx:11 SW registered:  ServiceWorkerRegistration {installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager, scope: 'https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/', …}
+queryClient.ts:32  GET https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/auth/user 401 (Unauthorized)
+(anonymous) @ queryClient.ts:32
+fetchFn @ @tanstack_react-query.js?v=f41d8f37:840
+run @ @tanstack_react-query.js?v=f41d8f37:494
+start @ @tanstack_react-query.js?v=f41d8f37:536
+fetch @ @tanstack_react-query.js?v=f41d8f37:926
+executeFetch_fn @ @tanstack_react-query.js?v=f41d8f37:2211
+onSubscribe @ @tanstack_react-query.js?v=f41d8f37:1898
+subscribe @ @tanstack_react-query.js?v=f41d8f37:24
+(anonymous) @ @tanstack_react-query.js?v=f41d8f37:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=f41d8f37:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=f41d8f37:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=f41d8f37:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=f41d8f37:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=f41d8f37:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=f41d8f37:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=f41d8f37:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=f41d8f37:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=f41d8f37:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=f41d8f37:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=f41d8f37:19432
+commitRoot @ chunk-RPCDYKBN.js?v=f41d8f37:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=f41d8f37:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=f41d8f37:18718
+workLoop @ chunk-RPCDYKBN.js?v=f41d8f37:197
+flushWork @ chunk-RPCDYKBN.js?v=f41d8f37:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=f41d8f37:384Understand this error
+auth:1 Error while trying to use the following icon from the Manifest: https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/icon-144x144.png (Download error or resource isn't a valid image)
