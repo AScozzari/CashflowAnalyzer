@@ -72,11 +72,14 @@ export class AIService {
       throw new Error('Chat AI is disabled for this user');
     }
 
+    // Get financial data for context (with privacy filtering)
+    const financialContext = await this.getFinancialContext(userId, aiSettings, message);
+
     // Build conversation context
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       {
         role: 'system',
-        content: this.buildSystemPrompt(aiSettings, context),
+        content: this.buildSystemPrompt(aiSettings, { ...context, financialData: financialContext }),
       },
     ];
 
@@ -157,11 +160,134 @@ Privacy Mode: ${aiSettings.privacyMode}`;
 - Focus on patterns and general analysis rather than specific details.`;
     }
 
-    if (context) {
-      prompt += `\n\nCurrent Context:\n${JSON.stringify(context, null, 2)}`;
+    if (context?.financialData) {
+      prompt += `\n\nDati Finanziari Disponibili:`;
+      
+      if (context.financialData.analytics) {
+        prompt += `\n- Entrate Totali: €${context.financialData.analytics.totalIncome || 0}`;
+        prompt += `\n- Uscite Totali: €${context.financialData.analytics.totalExpenses || 0}`;
+        prompt += `\n- Saldo Netto: €${context.financialData.analytics.netBalance || 0}`;
+        prompt += `\n- Totale Movimenti: ${context.financialData.analytics.totalMovements || 0}`;
+        if (context.financialData.analytics.pendingMovements !== undefined) {
+          prompt += `\n- Movimenti Pendenti: ${context.financialData.analytics.pendingMovements}`;
+        }
+      }
+      
+      if (context.financialData.recentMovements && context.financialData.recentMovements?.length > 0) {
+        prompt += `\n\nMovimenti Recenti (ultimi ${context.financialData.recentMovements.length}):`;
+        context.financialData.recentMovements.forEach((mov: any, idx: number) => {
+          prompt += `\n${idx + 1}. ${mov.type === 'income' ? 'Entrata' : 'Uscita'}: €${mov.amount} - ${mov.description} (${mov.insertDate})`;
+        });
+      }
+      
+      if (context.financialData.companies && context.financialData.companies?.length > 0) {
+        prompt += `\n\nAziende Principali:`;
+        context.financialData.companies.forEach((comp: any, idx: number) => {
+          prompt += `\n${idx + 1}. ${comp.name} (${comp.legalForm}) - ${comp.city}`;
+        });
+      }
+      
+      prompt += `\n\nData Corrente: ${context.financialData.currentDate}`;
+      prompt += `\n\nNOTA: Usa questi dati per fornire analisi specifiche e actionable. Puoi fare riferimenti diretti ai numeri e trend che vedi.`;
     }
 
     return prompt;
+  }
+
+  private async getFinancialContext(userId: string, aiSettings: AiSettings, userMessage: string): Promise<any> {
+    try {
+      // Analyze user query to determine what data is needed
+      const queryType = this.analyzeQueryType(userMessage.toLowerCase());
+      
+      const context: any = {};
+
+      // Always get basic stats for context
+      if (queryType.includes('general') || queryType.includes('analytics') || queryType.includes('summary')) {
+        try {
+          const analytics = await storage.getMovementStats();
+          context.analytics = analytics;
+        } catch (error) {
+          console.warn('[AI] Could not fetch analytics data:', error);
+        }
+      }
+
+      // Get recent movements if requested
+      if (queryType.includes('movements') || queryType.includes('recent') || queryType.includes('transazioni')) {
+        try {
+          const movementsResult = await storage.getMovements({});
+          const movements = movementsResult.data || movementsResult;
+          const recentMovements = movements.slice(0, 10).map((m: any) => ({
+            type: m.type,
+            amount: m.amount,
+            description: m.description,
+            insertDate: m.insertDate,
+            company: aiSettings.privacyMode === 'strict' ? '[ANONIMO]' : m.company?.name,
+            status: m.status?.name
+          }));
+          context.recentMovements = recentMovements;
+        } catch (error) {
+          console.warn('[AI] Could not fetch movements data:', error);
+        }
+      }
+
+      // Get companies data if requested  
+      if (queryType.includes('companies') || queryType.includes('aziende') || queryType.includes('clienti')) {
+        try {
+          const companies = await storage.getCompanies();
+          context.companies = companies.slice(0, 5).map(c => ({
+            name: aiSettings.privacyMode === 'strict' ? '[ANONIMO]' : c.name,
+            legalForm: c.legalForm,
+            city: aiSettings.privacyMode === 'strict' ? '[CITTÀ]' : c.city
+          }));
+        } catch (error) {
+          console.warn('[AI] Could not fetch companies data:', error);
+        }
+      }
+
+      // Add current date context
+      context.currentDate = new Date().toISOString().split('T')[0];
+      context.privacyMode = aiSettings.privacyMode;
+
+      return context;
+    } catch (error) {
+      console.error('[AI] Error building financial context:', error);
+      return { error: 'Could not access financial data', currentDate: new Date().toISOString().split('T')[0] };
+    }
+  }
+
+  private analyzeQueryType(message: string): string[] {
+    const types: string[] = [];
+    
+    // General queries
+    if (message.includes('riassunto') || message.includes('overview') || message.includes('situazione') || 
+        message.includes('generale') || message.includes('stato')) {
+      types.push('general', 'analytics');
+    }
+    
+    // Movements/transactions queries
+    if (message.includes('movimenti') || message.includes('transazioni') || message.includes('ultimi') ||
+        message.includes('recenti') || message.includes('entrate') || message.includes('uscite')) {
+      types.push('movements', 'recent');
+    }
+    
+    // Analytics queries
+    if (message.includes('analisi') || message.includes('trend') || message.includes('performance') ||
+        message.includes('crescita') || message.includes('andamento') || message.includes('previsioni')) {
+      types.push('analytics');
+    }
+    
+    // Companies queries
+    if (message.includes('aziende') || message.includes('clienti') || message.includes('fornitori') ||
+        message.includes('companies') || message.includes('business')) {
+      types.push('companies');
+    }
+
+    // If no specific type detected, assume general query
+    if (types.length === 0) {
+      types.push('general');
+    }
+    
+    return types;
   }
 
   async analyzeDocument(
