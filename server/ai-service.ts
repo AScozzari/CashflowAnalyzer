@@ -22,11 +22,16 @@ export class AIService {
     }
 
     try {
-      // Test with a simple completion
+      // First try to list models (lightweight test)
+      const models = await this.openai.models.list();
+      console.log(`[AI] Available models: ${models.data.length} found`);
+      
+      // Then try a minimal completion test
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: 'Test connection - respond with "OK"' }],
-        max_tokens: 10,
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: 'Hi' }],
+        max_tokens: 3,
+        temperature: 0,
       });
 
       return { 
@@ -35,9 +40,18 @@ export class AIService {
       };
     } catch (error: any) {
       console.error('[AI] Connection test failed:', error);
+      
+      // Provide more specific error information
+      let errorMessage = error.message || 'Connection test failed';
+      if (error.status === 429) {
+        errorMessage = `Quota exceeded (${error.status}). Check billing at https://platform.openai.com/account/billing`;
+      } else if (error.status === 401) {
+        errorMessage = `Invalid API key (${error.status}). Check key at https://platform.openai.com/api-keys`;
+      }
+      
       return { 
         success: false, 
-        error: error.message || 'Connection test failed' 
+        error: errorMessage 
       };
     }
   }

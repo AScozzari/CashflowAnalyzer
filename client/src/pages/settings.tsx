@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AiSettings from "@/components/settings/ai-settings";
 import { WebSocketStatus } from "@/components/debug/websocket-status";
 import { EmailSettings } from "@/components/settings/email-settings";
+import { OpenAIDiagnostic } from "@/components/debug/openai-diagnostic";
 
 export default function Settings() {
   return (
@@ -57,6 +58,8 @@ export default function Settings() {
             </Card>
             
             <WebSocketStatus />
+            
+            <OpenAIDiagnostic />
           </div>
         </TabsContent>
       </Tabs>
