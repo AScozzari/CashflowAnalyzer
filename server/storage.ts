@@ -1838,7 +1838,7 @@ export class DatabaseStorage implements IStorage {
   async updateAiSettings(userId: string, settings: Partial<InsertAiSettings>): Promise<AiSettings> {
     try {
       const result = await db.update(aiSettings)
-        .set({ ...settings, updatedAt: new Date() })
+        .set({ ...settings, updatedAt: new Date().toISOString() })
         .where(eq(aiSettings.userId, userId))
         .returning();
       return result[0];
@@ -1866,9 +1866,69 @@ export class DatabaseStorage implements IStorage {
         query = query.where(eq(aiChatHistory.sessionId, sessionId));
       }
       
-      return await query.orderBy(desc(aiChatHistory.createdAt));
+      return await query.orderBy(aiChatHistory.createdAt);
     } catch (error) {
       console.error('Error fetching AI chat history:', error);
+      return [];
+    }
+  }
+
+  async getAiChatSessions(userId: string): Promise<any[]> {
+    try {
+      const sessions = await db
+        .select({
+          id: aiChatHistory.sessionId,
+          title: sql<string>`CASE 
+            WHEN ${aiChatHistory.sessionId} IS NOT NULL 
+            THEN CONCAT('Chat ', SUBSTRING(${aiChatHistory.sessionId}, 1, 8))
+            ELSE 'Conversazione'
+          END`,
+          lastMessage: sql<string>`(
+            SELECT content FROM ${aiChatHistory} 
+            WHERE user_id = ${userId} AND session_id = ${aiChatHistory.sessionId} 
+            ORDER BY created_at DESC LIMIT 1
+          )`,
+          createdAt: sql<string>`MIN(${aiChatHistory.createdAt})`,
+          messageCount: sql<number>`COUNT(*)`
+        })
+        .from(aiChatHistory)
+        .where(eq(aiChatHistory.userId, userId))
+        .groupBy(aiChatHistory.sessionId)
+        .orderBy(sql`MIN(${aiChatHistory.createdAt}) DESC`);
+
+      return sessions;
+    } catch (error) {
+      console.error('Error fetching AI chat history:', error);
+      return [];
+    }
+  }
+
+  async getAiChatSessions(userId: string): Promise<any[]> {
+    try {
+      const sessions = await db
+        .select({
+          id: aiChatHistory.sessionId,
+          title: sql<string>`CASE 
+            WHEN ${aiChatHistory.sessionId} IS NOT NULL 
+            THEN CONCAT('Chat ', SUBSTRING(${aiChatHistory.sessionId}, 1, 8))
+            ELSE 'Conversazione'
+          END`,
+          lastMessage: sql<string>`(
+            SELECT content FROM ${aiChatHistory} 
+            WHERE user_id = ${userId} AND session_id = ${aiChatHistory.sessionId} 
+            ORDER BY created_at DESC LIMIT 1
+          )`,
+          createdAt: sql<string>`MIN(${aiChatHistory.createdAt})`,
+          messageCount: sql<number>`COUNT(*)`
+        })
+        .from(aiChatHistory)
+        .where(eq(aiChatHistory.userId, userId))
+        .groupBy(aiChatHistory.sessionId)
+        .orderBy(sql`MIN(${aiChatHistory.createdAt}) DESC`);
+
+      return sessions;
+    } catch (error) {
+      console.error('Error fetching AI chat sessions:', error);
       return [];
     }
   }

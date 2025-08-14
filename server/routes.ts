@@ -1506,6 +1506,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Get chat sessions
+  app.get("/api/ai/chat/sessions", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const sessions = await storage.getAiChatSessions(req.user.id);
+      res.json(sessions);
+    } catch (error) {
+      console.error('Error getting chat sessions:', error);
+      res.status(500).json({ error: "Errore nel recupero delle sessioni chat" });
+    }
+  }));
+
+  // Get chat messages for a session
+  app.get("/api/ai/chat/messages/:sessionId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { sessionId } = req.params;
+      const messages = await storage.getAiChatHistory(req.user.id, sessionId);
+      res.json(messages);
+    } catch (error) {
+      console.error('Error getting chat messages:', error);
+      res.status(500).json({ error: "Errore nel recupero dei messaggi chat" });
+    }
+  }));
+
+  // Delete chat session
+  app.delete("/api/ai/chat/sessions/:sessionId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { sessionId } = req.params;
+      await storage.deleteAiChatSession(req.user.id, sessionId);
+      res.json({ success: true, message: "Sessione chat eliminata" });
+    } catch (error) {
+      console.error('Error deleting chat session:', error);
+      res.status(500).json({ error: "Errore nell'eliminazione della sessione chat" });
+    }
+  }));
+
   app.get("/api/ai/chat/history/:sessionId?", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { sessionId } = req.params;
