@@ -184,7 +184,10 @@ export function AiChat() {
                     {session.messageCount} messaggi
                   </div>
                   <div className="text-xs opacity-50">
-                    {format(new Date(session.createdAt), 'dd/MM HH:mm')}
+                    {session.createdAt && !isNaN(new Date(session.createdAt).getTime())
+                      ? format(new Date(session.createdAt), 'dd/MM HH:mm')
+                      : 'Data non disponibile'
+                    }
                   </div>
                 </div>
               ))}
@@ -281,7 +284,10 @@ export function AiChat() {
                         <div className="text-sm whitespace-pre-wrap">{message.content}</div>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs opacity-70">
-                            {format(new Date(message.timestamp), 'HH:mm')}
+                            {message.timestamp && !isNaN(new Date(message.timestamp).getTime()) 
+                              ? format(new Date(message.timestamp), 'HH:mm')
+                              : 'Ora non disponibile'
+                            }
                           </span>
                           {message.tokensUsed && (
                             <Badge variant="outline" className="text-xs">
