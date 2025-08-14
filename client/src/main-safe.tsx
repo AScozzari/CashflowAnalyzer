@@ -2,12 +2,27 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 
-console.log('[MAIN-SAFE] Starting EasyCashFlows in safe mode...');
+console.log('[MAIN-SAFE] Starting EasyCashFlows in completely safe mode...');
 
-// COMPLETELY DISABLE ALL HMR FUNCTIONALITY
-(window as any).$RefreshReg$ = function() { return function() {}; };
-(window as any).$RefreshSig$ = function() { return function(type: any) { return type; }; };
-(window as any).__vite_plugin_react_preamble_installed__ = true;
+// NUCLEAR OPTION: Override ALL possible HMR functions before any React code loads
+if (typeof window !== 'undefined') {
+  // Pre-emptively define all HMR functions as no-ops
+  (window as any).$RefreshReg$ = () => () => {};
+  (window as any).$RefreshSig$ = () => (type: any) => type;
+  (window as any).__vite_plugin_react_preamble_installed__ = true;
+  
+  // Override React Refresh at the core
+  (window as any).__react_refresh_utils__ = {
+    injectIntoGlobalHook: () => {},
+    register: () => {},
+    signature: () => () => {}
+  };
+  
+  // Disable hot updates completely
+  if (import.meta.hot) {
+    import.meta.hot.decline();
+  }
+}
 
 // SIMPLE ERROR HANDLERS
 window.addEventListener('error', (event) => {
@@ -18,8 +33,8 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('[MAIN-SAFE] Rejection:', event.reason);
 });
 
-// DIRECT APP IMPORT - USE WORKING VERSION
-import App from "./App-working";
+// SIMPLEST POSSIBLE APP - NO JSX TRANSFORMS
+import App from "./simple-app";
 
 const container = document.getElementById("root");
 if (!container) {
