@@ -17,19 +17,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
 export default function AuthPage() {
-  console.log('[AUTH PAGE] AuthPage component rendering...');
-  
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">EasyCashFlows Login</h1>
-        <p className="mt-2 text-muted-foreground">Test rendering - AuthPage loaded</p>
-      </div>
-    </div>
-  );
-}
+  const [, setLocation] = useLocation();
   const { user, loginMutation, changePasswordMutation } = useAuth();
-  console.log('[AUTH PAGE] User state:', user?.username || 'null');
   const [activeTab, setActiveTab] = useState("login");
   const [requirePasswordChange, setRequirePasswordChange] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -256,9 +245,9 @@ export default function AuthPage() {
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          <EyeOff className="h-4 w-4" />
                         ) : (
-                          <Eye className="h-4 w-4 text-muted-foreground" />
+                          <Eye className="h-4 w-4" />
                         )}
                       </Button>
                     </div>
@@ -268,6 +257,15 @@ export default function AuthPage() {
                       </p>
                     )}
                   </div>
+
+                  {/* Blocco temporaneo */}
+                  {isBlocked && (
+                    <Alert>
+                      <AlertDescription>
+                        Troppi tentativi falliti. Riprova tra {Math.floor(blockTimeLeft / 60)}:{(blockTimeLeft % 60).toString().padStart(2, '0')} minuti.
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   <Button
                     type="submit"
@@ -279,58 +277,35 @@ export default function AuthPage() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Accesso in corso...
                       </>
-                    ) : isBlocked ? (
-                      <>
-                        <Lock className="mr-2 h-4 w-4" />
-                        Bloccato ({Math.floor(blockTimeLeft / 60)}:{(blockTimeLeft % 60).toString().padStart(2, '0')})
-                      </>
                     ) : (
-                      <>
-                        <LogIn className="mr-2 h-4 w-4" />
-                        Accedi
-                      </>
+                      "Accedi"
                     )}
                   </Button>
-                  
-                  {loginAttempts > 0 && !isBlocked && (
-                    <div className="text-center mt-2">
-                      <p className="text-sm text-yellow-600">
-                        Tentativo {loginAttempts}/5. Attenzione: dopo 5 tentativi falliti l'account verrà temporaneamente bloccato.
-                      </p>
-                    </div>
-                  )}
-                  
-                  <div className="text-center mt-4">
+
+                  <div className="text-center">
                     <Link href="/forgot-password">
-                      <span className="text-sm text-muted-foreground hover:text-primary cursor-pointer">
+                      <Button variant="link" className="text-sm">
                         Password dimenticata?
-                      </span>
+                      </Button>
                     </Link>
                   </div>
                 </form>
-
-                {loginMutation.isError && (
-                  <Alert className="mt-4" variant={isBlocked ? "destructive" : "default"}>
-                    <Shield className="h-4 w-4" />
-                    <AlertDescription>
-                      {isBlocked 
-                        ? `Account temporaneamente bloccato per sicurezza. Riprova tra ${Math.floor(blockTimeLeft / 60)} minuti e ${blockTimeLeft % 60} secondi.`
-                        : "Credenziali non valide. Verifica username e password."
-                      }
-                    </AlertDescription>
-                  </Alert>
-                )}
               </CardContent>
-                </Card>
+            </Card>
           </div>
         </div>
 
-        {/* Hero Section */}
-        <div className="bg-primary/5 flex items-center justify-center p-8">
-          <div className="text-center max-w-md">
-            <h2 className="text-3xl font-bold text-primary mb-4">
-              Gestione Flussi di Cassa Avanzata
-            </h2>
+        {/* Right Side - Branding */}
+        <div className="hidden lg:flex bg-primary/5 p-8 items-center justify-center">
+          <div className="max-w-md text-center">
+            <div className="mx-auto mb-6 w-20 h-20 bg-primary rounded-full flex items-center justify-center">
+              <Shield className="h-10 w-10 text-primary-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold mb-4">Gestione Finanziaria Professionale</h2>
+            <p className="text-muted-foreground mb-8">
+              Controlla i flussi di cassa, monitora le performance e prendi decisioni informate con il nostro sistema integrato di gestione finanziaria.
+            </p>
+            
             <div className="space-y-4 text-left">
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-primary rounded-full mt-2" />

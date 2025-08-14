@@ -91,12 +91,7 @@ function Router() {
   return (
     <Switch>
       {/* Public routes */}
-      <Route path="/auth">
-        {() => {
-          console.log('[ROUTER] Loading AuthPage...');
-          return <AuthPage />;
-        }}
-      </Route>
+      <Route path="/auth" component={AuthPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
       
@@ -143,8 +138,8 @@ function Router() {
         </AppLayout>
       )} />
       
-      {/* Fallback - TEMPORANEO DISABILITATO */}
-      {/* <Route component={NotFound} /> */}
+      {/* Fallback */}
+      <Route component={NotFound} />
     </Switch>
   );
 }
