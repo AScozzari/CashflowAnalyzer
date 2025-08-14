@@ -29,35 +29,26 @@ app.use((req, res, next) => {
   // CRITICAL: Detect iframe context and store it
   (req as any).isIframe = isIframe;
   
-  // REPLIT IFRAME COMPATIBILITY: Basato su documentazione ufficiale
+  // REPLIT CONNECTION DENIED FIX: Disabilita TUTTI i security headers
   if (isReplit) {
-    // STEP 1: Remove ALL frame restrictions
+    // STEP 1: Remove TUTTI i frame-related headers
     res.removeHeader('X-Frame-Options');
     res.removeHeader('X-Frame-Ancestors');
+    res.removeHeader('Content-Security-Policy');
+    res.removeHeader('X-Content-Security-Policy');
+    res.removeHeader('X-WebKit-CSP');
     
-    // STEP 2: CSP completo per iframe embedding + spock proxy
-    const cspValue = [
-      "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:",
-      "connect-src * wss: ws: data: blob: *.replit.dev *.repl.co",
-      "font-src * data: fonts.googleapis.com fonts.gstatic.com",
-      "style-src * 'unsafe-inline' fonts.googleapis.com",
-      "script-src * 'unsafe-inline' 'unsafe-eval'",
-      "img-src * data: blob:",
-      "frame-ancestors * *.replit.dev *.repl.co", // Specifico per Replit
-      "child-src * *.replit.dev *.repl.co",
-      "frame-src * *.replit.dev *.repl.co",
-      "object-src 'none'", // Sicurezza
-      "base-uri 'self'"
-    ].join('; ');
+    // STEP 2: Set headers permissivi per debug
+    res.setHeader('X-Frame-Options', 'ALLOWALL');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     
-    res.setHeader('Content-Security-Policy', cspValue);
+    // STEP 3: NO CSP per test completo
+    // CSP completamente disabilitata per debug Connection Denied
     
-    // STEP 3: Headers specifici per iframe Replit
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Referrer-Policy', 'same-origin');
-    res.setHeader('Permissions-Policy', 'fullscreen=*');
-    
-    console.log('[CSP] Replit iframe compatibility + Connection Denied fix');
+    console.log('[DEBUG] ALL security headers disabled for Connection Denied troubleshooting');
   } else {
     // Standard CSP for non-Replit environments
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');

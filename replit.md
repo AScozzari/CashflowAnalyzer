@@ -18,11 +18,12 @@ EasyCashFlows is a comprehensive financial management system designed for Italia
 - 2024 Replit changes: iframe embeds hanno restrizioni security aumentate
 
 ### 🛠️ SOLUZIONI IMPLEMENTATE
-- **WebSocket HMR Fix**: Redirect automatico per spock proxy architecture
-- **CSP Headers**: Ultra-permissive per iframe compatibility
-- **Fetch Retry Mechanism**: Handle Connection Denied con retry logic
-- **TypeScript Safety**: Proper typing per tutti i fix applicati
-- **Environment Variables**: Polling configuration per hot reload
+- **Root Cause Identificato**: ERR_BLOCKED_BY_CLIENT da firewall/ad blocker (ricerca web conferma)
+- **Soluzione Principale**: firewalledreplit.com come alternativa per ambienti restrittivi
+- **Security Headers**: Completamente disabilitati per debug (X-Frame-Options: ALLOWALL)
+- **DNS Fix**: Google DNS (8.8.8.8) o Cloudflare DNS (1.1.1.1) raccomandati
+- **Diagnostic Tools**: /connection-fix.html, /iframe-test.html, debug component nelle Settings
+- **Whitelist Domains**: *.replit.dev, *.repl.co, firewalledreplit.com per IT aziendali
 
 ### 🏗️ ARCHITECTURE COMPLETION
 - **Performance Monitoring**: Custom hooks for debouncing, lazy loading, memory management

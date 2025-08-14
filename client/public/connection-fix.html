@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Connection Denied Fix - EasyCashFlows</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; background: #f5f5f5; }
+        .card { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .success { border-left: 4px solid #4caf50; background: #f1f8e9; }
+        .error { border-left: 4px solid #f44336; background: #ffebee; }
+        .warning { border-left: 4px solid #ff9800; background: #fff3e0; }
+        .info { border-left: 4px solid #2196f3; background: #e3f2fd; }
+        .btn { display: inline-block; padding: 10px 20px; background: #2196f3; color: white; text-decoration: none; border-radius: 4px; margin: 5px; }
+        .btn:hover { background: #1976d2; }
+        code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        .dns-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        @media (max-width: 768px) { .dns-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <h1>🔧 Risoluzione "Connessione Negata" - EasyCashFlows</h1>
+    
+    <div class="card error">
+        <h2>⚠️ Problema Identificato</h2>
+        <p><strong>Errore:</strong> "Connessione negata da 3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev"</p>
+        <p><strong>Causa:</strong> Firewall aziendale, ad blocker o software antivirus sta bloccando il dominio Replit spock proxy.</p>
+    </div>
+
+    <div class="card success">
+        <h2>✅ Soluzione Immediata: Firewall-Friendly Replit</h2>
+        <p>Replit fornisce un dominio alternativo per ambienti con firewall restrittivi:</p>
+        <div style="text-align: center; margin: 20px 0;">
+            <a href="https://firewalledreplit.com" class="btn" target="_blank">
+                🚀 Usa Firewalled Replit
+            </a>
+        </div>
+        <p><small>Questo dominio bypassa le restrizioni firewall mantenendo tutte le funzionalità.</small></p>
+    </div>
+
+    <div class="card warning">
+        <h2>🛠️ Soluzioni Alternative</h2>
+        
+        <h3>1. Cambia DNS (Più Efficace)</h3>
+        <div class="dns-grid">
+            <div>
+                <h4>Google DNS</h4>
+                <p>Primario: <code>8.8.8.8</code><br>
+                Secondario: <code>8.8.4.4</code></p>
+            </div>
+            <div>
+                <h4>Cloudflare DNS</h4>
+                <p>Primario: <code>1.1.1.1</code><br>
+                Secondario: <code>1.0.0.1</code></p>
+            </div>
+        </div>
+        
+        <h3>2. Disabilita Ad Blocker</h3>
+        <ul>
+            <li>Disabilita temporaneamente ad blocker (uBlock Origin, AdBlock Plus)</li>
+            <li>Aggiungi <code>*.replit.dev</code> alla whitelist</li>
+            <li>Prova modalità incognito/privata</li>
+        </ul>
+
+        <h3>3. Software Antivirus</h3>
+        <p>Se usi Symantec, Kaspersky o simili, aggiungi alla whitelist:</p>
+        <ul>
+            <li><code>*.replit.dev</code></li>
+            <li><code>*.repl.co</code></li>
+            <li><code>firewalledreplit.com</code></li>
+        </ul>
+    </div>
+
+    <div class="card info">
+        <h2>🔍 Test di Connessione</h2>
+        <div id="connectionTests">
+            <p>Eseguendo test automatici...</p>
+        </div>
+        
+        <button onclick="runTests()" class="btn">🔄 Esegui Nuovi Test</button>
+        
+        <h3>Test Manuali</h3>
+        <ul>
+            <li><a href="/replit-debug.html" target="_blank">Test Diagnostico Completo</a></li>
+            <li><a href="/iframe-test.html" target="_blank">Test iframe Embedding</a></li>
+            <li><a href="/api/auth/user" target="_blank">Test API Health</a></li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>📞 Supporto Aziendale</h2>
+        <p>Se sei in un ambiente aziendale o scolastico, invia queste informazioni al tuo IT:</p>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px;">
+Domini da sbloccare per EasyCashFlows:<br>
+- firewalledreplit.com (priorità alta)<br>
+- *.replit.dev<br>
+- *.repl.co<br>
+- replit.com<br><br>
+Motivazione: Piattaforma di sviluppo per gestione finanziaria aziendale
+        </div>
+    </div>
+
+    <script>
+        async function runTests() {
+            const testsDiv = document.getElementById('connectionTests');
+            testsDiv.innerHTML = '<p>🔄 Eseguendo test...</p>';
+            
+            let results = [];
+            
+            // Test 1: API Health
+            try {
+                const response = await fetch('/api/auth/user');
+                results.push(`✅ API Health: Status ${response.status}`);
+            } catch (error) {
+                results.push(`❌ API Health: ${error.message}`);
+            }
+            
+            // Test 2: Environment
+            const isReplit = window.location.hostname.includes('replit.dev');
+            const isFirewalled = window.location.hostname.includes('firewalledreplit.com');
+            results.push(`🌍 Environment: ${isReplit ? 'Replit Standard' : isFirewalled ? 'Firewalled Replit' : 'Altro'}`);
+            
+            // Test 3: Connection Type
+            if (navigator.connection) {
+                results.push(`📡 Connessione: ${navigator.connection.effectiveType || 'Sconosciuto'}`);
+            }
+            
+            // Test 4: User Agent Check (corporate filter detection)
+            const ua = navigator.userAgent;
+            if (ua.includes('Corporate') || ua.includes('Proxy') || ua.includes('Filter')) {
+                results.push(`⚠️ Proxy aziendale rilevato`);
+            } else {
+                results.push(`✅ Nessun proxy aziendale rilevato`);
+            }
+            
+            testsDiv.innerHTML = results.map(r => `<div style="margin: 5px 0;">${r}</div>`).join('');
+        }
+        
+        // Auto-run tests on load
+        window.onload = runTests;
+        
+        // Environment-specific recommendations
+        if (window.location.hostname.includes('replit.dev')) {
+            setTimeout(() => {
+                const card = document.createElement('div');
+                card.className = 'card warning';
+                card.innerHTML = `
+                    <h2>💡 Raccomandazione Specifica</h2>
+                    <p>Stai usando il dominio standard Replit che può essere bloccato da firewall aziendali.</p>
+                    <p><strong>Soluzione immediata:</strong> Passa a <a href="https://firewalledreplit.com" target="_blank">firewalledreplit.com</a></p>
+                `;
+                document.body.appendChild(card);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

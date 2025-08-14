@@ -171,8 +171,11 @@ export function ConnectionStatus() {
           <Alert>
             <AlertCircle className="w-4 h-4" />
             <AlertDescription>
-              Some connection issues detected. This might affect hot reload or API functionality.
-              Try refreshing the page or opening in a new tab.
+              Connection issues detected. This is likely due to firewall/ad blocker restrictions.
+              <br />
+              <strong>Quick fix:</strong> Try <a href="https://firewalledreplit.com" target="_blank" className="text-blue-600 underline">firewalledreplit.com</a> or disable ad blocker.
+              <br />
+              <a href="/connection-fix.html" target="_blank" className="text-blue-600 underline">View detailed solutions →</a>
             </AlertDescription>
           </Alert>
         )}
