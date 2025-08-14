@@ -21,36 +21,47 @@ export class WebSocketManager {
   private listeners: { [event: string]: Function[] } = {};
 
   constructor(config: Partial<WebSocketConfig> = {}) {
-    // WORKAROUND: Disable WebSocket for Replit Eval proxy stability issues
-    // Application works perfectly without WebSocket for hot reload
-    console.log('[WebSocket Manager] WebSocket disabled - application fully functional without it');
+    // INTELLIGENT REPLIT CONFIG: Auto-detect if WebSocket should be enabled
+    const isReplitDev = window.location.hostname.includes('replit.dev');
+    const shouldEnableWS = !isReplitDev || this.testReplitWebSocketSupport();
+    
+    if (shouldEnableWS) {
+      console.log('[WebSocket Manager] WebSocket enabled with Replit optimizations');
+    } else {
+      console.log('[WebSocket Manager] WebSocket disabled - fallback to HTTP polling');
+    }
     
     this.config = {
       url: this.getWebSocketUrl(),
-      maxRetries: 0, // Disabled
-      retryDelay: 1000,
-      heartbeatInterval: 30000,
-      debug: false, // Disabled to reduce console noise
+      maxRetries: shouldEnableWS ? 5 : 0,
+      retryDelay: 2000, // Longer delay for Replit stability
+      heartbeatInterval: 45000, // Increased for Replit Eval proxy
+      debug: shouldEnableWS,
       ...config
     };
   }
 
   private getWebSocketUrl(): string {
-    // Handle Replit's domain structure for WebSocket connections
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     let host = window.location.host;
     
-    // Special handling for Replit's spock domain structure
-    if (host.includes('spock.replit.dev')) {
-      // Use the main domain for WebSocket connections
-      host = host.replace('spock.replit.dev', 'replit.dev');
+    // REPLIT 2025 EVAL PROXY: Keep original domain for proper routing
+    // The Eval proxy handles WebSocket connections correctly when using same domain
+    if (host.includes('replit.dev')) {
+      this.log('Using Replit domain for WebSocket:', host);
     }
     
-    return `${protocol}//${host}`;
+    return `${protocol}//${host}/ws`;
+  }
+
+  private testReplitWebSocketSupport(): boolean {
+    // Conservative approach: disable WebSocket on Replit for now
+    // until we implement proper server-side WebSocket handler
+    return false;
   }
 
   private log(message: string, data?: any): void {
-    if (this.config.debug) {
+    if (this.config?.debug) {
       console.log(`[WebSocket Manager] ${message}`, data || '');
     }
   }
@@ -75,9 +86,26 @@ export class WebSocketManager {
   }
 
   public connect(): void {
-    // DISABLED: WebSocket connections disabled for Replit stability
-    console.log('[WebSocket Manager] Connect() disabled - application works without WebSocket');
-    return;
+    if (this.config.maxRetries === 0) {
+      this.log('WebSocket disabled - using HTTP fallback');
+      return;
+    }
+
+    if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.CONNECTING)) {
+      this.log('Connection already in progress');
+      return;
+    }
+
+    this.isConnecting = true;
+    this.log('Attempting WebSocket connection to:', this.config.url);
+
+    try {
+      this.ws = new WebSocket(this.config.url);
+      this.setupEventHandlers();
+    } catch (error) {
+      this.log('Failed to create WebSocket:', error);
+      this.handleConnectionFailure();
+    }
   }
 
   private setupEventHandlers(): void {
