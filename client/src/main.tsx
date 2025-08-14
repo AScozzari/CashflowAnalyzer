@@ -1,3 +1,6 @@
+// IMPORT HMR DISABLE FIRST
+import "./hmr-disable";
+
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
@@ -11,7 +14,11 @@ if (typeof window !== 'undefined') {
   
   // Disable HMR if available
   if (import.meta.hot) {
-    import.meta.hot.decline();
+    try {
+      import.meta.hot.decline();
+    } catch (e) {
+      console.log('[MAIN] HMR decline failed (expected):', e);
+    }
   }
 }
 

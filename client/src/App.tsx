@@ -1,3 +1,6 @@
+// IMPORT HMR DISABLE FIRST
+import "./hmr-disable";
+
 import { useState } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
