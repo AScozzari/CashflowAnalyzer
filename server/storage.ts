@@ -933,7 +933,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Analytics
-  async getMovementStats(period?: { startDate: string; endDate: string }): Promise<{
+  async getMovementStats(period?: { startDate: string; endDate: string }, resourceIdFilter?: string): Promise<{
     totalIncome: number;
     totalExpenses: number;
     netBalance: number;
@@ -953,6 +953,11 @@ export class DatabaseStorage implements IStorage {
         if (!isNaN(endDate.getTime())) {
           conditions.push(lte(movements.flowDate, period.endDate));
         }
+      }
+      
+      // Filtro per resourceId se specificato (per utenti role 'user')
+      if (resourceIdFilter) {
+        conditions.push(eq(movements.resourceId, resourceIdFilter));
       }
 
       const [stats] = await db
@@ -990,7 +995,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCashFlowData(days: number): Promise<Array<{
+  async getCashFlowData(days: number, resourceIdFilter?: string): Promise<Array<{
     date: string;
     income: number;
     expenses: number;
@@ -1001,6 +1006,16 @@ export class DatabaseStorage implements IStorage {
       const startDate = new Date(endDate);
       startDate.setDate(startDate.getDate() - days);
 
+      const conditions = [
+        gte(movements.flowDate, startDate.toISOString().split('T')[0]),
+        lte(movements.flowDate, endDate.toISOString().split('T')[0])
+      ];
+      
+      // Filtro per resourceId se specificato (per utenti role 'user')
+      if (resourceIdFilter) {
+        conditions.push(eq(movements.resourceId, resourceIdFilter));
+      }
+
       const result = await db
         .select({
           date: movements.flowDate,
@@ -1008,12 +1023,7 @@ export class DatabaseStorage implements IStorage {
           expenses: sql<number>`COALESCE(SUM(CASE WHEN ${movements.type} = 'expense' THEN ${movements.amount} ELSE 0 END), 0)`,
         })
         .from(movements)
-        .where(
-          and(
-            gte(movements.flowDate, startDate.toISOString().split('T')[0]),
-            lte(movements.flowDate, endDate.toISOString().split('T')[0])
-          )
-        )
+        .where(and(...conditions))
         .groupBy(movements.flowDate)
         .orderBy(movements.flowDate);
 

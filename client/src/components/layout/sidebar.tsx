@@ -31,8 +31,8 @@ export default function Sidebar({ isCollapsed: externalCollapsed, onCollapsedCha
       { name: "Analytics", href: "/analytics", icon: TrendingUp },
     ];
 
-    // Solo Admin e Finance possono accedere alle impostazioni
-    if (user && (user.role === "admin" || user.role === "finance")) {
+    // Solo Admin può accedere alle impostazioni (finance no)
+    if (user && user.role === "admin") {
       baseNavigation.push({ name: "Impostazioni", href: "/settings", icon: Settings });
     }
 

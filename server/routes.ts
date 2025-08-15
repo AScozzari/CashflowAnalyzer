@@ -765,6 +765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/analytics/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { startDate, endDate } = req.query;
+      const user = req.user;
       let period;
       
       if (startDate && endDate) {
@@ -782,7 +783,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
       
-      const stats = await storage.getMovementStats(period);
+      // User con role 'user' vedono solo gli analytics dei loro movimenti
+      let resourceIdFilter = undefined;
+      if (user.role === 'user' && user.resourceId) {
+        resourceIdFilter = user.resourceId;
+      }
+      
+      const stats = await storage.getMovementStats(period, resourceIdFilter);
       res.json(stats);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -793,6 +800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/analytics/cash-flow", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const daysParam = req.query.days as string;
+      const user = req.user;
       let days = 30;
       
       if (daysParam) {
@@ -803,7 +811,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         days = parsedDays;
       }
       
-      const data = await storage.getCashFlowData(days);
+      // User con role 'user' vedono solo i cash flow dei loro movimenti
+      let resourceIdFilter = undefined;
+      if (user.role === 'user' && user.resourceId) {
+        resourceIdFilter = user.resourceId;
+      }
+      
+      const data = await storage.getCashFlowData(days, resourceIdFilter);
       res.json(data);
     } catch (error) {
       console.error('Error fetching cash flow data:', error);

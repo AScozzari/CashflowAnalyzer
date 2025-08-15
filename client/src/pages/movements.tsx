@@ -16,9 +16,12 @@ import { Plus, Eye, Edit, Upload, Trash2, Download, Paperclip } from "lucide-rea
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { MovementWithRelations } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import { canCreateMovements, canEditMovements, canDeleteMovements } from "@/lib/permissions";
 
 export default function Movements() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMovement, setEditingMovement] = useState<MovementWithRelations | null>(null);
@@ -124,13 +127,15 @@ export default function Movements() {
         title="Movimenti" 
         subtitle="Gestione dei flussi finanziari"
         action={
-          <Button 
-            onClick={() => setIsFormOpen(true)}
-            className="bg-primary hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Movimento
-          </Button>
+          canCreateMovements(user) ? (
+            <Button 
+              onClick={() => setIsFormOpen(true)}
+              className="bg-primary hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Movimento
+            </Button>
+          ) : null
         }
       />
       
@@ -156,10 +161,12 @@ export default function Movements() {
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
                     <div className="text-muted-foreground mb-2">Nessun movimento trovato</div>
-                    <Button onClick={() => setIsFormOpen(true)} variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Aggiungi il primo movimento
-                    </Button>
+                    {canCreateMovements(user) && (
+                      <Button onClick={() => setIsFormOpen(true)} variant="outline">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Aggiungi il primo movimento
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -334,7 +341,21 @@ export default function Movements() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <AlertDialog>
+                            {canEditMovements(user) && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                title="Modifica movimento"
+                                onClick={() => {
+                                  setEditingMovement(movement);
+                                  setIsFormOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canDeleteMovements(user) && (
+                              <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button 
                                   variant="ghost" 
@@ -376,6 +397,7 @@ export default function Movements() {
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
