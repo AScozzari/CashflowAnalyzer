@@ -505,6 +505,12 @@ export const insertUserSchema = createInsertSchema(users).omit({
   lastLogin: true,
   resetToken: true,
   resetTokenExpiry: true,
+}).extend({
+  email: z.string().email("Email non valida"),
+  password: z.string().min(6, "Password deve avere almeno 6 caratteri"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  avatarUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export const insertNotificationSchema = createInsertSchema(notifications).omit({

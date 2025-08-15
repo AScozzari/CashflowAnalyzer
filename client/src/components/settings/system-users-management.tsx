@@ -38,6 +38,9 @@ const systemUserSchema = z.object({
   username: z.string().min(3, "Username deve avere almeno 3 caratteri"),
   email: z.string().email("Email non valida"),
   password: z.string().min(6, "Password deve avere almeno 6 caratteri"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  avatarUrl: z.string().url().optional().or(z.literal("")),
   role: z.enum(["admin", "finance"], {
     required_error: "Seleziona un ruolo"
   }),
