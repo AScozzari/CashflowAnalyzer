@@ -1931,7 +1931,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const users = await storage.getUsers();
-      res.json(users);
+      // Map database snake_case to frontend camelCase
+      const mappedUsers = users.map(user => ({
+        ...user,
+        firstName: user.firstName || null,
+        lastName: user.lastName || null,
+        avatarUrl: user.avatarUrl || null
+      }));
+      res.json(mappedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       res.status(500).json({ message: "Failed to fetch users" });
