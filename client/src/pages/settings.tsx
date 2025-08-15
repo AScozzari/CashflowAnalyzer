@@ -23,18 +23,30 @@ export default function Settings() {
             Gestisci entità, AI, canali di comunicazione, backup e configurazioni sistema
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="text-xs">
-            <Download className="h-4 w-4 mr-2" />
-            Backup
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative hover:bg-primary/10 hover:text-primary transition-colors"
+            title="Backup System"
+          >
+            <Download className="h-5 w-5" />
           </Button>
-          <Button variant="outline" size="sm" className="text-xs">
-            <User className="h-4 w-4 mr-2" />
-            Account
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative hover:bg-primary/10 hover:text-primary transition-colors"
+            title="Account Management"
+          >
+            <User className="h-5 w-5" />
           </Button>
-          <Button variant="outline" size="sm" className="text-xs">
-            <Shield className="h-4 w-4 mr-2" />
-            Sicurezza
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative hover:bg-primary/10 hover:text-primary transition-colors"
+            title="Security Settings"
+          >
+            <Shield className="h-5 w-5" />
           </Button>
         </div>
       </div>
