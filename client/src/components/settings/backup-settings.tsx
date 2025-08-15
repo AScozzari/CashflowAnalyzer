@@ -43,6 +43,9 @@ import {
   Settings, 
   Calendar, 
   HardDrive,
+  Plus,
+  Save,
+  TestTube2 as TestTube,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -59,7 +62,7 @@ export function BackupSettings() {
   const [activeTab, setActiveTab] = useState("overview");
 
   // Fetch backup data
-  const { data: configurations, isLoading: configsLoading } = useQuery({
+  const { data: backupConfigs, isLoading: configsLoading } = useQuery({
     queryKey: ["/api/backup/configurations"],
     queryFn: async () => {
       const response = await apiRequest("/api/backup/configurations");
@@ -320,7 +323,11 @@ export function BackupSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview" className="flex items-center space-x-2">
+            <HardDrive className="h-4 w-4" />
+            <span>Overview</span>
+          </TabsTrigger>
           <TabsTrigger value="providers" className="flex items-center space-x-2">
             <Cloud className="h-4 w-4" />
             <span>Provider</span>
@@ -342,6 +349,165 @@ export function BackupSettings() {
             <span>Disaster Recovery</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Configurazioni Attive</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {(backupStats as any)?.activeConfigurations || 0}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                    <Settings className="h-6 w-6 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Backup Completati</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {(backupStats as any)?.successfulJobs || 0}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Spazio Utilizzato</p>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {formatBytes((backupStats as any)?.totalBackupSize || 0)}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                    <HardDrive className="h-6 w-6 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Restore Points</p>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {(backupStats as any)?.totalRestorePoints || 0}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                    <Archive className="h-6 w-6 text-orange-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Backup</CardTitle>
+                <CardDescription>Esegui un backup manuale immediato</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Configurazione</label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona configurazione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {backupConfigs?.map((config: any) => (
+                        <SelectItem key={config.id} value={config.id}>
+                          {config.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button className="w-full">
+                  <Play className="h-4 w-4 mr-2" />
+                  Avvia Backup
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Sistema Status</CardTitle>
+                <CardDescription>Stato complessivo del sistema backup</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Ultimo Backup</span>
+                    <span className="text-sm text-muted-foreground">2 ore fa</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Prossimo Backup</span>
+                    <span className="text-sm text-muted-foreground">22 ore</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Sistema</span>
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                      Operativo
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Activity */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Attività Recente</CardTitle>
+              <CardDescription>Ultimi backup e restore points creati</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {backupJobs?.slice(0, 5).map((job: any) => (
+                  <div key={job.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      {getStatusIcon(job.status)}
+                      <div>
+                        <p className="font-medium">{job.type} Backup</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(job.createdAt).toLocaleString('it-IT')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {getStatusBadge(job.status)}
+                      {job.backupSizeBytes && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {formatBytes(job.backupSizeBytes)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Provider Configuration Tab */}
         <TabsContent value="providers" className="space-y-6">
