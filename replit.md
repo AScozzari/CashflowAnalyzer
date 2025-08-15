@@ -15,6 +15,8 @@ EasyCashFlows is a comprehensive financial management system designed for Italia
 - **AI Context Awareness**: ✅ AVANZATO - Accesso dati finanziari per risposte personalizzate
 - **OpenAI Error 429 Fix**: ✅ RISOLTO - Retry logic con exponential backoff per rate limiting
 - **WebSocket Diagnostics**: ✅ MIGLIORATO - Usa WebSocket Manager esistente invece di test che falliscono
+- **OpenAI UI Conditional**: ✅ PERFEZIONATO - Guida errori 429 visibile solo quando necessario, messaggio successo per connessioni funzionanti
+- **Webhook Diagnostics Buttons**: ✅ OPERATIVI - Test Generale e Aggiorna con loading states e feedback corretto
 
 ### 🎯 PREVIOUS MILESTONE - WHATSAPP BUSINESS API (2025-08-15 20:05)
 - **UI/UX Simplificata**: ✅ COMPLETATO - Single provider selection invece di configurazioni multiple confuse

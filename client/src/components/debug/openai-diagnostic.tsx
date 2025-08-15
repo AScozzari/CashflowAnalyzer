@@ -108,14 +108,15 @@ export function OpenAIDiagnostic() {
           </div>
         )}
 
-        {/* Error 429 Troubleshooting Guide */}
-        <Alert>
-          <AlertTriangle className="w-4 h-4" />
-          <AlertDescription>
-            <div className="space-y-3">
-              <div>
-                <strong>Error 429 "Quota Exceeded" - Common Solutions:</strong>
-              </div>
+        {/* Error 429 Troubleshooting Guide - Only show if there's an error or no test results */}
+        {(results.length === 0 || results.some(r => r.status === 'error' && r.message.toLowerCase().includes('rate limit'))) && (
+          <Alert>
+            <AlertTriangle className="w-4 h-4" />
+            <AlertDescription>
+              <div className="space-y-3">
+                <div>
+                  <strong>Error 429 "Quota Exceeded" - Common Solutions:</strong>
+                </div>
               
               <div className="space-y-2 text-sm">
                 <div>
@@ -165,6 +166,27 @@ export function OpenAIDiagnostic() {
             </div>
           </AlertDescription>
         </Alert>
+        )}
+
+        {/* Success Guide for Working API - Only show when connection is successful */}
+        {results.some(r => r.status === 'success') && (
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <div>
+                  <strong className="text-green-800">✅ OpenAI Connection Successful</strong>
+                </div>
+                <div className="text-sm text-green-700">
+                  <p>• API key working correctly</p>
+                  <p>• Automatic retry logic enabled for rate limiting</p>
+                  <p>• AI webhook responses operational</p>
+                  <p>• System handles errors gracefully</p>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Current API Key Info */}
         <div className="p-3 bg-muted rounded-lg">
