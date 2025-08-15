@@ -7,7 +7,7 @@ import {
   insertIbanSchema, insertOfficeSchema, insertTagSchema,
   insertMovementStatusSchema, insertMovementReasonSchema, insertMovementSchema,
   insertNotificationSchema, insertSupplierSchema, insertCustomerSchema, insertEmailSettingsSchema,
-  passwordResetSchema, resetPasswordSchema
+  insertUserSchema, passwordResetSchema, resetPasswordSchema
 } from "@shared/schema";
 import { emailService } from './email-service';
 import { setupAuth } from "./auth";
@@ -1307,6 +1307,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: error instanceof Error ? error.message : "Errore nella creazione dei movimenti"
       });
+    }
+  }));
+
+  // Users API routes (for system user management)
+  app.get("/api/users", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const users = await storage.getUsers();
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  }));
+
+  app.post("/api/users", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Hash password before storing
+      const { hashPassword } = await import("./auth");
+      const userData = insertUserSchema.parse(req.body);
+      const hashedPassword = await hashPassword(userData.password);
+      
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword,
+      });
+
+      // Don't return password in response
+      const { password, ...userResponse } = user;
+      res.status(201).json(userResponse);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid data", 
+          errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+        });
+      }
+      console.error('Error creating user:', error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  }));
+
+  app.put("/api/users/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userData = insertUserSchema.partial().parse(req.body);
+      
+      // Hash password if provided
+      if (userData.password) {
+        const { hashPassword } = await import("./auth");
+        userData.password = await hashPassword(userData.password);
+      }
+      
+      const user = await storage.updateUser(req.params.id, userData);
+      
+      // Don't return password in response
+      const { password, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid data", 
+          errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+        });
+      }
+      console.error('Error updating user:', error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  }));
+
+  app.delete("/api/users/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Prevent deleting your own account
+      if (req.params.id === req.user?.id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      
+      await storage.deleteUser(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ message: "Failed to delete user" });
     }
   }));
 

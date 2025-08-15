@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Shield, Database, Bell, Globe, Palette, FileText, Settings2, Users2, Lock } from "lucide-react";
 import { EmailSettings } from "./email-settings";
+import SystemUsersManagement from "./system-users-management";
 
 export default function SystemConfigHorizontal() {
   const [activeTab, setActiveTab] = useState("email");
@@ -138,12 +139,7 @@ export default function SystemConfigHorizontal() {
                   description="Configurazioni globali, parametri sistema, logging e diagnostics avanzati"
                 />
               )}
-              {activeTab === "users" && (
-                <PlaceholderSection 
-                  title="Gestione Utenti Sistema"
-                  description="Amministrazione utenti, ruoli, permessi, sessioni attive e audit log"
-                />
-              )}
+              {activeTab === "users" && <SystemUsersManagement />}
               {activeTab === "backup" && (
                 <PlaceholderSection 
                   title="Backup e Recovery"

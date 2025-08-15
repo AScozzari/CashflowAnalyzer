@@ -457,7 +457,7 @@ export const insertResourceSchema = createInsertSchema(resources).omit({
   taxCode: z.string(),
   companyId: z.string(),
   email: z.string().email().optional(),
-  role: z.enum(['admin', 'finance', 'user']).default('user'),
+  role: z.enum(['user']).default('user'), // Solo ruolo user per dipendenti
 });
 
 export const insertIbanSchema = createInsertSchema(ibans).omit({
