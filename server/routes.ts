@@ -2144,6 +2144,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI ENDPOINTS
   // ===================
 
+  // OpenAI API Key Management Routes
+  app.get("/api/ai/api-key/status", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const apiKey = process.env.OPENAI_API_KEY;
+      
+      if (!apiKey) {
+        return res.json({
+          hasKey: false,
+          keyPreview: null,
+          lastUpdated: null
+        });
+      }
+
+      // Create masked preview of the key (show first 3 and last 4 characters)
+      const keyPreview = `sk-${apiKey.substring(3, 6)}${'*'.repeat(35)}${apiKey.slice(-4)}`;
+      
+      res.json({
+        hasKey: true,
+        keyPreview,
+        lastUpdated: new Date().toISOString(), // In real app, store this timestamp
+        isValid: true // You could test this with a lightweight API call
+      });
+
+    } catch (error) {
+      console.error("Error checking API key status:", error);
+      res.status(500).json({ 
+        error: "Error checking API key status",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }));
+
+  app.post("/api/ai/api-key/update", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { apiKey } = req.body;
+
+      if (!apiKey || !apiKey.startsWith('sk-')) {
+        return res.status(400).json({ 
+          error: "Invalid API key format. OpenAI keys start with 'sk-'" 
+        });
+      }
+
+      // Test the API key by making a simple request
+      const testResponse = await fetch('https://api.openai.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!testResponse.ok) {
+        const errorData = await testResponse.json().catch(() => ({}));
+        return res.status(400).json({ 
+          error: "Invalid API key or insufficient permissions",
+          details: errorData.error?.message || "API key test failed"
+        });
+      }
+
+      // Store the API key (in production, encrypt this)
+      process.env.OPENAI_API_KEY = apiKey;
+      
+      // Create masked preview
+      const keyPreview = `sk-${apiKey.substring(3, 6)}${'*'.repeat(35)}${apiKey.slice(-4)}`;
+
+      res.json({ 
+        success: true, 
+        message: "API key updated successfully",
+        keyPreview,
+        lastUpdated: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Error updating API key:", error);
+      res.status(500).json({ 
+        error: "Error updating API key",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }));
+
+  app.delete("/api/ai/api-key", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Remove the API key
+      delete process.env.OPENAI_API_KEY;
+
+      res.json({ 
+        success: true, 
+        message: "API key removed successfully" 
+      });
+
+    } catch (error) {
+      console.error("Error removing API key:", error);
+      res.status(500).json({ 
+        error: "Error removing API key",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }));
+
+  app.post("/api/ai/api-key/test", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const apiKey = process.env.OPENAI_API_KEY;
+
+      if (!apiKey) {
+        return res.status(400).json({ 
+          error: "No API key configured" 
+        });
+      }
+
+      // Test with a simple models list request
+      const testResponse = await fetch('https://api.openai.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!testResponse.ok) {
+        const errorData = await testResponse.json().catch(() => ({}));
+        return res.status(400).json({ 
+          error: "API key test failed",
+          details: errorData.error?.message || "Connection failed"
+        });
+      }
+
+      const modelsData = await testResponse.json();
+      const availableModels = modelsData.data?.filter((model: any) => 
+        model.id.includes('gpt-4') || model.id.includes('gpt-3.5')
+      ).map((model: any) => model.id) || [];
+
+      res.json({ 
+        success: true, 
+        message: "API key is valid and working",
+        availableModels,
+        testedAt: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Error testing API key:", error);
+      res.status(500).json({ 
+        error: "Error testing API key",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }));
+
   // AI Settings
   app.get("/api/ai/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {

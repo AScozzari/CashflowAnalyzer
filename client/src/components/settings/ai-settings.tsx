@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Brain, Zap, Shield, FileText, MessageSquare, TrendingUp, Settings2, Key } from "lucide-react";
+import { Brain, Zap, Shield, FileText, MessageSquare, TrendingUp, Settings2, Key, Eye, EyeOff, Trash2, RefreshCcw } from "lucide-react";
 
 // AI Settings Schema
 const aiSettingsSchema = z.object({
@@ -39,10 +39,18 @@ export default function AiSettings() {
   const queryClient = useQueryClient();
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [newApiKey, setNewApiKey] = useState('');
 
   // Fetch current AI settings
   const { data: aiSettings, isLoading } = useQuery({
     queryKey: ['/api/ai/settings'],
+    retry: false,
+  });
+
+  // Fetch API key status
+  const { data: apiKeyStatus, refetch: refetchApiKeyStatus } = useQuery({
+    queryKey: ['/api/ai/api-key/status'],
     retry: false,
   });
 
@@ -103,6 +111,74 @@ export default function AiSettings() {
     },
   });
 
+  // Update API key mutation
+  const updateApiKeyMutation = useMutation({
+    mutationFn: async (apiKey: string) => {
+      const response = await apiRequest('POST', '/api/ai/api-key/update', { apiKey });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "✅ API Key Aggiornata",
+        description: "La chiave OpenAI è stata aggiornata e testata con successo.",
+      });
+      setNewApiKey('');
+      refetchApiKeyStatus();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "❌ Errore API Key",
+        description: error.message || "Impossibile aggiornare la chiave OpenAI.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete API key mutation
+  const deleteApiKeyMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('DELETE', '/api/ai/api-key');
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "✅ API Key Rimossa",
+        description: "La chiave OpenAI è stata rimossa dal sistema.",
+      });
+      refetchApiKeyStatus();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "❌ Errore Rimozione",
+        description: error.message || "Impossibile rimuovere la chiave OpenAI.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Test API key mutation
+  const testApiKeyMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/ai/api-key/test');
+      return response;
+    },
+    onSuccess: (data) => {
+      setConnectionStatus('success');
+      toast({
+        title: "✅ Test Connessione Riuscito",
+        description: `API key valida. Modelli disponibili: ${data.availableModels?.length || 0}`,
+      });
+    },
+    onError: (error: any) => {
+      setConnectionStatus('error');
+      toast({
+        title: "❌ Test Connessione Fallito",
+        description: error.message || "Impossibile connettersi all'API OpenAI.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Test connection mutation
   const testConnectionMutation = useMutation({
     mutationFn: async () => {
@@ -157,37 +233,137 @@ export default function AiSettings() {
         </CardContent>
       </Card>
 
-      {/* Connection Status */}
+      {/* OpenAI API Key Management */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Key className="w-5 h-5 text-green-600" />
-              <CardTitle className="text-lg">Stato Connessione OpenAI</CardTitle>
+              <CardTitle className="text-lg">Gestione API Key OpenAI</CardTitle>
             </div>
-            <Button 
-              onClick={handleTestConnection}
-              disabled={isTestingConnection}
-              variant="outline"
-              size="sm"
-            >
-              {isTestingConnection ? 'Testing...' : 'Test Connessione'}
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button 
+                onClick={() => testApiKeyMutation.mutate()}
+                disabled={testApiKeyMutation.isPending || !apiKeyStatus?.hasKey}
+                variant="outline"
+                size="sm"
+              >
+                {testApiKeyMutation.isPending ? 'Testing...' : 'Test Connessione'}
+              </Button>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Current API Key Status */}
+          <div className="p-4 border rounded-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <span className="font-medium">API Key Corrente</span>
+                {apiKeyStatus?.hasKey ? (
+                  <Badge variant="default" className="bg-green-100 text-green-800">Configurata</Badge>
+                ) : (
+                  <Badge variant="outline">Non Configurata</Badge>
+                )}
+              </div>
+              {apiKeyStatus?.hasKey && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                  >
+                    {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteApiKeyMutation.mutate()}
+                    disabled={deleteApiKeyMutation.isPending}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            {apiKeyStatus?.hasKey ? (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 font-mono text-sm">
+                  <span className="text-muted-foreground">Chiave:</span>
+                  <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    {showApiKey ? 'sk-...' : apiKeyStatus.keyPreview}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Ultimo aggiornamento: {new Date(apiKeyStatus.lastUpdated).toLocaleString('it-IT')}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nessuna API key configurata. Aggiungi una chiave per abilitare le funzionalità AI.
+              </p>
+            )}
+          </div>
+
+          {/* Add/Update API Key */}
+          <div className="p-4 border rounded-lg">
+            <h4 className="font-medium mb-3">
+              {apiKeyStatus?.hasKey ? 'Sostituisci API Key' : 'Aggiungi API Key'}
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Input
+                  type={showApiKey ? "text" : "password"}
+                  placeholder="sk-..."
+                  value={newApiKey}
+                  onChange={(e) => setNewApiKey(e.target.value)}
+                  className="font-mono"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                >
+                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => updateApiKeyMutation.mutate(newApiKey)}
+                  disabled={!newApiKey || updateApiKeyMutation.isPending}
+                  size="sm"
+                >
+                  {updateApiKeyMutation.isPending ? 'Salvando...' : (apiKeyStatus?.hasKey ? 'Sostituisci' : 'Aggiungi')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNewApiKey('')}
+                >
+                  Annulla
+                </Button>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                La chiave verrà automaticamente testata prima del salvataggio. 
+                Deve iniziare con "sk-" ed avere permessi per l'API OpenAI.
+              </div>
+            </div>
+          </div>
+
+          {/* Connection Status */}
           <div className="flex items-center space-x-2">
             {connectionStatus === 'idle' && (
               <Badge variant="secondary">Non Testato</Badge>
             )}
             {connectionStatus === 'success' && (
-              <Badge variant="default" className="bg-green-100 text-green-800">✅ Connesso</Badge>
+              <Badge variant="default" className="bg-green-100 text-green-800">✅ Connessione OK</Badge>
             )}
             {connectionStatus === 'error' && (
-              <Badge variant="destructive">❌ Errore</Badge>
+              <Badge variant="destructive">❌ Connessione Fallita</Badge>
             )}
             <span className="text-sm text-muted-foreground">
-              Chiave API OpenAI configurata nelle variabili d'ambiente
+              Stato ultima verifica connessione OpenAI
             </span>
           </div>
         </CardContent>
