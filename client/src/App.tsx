@@ -15,6 +15,7 @@ import Movements from "@/pages/movements";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
 import AiChatPage from "@/pages/ai-chat";
+import Communications from "@/pages/communications";
 import AuthPage from "@/pages/auth-page";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
@@ -153,6 +154,12 @@ function Router() {
       <ProtectedRoute path="/ai-chat" component={() => (
         <AppLayout>
           <AiChatPage />
+        </AppLayout>
+      )} />
+      
+      <ProtectedRoute path="/communications" component={() => (
+        <AppLayout>
+          <Communications />
         </AppLayout>
       )} />
       

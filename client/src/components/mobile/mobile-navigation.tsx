@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Menu, X, Bot } from "lucide-react";
+import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Menu, X, Bot, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ export function MobileNavigation({ className }: MobileNavigationProps) {
       { name: "Dashboard", href: "/dashboard", icon: Home },
       { name: "Movimenti", href: "/movements", icon: RefreshCw },
       { name: "Analytics", href: "/analytics", icon: TrendingUp },
+      { name: "Comunicazioni", href: "/communications", icon: MessageSquare },
     ];
 
     // Solo Admin e Finance possono accedere alle impostazioni

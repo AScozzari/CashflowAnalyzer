@@ -100,6 +100,16 @@ EasyCashFlows is a comprehensive financial management system designed for Italia
 
 Preferred communication style: Simple, everyday language.
 
+## Communication System Architecture Plan (2025-08-15)
+**Vision**: Sistema multi-canale con interfacce specializzate per ogni tipo di comunicazione:
+- **Email**: Interface simile a Outlook con template, view interazioni, composizione email
+- **WhatsApp**: Chat interface simile a WhatsApp con template per conversazioni, AI integration
+- **SMS**: Interface chat-like per gestione SMS con template
+- **Telegram**: Interface simile a Telegram per gestione comunicazioni
+- **Sidebar Navigation**: Menu "Comunicazioni" con tab per ogni canale
+- **Template System**: Template personalizzabili per ogni canale
+- **AI Integration**: Assistant per ogni canale con risposte intelligenti
+
 # System Architecture
 
 ## Frontend Architecture
