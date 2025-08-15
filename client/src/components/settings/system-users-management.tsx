@@ -74,6 +74,9 @@ interface User {
   role: string;
   resourceId?: string | null;
   lastLogin?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  avatarUrl?: string | null;
 }
 
 // Filtro per identificare utenti sistema (no resourceId + ruoli admin/finance)
@@ -174,6 +177,9 @@ export default function SystemUsersManagement() {
       username: user.username,
       email: user.email,
       password: "", // Non precompilare la password per sicurezza
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      avatarUrl: user.avatarUrl || "",
       role: user.role as "admin" | "finance",
     });
     setIsCreateDialogOpen(true);
@@ -262,6 +268,56 @@ export default function SystemUsersManagement() {
                         <FormLabel>Password</FormLabel>
                         <FormControl>
                           <Input type="password" {...field} data-testid="input-password" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Campi anagrafici */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-firstName" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cognome</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-lastName" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="avatarUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL Avatar (opzionale)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="url" 
+                            placeholder="https://example.com/avatar.jpg"
+                            {...field} 
+                            data-testid="input-avatarUrl" 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -363,17 +419,33 @@ export default function SystemUsersManagement() {
                     data-testid={`user-system-${user.id}`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-lg ${roleConfig?.color || 'bg-gray-500'} text-white`}>
-                        <Icon className="h-4 w-4" />
-                      </div>
+                      {/* Avatar o icona ruolo */}
+                      {user.avatarUrl ? (
+                        <img 
+                          src={user.avatarUrl} 
+                          alt={`Avatar di ${user.firstName || user.username}`}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className={`p-2 rounded-lg ${roleConfig?.color || 'bg-gray-500'} text-white`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                      )}
                       
                       <div>
                         <div className="font-medium text-gray-900 dark:text-white">
-                          {user.username}
+                          {user.firstName && user.lastName 
+                            ? `${user.firstName} ${user.lastName}` 
+                            : user.username}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {user.email}
                         </div>
+                        {(user.firstName || user.lastName) && (
+                          <div className="text-xs text-gray-400">
+                            @{user.username}
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant={roleConfig?.badge || "default"}>
                             {roleConfig?.label || user.role}
