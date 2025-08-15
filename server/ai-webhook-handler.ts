@@ -17,6 +17,26 @@ export class AIWebhookHandler {
     }
   }
 
+  // OpenAI with retry logic for 429 errors
+  private async openaiWithRetry(params: any, maxRetries: number = 3): Promise<any> {
+    if (!this.openai) throw new Error('OpenAI not initialized');
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await this.openai.chat.completions.create(params);
+      } catch (error: any) {
+        if (error.status === 429 && attempt < maxRetries) {
+          // Rate limit hit, wait with exponential backoff
+          const waitTime = Math.min(1000 * Math.pow(2, attempt), 10000);
+          console.log(`OpenAI rate limit hit, retrying in ${waitTime}ms... (attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+        throw error;
+      }
+    }
+  }
+
   // Analyze incoming message and generate intelligent response
   async analyzeAndRespond(messageData: {
     from: string;
@@ -109,7 +129,7 @@ Rispondi in formato JSON:
   "reasoning": "spiegazione breve"
 }`;
 
-      const completion = await this.openai.chat.completions.create({
+      const completion = await this.openaiWithRetry({
         model: "gpt-3.5-turbo",
         messages: [
           {
@@ -172,7 +192,7 @@ Linee guida per la risposta:
 
 Rispondi SOLO con il testo del messaggio, senza spiegazioni.`;
 
-      const completion = await this.openai.chat.completions.create({
+      const completion = await this.openaiWithRetry({
         model: "gpt-3.5-turbo",
         messages: [
           {
