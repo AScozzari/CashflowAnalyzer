@@ -49,6 +49,24 @@ export function BackupSettings() {
     staleTime: 300000, // Cache for 5 minutes
   });
 
+  const { data: multiCloudStats } = useQuery({
+    queryKey: ["/api/backup/multi-cloud/stats"],
+    queryFn: () => fetch("/api/backup/multi-cloud/stats").then(res => res.json()),
+    staleTime: 60000, // Cache for 1 minute
+  });
+
+  const { data: s3Stats } = useQuery({
+    queryKey: ["/api/backup/s3/stats"],
+    queryFn: () => fetch("/api/backup/s3/stats").then(res => res.json()),
+    staleTime: 120000, // Cache for 2 minutes
+  });
+
+  const { data: azureStats } = useQuery({
+    queryKey: ["/api/backup/azure/stats"],
+    queryFn: () => fetch("/api/backup/azure/stats").then(res => res.json()),
+    staleTime: 120000, // Cache for 2 minutes
+  });
+
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -268,7 +286,7 @@ export function BackupSettings() {
                 </Card>
 
                 {/* Amazon S3 */}
-                <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
+                <Card className={`border-2 ${s3Stats?.configured ? 'border-orange-200 bg-orange-50 dark:bg-orange-950 dark:border-orange-800' : 'border-dashed border-gray-300 dark:border-gray-600'}`}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-2">
@@ -277,23 +295,51 @@ export function BackupSettings() {
                         </div>
                         <span className="font-medium">Amazon S3</span>
                       </div>
-                      <Badge variant="outline">Non configurato</Badge>
+                      <Badge variant={s3Stats?.configured ? "default" : "outline"} className={s3Stats?.configured ? "bg-green-100 text-green-800" : ""}>
+                        {s3Stats?.configured ? "Attivo" : "Non configurato"}
+                      </Badge>
                     </div>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>Backup ridondante su AWS S3</p>
-                      <p>• Durata 99.999999999%</p>
-                      <p>• Multi-region replication</p>
-                      <p>• Glacier per archiviazione</p>
-                    </div>
+                    {s3Stats?.configured ? (
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <div className="flex justify-between">
+                          <span>Bucket:</span>
+                          <span className="font-mono text-xs">{s3Stats.bucketName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Region:</span>
+                          <span>{s3Stats.region}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Files:</span>
+                          <span>{s3Stats.totalFiles}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>Backup ridondante su AWS S3</p>
+                        <p>• Durata 99.999999999%</p>
+                        <p>• Multi-region replication</p>
+                        <p>• Glacier per archiviazione</p>
+                      </div>
+                    )}
                     <Button className="w-full mt-3" variant="outline" size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Aggiungi S3
+                      {s3Stats?.configured ? (
+                        <>
+                          <Settings className="h-4 w-4 mr-2" />
+                          Configura
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Aggiungi S3
+                        </>
+                      )}
                     </Button>
                   </CardContent>
                 </Card>
 
                 {/* Azure Blob Storage */}
-                <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
+                <Card className={`border-2 ${azureStats?.configured ? 'border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800' : 'border-dashed border-gray-300 dark:border-gray-600'}`}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-2">
@@ -302,17 +348,45 @@ export function BackupSettings() {
                         </div>
                         <span className="font-medium">Azure Blob</span>
                       </div>
-                      <Badge variant="outline">Non configurato</Badge>
+                      <Badge variant={azureStats?.configured ? "default" : "outline"} className={azureStats?.configured ? "bg-green-100 text-green-800" : ""}>
+                        {azureStats?.configured ? "Attivo" : "Non configurato"}
+                      </Badge>
                     </div>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>Backup enterprise su Azure</p>
-                      <p>• Hot/Cool/Archive tiers</p>
-                      <p>• Geo-redundant storage</p>
-                      <p>• Compliance avanzato</p>
-                    </div>
+                    {azureStats?.configured ? (
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <div className="flex justify-between">
+                          <span>Container:</span>
+                          <span className="font-mono text-xs">{azureStats.containerName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Files:</span>
+                          <span>{azureStats.totalFiles}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Storage:</span>
+                          <span>Blob Storage</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>Backup enterprise su Azure</p>
+                        <p>• Hot/Cool/Archive tiers</p>
+                        <p>• Geo-redundant storage</p>
+                        <p>• Compliance avanzato</p>
+                      </div>
+                    )}
                     <Button className="w-full mt-3" variant="outline" size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Aggiungi Azure
+                      {azureStats?.configured ? (
+                        <>
+                          <Settings className="h-4 w-4 mr-2" />
+                          Configura
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Aggiungi Azure
+                        </>
+                      )}
                     </Button>
                   </CardContent>
                 </Card>
@@ -333,7 +407,7 @@ export function BackupSettings() {
                     <div className="space-y-4">
                       <div>
                         <label className="text-sm font-medium">Provider Primario</label>
-                        <Select defaultValue="gcs">
+                        <Select defaultValue={multiCloudStats?.providers?.find(p => p.configured)?.type || "gcs"}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -431,33 +505,130 @@ export function BackupSettings() {
                 </CardContent>
               </Card>
 
-              {/* Storage Statistics */}
+              {/* Multi-Cloud Storage Statistics */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Utilizzo Storage</CardTitle>
+                  <CardTitle>Utilizzo Storage Multi-Cloud</CardTitle>
+                  <CardDescription>
+                    Statistiche aggregate da tutti i provider configurati
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Google Cloud Storage</span>
-                      <span className="text-sm text-muted-foreground">2.3 GB / 100 GB</span>
+                  <div className="space-y-6">
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="font-medium text-2xl text-blue-600">
+                          {multiCloudStats?.summary?.configuredProviders || 1}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Provider Configurati</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="font-medium text-2xl text-green-600">
+                          {formatBytes(multiCloudStats?.summary?.totalBackupSize || backupStats?.totalBackupSize || 0)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Spazio Totale Usato</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="font-medium text-2xl text-purple-600">
+                          {multiCloudStats?.summary?.redundancy || "Single-cloud"}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Ridondanza</div>
+                      </div>
                     </div>
-                    <Progress value={23} className="h-2" />
-                    
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div className="text-center">
-                        <div className="font-medium text-lg">156</div>
-                        <div className="text-muted-foreground">File Backup</div>
+
+                    {/* Provider Breakdown */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium">Breakdown per Provider</h4>
+                      
+                      {/* Google Cloud Storage */}
+                      <div className="flex justify-between items-center p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                            <Cloud className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <div className="font-medium">Google Cloud Storage</div>
+                            <div className="text-sm text-muted-foreground">
+                              {backupStats?.totalFiles || 0} files • {formatBytes(backupStats?.totalBackupSize || 0)}
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="default" className="bg-green-100 text-green-800">Attivo</Badge>
                       </div>
-                      <div className="text-center">
-                        <div className="font-medium text-lg">2.3 GB</div>
-                        <div className="text-muted-foreground">Spazio Usato</div>
+
+                      {/* Amazon S3 */}
+                      <div className="flex justify-between items-center p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                            <Database className="h-4 w-4 text-orange-600" />
+                          </div>
+                          <div>
+                            <div className="font-medium">Amazon S3</div>
+                            <div className="text-sm text-muted-foreground">
+                              {s3Stats?.configured ? (
+                                `${s3Stats.totalFiles || 0} files • ${formatBytes(s3Stats.totalBackupSize || 0)}`
+                              ) : (
+                                "Non configurato"
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant={s3Stats?.configured ? "default" : "outline"} 
+                               className={s3Stats?.configured ? "bg-green-100 text-green-800" : ""}>
+                          {s3Stats?.configured ? "Attivo" : "Non configurato"}
+                        </Badge>
                       </div>
-                      <div className="text-center">
-                        <div className="font-medium text-lg">97.7 GB</div>
-                        <div className="text-muted-foreground">Disponibile</div>
+
+                      {/* Azure Blob Storage */}
+                      <div className="flex justify-between items-center p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                            <Server className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <div className="font-medium">Azure Blob Storage</div>
+                            <div className="text-sm text-muted-foreground">
+                              {azureStats?.configured ? (
+                                `${azureStats.totalFiles || 0} files • ${formatBytes(azureStats.totalBackupSize || 0)}`
+                              ) : (
+                                "Non configurato"
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant={azureStats?.configured ? "default" : "outline"}
+                               className={azureStats?.configured ? "bg-green-100 text-green-800" : ""}>
+                          {azureStats?.configured ? "Attivo" : "Non configurato"}
+                        </Badge>
                       </div>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Configuration Test Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Test Configurazioni Provider</CardTitle>
+                  <CardDescription>
+                    Testa la connessione ai provider cloud configurati
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button variant="outline" className="h-20 flex flex-col space-y-2">
+                      <Cloud className="h-6 w-6 text-blue-600" />
+                      <span>Test GCS</span>
+                    </Button>
+                    <Button variant="outline" className="h-20 flex flex-col space-y-2" disabled={!s3Stats?.configured}>
+                      <Database className="h-6 w-6 text-orange-600" />
+                      <span>Test S3</span>
+                    </Button>
+                    <Button variant="outline" className="h-20 flex flex-col space-y-2" disabled={!azureStats?.configured}>
+                      <Server className="h-6 w-6 text-blue-600" />
+                      <span>Test Azure</span>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -469,19 +640,138 @@ export function BackupSettings() {
         <TabsContent value="configurations" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Configurazioni Backup</CardTitle>
+              <CardTitle>Configurazioni Backup Multi-Cloud</CardTitle>
               <CardDescription>
-                Gestisci le configurazioni di backup automatizzati
+                Gestisci backup automatizzati su Google Cloud, Amazon S3 e Azure Blob Storage
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Configurazione backup in sviluppo</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Funzionalità disponibile nella prossima release
-                </p>
+            <CardContent className="space-y-6">
+              
+              {/* Current Configurations */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Configurazioni Attive</h4>
+                {backupConfigs?.map((config: any) => (
+                  <div key={config.id} className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h5 className="font-medium">{config.name}</h5>
+                        <p className="text-sm text-muted-foreground">{config.description}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={config.enabled ? "default" : "outline"}>
+                          {config.enabled ? "Attivo" : "Disabilitato"}
+                        </Badge>
+                        <Button variant="outline" size="sm">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <div className="text-muted-foreground">Tipo</div>
+                        <div className="font-medium capitalize">{config.type}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Schedule</div>
+                        <div className="font-medium font-mono text-xs">{config.schedule}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Provider</div>
+                        <div className="font-medium uppercase">{config.storage_provider}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Retention</div>
+                        <div className="font-medium">{config.retention_days} giorni</div>
+                      </div>
+                    </div>
+                  </div>
+                )) || (
+                  <div className="text-center py-8">
+                    <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Nessuna configurazione trovata</p>
+                  </div>
+                )}
               </div>
+
+              {/* Add New Configuration */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Nuova Configurazione Backup</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Nome Configurazione</label>
+                        <Input placeholder="es. Backup Giornaliero DB" className="mt-1" />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Tipo Backup</label>
+                        <Select>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleziona tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="database">Solo Database</SelectItem>
+                            <SelectItem value="files">Solo Files</SelectItem>
+                            <SelectItem value="full">Backup Completo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Storage Provider</label>
+                        <Select>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleziona provider" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gcs">Google Cloud Storage</SelectItem>
+                            <SelectItem value="s3" disabled={!s3Stats?.configured}>Amazon S3 {!s3Stats?.configured && "(Non configurato)"}</SelectItem>
+                            <SelectItem value="azure" disabled={!azureStats?.configured}>Azure Blob {!azureStats?.configured && "(Non configurato)"}</SelectItem>
+                            <SelectItem value="multi">Multi-Cloud (Ridondante)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Schedule (Cron)</label>
+                        <Input placeholder="0 2 * * * (ogni giorno alle 2:00)" className="mt-1 font-mono text-sm" />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Retention (giorni)</label>
+                        <Input type="number" placeholder="30" className="mt-1" />
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch id="compression" defaultChecked />
+                        <label htmlFor="compression" className="text-sm font-medium">
+                          Abilita compressione
+                        </label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch id="encryption" defaultChecked />
+                        <label htmlFor="encryption" className="text-sm font-medium">
+                          Abilita crittografia
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-2 mt-6 pt-6 border-t">
+                    <Button variant="outline">Annulla</Button>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Crea Configurazione
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
         </TabsContent>

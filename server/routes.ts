@@ -1326,6 +1326,409 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Multi-cloud provider stats - Amazon S3
+  app.get("/api/backup/s3/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Amazon S3 configuration
+      const AWS = await import("aws-sdk");
+      
+      // Check if S3 credentials are configured
+      const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+      const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+      const region = process.env.AWS_REGION || "us-east-1";
+      const bucketName = process.env.S3_BACKUP_BUCKET || "easycashflows-backup";
+
+      if (!accessKeyId || !secretAccessKey) {
+        return res.json({
+          configured: false,
+          error: "AWS credentials not configured",
+          setup_required: true
+        });
+      }
+
+      AWS.config.update({
+        accessKeyId,
+        secretAccessKey,
+        region
+      });
+
+      const s3 = new AWS.S3();
+
+      // Get bucket info
+      const bucketLocation = await s3.getBucketLocation({ Bucket: bucketName }).promise();
+      const bucketObjects = await s3.listObjectsV2({ Bucket: bucketName }).promise();
+
+      let totalSize = 0;
+      let backupFiles = 0;
+      let restorePoints = 0;
+
+      if (bucketObjects.Contents) {
+        for (const obj of bucketObjects.Contents) {
+          if (obj.Size) {
+            totalSize += obj.Size;
+          }
+          
+          if (obj.Key?.includes('backup/')) {
+            backupFiles++;
+            
+            if (obj.Key.endsWith('.tar.gz') || obj.Key.endsWith('.sql')) {
+              restorePoints++;
+            }
+          }
+        }
+      }
+
+      res.json({
+        configured: true,
+        provider: "s3",
+        bucketName,
+        region: bucketLocation.LocationConstraint || "us-east-1",
+        totalFiles: bucketObjects.KeyCount || 0,
+        totalBackupSize: totalSize,
+        backupFiles,
+        restorePoints,
+        lastUpdated: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Error getting S3 stats:", error);
+      res.status(500).json({ 
+        configured: false,
+        error: "S3 connection failed",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }));
+
+  // Multi-cloud provider stats - Azure Blob Storage
+  app.get("/api/backup/azure/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Azure Blob Storage configuration
+      const { BlobServiceClient } = await import("@azure/storage-blob");
+      
+      const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+      const containerName = process.env.AZURE_BACKUP_CONTAINER || "easycashflows-backup";
+
+      if (!connectionString) {
+        return res.json({
+          configured: false,
+          error: "Azure Storage connection string not configured",
+          setup_required: true
+        });
+      }
+
+      const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+      const containerClient = blobServiceClient.getContainerClient(containerName);
+
+      // Check if container exists
+      const exists = await containerClient.exists();
+      if (!exists) {
+        await containerClient.create();
+      }
+
+      let totalSize = 0;
+      let backupFiles = 0;
+      let restorePoints = 0;
+
+      for await (const blob of containerClient.listBlobsFlat()) {
+        if (blob.properties.contentLength) {
+          totalSize += blob.properties.contentLength;
+        }
+        
+        if (blob.name.includes('backup/')) {
+          backupFiles++;
+          
+          if (blob.name.endsWith('.tar.gz') || blob.name.endsWith('.sql')) {
+            restorePoints++;
+          }
+        }
+      }
+
+      res.json({
+        configured: true,
+        provider: "azure",
+        containerName,
+        totalFiles: backupFiles,
+        totalBackupSize: totalSize,
+        backupFiles,
+        restorePoints,
+        lastUpdated: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Error getting Azure stats:", error);
+      res.status(500).json({ 
+        configured: false,
+        error: "Azure Blob Storage connection failed",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }));
+
+  // Combined multi-cloud backup stats
+  app.get("/api/backup/multi-cloud/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Get stats from all providers
+      const [gcsStats, s3Stats, azureStats] = await Promise.allSettled([
+        fetch(`${req.protocol}://${req.get('host')}/api/backup/stats`).then(r => r.json()),
+        fetch(`${req.protocol}://${req.get('host')}/api/backup/s3/stats`).then(r => r.json()),
+        fetch(`${req.protocol}://${req.get('host')}/api/backup/azure/stats`).then(r => r.json())
+      ]);
+
+      const providers = [];
+      let totalSize = 0;
+      let totalFiles = 0;
+      let totalRestorePoints = 0;
+
+      // GCS (always configured)
+      if (gcsStats.status === 'fulfilled') {
+        providers.push({
+          name: "Google Cloud Storage",
+          type: "gcs",
+          configured: true,
+          active: true,
+          ...gcsStats.value
+        });
+        totalSize += gcsStats.value.totalBackupSize || 0;
+        totalFiles += gcsStats.value.totalFiles || 0;
+        totalRestorePoints += gcsStats.value.totalRestorePoints || 0;
+      }
+
+      // S3
+      if (s3Stats.status === 'fulfilled' && s3Stats.value.configured) {
+        providers.push({
+          name: "Amazon S3",
+          type: "s3",
+          configured: true,
+          active: true,
+          ...s3Stats.value
+        });
+        totalSize += s3Stats.value.totalBackupSize || 0;
+        totalFiles += s3Stats.value.totalFiles || 0;
+        totalRestorePoints += s3Stats.value.restorePoints || 0;
+      } else {
+        providers.push({
+          name: "Amazon S3",
+          type: "s3",
+          configured: false,
+          active: false,
+          setup_required: true
+        });
+      }
+
+      // Azure
+      if (azureStats.status === 'fulfilled' && azureStats.value.configured) {
+        providers.push({
+          name: "Azure Blob Storage",
+          type: "azure",
+          configured: true,
+          active: true,
+          ...azureStats.value
+        });
+        totalSize += azureStats.value.totalBackupSize || 0;
+        totalFiles += azureStats.value.totalFiles || 0;
+        totalRestorePoints += azureStats.value.restorePoints || 0;
+      } else {
+        providers.push({
+          name: "Azure Blob Storage",
+          type: "azure",
+          configured: false,
+          active: false,
+          setup_required: true
+        });
+      }
+
+      res.json({
+        providers,
+        summary: {
+          totalProviders: providers.length,
+          configuredProviders: providers.filter(p => p.configured).length,
+          totalBackupSize: totalSize,
+          totalFiles,
+          totalRestorePoints,
+          redundancy: providers.filter(p => p.configured).length > 1 ? "Multi-cloud" : "Single-cloud"
+        },
+        lastUpdated: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Error getting multi-cloud stats:", error);
+      res.status(500).json({ 
+        error: "Multi-cloud statistics failed",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }));
+
+  // Provider configuration endpoints
+  app.post("/api/backup/providers/s3/configure", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { accessKeyId, secretAccessKey, region, bucketName } = req.body;
+
+      if (!accessKeyId || !secretAccessKey || !region || !bucketName) {
+        return res.status(400).json({ 
+          error: "Missing required S3 configuration parameters" 
+        });
+      }
+
+      // Test S3 connection
+      const AWS = await import("aws-sdk");
+      AWS.config.update({ accessKeyId, secretAccessKey, region });
+      
+      const s3 = new AWS.S3();
+      
+      // Test bucket access
+      try {
+        await s3.headBucket({ Bucket: bucketName }).promise();
+      } catch (error) {
+        // Try to create bucket if it doesn't exist
+        await s3.createBucket({ 
+          Bucket: bucketName,
+          CreateBucketConfiguration: region !== 'us-east-1' ? { LocationConstraint: region } : undefined
+        }).promise();
+      }
+
+      // Store configuration (in a real app, encrypt these values)
+      process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+      process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+      process.env.AWS_REGION = region;
+      process.env.S3_BACKUP_BUCKET = bucketName;
+
+      res.json({ 
+        success: true, 
+        message: "S3 configuration successful",
+        bucketName,
+        region 
+      });
+
+    } catch (error) {
+      console.error("Error configuring S3:", error);
+      res.status(500).json({ 
+        error: "S3 configuration failed",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }));
+
+  app.post("/api/backup/providers/azure/configure", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { connectionString, containerName } = req.body;
+
+      if (!connectionString || !containerName) {
+        return res.status(400).json({ 
+          error: "Missing required Azure configuration parameters" 
+        });
+      }
+
+      // Test Azure connection
+      const { BlobServiceClient } = await import("@azure/storage-blob");
+      const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+      const containerClient = blobServiceClient.getContainerClient(containerName);
+
+      // Test container access or create
+      const exists = await containerClient.exists();
+      if (!exists) {
+        await containerClient.create();
+      }
+
+      // Store configuration (in a real app, encrypt these values)
+      process.env.AZURE_STORAGE_CONNECTION_STRING = connectionString;
+      process.env.AZURE_BACKUP_CONTAINER = containerName;
+
+      res.json({ 
+        success: true, 
+        message: "Azure Blob Storage configuration successful",
+        containerName 
+      });
+
+    } catch (error) {
+      console.error("Error configuring Azure:", error);
+      res.status(500).json({ 
+        error: "Azure configuration failed",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }));
+
+  // Test provider connections
+  app.post("/api/backup/providers/:provider/test", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    const { provider } = req.params;
+
+    try {
+      switch (provider) {
+        case 'gcs':
+          // Test GCS connection (already working)
+          const { Storage } = await import("@google-cloud/storage");
+          const storage = new Storage({
+            credentials: {
+              audience: "replit",
+              subject_token_type: "access_token",
+              token_url: "http://127.0.0.1:1106/token",
+              type: "external_account",
+              credential_source: {
+                url: "http://127.0.0.1:1106/credential",
+                format: { type: "json", subject_token_field_name: "access_token" }
+              },
+              universe_domain: "googleapis.com",
+            },
+            projectId: "",
+          });
+          
+          const bucketName = process.env.PRIVATE_OBJECT_DIR?.split('/')[1] || 'replit-objstore-bd98f427-b99d-4751-94d4-a5f1c51a6be9';
+          const bucket = storage.bucket(bucketName);
+          await bucket.getMetadata();
+          
+          res.json({ success: true, message: "GCS connection successful" });
+          break;
+
+        case 's3':
+          const AWS = await import("aws-sdk");
+          const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+          const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+          
+          if (!accessKeyId || !secretAccessKey) {
+            return res.status(400).json({ error: "S3 credentials not configured" });
+          }
+
+          AWS.config.update({
+            accessKeyId,
+            secretAccessKey,
+            region: process.env.AWS_REGION || "us-east-1"
+          });
+
+          const s3 = new AWS.S3();
+          await s3.listBuckets().promise();
+          
+          res.json({ success: true, message: "S3 connection successful" });
+          break;
+
+        case 'azure':
+          const { BlobServiceClient } = await import("@azure/storage-blob");
+          const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+          
+          if (!connectionString) {
+            return res.status(400).json({ error: "Azure connection string not configured" });
+          }
+
+          const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+          await blobServiceClient.getProperties();
+          
+          res.json({ success: true, message: "Azure Blob Storage connection successful" });
+          break;
+
+        default:
+          res.status(400).json({ error: "Unknown provider" });
+      }
+
+    } catch (error) {
+      console.error(`Error testing ${provider} connection:`, error);
+      res.status(500).json({ 
+        error: `${provider.toUpperCase()} connection test failed`,
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }));
+
   // API per l'upload e parsing dei file XML delle fatture elettroniche
   app.post('/api/invoices/parse-xml', requireRole("admin", "finance"), upload.single('xmlFile'), handleAsyncErrors(async (req: any, res: any) => {
     if (!req.file) {
