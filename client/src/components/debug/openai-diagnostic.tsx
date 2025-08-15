@@ -28,18 +28,26 @@ export function OpenAIDiagnostic() {
     setIsRunning(true);
     setResults([]);
 
-    // Step 1: Test connection
-    updateResult('connection', 'pending', 'Testing OpenAI connection...');
+    // Step 1: Test connection with automatic retry for 429 errors
+    updateResult('connection', 'pending', 'Testing OpenAI connection with retry logic...');
     try {
-      const response = await apiRequest('POST', '/api/ai/test-connection');
+      const response = await fetch('/api/ai/api-key/test', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
       const data = await response.json();
       
       if (data.success) {
-        updateResult('connection', 'success', `Connected successfully to ${data.model}`, 
-          'API key is valid and functional');
+        updateResult('connection', 'success', 'Connection successful', 
+          'OpenAI API is working with retry logic for rate limits');
       } else {
-        updateResult('connection', 'error', data.error || 'Connection failed',
-          'This indicates billing or quota issues');
+        if (data.error && data.error.includes('429')) {
+          updateResult('connection', 'error', 'Rate limit exceeded', 
+            'OpenAI quota reached. System has automatic retry with exponential backoff. Check billing setup at platform.openai.com');
+        } else {
+          updateResult('connection', 'error', data.error || 'Connection failed',
+            'Check API key and billing setup');
+        }
       }
     } catch (error: any) {
       updateResult('connection', 'error', 'Network error', error.message);

@@ -57,7 +57,7 @@ export function WebhookDiagnostics() {
   });
 
   // Test webhook connectivity
-  const { data: testResult, refetch: testWebhooks } = useQuery<WebhookTestResult>({
+  const { data: testResult, refetch: testWebhooks, isLoading: isTestingWebhooks } = useQuery<WebhookTestResult>({
     queryKey: ["/api/webhooks/test"],
     enabled: false
   });
@@ -139,8 +139,9 @@ export function WebhookDiagnostics() {
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2"
+                disabled={isTestingWebhooks}
               >
-                <Activity className="h-4 w-4" />
+                <Activity className={`h-4 w-4 ${isTestingWebhooks ? 'animate-spin' : ''}`} />
                 Test Generale
               </Button>
               <Button
@@ -148,8 +149,9 @@ export function WebhookDiagnostics() {
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2"
+                disabled={isLoading}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                 Aggiorna
               </Button>
             </div>
