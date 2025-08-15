@@ -654,6 +654,40 @@ export const insertSendgridTemplateSchema = createInsertSchema(sendgridTemplates
 export type InsertSendgridTemplate = z.infer<typeof insertSendgridTemplateSchema>;
 export type SendgridTemplate = typeof sendgridTemplates.$inferSelect;
 
+// WhatsApp Business API Settings Schema
+export const whatsappSettings = pgTable('whatsapp_settings', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  provider: text('provider').notNull().default('twilio'), // twilio, linkmobility, meta
+  accountSid: text('account_sid'), // Twilio Account SID
+  authToken: text('auth_token'), // Twilio Auth Token
+  whatsappNumber: text('whatsapp_number').notNull(), // +15551234567
+  webhookUrl: text('webhook_url'), // For receiving messages
+  verifyToken: text('verify_token'), // For webhook verification
+  isActive: boolean('is_active').default(true),
+  isVerified: boolean('is_verified').default(false), // Business verification status
+  businessDisplayName: text('business_display_name'),
+  businessAbout: text('business_about'),
+  businessWebsite: text('business_website'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export const insertWhatsappSettingsSchema = createInsertSchema(whatsappSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+}).extend({
+  provider: z.enum(['twilio', 'linkmobility', 'meta']).default('twilio'),
+  whatsappNumber: z.string().min(1, "Numero WhatsApp richiesto"),
+  accountSid: z.string().min(1, "Account SID richiesto").optional(),
+  authToken: z.string().min(1, "Auth Token richiesto").optional(),
+  businessDisplayName: z.string().min(1, "Nome business richiesto").optional(),
+  businessWebsite: z.string().url("URL sito web non valido").optional().or(z.literal(""))
+});
+
+export type InsertWhatsappSettings = z.infer<typeof insertWhatsappSettingsSchema>;
+export type WhatsappSettings = typeof whatsappSettings.$inferSelect;
+
 export const passwordResetSchema = z.object({
   email: z.string().email("Email non valida"),
 });

@@ -11,6 +11,16 @@ import { OpenAIDiagnostic } from "@/components/debug/openai-diagnostic";
 export default function Settings() {
   return (
     <div className="container mx-auto py-6">
+      {/* Header Settings */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Configurazioni Sistema
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Gestisci entità, AI, canali di comunicazione, backup e configurazioni sistema
+        </p>
+      </div>
+
       <Tabs defaultValue="entities" className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="entities">Entity Management</TabsTrigger>
