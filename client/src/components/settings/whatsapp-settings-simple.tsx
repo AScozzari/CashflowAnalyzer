@@ -8,9 +8,10 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { MessageSquare, CheckCircle, AlertCircle, ExternalLink, DollarSign } from "lucide-react";
+import { MessageSquare, CheckCircle, AlertCircle, ExternalLink, DollarSign, HelpCircle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
+import { WhatsAppSetupGuide } from "./whatsapp-setup-guide";
 
 interface WhatsAppSettings {
   id?: string;
@@ -43,6 +44,7 @@ export function WhatsAppSettingsSimple() {
     apiKey: '',
     webhookUrl: ''
   });
+  const [showSetupGuide, setShowSetupGuide] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -192,7 +194,7 @@ export function WhatsAppSettingsSimple() {
           <Alert>
             <DollarSign className="h-4 w-4" />
             <AlertDescription>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="font-semibold">{currentProvider.name}</div>
                 <div className="text-sm text-muted-foreground">{currentProvider.description}</div>
                 <div className="text-sm font-medium text-green-600">{currentProvider.pricing}</div>
@@ -203,14 +205,62 @@ export function WhatsAppSettingsSimple() {
                     </Badge>
                   ))}
                 </div>
-                <a 
-                  href={currentProvider.docs} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
-                >
-                  Documentazione ufficiale <ExternalLink className="h-3 w-3" />
-                </a>
+                
+                {/* Business Manager Setup Guide */}
+                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="font-semibold text-blue-900 dark:text-blue-100 text-sm mb-2">
+                    📋 Setup Business Manager {formData.provider === 'twilio' ? 'Meta/Twilio' : 'Meta/LinkMobility'}
+                  </div>
+                  {formData.provider === 'twilio' ? (
+                    <div className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                      <div>1. Crea <strong>Meta Business Manager</strong> su business.facebook.com</div>
+                      <div>2. Aggiungi <strong>WhatsApp Business Account</strong> nel Business Manager</div>
+                      <div>3. Verifica il tuo <strong>numero business</strong> con documenti aziendali</div>
+                      <div>4. Registra account <strong>Twilio</strong> e ottieni Account SID + Auth Token</div>
+                      <div>5. Collega <strong>Meta WhatsApp</strong> con Twilio tramite Programmable Messaging</div>
+                      <div>6. Crea e approva <strong>Message Templates</strong> via Meta Business Manager</div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                      <div>1. Crea <strong>Meta Business Manager</strong> su business.facebook.com</div>
+                      <div>2. Aggiungi <strong>WhatsApp Business Account</strong> nel Business Manager</div>
+                      <div>3. Verifica il tuo <strong>numero business</strong> con documenti aziendali</div>
+                      <div>4. Contatta <strong>LinkMobility</strong> (+47 22 99 44 00) per account BSP</div>
+                      <div>5. Fornisci <strong>Meta Business Manager ID</strong> a LinkMobility</div>
+                      <div>6. LinkMobility configura hosting e fornisce <strong>API Key</strong></div>
+                      <div>7. Crea e approva <strong>Message Templates</strong> via Meta Business Manager</div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex gap-2">
+                  <a 
+                    href={currentProvider.docs} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                  >
+                    Documentazione API <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <a 
+                    href="https://business.facebook.com/"
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                  >
+                    Meta Business Manager <ExternalLink className="h-3 w-3" />
+                  </a>
+                  {formData.provider === 'linkmobility' && (
+                    <a 
+                      href="https://www.linkmobility.com/contact"
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                    >
+                      LinkMobility Contact <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
               </div>
             </AlertDescription>
           </Alert>
@@ -330,13 +380,23 @@ export function WhatsAppSettingsSimple() {
 
           {/* Action Buttons */}
           <div className="flex justify-between pt-4">
-            <Button
-              variant="outline"
-              onClick={handleTestConnection}
-              disabled={testConnectionMutation.isPending || !formData.isActive}
-            >
-              {testConnectionMutation.isPending ? "Testing..." : "Test Connessione"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowSetupGuide(!showSetupGuide)}
+                className="flex items-center gap-2"
+              >
+                <HelpCircle className="h-4 w-4" />
+                {showSetupGuide ? "Nascondi Guida" : "Guida Setup Completa"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleTestConnection}
+                disabled={testConnectionMutation.isPending || !formData.isActive}
+              >
+                {testConnectionMutation.isPending ? "Testing..." : "Test Connessione"}
+              </Button>
+            </div>
             <Button
               onClick={handleSave}
               disabled={saveSettingsMutation.isPending}
@@ -346,6 +406,11 @@ export function WhatsAppSettingsSimple() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Setup Guide */}
+      {showSetupGuide && (
+        <WhatsAppSetupGuide provider={formData.provider} />
+      )}
     </div>
   );
 }
