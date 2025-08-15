@@ -2809,6 +2809,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Initialize AI webhook handler with storage
+  WebhookRouter.initializeAI(storage);
+  
   // Setup webhook routes for multi-channel notifications
   WebhookRouter.setupRoutes(app);
 

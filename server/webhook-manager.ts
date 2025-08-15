@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import crypto from 'crypto';
 import { TwilioWhatsAppService, createWhatsAppService } from './whatsapp-service';
+import { AIWebhookHandler, BusinessHoursHandler } from './ai-webhook-handler';
 import type { WhatsappProvider } from '../shared/whatsapp-schema';
 
 // Webhook Event Types
@@ -53,8 +54,14 @@ export class WebhookSecurityValidator {
   }
 }
 
-// WhatsApp Webhook Handler
+// WhatsApp Webhook Handler with AI Integration
 export class WhatsAppWebhookHandler {
+  private static aiHandler: AIWebhookHandler | null = null;
+
+  // Initialize AI handler with storage
+  static initializeAI(storage: any): void {
+    this.aiHandler = new AIWebhookHandler(storage);
+  }
   
   // Handle Twilio WhatsApp webhook
   static async handleTwilioWebhook(req: Request, res: Response): Promise<void> {
@@ -157,7 +164,7 @@ export class WhatsAppWebhookHandler {
     }
   }
 
-  // Handle incoming messages
+  // Handle incoming messages with AI integration
   private static async handleIncomingMessage(data: {
     from: string;
     to: string;
@@ -171,25 +178,61 @@ export class WhatsAppWebhookHandler {
         from: data.from,
         provider: data.provider,
         body: data.body.substring(0, 50) + '...',
+        timestamp: data.timestamp
       });
 
-      // Here you would:
-      // 1. Log the message to database
-      // 2. Process auto-responses if needed
-      // 3. Notify relevant users
-      // 4. Trigger any business logic
-
-      // Example: Auto-response for business hours
-      const now = new Date();
-      const hour = now.getHours();
-      
-      if (hour < 9 || hour > 18) {
-        // Send auto-response for out of hours
-        console.log('Out of hours - would send auto-response');
+      // 1. Try AI-powered response first
+      if (this.aiHandler) {
+        const aiResult = await this.aiHandler.analyzeAndRespond(data);
+        
+        if (aiResult.shouldRespond && aiResult.confidence > 0.7) {
+          console.log('AI Response sent:', {
+            confidence: aiResult.confidence,
+            response: aiResult.response
+          });
+          return;
+        }
       }
+
+      // 2. Fallback to common scenario handling
+      if (this.aiHandler) {
+        const commonResponse = await this.aiHandler.handleCommonScenarios(data);
+        if (commonResponse) {
+          console.log('Common scenario response sent');
+          return;
+        }
+      }
+
+      // 3. Business hours auto-response
+      if (!BusinessHoursHandler.isBusinessHours()) {
+        const businessHoursMsg = BusinessHoursHandler.getBusinessHoursMessage();
+        console.log('Business hours auto-response:', businessHoursMsg);
+        
+        // Send business hours response
+        if (this.aiHandler) {
+          await this.aiHandler.sendResponse(data, businessHoursMsg);
+        }
+      }
+
+      // 4. Log message for manual handling
+      console.log('Message logged for manual handling:', {
+        messageId: data.messageId,
+        needsResponse: !BusinessHoursHandler.isBusinessHours()
+      });
 
     } catch (error) {
       console.error('Error handling incoming message:', error);
+      
+      // Send fallback error response
+      try {
+        if (this.aiHandler) {
+          await this.aiHandler.sendResponse(data, 
+            "Messaggio ricevuto. Ti ricontatteremo appena possibile. Grazie!"
+          );
+        }
+      } catch (fallbackError) {
+        console.error('Fallback response failed:', fallbackError);
+      }
     }
   }
 
@@ -221,6 +264,11 @@ export class WhatsAppWebhookHandler {
 
 // General Webhook Router
 export class WebhookRouter {
+  
+  // Initialize AI handler
+  static initializeAI(storage: any): void {
+    WhatsAppWebhookHandler.initializeAI(storage);
+  }
   
   static setupRoutes(app: any): void {
     
