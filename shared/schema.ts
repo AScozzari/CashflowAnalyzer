@@ -46,6 +46,18 @@ export const users = pgTable("users", {
   resetTokenExpiry: timestamp("reset_token_expiry"),
   lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  
+  // Add anagrafica fields for system users (non-resources)
+  firstName: text("first_name"), // solo per utenti sistema (non collegati a resource)
+  lastName: text("last_name"),   // solo per utenti sistema (non collegati a resource)
+  avatarUrl: text("avatar_url"), // solo per utenti sistema (non collegati a resource)
+  
+  // Security fields
+  passwordExpiresAt: timestamp("password_expires_at"),
+  isTwoFactorEnabled: boolean("is_two_factor_enabled").notNull().default(false),
+  isLocked: boolean("is_locked").notNull().default(false),
+  lockoutTime: timestamp("lockout_time"),
+  failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
 });
 
 // Risorse (Employees/Resources)
@@ -674,6 +686,135 @@ export type InsertAiChatHistory = z.infer<typeof insertAiChatHistorySchema>;
 
 export type AiDocumentJob = typeof aiDocumentJobs.$inferSelect;
 export type InsertAiDocumentJob = z.infer<typeof insertAiDocumentJobSchema>;
+
+// === SECURITY TABLES ===
+
+// Security Settings Table
+export const securitySettings = pgTable("security_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Session Management
+  sessionTimeout: integer("session_timeout").notNull().default(3600), // seconds
+  maxConcurrentSessions: integer("max_concurrent_sessions").notNull().default(3),
+  enforceSessionTimeout: boolean("enforce_session_timeout").notNull().default(true),
+  
+  // Password Policy
+  passwordMinLength: integer("password_min_length").notNull().default(8),
+  passwordRequireUppercase: boolean("password_require_uppercase").notNull().default(true),
+  passwordRequireLowercase: boolean("password_require_lowercase").notNull().default(true),
+  passwordRequireNumbers: boolean("password_require_numbers").notNull().default(true),
+  passwordRequireSymbols: boolean("password_require_symbols").notNull().default(false),
+  passwordExpiryDays: integer("password_expiry_days").notNull().default(90),
+  passwordHistoryCount: integer("password_history_count").notNull().default(5),
+  
+  // Two-Factor Authentication
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
+  twoFactorMandatoryForAdmin: boolean("two_factor_mandatory_admin").notNull().default(false),
+  twoFactorMandatoryForFinance: boolean("two_factor_mandatory_finance").notNull().default(false),
+  
+  // Rate Limiting
+  loginAttemptsLimit: integer("login_attempts_limit").notNull().default(5),
+  loginBlockDuration: integer("login_block_duration").notNull().default(900), // seconds
+  apiRateLimit: integer("api_rate_limit").notNull().default(100), // requests per minute
+  
+  // Login Audit
+  auditEnabled: boolean("audit_enabled").notNull().default(true),
+  auditRetentionDays: integer("audit_retention_days").notNull().default(90),
+  trackFailedLogins: boolean("track_failed_logins").notNull().default(true),
+  trackIpChanges: boolean("track_ip_changes").notNull().default(true),
+  
+  // API Security
+  jwtExpirationHours: integer("jwt_expiration_hours").notNull().default(24),
+  refreshTokenExpirationDays: integer("refresh_token_expiration_days").notNull().default(7),
+  apiKeyRotationDays: integer("api_key_rotation_days").notNull().default(30),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Login Audit Log Table
+export const loginAuditLog = pgTable("login_audit_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  username: text("username").notNull(),
+  ipAddress: text("ip_address").notNull(),
+  userAgent: text("user_agent"),
+  loginTime: timestamp("login_time").defaultNow().notNull(),
+  success: boolean("success").notNull(),
+  failureReason: text("failure_reason"),
+  sessionId: text("session_id"),
+  location: text("location"), // Geolocation if available
+  deviceInfo: text("device_info"), // Browser, OS, etc.
+});
+
+// Active Sessions Table
+export const activeSessions = pgTable("active_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionToken: text("session_token").notNull().unique(),
+  ipAddress: text("ip_address").notNull(),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastActivity: timestamp("last_activity").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+});
+
+// Password History Table
+export const passwordHistory = pgTable("password_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Two-Factor Authentication Table
+export const twoFactorAuth = pgTable("two_factor_auth", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  secret: text("secret").notNull(),
+  isEnabled: boolean("is_enabled").notNull().default(false),
+  backupCodes: text("backup_codes"), // JSON string of backup codes
+  lastUsed: timestamp("last_used"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Security Schemas
+export const insertSecuritySettingsSchema = createInsertSchema(securitySettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLoginAuditSchema = createInsertSchema(loginAuditLog).omit({
+  id: true,
+  loginTime: true,
+});
+
+export const insertActiveSessionSchema = createInsertSchema(activeSessions).omit({
+  id: true,
+  createdAt: true,
+  lastActivity: true,
+});
+
+export const insertPasswordHistorySchema = createInsertSchema(passwordHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTwoFactorAuthSchema = createInsertSchema(twoFactorAuth).omit({
+  id: true,
+  createdAt: true,
+  lastUsed: true,
+});
+
+// Security Types
+export type SecuritySettings = typeof securitySettings.$inferSelect;
+export type InsertSecuritySettings = z.infer<typeof insertSecuritySettingsSchema>;
+export type LoginAuditLog = typeof loginAuditLog.$inferSelect;
+export type ActiveSession = typeof activeSessions.$inferSelect;
+export type PasswordHistory = typeof passwordHistory.$inferSelect;
+export type TwoFactorAuth = typeof twoFactorAuth.$inferSelect;
 
 
 

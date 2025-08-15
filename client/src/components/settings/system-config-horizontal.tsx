@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Shield, Database, Bell, Globe, Palette, FileText, Settings2, Users2, Lock } from "lucide-react";
 import { EmailSettings } from "./email-settings";
 import SystemUsersManagement from "./system-users-management";
+import { SecuritySettings } from "./security-settings";
 
 export default function SystemConfigHorizontal() {
   const [activeTab, setActiveTab] = useState("email");
@@ -97,12 +98,7 @@ export default function SystemConfigHorizontal() {
           <Card className="border-0 shadow-lg bg-white dark:bg-gray-800">
             <CardContent className="p-8">
               {activeTab === "email" && <EmailSettings />}
-              {activeTab === "security" && (
-                <PlaceholderSection 
-                  title="Configurazione Sicurezza"
-                  description="Gestione autenticazione, sessioni, CSRF protection, rate limiting e controlli di accesso"
-                />
-              )}
+              {activeTab === "security" && <SecuritySettings />}
               {activeTab === "database" && (
                 <PlaceholderSection 
                   title="Configurazione Database"

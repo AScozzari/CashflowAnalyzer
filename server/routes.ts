@@ -1498,6 +1498,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Security Settings Routes
+  app.get('/api/security/settings', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const settings = await storage.getSecuritySettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('Error fetching security settings:', error);
+      res.status(500).json({ error: 'Failed to fetch security settings' });
+    }
+  });
+
+  app.put('/api/security/settings', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const settings = await storage.updateSecuritySettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error('Error updating security settings:', error);
+      res.status(500).json({ error: 'Failed to update security settings' });
+    }
+  });
+
+  app.get('/api/security/stats', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const stats = await storage.getSecurityStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching security stats:', error);
+      res.status(500).json({ error: 'Failed to fetch security stats' });
+    }
+  });
+
   app.post("/api/email-settings/test", requireAuth, requireRole('admin'), async (req, res) => {
     try {
       const result = await emailService.testConnection();

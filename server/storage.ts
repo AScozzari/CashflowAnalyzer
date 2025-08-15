@@ -1,6 +1,7 @@
 import {
   companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens,
   aiSettings, aiChatHistory, aiDocumentJobs,
+  securitySettings, loginAuditLog, activeSessions, passwordHistory, twoFactorAuth,
   type Company, type InsertCompany,
   type Core, type InsertCore,
   type Resource, type InsertResource,
@@ -19,7 +20,9 @@ import {
   type EmailSettings, type InsertEmailSettings,
   type AiSettings, type InsertAiSettings,
   type AiChatHistory, type InsertAiChatHistory,
-  type AiDocumentJob, type InsertAiDocumentJob
+  type AiDocumentJob, type InsertAiDocumentJob,
+  type SecuritySettings, type InsertSecuritySettings,
+  type LoginAuditLog, type ActiveSession, type PasswordHistory, type TwoFactorAuth
 } from "@shared/schema";
 import crypto from 'crypto';
 import { db } from "./db";
@@ -1438,6 +1441,102 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Security Settings Methods
+  async getSecuritySettings(): Promise<SecuritySettings | undefined> {
+    try {
+      const result = await db.select().from(securitySettings).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching security settings:', error);
+      return undefined;
+    }
+  }
+
+  async updateSecuritySettings(settings: Partial<InsertSecuritySettings>): Promise<SecuritySettings> {
+    try {
+      // First check if settings exist
+      const existing = await this.getSecuritySettings();
+      
+      if (!existing) {
+        // Create default settings first
+        const defaultSettings: InsertSecuritySettings = {
+          sessionTimeout: 3600,
+          maxConcurrentSessions: 3,
+          enforceSessionTimeout: true,
+          passwordMinLength: 8,
+          passwordRequireUppercase: true,
+          passwordRequireLowercase: true,
+          passwordRequireNumbers: true,
+          passwordRequireSymbols: false,
+          passwordExpiryDays: 90,
+          passwordHistoryCount: 5,
+          twoFactorEnabled: false,
+          twoFactorMandatoryForAdmin: false,
+          twoFactorMandatoryForFinance: false,
+          loginAttemptsLimit: 5,
+          loginBlockDuration: 900,
+          apiRateLimit: 100,
+          auditEnabled: true,
+          auditRetentionDays: 90,
+          trackFailedLogins: true,
+          trackIpChanges: true,
+          jwtExpirationHours: 24,
+          refreshTokenExpirationDays: 7,
+          apiKeyRotationDays: 30,
+          ...settings
+        };
+        const result = await db.insert(securitySettings).values([defaultSettings]).returning();
+        return result[0];
+      }
+
+      const result = await db.update(securitySettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(securitySettings.id, existing.id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating security settings:', error);
+      throw new Error('Failed to update security settings');
+    }
+  }
+
+  // Security Statistics
+  async getSecurityStats(): Promise<{
+    activeSessions: number;
+    failedLogins24h: number;
+    lockedUsers: number;
+    twoFactorUsers: number;
+  }> {
+    try {
+      const [activeSessionsCount, failedLogins24h, lockedUsers, twoFactorUsers] = await Promise.all([
+        db.select({ count: count() }).from(activeSessions).where(eq(activeSessions.isActive, true)),
+        db.select({ count: count() }).from(loginAuditLog).where(
+          and(
+            eq(loginAuditLog.success, false),
+            gte(loginAuditLog.loginTime, new Date(Date.now() - 24 * 60 * 60 * 1000))
+          )
+        ),
+        db.select({ count: count() }).from(users).where(eq(users.isLocked, true)),
+        db.select({ count: count() }).from(users).where(eq(users.isTwoFactorEnabled, true))
+      ]);
+
+      return {
+        activeSessions: activeSessionsCount[0]?.count || 0,
+        failedLogins24h: failedLogins24h[0]?.count || 0,
+        lockedUsers: lockedUsers[0]?.count || 0,
+        twoFactorUsers: twoFactorUsers[0]?.count || 0,
+      };
+    } catch (error) {
+      console.error('Error fetching security stats:', error);
+      return {
+        activeSessions: 0,
+        failedLogins24h: 0,
+        lockedUsers: 0,
+        twoFactorUsers: 0,
+      };
+    }
+  }
+
   // Password Reset Tokens
   async createPasswordResetToken(userId: string): Promise<string> {
     try {
@@ -1837,7 +1936,7 @@ export class DatabaseStorage implements IStorage {
 
   async createAiSettings(settings: InsertAiSettings): Promise<AiSettings> {
     try {
-      const result = await db.insert(aiSettings).values(settings).returning();
+      const result = await db.insert(aiSettings).values([settings]).returning();
       return result[0];
     } catch (error) {
       console.error('Error creating AI settings:', error);
@@ -1848,7 +1947,7 @@ export class DatabaseStorage implements IStorage {
   async updateAiSettings(userId: string, settings: Partial<InsertAiSettings>): Promise<AiSettings> {
     try {
       const result = await db.update(aiSettings)
-        .set({ ...settings, updatedAt: new Date().toISOString() })
+        .set({ ...settings, updatedAt: new Date() })
         .where(eq(aiSettings.userId, userId))
         .returning();
       return result[0];
@@ -1873,7 +1972,7 @@ export class DatabaseStorage implements IStorage {
       let query = db.select().from(aiChatHistory).where(eq(aiChatHistory.userId, userId));
       
       if (sessionId) {
-        query = query.where(eq(aiChatHistory.sessionId, sessionId));
+        query = query.and(eq(aiChatHistory.sessionId, sessionId));
       }
       
       return await query.orderBy(aiChatHistory.createdAt);
@@ -1913,35 +2012,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getAiChatSessions(userId: string): Promise<any[]> {
-    try {
-      const sessions = await db
-        .select({
-          id: aiChatHistory.sessionId,
-          title: sql<string>`CASE 
-            WHEN ${aiChatHistory.sessionId} IS NOT NULL 
-            THEN CONCAT('Chat ', SUBSTRING(${aiChatHistory.sessionId}, 1, 8))
-            ELSE 'Conversazione'
-          END`,
-          lastMessage: sql<string>`(
-            SELECT content FROM ${aiChatHistory} 
-            WHERE user_id = ${userId} AND session_id = ${aiChatHistory.sessionId} 
-            ORDER BY created_at DESC LIMIT 1
-          )`,
-          createdAt: sql<string>`MIN(${aiChatHistory.createdAt})`,
-          messageCount: sql<number>`COUNT(*)`
-        })
-        .from(aiChatHistory)
-        .where(eq(aiChatHistory.userId, userId))
-        .groupBy(aiChatHistory.sessionId)
-        .orderBy(sql`MIN(${aiChatHistory.createdAt}) DESC`);
 
-      return sessions;
-    } catch (error) {
-      console.error('Error fetching AI chat sessions:', error);
-      return [];
-    }
-  }
 
   async createAiChatMessage(message: InsertAiChatHistory): Promise<AiChatHistory> {
     try {
