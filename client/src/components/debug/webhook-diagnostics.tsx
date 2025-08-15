@@ -62,6 +62,45 @@ export function WebhookDiagnostics() {
     enabled: false
   });
 
+  // Handle test webhook with toast feedback
+  const handleTestWebhooks = async () => {
+    try {
+      const result = await testWebhooks();
+      const data = result.data;
+      
+      toast({
+        title: data?.success ? "✅ Test Webhook Completato" : "❌ Test Webhook Fallito",
+        description: data?.success 
+          ? `Sistema operativo: ${data.endpoints?.length || 0} endpoint testati con successo`
+          : `Errore: ${data?.message || 'Test fallito'}`,
+        variant: data?.success ? "default" : "destructive",
+      });
+    } catch (error: any) {
+      toast({
+        title: "❌ Errore Test Webhook",
+        description: "Impossibile eseguire il test. Verifica la connessione di rete.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle refresh with toast feedback
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast({
+        title: "🔄 Configurazione Aggiornata",
+        description: "Informazioni webhook caricate correttamente",
+      });
+    } catch (error) {
+      toast({
+        title: "❌ Errore Aggiornamento",
+        description: "Impossibile aggiornare le configurazioni webhook",
+        variant: "destructive",
+      });
+    }
+  };
+
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -135,7 +174,7 @@ export function WebhookDiagnostics() {
             </div>
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => testWebhooks()}
+                onClick={handleTestWebhooks}
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2"
@@ -145,7 +184,7 @@ export function WebhookDiagnostics() {
                 Test Generale
               </Button>
               <Button
-                onClick={() => refetch()}
+                onClick={handleRefresh}
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2"
