@@ -1,10 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityConfigHorizontal from "@/components/settings/entity-config-horizontal";
+import SystemConfigHorizontal from "@/components/settings/system-config-horizontal";
 import { ConnectionStatus } from "@/components/debug/connection-status";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AiSettings from "@/components/settings/ai-settings";
 import { WebSocketStatus } from "@/components/debug/websocket-status";
-import { EmailSettings } from "@/components/settings/email-settings";
 import { OpenAIDiagnostic } from "@/components/debug/openai-diagnostic";
 
 export default function Settings() {
@@ -27,20 +27,7 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="system">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Configuration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  General system settings and configuration options.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <EmailSettings />
-          </div>
+          <SystemConfigHorizontal />
         </TabsContent>
 
         <TabsContent value="debug">
