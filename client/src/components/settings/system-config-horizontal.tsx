@@ -4,6 +4,7 @@ import { Mail, Shield, Database, Bell, Globe, Palette, FileText, Settings2, User
 import { EmailSettings } from "./email-settings";
 import SystemUsersManagement from "./system-users-management";
 import { SecuritySettings } from "./security-settings";
+import { BackupSettings } from "./backup-settings";
 
 export default function SystemConfigHorizontal() {
   const [activeTab, setActiveTab] = useState("email");
@@ -136,12 +137,7 @@ export default function SystemConfigHorizontal() {
                 />
               )}
               {activeTab === "users" && <SystemUsersManagement />}
-              {activeTab === "backup" && (
-                <PlaceholderSection 
-                  title="Backup e Recovery"
-                  description="Backup automatico, restore procedure, export dati e disaster recovery"
-                />
-              )}
+              {activeTab === "backup" && <BackupSettings />}
             </CardContent>
           </Card>
         </div>

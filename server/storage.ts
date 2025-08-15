@@ -2045,6 +2045,236 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // === BACKUP MANAGEMENT ===
+
+  async createBackupConfiguration(config: BackupConfigurationInsert): Promise<BackupConfiguration> {
+    try {
+      const [result] = await db.insert(backupConfigurations).values({
+        ...config,
+        updatedAt: new Date(),
+      }).returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating backup configuration:", error);
+      throw new Error("Failed to create backup configuration");
+    }
+  }
+
+  async getBackupConfigurations(): Promise<BackupConfiguration[]> {
+    try {
+      return await db.select().from(backupConfigurations).orderBy(backupConfigurations.createdAt);
+    } catch (error) {
+      console.error("Error fetching backup configurations:", error);
+      throw new Error("Failed to fetch backup configurations");
+    }
+  }
+
+  async updateBackupConfiguration(id: string, updates: Partial<BackupConfigurationInsert>): Promise<BackupConfiguration> {
+    try {
+      const [result] = await db.update(backupConfigurations)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(backupConfigurations.id, id))
+        .returning();
+      
+      if (!result) {
+        throw new Error("Backup configuration not found");
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error updating backup configuration:", error);
+      throw new Error("Failed to update backup configuration");
+    }
+  }
+
+  async deleteBackupConfiguration(id: string): Promise<void> {
+    try {
+      const result = await db.delete(backupConfigurations)
+        .where(eq(backupConfigurations.id, id));
+      
+      if (result.rowCount === 0) {
+        throw new Error("Backup configuration not found");
+      }
+    } catch (error) {
+      console.error("Error deleting backup configuration:", error);
+      throw new Error("Failed to delete backup configuration");
+    }
+  }
+
+  async createBackupJob(job: BackupJobInsert): Promise<BackupJob> {
+    try {
+      const [result] = await db.insert(backupJobs).values(job).returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating backup job:", error);
+      throw new Error("Failed to create backup job");
+    }
+  }
+
+  async updateBackupJob(id: string, updates: Partial<BackupJobInsert>): Promise<BackupJob> {
+    try {
+      const [result] = await db.update(backupJobs)
+        .set(updates)
+        .where(eq(backupJobs.id, id))
+        .returning();
+      
+      if (!result) {
+        throw new Error("Backup job not found");
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error updating backup job:", error);
+      throw new Error("Failed to update backup job");
+    }
+  }
+
+  async getBackupJobs(limit = 50): Promise<BackupJob[]> {
+    try {
+      return await db.select()
+        .from(backupJobs)
+        .orderBy(desc(backupJobs.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error fetching backup jobs:", error);
+      throw new Error("Failed to fetch backup jobs");
+    }
+  }
+
+  async getBackupJobsByConfiguration(configId: string): Promise<BackupJob[]> {
+    try {
+      return await db.select()
+        .from(backupJobs)
+        .where(eq(backupJobs.configurationId, configId))
+        .orderBy(desc(backupJobs.createdAt));
+    } catch (error) {
+      console.error("Error fetching backup jobs for configuration:", error);
+      throw new Error("Failed to fetch backup jobs for configuration");
+    }
+  }
+
+  async createRestorePoint(point: RestorePointInsert): Promise<RestorePoint> {
+    try {
+      const [result] = await db.insert(restorePoints).values(point).returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating restore point:", error);
+      throw new Error("Failed to create restore point");
+    }
+  }
+
+  async getRestorePoints(): Promise<RestorePoint[]> {
+    try {
+      return await db.select()
+        .from(restorePoints)
+        .where(eq(restorePoints.isArchived, false))
+        .orderBy(desc(restorePoints.createdAt));
+    } catch (error) {
+      console.error("Error fetching restore points:", error);
+      throw new Error("Failed to fetch restore points");
+    }
+  }
+
+  async updateRestorePoint(id: string, updates: Partial<RestorePointInsert>): Promise<RestorePoint> {
+    try {
+      const [result] = await db.update(restorePoints)
+        .set(updates)
+        .where(eq(restorePoints.id, id))
+        .returning();
+      
+      if (!result) {
+        throw new Error("Restore point not found");
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error updating restore point:", error);
+      throw new Error("Failed to update restore point");
+    }
+  }
+
+  async archiveRestorePoint(id: string): Promise<void> {
+    try {
+      await db.update(restorePoints)
+        .set({ isArchived: true })
+        .where(eq(restorePoints.id, id));
+    } catch (error) {
+      console.error("Error archiving restore point:", error);
+      throw new Error("Failed to archive restore point");
+    }
+  }
+
+  async createBackupAuditLog(log: BackupAuditLogInsert): Promise<void> {
+    try {
+      await db.insert(backupAuditLog).values(log);
+    } catch (error) {
+      console.error("Error creating backup audit log:", error);
+      // Non-critical, don't throw
+    }
+  }
+
+  async getBackupAuditLogs(limit = 100): Promise<BackupAuditLog[]> {
+    try {
+      return await db.select()
+        .from(backupAuditLog)
+        .orderBy(desc(backupAuditLog.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error fetching backup audit logs:", error);
+      throw new Error("Failed to fetch backup audit logs");
+    }
+  }
+
+  async getBackupStats(): Promise<{
+    totalConfigurations: number;
+    activeConfigurations: number;
+    totalJobs: number;
+    successfulJobs: number;
+    failedJobs: number;
+    totalRestorePoints: number;
+    totalBackupSize: number;
+  }> {
+    try {
+      const [totalConfigs] = await db.select({ count: count() }).from(backupConfigurations);
+      const [activeConfigs] = await db.select({ count: count() })
+        .from(backupConfigurations)
+        .where(eq(backupConfigurations.enabled, true));
+      
+      const [totalJobsResult] = await db.select({ count: count() }).from(backupJobs);
+      const [successfulJobsResult] = await db.select({ count: count() })
+        .from(backupJobs)
+        .where(eq(backupJobs.status, 'completed'));
+      const [failedJobsResult] = await db.select({ count: count() })
+        .from(backupJobs)
+        .where(eq(backupJobs.status, 'failed'));
+      
+      const [totalRestorePointsResult] = await db.select({ count: count() })
+        .from(restorePoints)
+        .where(eq(restorePoints.isArchived, false));
+      
+      // Calculate total backup size
+      const sizeResult = await db.select({
+        totalSize: sql<number>`COALESCE(SUM(${backupJobs.backupSizeBytes}), 0)`
+      }).from(backupJobs).where(eq(backupJobs.status, 'completed'));
+      
+      return {
+        totalConfigurations: totalConfigs.count,
+        activeConfigurations: activeConfigs.count,
+        totalJobs: totalJobsResult.count,
+        successfulJobs: successfulJobsResult.count,
+        failedJobs: failedJobsResult.count,
+        totalRestorePoints: totalRestorePointsResult.count,
+        totalBackupSize: sizeResult[0]?.totalSize || 0,
+      };
+    } catch (error) {
+      console.error("Error fetching backup stats:", error);
+      throw new Error("Failed to fetch backup stats");
+    }
+  }
+
   // AI Document Jobs Methods
   async getAiDocumentJobs(userId: string): Promise<AiDocumentJob[]> {
     try {

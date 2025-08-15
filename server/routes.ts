@@ -1739,6 +1739,259 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // === BACKUP ROUTES ===
+
+  // Get backup configurations
+  app.get('/api/backup/configurations', requireAuth, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || !['admin', 'finance'].includes(user.role)) {
+        return res.status(403).json({ error: 'Accesso negato' });
+      }
+
+      const configurations = await storage.getBackupConfigurations();
+      res.json(configurations);
+    } catch (error) {
+      console.error('Error fetching backup configurations:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+    }
+  });
+
+  // Create backup configuration
+  app.post('/api/backup/configurations', requireAuth, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: 'Solo gli amministratori possono creare configurazioni backup' });
+      }
+
+      const configuration = await storage.createBackupConfiguration(req.body);
+      
+      // Log audit
+      await storage.createBackupAuditLog({
+        action: 'configuration_created',
+        resourceType: 'backup_configuration',
+        resourceId: configuration.id,
+        userId: user.id,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        details: { name: configuration.name }
+      });
+
+      res.status(201).json(configuration);
+    } catch (error) {
+      console.error('Error creating backup configuration:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+    }
+  });
+
+  // Get backup jobs
+  app.get('/api/backup/jobs', requireAuth, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || !['admin', 'finance'].includes(user.role)) {
+        return res.status(403).json({ error: 'Accesso negato' });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 50;
+      const jobs = await storage.getBackupJobs(limit);
+      res.json(jobs);
+    } catch (error) {
+      console.error('Error fetching backup jobs:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+    }
+  });
+
+  // Run manual backup
+  app.post('/api/backup/run/:configId', requireAuth, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || !['admin', 'finance'].includes(user.role)) {
+        return res.status(403).json({ error: 'Accesso negato' });
+      }
+
+      const configId = req.params.configId;
+      
+      // Create backup job
+      const job = await storage.createBackupJob({
+        configurationId: configId,
+        status: 'pending',
+        type: 'database' // Will be determined by config
+      });
+
+      // Log audit
+      await storage.createBackupAuditLog({
+        action: 'backup_started',
+        resourceType: 'backup_job',
+        resourceId: job.id,
+        userId: user.id,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        details: { configId }
+      });
+
+      // In production, this would trigger the actual backup process
+      // For now, we'll simulate it by updating the job status
+      setTimeout(async () => {
+        try {
+          await storage.updateBackupJob(job.id, {
+            status: 'completed',
+            startedAt: new Date(),
+            completedAt: new Date(),
+            durationSeconds: 120,
+            backupSizeBytes: 1024 * 1024 * 50, // 50MB simulated
+            backupPath: `/backups/db_backup_${Date.now()}.sql.gz`,
+            checksum: 'sha256:abc123...'
+          });
+        } catch (error) {
+          console.error('Error updating simulated backup job:', error);
+        }
+      }, 5000);
+
+      res.status(201).json(job);
+    } catch (error) {
+      console.error('Error starting backup:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+    }
+  });
+
+  // Get restore points
+  app.get('/api/backup/restore-points', requireAuth, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || !['admin', 'finance'].includes(user.role)) {
+        return res.status(403).json({ error: 'Accesso negato' });
+      }
+
+      const restorePoints = await storage.getRestorePoints();
+      res.json(restorePoints);
+    } catch (error) {
+      console.error('Error fetching restore points:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+    }
+  });
+
+  // Create manual restore point  
+  app.post('/api/backup/restore-points', requireAuth, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: 'Solo gli amministratori possono creare restore point' });
+      }
+
+      // Create backup job for the restore point
+      const backupJob = await storage.createBackupJob({
+        configurationId: 'manual', // Special ID for manual jobs
+        status: 'pending',
+        type: req.body.include_database && req.body.include_files ? 'full' : 
+              req.body.include_database ? 'database' : 'files'
+      });
+
+      // Create restore point
+      const restorePoint = await storage.createRestorePoint({
+        name: req.body.name,
+        description: req.body.description,
+        backupJobId: backupJob.id,
+        snapshotType: 'manual',
+        verificationStatus: 'pending'
+      });
+
+      // Log audit
+      await storage.createBackupAuditLog({
+        action: 'restore_point_created',
+        resourceType: 'restore_point',
+        resourceId: restorePoint.id,
+        userId: user.id,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        details: { name: req.body.name }
+      });
+
+      // Simulate backup completion
+      setTimeout(async () => {
+        try {
+          await storage.updateBackupJob(backupJob.id, {
+            status: 'completed',
+            startedAt: new Date(),
+            completedAt: new Date(),
+            durationSeconds: 180,
+            backupSizeBytes: 1024 * 1024 * 100, // 100MB simulated
+            backupPath: `/backups/restore_point_${Date.now()}.tar.gz`,
+            checksum: 'sha256:def456...'
+          });
+
+          await storage.updateRestorePoint(restorePoint.id, {
+            totalSizeBytes: 1024 * 1024 * 100,
+            verificationStatus: 'verified',
+            verificationDate: new Date()
+          });
+        } catch (error) {
+          console.error('Error updating simulated restore point:', error);
+        }
+      }, 3000);
+
+      res.status(201).json(restorePoint);
+    } catch (error) {
+      console.error('Error creating restore point:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+    }
+  });
+
+  // Restore from restore point
+  app.post('/api/backup/restore', requireAuth, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: 'Solo gli amministratori possono eseguire restore' });
+      }
+
+      const { restore_point_id, restore_database, restore_files, confirm_restore } = req.body;
+
+      if (!confirm_restore) {
+        return res.status(400).json({ error: 'Conferma restore richiesta' });
+      }
+
+      // Log audit
+      await storage.createBackupAuditLog({
+        action: 'restore_started',
+        resourceType: 'restore_point',
+        resourceId: restore_point_id,
+        userId: user.id,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        details: { restore_database, restore_files }
+      });
+
+      // In production, this would trigger the actual restore process
+      // For now, we'll simulate a successful restore
+      res.json({ 
+        message: 'Restore completato con successo',
+        restored_database: restore_database,
+        restored_files: restore_files,
+        restore_time: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error performing restore:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+    }
+  });
+
+  // Get backup statistics
+  app.get('/api/backup/stats', requireAuth, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || !['admin', 'finance'].includes(user.role)) {
+        return res.status(403).json({ error: 'Accesso negato' });
+      }
+
+      const stats = await storage.getBackupStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching backup stats:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -889,3 +889,8 @@ export type UserWithResource = User & {
   firstName?: string;  // Derived from resource
   lastName?: string;   // Derived from resource
 };
+
+// Re-export all specialized schemas
+export * from "./user-schema";
+export * from "./security-schema";
+export * from "./backup-schema";
