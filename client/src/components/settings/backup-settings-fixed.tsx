@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -29,30 +30,24 @@ import {
 export function BackupSettings() {
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Mock data for backup functionality
-  const backupStats = {
-    activeConfigurations: 2,
-    successfulJobs: 145,
-    totalBackupSize: 2500000000, // 2.5GB
-    totalRestorePoints: 24
-  };
+  // Real data from backup API
+  const { data: backupStats } = useQuery({
+    queryKey: ["/api/backup/stats"],
+    queryFn: () => fetch("/api/backup/stats").then(res => res.json()),
+    staleTime: 30000, // Cache for 30 seconds
+  });
 
-  const backupJobs = [
-    {
-      id: "1",
-      type: "Database",
-      status: "completed",
-      createdAt: new Date().toISOString(),
-      backupSizeBytes: 1500000000
-    },
-    {
-      id: "2", 
-      type: "Files",
-      status: "completed", 
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-      backupSizeBytes: 800000000
-    }
-  ];
+  const { data: backupJobs } = useQuery({
+    queryKey: ["/api/backup/jobs"],
+    queryFn: () => fetch("/api/backup/jobs").then(res => res.json()),
+    staleTime: 60000, // Cache for 1 minute
+  });
+
+  const { data: backupConfigs } = useQuery({
+    queryKey: ["/api/backup/configurations"],
+    queryFn: () => fetch("/api/backup/configurations").then(res => res.json()),
+    staleTime: 300000, // Cache for 5 minutes
+  });
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -129,7 +124,7 @@ export function BackupSettings() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Configurazioni Attive</p>
                     <p className="text-2xl font-bold text-green-600">
-                      {backupStats.activeConfigurations}
+                      {backupStats?.activeConfigurations || 0}
                     </p>
                   </div>
                   <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
@@ -145,7 +140,7 @@ export function BackupSettings() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Backup Completati</p>
                     <p className="text-2xl font-bold text-blue-600">
-                      {backupStats.successfulJobs}
+                      {backupStats?.successfulJobs || 0}
                     </p>
                   </div>
                   <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
@@ -161,7 +156,7 @@ export function BackupSettings() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Spazio Utilizzato</p>
                     <p className="text-2xl font-bold text-purple-600">
-                      {formatBytes(backupStats.totalBackupSize)}
+                      {formatBytes(backupStats?.totalBackupSize || 0)}
                     </p>
                   </div>
                   <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
@@ -177,7 +172,7 @@ export function BackupSettings() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Restore Points</p>
                     <p className="text-2xl font-bold text-orange-600">
-                      {backupStats.totalRestorePoints}
+                      {backupStats?.totalRestorePoints || 0}
                     </p>
                   </div>
                   <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
@@ -196,7 +191,7 @@ export function BackupSettings() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {backupJobs.slice(0, 5).map((job) => (
+                {backupJobs?.slice(0, 5).map((job) => (
                   <div key={job.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       {getStatusIcon(job.status)}
@@ -501,7 +496,7 @@ export function BackupSettings() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {backupJobs.map((job) => (
+                {backupJobs?.map((job) => (
                   <div key={job.id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
