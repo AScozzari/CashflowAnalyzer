@@ -321,9 +321,9 @@ export function BackupSettings() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview" className="flex items-center space-x-2">
-            <HardDrive className="h-4 w-4" />
-            <span>Overview</span>
+          <TabsTrigger value="providers" className="flex items-center space-x-2">
+            <Cloud className="h-4 w-4" />
+            <span>Provider</span>
           </TabsTrigger>
           <TabsTrigger value="configurations" className="flex items-center space-x-2">
             <Settings className="h-4 w-4" />
@@ -343,8 +343,256 @@ export function BackupSettings() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+        {/* Provider Configuration Tab */}
+        <TabsContent value="providers" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Cloud className="h-5 w-5 text-blue-500" />
+                <span>Configurazione Provider di Storage</span>
+              </CardTitle>
+              <CardDescription>
+                Configura i provider cloud per il backup. Seleziona il provider principale e inserisci le credenziali di accesso.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              
+              {/* Provider Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                {/* Google Cloud Storage */}
+                <Card className="border-2 border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                          <Cloud className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <span className="font-medium">Google Cloud Storage</span>
+                      </div>
+                      <Badge variant="default" className="bg-green-100 text-green-800">Attivo</Badge>
+                    </div>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>Bucket:</span>
+                        <span className="font-mono text-xs">replit-objstore-bd98...</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Region:</span>
+                        <span>us-central1</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Storage:</span>
+                        <span>Standard</span>
+                      </div>
+                    </div>
+                    <Button className="w-full mt-3" variant="outline" size="sm">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Configura
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Amazon S3 */}
+                <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                          <Database className="h-5 w-5 text-orange-600" />
+                        </div>
+                        <span className="font-medium">Amazon S3</span>
+                      </div>
+                      <Badge variant="outline">Non configurato</Badge>
+                    </div>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>Backup ridondante su AWS S3</p>
+                      <p>• Durata 99.999999999%</p>
+                      <p>• Multi-region replication</p>
+                      <p>• Glacier per archiviazione</p>
+                    </div>
+                    <Button className="w-full mt-3" variant="outline" size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Aggiungi S3
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Azure Blob Storage */}
+                <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                          <Server className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <span className="font-medium">Azure Blob</span>
+                      </div>
+                      <Badge variant="outline">Non configurato</Badge>
+                    </div>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>Backup enterprise su Azure</p>
+                      <p>• Hot/Cool/Archive tiers</p>
+                      <p>• Geo-redundant storage</p>
+                      <p>• Compliance avanzato</p>
+                    </div>
+                    <Button className="w-full mt-3" variant="outline" size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Aggiungi Azure
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Configuration Form */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Configurazione Provider</CardTitle>
+                  <CardDescription>
+                    Inserisci le credenziali e configura le impostazioni per i provider di backup
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* Provider Selection */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Provider Primario</label>
+                        <Select defaultValue="gcs">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gcs">Google Cloud Storage</SelectItem>
+                            <SelectItem value="s3">Amazon S3</SelectItem>
+                            <SelectItem value="azure">Azure Blob Storage</SelectItem>
+                            <SelectItem value="local">Storage Locale</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Bucket/Container</label>
+                        <Input 
+                          placeholder="nome-bucket-backup"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Percorso Base</label>
+                        <Input 
+                          placeholder="/backups/easycashflows"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Region</label>
+                        <Select defaultValue="us-central1">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="us-central1">US Central 1</SelectItem>
+                            <SelectItem value="europe-west1">Europe West 1</SelectItem>
+                            <SelectItem value="asia-southeast1">Asia Southeast 1</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Credentials */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Access Key ID</label>
+                        <Input 
+                          type="password"
+                          placeholder="••••••••••••••••"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Secret Access Key</label>
+                        <Input 
+                          type="password"
+                          placeholder="••••••••••••••••••••••••••••••••"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Service Account JSON (GCS)</label>
+                        <Textarea 
+                          placeholder="Incolla qui il contenuto del file JSON..."
+                          rows={4}
+                          className="mt-1 font-mono text-xs"
+                        />
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch id="encryption" defaultChecked />
+                        <label htmlFor="encryption" className="text-sm font-medium">
+                          Abilita crittografia server-side
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-6 pt-6 border-t">
+                    <Button variant="outline">
+                      <TestTube className="h-4 w-4 mr-2" />
+                      Test Connessione
+                    </Button>
+                    <div className="space-x-2">
+                      <Button variant="outline">Annulla</Button>
+                      <Button>
+                        <Save className="h-4 w-4 mr-2" />
+                        Salva Configurazione
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Storage Statistics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Utilizzo Storage</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Google Cloud Storage</span>
+                      <span className="text-sm text-muted-foreground">2.3 GB / 100 GB</span>
+                    </div>
+                    <Progress value={23} className="h-2" />
+                    
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="text-center">
+                        <div className="font-medium text-lg">156</div>
+                        <div className="text-muted-foreground">File Backup</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-medium text-lg">2.3 GB</div>
+                        <div className="text-muted-foreground">Spazio Usato</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-medium text-lg">97.7 GB</div>
+                        <div className="text-muted-foreground">Disponibile</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Configuration Tab */}
+        <TabsContent value="configurations" className="space-y-6">
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
