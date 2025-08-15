@@ -12,6 +12,7 @@ import {
 import { emailService } from './email-service';
 import { setupAuth } from "./auth";
 import { loginLimiter, apiLimiter, securityLogger, securityHeaders, sanitizeInput, sessionSecurity } from "./security-middleware";
+import { WebhookRouter } from './webhook-manager';
 import multer from 'multer';
 import type { Request } from 'express';
 import path from 'path';
@@ -1168,7 +1169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const file of files) {
         const [fileMetadata] = await file.getMetadata();
         if (fileMetadata.size) {
-          totalSize += parseInt(fileMetadata.size);
+          totalSize += parseInt(fileMetadata.size.toString());
         }
         
         // Count backup files (in .private directory)
@@ -1265,7 +1266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: file.name.includes('database') ? 'Database' : 'Files',
           status: 'completed',
           createdAt: metadata.timeCreated || new Date().toISOString(),
-          backupSizeBytes: parseInt(metadata.size || '0'),
+          backupSizeBytes: parseInt((metadata.size || '0').toString()),
           fileName: file.name
         };
       }));
@@ -1314,7 +1315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: `restore-${index + 1}`,
           name: file.name.split('/').pop() || 'Unknown',
           createdAt: file.metadata?.timeCreated || new Date().toISOString(),
-          size: parseInt(file.metadata?.size || '0'),
+          size: parseInt((file.metadata?.size || '0').toString()),
           type: file.name.endsWith('.sql') ? 'database' : 'full'
         }));
 
@@ -2738,6 +2739,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Errore interno del server' });
     }
   });
+
+  // Setup webhook routes for multi-channel notifications
+  WebhookRouter.setupRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

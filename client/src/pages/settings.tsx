@@ -4,6 +4,7 @@ import SystemConfigHorizontal from "@/components/settings/system-config-horizont
 import { ConnectionStatus } from "@/components/debug/connection-status";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AiSettings from "@/components/settings/ai-settings";
+import { ChannelSettings } from "@/components/settings/channel-settings";
 import { WebSocketStatus } from "@/components/debug/websocket-status";
 import { OpenAIDiagnostic } from "@/components/debug/openai-diagnostic";
 
@@ -11,9 +12,10 @@ export default function Settings() {
   return (
     <div className="container mx-auto py-6">
       <Tabs defaultValue="entities" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="entities">Entity Management</TabsTrigger>
           <TabsTrigger value="ai">AI Assistant</TabsTrigger>
+          <TabsTrigger value="channels">Channel Settings</TabsTrigger>
           <TabsTrigger value="system">System Settings</TabsTrigger>
           <TabsTrigger value="debug">Connection Debug</TabsTrigger>
         </TabsList>
@@ -24,6 +26,10 @@ export default function Settings() {
 
         <TabsContent value="ai">
           <AiSettings />
+        </TabsContent>
+
+        <TabsContent value="channels">
+          <ChannelSettings />
         </TabsContent>
 
         <TabsContent value="system">
