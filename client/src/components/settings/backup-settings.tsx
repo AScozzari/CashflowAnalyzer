@@ -61,46 +61,46 @@ export function BackupSettings() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Fetch backup data - Mock data for now since endpoints are not implemented
-  const { data: backupConfigs, isLoading: configsLoading } = useQuery({
-    queryKey: ["/api/backup/configurations"],
-    queryFn: () => Promise.resolve([]),
-  });
+  // Mock data for backup functionality
+  const backupConfigs = [
+    {
+      id: "1",
+      name: "Database Daily",
+      type: "database", 
+      schedule: "0 2 * * *",
+      enabled: true,
+      retention_days: 30,
+      storage_provider: "gcs",
+      description: "Backup giornaliero database"
+    }
+  ];
+  
+  const backupStats = {
+    activeConfigurations: 2,
+    successfulJobs: 145,
+    totalBackupSize: 2500000000, // 2.5GB
+    totalRestorePoints: 24
+  };
 
-  const { data: backupStats } = useQuery({
-    queryKey: ["/api/backup/stats"],
-    queryFn: () => Promise.resolve({
-      activeConfigurations: 2,
-      successfulJobs: 145,
-      totalBackupSize: 2500000000, // 2.5GB
-      totalRestorePoints: 24
-    }),
-  });
+  const backupJobs = [
+    {
+      id: "1",
+      type: "Database",
+      status: "completed",
+      createdAt: new Date().toISOString(),
+      backupSizeBytes: 1500000000
+    },
+    {
+      id: "2", 
+      type: "Files",
+      status: "completed", 
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      backupSizeBytes: 800000000
+    }
+  ];
 
-  const { data: backupJobs } = useQuery({
-    queryKey: ["/api/backup/jobs"],
-    queryFn: () => Promise.resolve([
-      {
-        id: "1",
-        type: "Database",
-        status: "completed",
-        createdAt: new Date().toISOString(),
-        backupSizeBytes: 1500000000
-      },
-      {
-        id: "2", 
-        type: "Files",
-        status: "completed",
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-        backupSizeBytes: 800000000
-      }
-    ]),
-  });
-
-  const { data: restorePoints } = useQuery({
-    queryKey: ["/api/backup/restore-points"],
-    queryFn: () => Promise.resolve([]),
-  });
+  const restorePoints: any[] = [];
+  const configsLoading = false;
 
   // Create backup configuration mutation
   const createConfigMutation = useMutation({
