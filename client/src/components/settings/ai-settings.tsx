@@ -300,22 +300,36 @@ export default function AiSettings() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Nessuna API key configurata. Aggiungi una chiave per abilitare le funzionalità AI.
-              </p>
+              <div className="text-center py-6">
+                <Key className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="font-medium text-muted-foreground mb-1">
+                  Nessuna API Key Configurata
+                </p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Aggiungi una chiave OpenAI per abilitare chat AI, analisi documenti e previsioni finanziarie
+                </p>
+                <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                  <p className="text-sm text-orange-800 dark:text-orange-200">
+                    <strong>Per iniziare:</strong> Utilizza il modulo qui sotto per aggiungere la tua API key OpenAI
+                  </p>
+                </div>
+              </div>
             )}
           </div>
 
           {/* Add/Update API Key */}
-          <div className="p-4 border rounded-lg">
-            <h4 className="font-medium mb-3">
-              {apiKeyStatus?.hasKey ? 'Sostituisci API Key' : 'Aggiungi API Key'}
-            </h4>
+          <div className={`p-4 border rounded-lg ${!apiKeyStatus?.hasKey ? 'border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800' : ''}`}>
+            <div className="flex items-center space-x-2 mb-3">
+              {!apiKeyStatus?.hasKey && <Key className="h-5 w-5 text-blue-600" />}
+              <h4 className="font-medium">
+                {apiKeyStatus?.hasKey ? 'Sostituisci API Key' : 'Aggiungi Nuova API Key'}
+              </h4>
+            </div>
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Input
                   type={showApiKey ? "text" : "password"}
-                  placeholder="sk-..."
+                  placeholder={!apiKeyStatus?.hasKey ? "sk-proj-... (incolla qui la tua API key OpenAI)" : "sk-..."}
                   value={newApiKey}
                   onChange={(e) => setNewApiKey(e.target.value)}
                   className="font-mono"
@@ -333,8 +347,9 @@ export default function AiSettings() {
                   onClick={() => updateApiKeyMutation.mutate(newApiKey)}
                   disabled={!newApiKey || updateApiKeyMutation.isPending}
                   size="sm"
+                  className={!apiKeyStatus?.hasKey ? 'bg-blue-600 hover:bg-blue-700' : ''}
                 >
-                  {updateApiKeyMutation.isPending ? 'Salvando...' : (apiKeyStatus?.hasKey ? 'Sostituisci' : 'Aggiungi')}
+                  {updateApiKeyMutation.isPending ? 'Salvando...' : (apiKeyStatus?.hasKey ? 'Sostituisci' : 'Aggiungi e Testa')}
                 </Button>
                 <Button
                   variant="outline"
@@ -345,8 +360,18 @@ export default function AiSettings() {
                 </Button>
               </div>
               <div className="text-xs text-muted-foreground">
-                La chiave verrà automaticamente testata prima del salvataggio. 
-                Deve iniziare con "sk-" ed avere permessi per l'API OpenAI.
+                <div className="flex items-start space-x-2">
+                  <span>•</span>
+                  <div>
+                    La chiave verrà automaticamente testata prima del salvataggio<br/>
+                    • Deve iniziare con "sk-" ed avere permessi per l'API OpenAI<br/>
+                    • {!apiKeyStatus?.hasKey ? 'Ottieni la tua chiave da ' : 'Gestisci le tue chiavi su '}
+                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" 
+                       className="text-blue-600 hover:text-blue-800 underline">
+                      platform.openai.com
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
