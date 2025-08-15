@@ -2813,6 +2813,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   WebhookRouter.setupRoutes(app);
 
   const httpServer = createServer(app);
+  // WhatsApp Settings routes
+  app.get("/api/whatsapp/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getWhatsappSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('Error fetching WhatsApp settings:', error);
+      res.status(500).json({ error: "Errore nel recupero impostazioni WhatsApp" });
+    }
+  }));
+
+  app.post("/api/whatsapp/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const validatedData = insertWhatsappSettingsSchema.parse(req.body);
+      const settings = await storage.saveWhatsappSettings(validatedData);
+      res.json(settings);
+    } catch (error) {
+      console.error('Error saving WhatsApp settings:', error);
+      res.status(500).json({ error: "Errore nel salvataggio impostazioni WhatsApp" });
+    }
+  }));
+
+  app.put("/api/whatsapp/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const validatedData = insertWhatsappSettingsSchema.parse(req.body);
+      const settings = await storage.saveWhatsappSettings(validatedData);
+      res.json(settings);
+    } catch (error) {
+      console.error('Error updating WhatsApp settings:', error);
+      res.status(500).json({ error: "Errore nell'aggiornamento impostazioni WhatsApp" });
+    }
+  }));
+
+  app.post("/api/whatsapp/test-connection", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const result = await storage.testWhatsappConnection();
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing WhatsApp connection:', error);
+      res.status(500).json({ error: "Errore nel test connessione WhatsApp" });
+    }
+  }));
+
   return httpServer;
 }
 

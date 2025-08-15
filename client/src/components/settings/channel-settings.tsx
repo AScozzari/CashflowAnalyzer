@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Mail, Phone, Send, Settings, Webhook } from 'lucide-react';
 import { EmailSettings } from './email-settings';
+import WhatsappSettings from './whatsapp-settings';
 
 export function ChannelSettings() {
   const [activeTab, setActiveTab] = useState('whatsapp');
@@ -33,12 +34,12 @@ export function ChannelSettings() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <MessageSquare className="w-5 h-5 text-green-600" />
-                <span className="font-medium">WhatsApp</span>
+                <span className="font-medium">WhatsApp Business</span>
               </div>
-              <Badge variant="secondary">In Sviluppo</Badge>
+              <Badge variant="default" className="bg-green-600">Implementato</Badge>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-              Business API con template
+              API Business + Template Pre-approvati
             </p>
           </CardContent>
         </Card>
@@ -112,16 +113,7 @@ export function ChannelSettings() {
 
         {/* WhatsApp Channel */}
         <TabsContent value="whatsapp">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">WhatsApp Business</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Configura provider e template per notifiche WhatsApp
-              </p>
-              <Badge variant="secondary">In Sviluppo</Badge>
-            </CardContent>
-          </Card>
+          <WhatsappSettings />
         </TabsContent>
 
         {/* Email Channel */}

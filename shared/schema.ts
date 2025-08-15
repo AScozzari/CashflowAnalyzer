@@ -654,20 +654,52 @@ export const insertSendgridTemplateSchema = createInsertSchema(sendgridTemplates
 export type InsertSendgridTemplate = z.infer<typeof insertSendgridTemplateSchema>;
 export type SendgridTemplate = typeof sendgridTemplates.$inferSelect;
 
-// WhatsApp Business API Settings Schema
+// WhatsApp Business API Settings Schema - Compliant con Business Manager Meta
 export const whatsappSettings = pgTable('whatsapp_settings', {
   id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
-  provider: text('provider').notNull().default('twilio'), // twilio, linkmobility, meta
+  provider: text('provider').notNull().default('twilio'), // twilio, linkmobility
+  
+  // Twilio Configuration
   accountSid: text('account_sid'), // Twilio Account SID
   authToken: text('auth_token'), // Twilio Auth Token
-  whatsappNumber: text('whatsapp_number').notNull(), // +15551234567
-  webhookUrl: text('webhook_url'), // For receiving messages
-  verifyToken: text('verify_token'), // For webhook verification
+  
+  // LinkMobility Configuration  
+  apiKey: text('api_key'), // LinkMobility API Key
+  linkMobilityEndpoint: text('linkmobility_endpoint'), // EU endpoint
+  
+  // WhatsApp Business Number (Meta Business Manager Required)
+  whatsappNumber: text('whatsapp_number').notNull(), // +393451234567
+  numberDisplayName: text('number_display_name'), // Nome mostrato nei messaggi
+  
+  // Business Manager Meta Information (REQUIRED)
+  businessManagerId: text('business_manager_id'), // Meta Business Manager ID
+  whatsappBusinessAccountId: text('whatsapp_business_account_id'), // WABA ID
+  businessVerificationStatus: text('business_verification_status').default('pending'), // pending, approved, rejected
+  
+  // Business Profile Information (per approvazione Meta)
+  businessDisplayName: text('business_display_name'), // Nome business verificato
+  businessAbout: text('business_about'), // Descrizione per approvazione
+  businessWebsite: text('business_website'), // Sito verificato in Business Manager
+  businessCategory: text('business_category'), // Categoria business Meta
+  businessAddress: text('business_address'), // Indirizzo business per verifica
+  
+  // Template System (Pre-approvazione richiesta)
+  templateApprovalStatus: text('template_approval_status').default('none'), // none, pending, approved
+  approvedTemplates: text('approved_templates'), // JSON array of approved template names
+  
+  // Webhook Configuration
+  webhookUrl: text('webhook_url'), // URL per ricevere messaggi
+  verifyToken: text('verify_token'), // Token verifica webhook
+  webhookSecret: text('webhook_secret'), // Secret per validazione firma
+  
+  // Status Flags
   isActive: boolean('is_active').default(true),
-  isVerified: boolean('is_verified').default(false), // Business verification status
-  businessDisplayName: text('business_display_name'),
-  businessAbout: text('business_about'),
-  businessWebsite: text('business_website'),
+  isNumberVerified: boolean('is_number_verified').default(false), // Numero verificato Business Manager
+  isApiConnected: boolean('is_api_connected').default(false), // Connessione API attiva
+  
+  // Audit Trail
+  lastTestAt: timestamp('last_test_at'), // Ultimo test connessione
+  lastMessageSentAt: timestamp('last_message_sent_at'), // Ultimo messaggio inviato
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
@@ -675,18 +707,86 @@ export const whatsappSettings = pgTable('whatsapp_settings', {
 export const insertWhatsappSettingsSchema = createInsertSchema(whatsappSettings).omit({
   id: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
+  lastTestAt: true,
+  lastMessageSentAt: true
 }).extend({
-  provider: z.enum(['twilio', 'linkmobility', 'meta']).default('twilio'),
-  whatsappNumber: z.string().min(1, "Numero WhatsApp richiesto"),
-  accountSid: z.string().min(1, "Account SID richiesto").optional(),
-  authToken: z.string().min(1, "Auth Token richiesto").optional(),
-  businessDisplayName: z.string().min(1, "Nome business richiesto").optional(),
-  businessWebsite: z.string().url("URL sito web non valido").optional().or(z.literal(""))
+  provider: z.enum(['twilio', 'linkmobility']).default('twilio'),
+  whatsappNumber: z.string().regex(/^\+[1-9]\d{1,14}$/, "Numero WhatsApp non valido (formato: +393451234567)"),
+  businessDisplayName: z.string().min(1, "Nome business richiesto per approvazione Meta"),
+  businessAbout: z.string().min(10, "Descrizione business minimo 10 caratteri"),
+  businessWebsite: z.string().url("URL sito web non valido").optional().or(z.literal("")),
+  accountSid: z.string().optional(), // Required se Twilio
+  authToken: z.string().optional(), // Required se Twilio
+  apiKey: z.string().optional(), // Required se LinkMobility
+  businessVerificationStatus: z.enum(['pending', 'approved', 'rejected']).default('pending'),
+  templateApprovalStatus: z.enum(['none', 'pending', 'approved']).default('none')
 });
 
 export type InsertWhatsappSettings = z.infer<typeof insertWhatsappSettingsSchema>;
 export type WhatsappSettings = typeof whatsappSettings.$inferSelect;
+
+// WhatsApp Template Schema (per template pre-approvati Meta)
+export const whatsappTemplates = pgTable('whatsapp_templates', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  name: text('name').notNull(), // Nome template (snake_case)
+  displayName: text('display_name').notNull(), // Nome mostrato
+  category: text('category').notNull(), // UTILITY, MARKETING, AUTHENTICATION
+  language: text('language').notNull().default('it'), // Codice lingua
+  
+  // Template Content
+  headerType: text('header_type'), // TEXT, IMAGE, VIDEO, DOCUMENT
+  headerText: text('header_text'), // Se header TEXT
+  bodyText: text('body_text').notNull(), // Corpo messaggio con {{1}} variabili
+  footerText: text('footer_text'), // Footer opzionale
+  
+  // Buttons (se presenti)
+  buttonType: text('button_type'), // CALL_TO_ACTION, QUICK_REPLY
+  buttonText: text('button_text'), // Testo bottone
+  buttonUrl: text('button_url'), // URL se call-to-action
+  
+  // Variables
+  variables: text('variables'), // JSON array di variabili: ["nome", "importo"]
+  exampleValues: text('example_values'), // JSON di valori esempio per approvazione
+  
+  // Meta Approval Status
+  metaTemplateId: text('meta_template_id'), // ID template approvato da Meta
+  approvalStatus: text('approval_status').default('pending'), // pending, approved, rejected
+  rejectionReason: text('rejection_reason'), // Motivo rifiuto Meta
+  submittedAt: timestamp('submitted_at'), // Data invio approvazione
+  approvedAt: timestamp('approved_at'), // Data approvazione
+  
+  // Usage
+  isActive: boolean('is_active').default(true),
+  usageCount: integer('usage_count').default(0), // Conteggio utilizzi
+  lastUsedAt: timestamp('last_used_at'), // Ultimo utilizzo
+  
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export const insertWhatsappTemplateSchema = createInsertSchema(whatsappTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  metaTemplateId: true,
+  approvedAt: true,
+  submittedAt: true,
+  usageCount: true,
+  lastUsedAt: true
+}).extend({
+  name: z.string().regex(/^[a-z0-9_]+$/, "Nome template: solo lettere minuscole, numeri e underscore"),
+  displayName: z.string().min(1, "Nome display richiesto"),
+  category: z.enum(['UTILITY', 'MARKETING', 'AUTHENTICATION']),
+  language: z.string().length(2, "Codice lingua ISO 2 caratteri").default('it'),
+  bodyText: z.string().min(1, "Corpo messaggio richiesto"),
+  headerType: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'DOCUMENT']).optional(),
+  buttonType: z.enum(['CALL_TO_ACTION', 'QUICK_REPLY']).optional(),
+  approvalStatus: z.enum(['pending', 'approved', 'rejected']).default('pending')
+});
+
+export type InsertWhatsappTemplate = z.infer<typeof insertWhatsappTemplateSchema>;
+export type WhatsappTemplate = typeof whatsappTemplates.$inferSelect;
 
 export const passwordResetSchema = z.object({
   email: z.string().email("Email non valida"),

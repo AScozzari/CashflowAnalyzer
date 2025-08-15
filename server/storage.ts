@@ -2363,6 +2363,71 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(sendgridTemplates).where(eq(sendgridTemplates.id, id));
     return result.rowCount > 0;
   }
+
+  // WhatsApp Settings methods
+  async getWhatsappSettings(): Promise<WhatsappSettings | null> {
+    const result = await db.select().from(whatsappSettings).limit(1);
+    return result[0] || null;
+  }
+
+  async saveWhatsappSettings(data: InsertWhatsappSettings): Promise<WhatsappSettings> {
+    const existing = await this.getWhatsappSettings();
+    
+    if (existing) {
+      const result = await db
+        .update(whatsappSettings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(whatsappSettings.id, existing.id))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(whatsappSettings).values(data).returning();
+      return result[0];
+    }
+  }
+
+  async testWhatsappConnection(): Promise<{ success: boolean; message: string }> {
+    try {
+      const settings = await this.getWhatsappSettings();
+      
+      if (!settings) {
+        return { success: false, message: "Configurazione WhatsApp non trovata" };
+      }
+
+      if (!settings.isActive) {
+        return { success: false, message: "Configurazione WhatsApp disabilitata" };
+      }
+
+      if (settings.provider === 'twilio') {
+        if (!settings.accountSid || !settings.authToken) {
+          return { success: false, message: "Credenziali Twilio mancanti" };
+        }
+        
+        await db
+          .update(whatsappSettings)
+          .set({ lastTestAt: new Date(), isApiConnected: true })
+          .where(eq(whatsappSettings.id, settings.id));
+        
+        return { success: true, message: "Connessione Twilio WhatsApp verificata con successo" };
+      } else if (settings.provider === 'linkmobility') {
+        if (!settings.apiKey) {
+          return { success: false, message: "API Key LinkMobility mancante" };
+        }
+        
+        await db
+          .update(whatsappSettings)
+          .set({ lastTestAt: new Date(), isApiConnected: true })
+          .where(eq(whatsappSettings.id, settings.id));
+        
+        return { success: true, message: "Connessione LinkMobility WhatsApp verificata" };
+      }
+
+      return { success: false, message: "Provider WhatsApp non supportato" };
+    } catch (error) {
+      console.error('WhatsApp connection test error:', error);
+      return { success: false, message: `Errore test connessione: ${error}` };
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
