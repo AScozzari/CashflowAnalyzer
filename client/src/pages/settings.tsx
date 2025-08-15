@@ -16,37 +16,7 @@ import { Download, User, Shield } from "lucide-react";
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("entities");
 
-  const settingsAction = (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setActiveTab('system')}
-        className="relative hover:bg-primary/10 hover:text-primary transition-colors"
-        title="Backup System"
-      >
-        <Download className="h-5 w-5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setActiveTab('entities')}
-        className="relative hover:bg-primary/10 hover:text-primary transition-colors"
-        title="Account Management"
-      >
-        <User className="h-5 w-5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setActiveTab('system')}
-        className="relative hover:bg-primary/10 hover:text-primary transition-colors"
-        title="Security Settings"
-      >
-        <Shield className="h-5 w-5" />
-      </Button>
-    </div>
-  );
+  const settingsAction = null;
 
   return (
     <div className="container mx-auto py-6">

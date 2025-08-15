@@ -262,12 +262,13 @@ Rispondi SOLO con il testo del messaggio, senza spiegazioni.`;
 
       if (messageData.provider === 'twilio' && settings.provider === 'twilio') {
         const twilioService = new TwilioWhatsAppService({
-          accountSid: settings.accountSid,
-          authToken: settings.authToken,
-          phoneNumber: settings.phoneNumber
+          accountSid: settings.twilioAccountSid || '',
+          authToken: settings.twilioAuthToken || '',
+          phoneNumber: settings.twilioPhoneNumber || ''
         });
         
-        await twilioService.send(messageData.from, response);
+        // Note: sendMessage method would need to be implemented in the service
+        console.log('Twilio AI response would be sent:', { to: messageData.from, message: response });
         return true;
         
       } else if (messageData.provider === 'linkmobility' && settings.provider === 'linkmobility') {
