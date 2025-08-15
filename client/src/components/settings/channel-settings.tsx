@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Mail, Phone, Send, Settings, Webhook } from 'lucide-react';
 import { EmailSettings } from './email-settings';
-import WhatsappSettings from './whatsapp-settings';
+import { WhatsAppSettingsSimple } from './whatsapp-settings-simple';
 
 export function ChannelSettings() {
   const [activeTab, setActiveTab] = useState('whatsapp');
@@ -113,7 +113,7 @@ export function ChannelSettings() {
 
         {/* WhatsApp Channel */}
         <TabsContent value="whatsapp">
-          <WhatsappSettings />
+          <WhatsAppSettingsSimple />
         </TabsContent>
 
         {/* Email Channel */}
