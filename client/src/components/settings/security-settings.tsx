@@ -61,13 +61,19 @@ export function SecuritySettings() {
   // Query per ottenere le impostazioni di sicurezza correnti
   const { data: settings, isLoading } = useQuery({
     queryKey: ["/api/security/settings"],
-    queryFn: () => apiRequest("/api/security/settings"),
+    queryFn: async () => {
+      const response = await apiRequest("/api/security/settings");
+      return response;
+    },
   });
 
   // Query per statistiche di sicurezza
   const { data: securityStats } = useQuery({
     queryKey: ["/api/security/stats"],
-    queryFn: () => apiRequest("/api/security/stats"),
+    queryFn: async () => {
+      const response = await apiRequest("/api/security/stats");
+      return response;
+    },
   });
 
   const form = useForm<SecuritySettingsForm>({
@@ -108,11 +114,22 @@ export function SecuritySettings() {
 
   // Mutation per salvare le impostazioni
   const updateMutation = useMutation({
-    mutationFn: (data: SecuritySettingsForm) =>
-      apiRequest("/api/security/settings", {
+    mutationFn: async (data: SecuritySettingsForm) => {
+      const response = await fetch("/api/security/settings", {
         method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
-      }),
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update security settings");
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Impostazioni salvate",
@@ -163,25 +180,25 @@ export function SecuritySettings() {
         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {securityStats?.activeSessions || 0}
+              {(securityStats as any)?.activeSessions || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-300">Sessioni Attive</div>
           </div>
           <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {securityStats?.failedLogins24h || 0}
+              {(securityStats as any)?.failedLogins24h || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-300">Login Falliti (24h)</div>
           </div>
           <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
             <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {securityStats?.lockedUsers || 0}
+              {(securityStats as any)?.lockedUsers || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-300">Utenti Bloccati</div>
           </div>
           <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-              {securityStats?.twoFactorUsers || 0}
+              {(securityStats as any)?.twoFactorUsers || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-300">Utenti con 2FA</div>
           </div>

@@ -1972,7 +1972,9 @@ export class DatabaseStorage implements IStorage {
       let query = db.select().from(aiChatHistory).where(eq(aiChatHistory.userId, userId));
       
       if (sessionId) {
-        query = query.and(eq(aiChatHistory.sessionId, sessionId));
+        query = db.select().from(aiChatHistory).where(
+          and(eq(aiChatHistory.userId, userId), eq(aiChatHistory.sessionId, sessionId))
+        );
       }
       
       return await query.orderBy(aiChatHistory.createdAt);
