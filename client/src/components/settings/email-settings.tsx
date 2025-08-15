@@ -9,7 +9,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, TestTube, Settings, CheckCircle, XCircle } from "lucide-react";
+import { Mail, TestTube, Settings, CheckCircle, XCircle, FileText } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SendGridTemplatesManager } from './sendgrid-templates';
 import { apiRequest } from "@/lib/queryClient";
 
 interface EmailSettingsData {
@@ -143,10 +145,24 @@ export function EmailSettings() {
           Configurazione Email
         </CardTitle>
         <CardDescription>
-          Configura le impostazioni per l'invio di email (recupero password, notifiche, ecc.)
+          Configura le impostazioni per l'invio di email e gestisci i template SendGrid
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <Tabs defaultValue="configuration" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="configuration" className="flex items-center space-x-2">
+              <Settings className="w-4 h-4" />
+              <span>Configurazione</span>
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center space-x-2">
+              <FileText className="w-4 h-4" />
+              <span>Template SendGrid</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="configuration" className="mt-6">
+            <div className="space-y-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Provider Selection */}
@@ -369,6 +385,13 @@ export function EmailSettings() {
             )}
           </form>
         </Form>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="templates" className="mt-6">
+            <SendGridTemplatesManager />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

@@ -616,6 +616,44 @@ export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit(
   provider: z.enum(["sendgrid", "smtp"]).default("sendgrid"),
 });
 
+// SendGrid Email Templates Schema
+export const sendgridTemplates = pgTable('sendgrid_templates', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  name: text('name').notNull(),
+  subject: text('subject').notNull(),
+  category: text('category').notNull(), // password_reset, notification, invoice, welcome, etc.
+  templateId: text('template_id').notNull(), // SendGrid template ID
+  description: text('description'),
+  variables: text('variables'), // JSON string of template variables
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export const insertSendgridTemplateSchema = createInsertSchema(sendgridTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+}).extend({
+  name: z.string().min(1, "Nome template richiesto"),
+  subject: z.string().min(1, "Oggetto richiesto"),
+  category: z.enum([
+    "password_reset", 
+    "notification", 
+    "invoice", 
+    "welcome", 
+    "alert", 
+    "report", 
+    "reminder",
+    "verification"
+  ]),
+  templateId: z.string().min(1, "Template ID SendGrid richiesto"),
+  variables: z.string().optional()
+});
+
+export type InsertSendgridTemplate = z.infer<typeof insertSendgridTemplateSchema>;
+export type SendgridTemplate = typeof sendgridTemplates.$inferSelect;
+
 export const passwordResetSchema = z.object({
   email: z.string().email("Email non valida"),
 });

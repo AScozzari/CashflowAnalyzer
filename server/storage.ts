@@ -1,5 +1,5 @@
 import {
-  companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens,
+  companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens, sendgridTemplates,
   aiSettings, aiChatHistory, aiDocumentJobs,
   securitySettings, loginAuditLog, activeSessions, passwordHistory, twoFactorAuth,
   type Company, type InsertCompany,
@@ -18,6 +18,7 @@ import {
   type Supplier, type InsertSupplier,
   type Customer, type InsertCustomer,
   type EmailSettings, type InsertEmailSettings,
+  type SendgridTemplate, type InsertSendgridTemplate,
   type AiSettings, type InsertAiSettings,
   type AiChatHistory, type InsertAiChatHistory,
   type AiDocumentJob, type InsertAiDocumentJob,
@@ -2327,6 +2328,40 @@ export class DatabaseStorage implements IStorage {
       console.error('Error deleting AI document job:', error);
       throw new Error('Failed to delete AI document job');
     }
+  }
+
+  // SendGrid Templates methods
+  async createSendgridTemplate(template: InsertSendgridTemplate): Promise<SendgridTemplate> {
+    const result = await db.insert(sendgridTemplates).values(template).returning();
+    return result[0];
+  }
+
+  async getSendgridTemplates(): Promise<SendgridTemplate[]> {
+    return await db.select().from(sendgridTemplates).orderBy(desc(sendgridTemplates.createdAt));
+  }
+
+  async getSendgridTemplateById(id: string): Promise<SendgridTemplate | null> {
+    const result = await db.select().from(sendgridTemplates).where(eq(sendgridTemplates.id, id));
+    return result[0] || null;
+  }
+
+  async getSendgridTemplateByCategory(category: string): Promise<SendgridTemplate[]> {
+    return await db.select().from(sendgridTemplates)
+      .where(and(eq(sendgridTemplates.category, category), eq(sendgridTemplates.isActive, true)))
+      .orderBy(desc(sendgridTemplates.createdAt));
+  }
+
+  async updateSendgridTemplate(id: string, updates: Partial<InsertSendgridTemplate>): Promise<SendgridTemplate | null> {
+    const result = await db.update(sendgridTemplates)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(sendgridTemplates.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async deleteSendgridTemplate(id: string): Promise<boolean> {
+    const result = await db.delete(sendgridTemplates).where(eq(sendgridTemplates.id, id));
+    return result.rowCount > 0;
   }
 }
 

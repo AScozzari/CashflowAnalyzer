@@ -7,9 +7,10 @@ import {
   insertIbanSchema, insertOfficeSchema, insertTagSchema,
   insertMovementStatusSchema, insertMovementReasonSchema, insertMovementSchema,
   insertNotificationSchema, insertSupplierSchema, insertCustomerSchema, insertEmailSettingsSchema,
-  insertUserSchema, passwordResetSchema, resetPasswordSchema
+  insertUserSchema, passwordResetSchema, resetPasswordSchema, insertSendgridTemplateSchema
 } from "@shared/schema";
 import { emailService } from './email-service';
+import { SendGridTemplateService } from './sendgrid-templates';
 import { setupAuth } from "./auth";
 import { loginLimiter, apiLimiter, securityLogger, securityHeaders, sanitizeInput, sessionSecurity } from "./security-middleware";
 import { WebhookRouter } from './webhook-manager';
@@ -2737,6 +2738,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching backup stats:', error);
       res.status(500).json({ error: 'Errore interno del server' });
+    }
+  });
+
+  // SendGrid Templates API routes
+  app.get('/api/sendgrid/templates', requireAuth, async (req, res) => {
+    try {
+      const templates = await storage.getSendgridTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error('Error fetching SendGrid templates:', error);
+      res.status(500).json({ error: 'Errore nel recupero dei template' });
+    }
+  });
+
+  app.post('/api/sendgrid/templates', requireAuth, async (req, res) => {
+    try {
+      const templateData = insertSendgridTemplateSchema.parse(req.body);
+      const template = await storage.createSendgridTemplate(templateData);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error('Error creating SendGrid template:', error);
+      res.status(400).json({ error: 'Errore nella creazione del template' });
+    }
+  });
+
+  app.delete('/api/sendgrid/templates/:id', requireAuth, async (req, res) => {
+    try {
+      const success = await storage.deleteSendgridTemplate(req.params.id);
+      if (success) {
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: 'Template non trovato' });
+      }
+    } catch (error) {
+      console.error('Error deleting SendGrid template:', error);
+      res.status(500).json({ error: 'Errore nella cancellazione del template' });
+    }
+  });
+
+  app.post('/api/sendgrid/templates/test', requireAuth, async (req, res) => {
+    try {
+      const { templateId, testEmail } = req.body;
+      if (!templateId || !testEmail) {
+        return res.status(400).json({ error: 'Template ID e email test richiesti' });
+      }
+
+      const emailSettings = await storage.getEmailSettings();
+      if (!emailSettings?.sendgridApiKey) {
+        return res.status(400).json({ error: 'SendGrid API key non configurata' });
+      }
+
+      const templateService = new SendGridTemplateService(
+        emailSettings.sendgridApiKey,
+        { email: emailSettings.fromEmail, name: emailSettings.fromName }
+      );
+
+      const success = await templateService.testTemplate(templateId, testEmail);
+      res.json({ success, message: success ? 'Test inviato con successo' : 'Errore nell\'invio del test' });
+    } catch (error) {
+      console.error('Error testing SendGrid template:', error);
+      res.status(500).json({ error: 'Errore nel test del template' });
     }
   });
 
