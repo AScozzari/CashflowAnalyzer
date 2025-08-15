@@ -23,6 +23,7 @@ export function MobileNavigation({ className }: MobileNavigationProps) {
       { name: "Dashboard", href: "/dashboard", icon: Home },
       { name: "Movimenti", href: "/movements", icon: RefreshCw },
       { name: "Analytics", href: "/analytics", icon: TrendingUp },
+      { name: "AI Chat", href: "/ai-chat", icon: Bot },
       { name: "Comunicazioni", href: "/communications", icon: MessageSquare },
     ];
 
@@ -138,10 +139,11 @@ export function BottomNavigation() {
       { name: "Dashboard", href: "/dashboard", icon: Home },
       { name: "Movimenti", href: "/movements", icon: RefreshCw },
       { name: "Analytics", href: "/analytics", icon: TrendingUp },
+      { name: "Chat", href: "/communications", icon: MessageSquare },
     ];
 
     if (user && (user.role === "admin" || user.role === "finance")) {
-      baseNavigation.push({ name: "Impostazioni", href: "/settings", icon: Settings });
+      baseNavigation.push({ name: "Settings", href: "/settings", icon: Settings });
     }
 
     return baseNavigation;
