@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Shield, Database, Bell, Globe, Palette, FileText, Settings2, Users2, Lock } from "lucide-react";
-import { EmailSettings } from "./email-settings";
+import { Shield, Database, Bell, Globe, Palette, FileText, Settings2, Users2, Lock } from "lucide-react";
 import SystemUsersManagement from "./system-users-management";
 import { SecuritySettings } from "./security-settings";
 import { BackupSettings } from "./backup-settings-fixed";
 
 export default function SystemConfigHorizontal() {
-  const [activeTab, setActiveTab] = useState("email");
+  const [activeTab, setActiveTab] = useState("security");
 
   const tabs = [
-    { id: "email", label: "Configurazione Mail", icon: Mail, color: "bg-blue-500" },
     { id: "security", label: "Sicurezza", icon: Shield, color: "bg-red-500" },
     { id: "database", label: "Database", icon: Database, color: "bg-green-500" },
     { id: "notifications", label: "Notifiche", icon: Bell, color: "bg-yellow-500" },
@@ -98,7 +96,6 @@ export default function SystemConfigHorizontal() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <Card className="border-0 shadow-lg bg-white dark:bg-gray-800">
             <CardContent className="p-8">
-              {activeTab === "email" && <EmailSettings />}
               {activeTab === "security" && <SecuritySettings />}
               {activeTab === "database" && (
                 <PlaceholderSection 

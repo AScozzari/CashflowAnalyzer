@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Mail, Phone, Send, Settings, Webhook } from 'lucide-react';
-// Import sarà aggiunto dopo aver creato i componenti correttamente
+import { EmailSettings } from './email-settings';
 
 export function ChannelSettings() {
   const [activeTab, setActiveTab] = useState('whatsapp');
@@ -50,7 +50,7 @@ export function ChannelSettings() {
                 <Mail className="w-5 h-5 text-blue-600" />
                 <span className="font-medium">Email</span>
               </div>
-              <Badge variant="default">Attivo</Badge>
+              <Badge variant="default">Migrato da System Settings</Badge>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
               SendGrid configurato
@@ -126,16 +126,7 @@ export function ChannelSettings() {
 
         {/* Email Channel */}
         <TabsContent value="email">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Mail className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">Email Notifications</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Configurazione email SendGrid per notifiche automatiche
-              </p>
-              <Badge variant="default">Spostato qui dalle System Settings</Badge>
-            </CardContent>
-          </Card>
+          <EmailSettings />
         </TabsContent>
 
         {/* SMS Channel */}
