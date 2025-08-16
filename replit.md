@@ -2,6 +2,14 @@
 
 EasyCashFlows is a comprehensive financial management system for Italian SMEs, offering advanced cash flow tracking, analytics, and integration with Italian fiscal requirements like FatturaPA (electronic invoicing). It features a React-based frontend with a modern dashboard, authentication, file upload, and financial movement tracking with predictive analytics. The project's vision is to provide a multi-channel communication system including email, WhatsApp, SMS, and Telegram, with AI integration for intelligent responses and personalized financial insights.
 
+## Recent Release - Release 4 (August 16, 2025)
+**Major UI/UX Improvements and Filter Validation**
+- Enhanced movement form file upload interface with professional design
+- Implemented conditional filter validation in analytics (requires date filters)
+- Improved "New" buttons for entity creation with clear visual distinction
+- Resolved all LSP errors and filter behavior inconsistencies
+- Backup created: `release4_backup.tar.gz`
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
