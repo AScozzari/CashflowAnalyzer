@@ -1735,12 +1735,32 @@ export class DatabaseStorage implements IStorage {
 
       // Log filter details
       console.log('Analytics - Applied filters:', filters);
+      
+      // Debug: mostra le prime 3 date di movimento per verifica
+      if (filteredMovements.length > 0) {
+        console.log('Analytics - Sample movement dates:', 
+          filteredMovements.slice(0, 3).map(m => ({
+            id: m.id.substring(0, 8),
+            insertDate: m.insertDate,
+            flowDate: m.flowDate,
+            createdAt: m.createdAt
+          }))
+        );
+      }
 
-      // Apply createdDate filters
+      // Apply createdDate filters - usando insertDate (data inserimento movimento)
       if (filters.createdDateFrom && filters.createdDateFrom !== '') {
         const beforeFilter = filteredMovements.length;
         const startDate = new Date(filters.createdDateFrom);
-        filteredMovements = filteredMovements.filter(m => new Date(m.createdAt) >= startDate);
+        // Usa insertDate invece di createdAt per data inserimento
+        filteredMovements = filteredMovements.filter(m => {
+          const moveDate = new Date(m.insertDate);
+          const result = moveDate >= startDate;
+          if (!result) {
+            console.log(`Analytics - Filtered out movement: ${m.insertDate} < ${filters.createdDateFrom}`);
+          }
+          return result;
+        });
         console.log(`Analytics - Created date from filter (${filters.createdDateFrom}): ${beforeFilter} -> ${filteredMovements.length}`);
       }
       
@@ -1748,7 +1768,15 @@ export class DatabaseStorage implements IStorage {
         const beforeFilter = filteredMovements.length;
         const endDate = new Date(filters.createdDateTo);
         endDate.setHours(23, 59, 59, 999);
-        filteredMovements = filteredMovements.filter(m => new Date(m.createdAt) <= endDate);
+        // Usa insertDate invece di createdAt per data inserimento
+        filteredMovements = filteredMovements.filter(m => {
+          const moveDate = new Date(m.insertDate);
+          const result = moveDate <= endDate;
+          if (!result) {
+            console.log(`Analytics - Filtered out movement: ${m.insertDate} > ${filters.createdDateTo}`);
+          }
+          return result;
+        });
         console.log(`Analytics - Created date to filter (${filters.createdDateTo}): ${beforeFilter} -> ${filteredMovements.length}`);
       }
       // Apply flowDate filters  
