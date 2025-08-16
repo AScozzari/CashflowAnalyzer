@@ -566,17 +566,18 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                       name="customerId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            Cliente
+                          <FormLabel className="flex items-center justify-between">
+                            <span>Cliente</span>
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               onClick={() => {/* TODO: Aprire modal nuovo cliente */}}
-                              className="h-6 w-6 p-0"
+                              className="h-7 px-2 text-xs bg-blue-50 hover:bg-blue-100 border-blue-200"
                               title="Crea nuovo cliente"
                             >
-                              <Plus className="h-3 w-3" />
+                              <Plus className="h-3 w-3 mr-1" />
+                              Nuovo
                             </Button>
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
@@ -611,17 +612,18 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                       name="supplierId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            Fornitore
+                          <FormLabel className="flex items-center justify-between">
+                            <span>Fornitore</span>
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               onClick={() => {/* TODO: Aprire modal nuovo fornitore */}}
-                              className="h-6 w-6 p-0"
+                              className="h-7 px-2 text-xs bg-green-50 hover:bg-green-100 border-green-200"
                               title="Crea nuovo fornitore"
                             >
-                              <Plus className="h-3 w-3" />
+                              <Plus className="h-3 w-3 mr-1" />
+                              Nuovo
                             </Button>
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
@@ -882,20 +884,35 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                 )}
 
                 {/* File Upload */}
-                <div className="space-y-2">
-                  <FormLabel>Documenti</FormLabel>
-                  <div className="flex gap-2">
-                    <Input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                      onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
-                      className="flex-1"
-                    />
+                <div className="space-y-3">
+                  <FormLabel className="text-sm font-medium flex items-center gap-2">
+                    <Upload className="h-4 w-4" />
+                    Allegati Documento
+                  </FormLabel>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Upload className="h-5 w-5" />
+                        <span className="text-sm">Carica Allegato</span>
+                      </div>
+                      <Input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xml"
+                        onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                        className="file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      <p className="text-xs text-gray-500 text-center">
+                        Formati supportati: PDF, DOC, DOCX, JPG, PNG, XML
+                      </p>
+                    </div>
                   </div>
                   {uploadedFile && (
-                    <p className="text-xs text-muted-foreground">
-                      File selezionato: {uploadedFile.name}
-                    </p>
+                    <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded">
+                      <FileText className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-700">
+                        File selezionato: {uploadedFile.name}
+                      </span>
+                    </div>
                   )}
                 </div>
               </CardContent>
