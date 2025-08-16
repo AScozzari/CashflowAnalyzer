@@ -889,29 +889,34 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                     <Upload className="h-4 w-4" />
                     Allegati Documento
                   </FormLabel>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
-                    <div className="flex flex-col items-center gap-3">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 transition-colors bg-gray-50/50">
+                    <div className="flex flex-col items-center gap-4">
                       <div className="flex items-center gap-2 text-gray-600">
                         <Upload className="h-5 w-5" />
-                        <span className="text-sm">Carica Allegato</span>
+                        <span className="text-sm font-medium">Carica Allegato</span>
                       </div>
-                      <div className="relative">
-                        <Input
+                      <label className="relative cursor-pointer">
+                        <input
                           type="file"
                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xml"
                           onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
-                          className="h-12 file:mr-4 file:py-3 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:h-full file:flex file:items-center cursor-pointer"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
-                      </div>
+                        <div className="flex items-center justify-center px-6 py-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+                          <span className="text-sm font-medium text-blue-700">
+                            Scegli file
+                          </span>
+                        </div>
+                      </label>
                       <p className="text-xs text-gray-500 text-center">
                         Formati supportati: PDF, DOC, DOCX, JPG, PNG, XML
                       </p>
                     </div>
                   </div>
                   {uploadedFile && (
-                    <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded">
+                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                       <FileText className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-700">
+                      <span className="text-sm text-green-700 font-medium">
                         File selezionato: {uploadedFile.name}
                       </span>
                     </div>
