@@ -296,7 +296,7 @@ export default function MovementFiltersAdvanced({
                 <Label className="text-sm font-medium text-gray-700">Entità Aziendali</Label>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Ragione Sociale</Label>
                   <Select value={filters.companyId || "all"} onValueChange={(value) => handleFieldChange('companyId', value)}>
@@ -348,22 +348,7 @@ export default function MovementFiltersAdvanced({
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs text-gray-600">Risorsa</Label>
-                  <Select value={filters.resourceId || "all"} onValueChange={(value) => handleFieldChange('resourceId', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tutte le risorse" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutte le risorse</SelectItem>
-                      {resources?.map((resource: any) => (
-                        <SelectItem key={resource.id} value={resource.id}>
-                          {resource.firstName} {resource.lastName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+
               </div>
             </div>
 
@@ -486,7 +471,7 @@ export default function MovementFiltersAdvanced({
                 <Label className="text-sm font-medium text-gray-700">Relazioni Esterne</Label>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Cliente</Label>
                   <Select value={filters.customerId || "all"} onValueChange={(value) => handleFieldChange('customerId', value)}>
@@ -515,6 +500,23 @@ export default function MovementFiltersAdvanced({
                       {suppliers?.map((supplier: any) => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           {supplier.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-gray-600">Risorsa</Label>
+                  <Select value={filters.resourceId || "all"} onValueChange={(value) => handleFieldChange('resourceId', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tutte le risorse" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le risorse</SelectItem>
+                      {resources?.map((resource: any) => (
+                        <SelectItem key={resource.id} value={resource.id}>
+                          {resource.firstName} {resource.lastName}
                         </SelectItem>
                       ))}
                     </SelectContent>

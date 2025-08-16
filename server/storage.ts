@@ -948,7 +948,7 @@ export class DatabaseStorage implements IStorage {
 
       console.log("[STORAGE] Query returned:", results.length, "movements");
 
-      return {
+      const response = {
         data: results as MovementWithRelations[],
         pagination: {
           page,
@@ -957,6 +957,13 @@ export class DatabaseStorage implements IStorage {
           totalPages: Math.ceil(total / pageSize)
         }
       };
+      
+      console.log("[STORAGE] Returning response structure:", {
+        dataLength: response.data.length,
+        pagination: response.pagination
+      });
+      
+      return response;
     } catch (error) {
       console.error('Error fetching filtered movements:', error);
       throw new Error('Failed to fetch filtered movements');
