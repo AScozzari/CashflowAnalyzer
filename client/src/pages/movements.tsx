@@ -78,7 +78,8 @@ export default function Movements() {
     setCurrentPage(1); // Reset to first page when applying new filters
     console.log("[MOVEMENTS] Applying filters:", filters);
     // La query si riattiverà automaticamente grazie al cambio dei queryKey
-  }, [filters]);
+    refetch(); // Forza il refetch per feedback immediato
+  }, [filters, refetch]);
 
   const handleResetFilters = useCallback(() => {
     setFilters({});
@@ -89,7 +90,8 @@ export default function Movements() {
       description: "Mostrati gli ultimi 25 movimenti inseriti",
     });
     // La query si riattiverà automaticamente grazie al cambio dei queryKey
-  }, [toast]);
+    refetch(); // Forza il refetch per feedback immediato
+  }, [toast, refetch]);
 
   // Delete movement mutation
   const deleteMutation = useMutation({

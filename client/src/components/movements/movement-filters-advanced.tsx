@@ -77,6 +77,7 @@ export default function MovementFiltersAdvanced({
   isLoading = false
 }: MovementFiltersAdvancedProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
 
   // Fetch options for dropdowns
   const { data: companies } = useQuery({ queryKey: ["/api/companies"] });
@@ -141,6 +142,42 @@ export default function MovementFiltersAdvanced({
     return value !== undefined && value !== '' && value !== null;
   }).length;
 
+  // Controlla se ci sono filtri di date per abilitare i filtri avanzati
+  const hasDateFilters = Boolean(
+    filters.insertDateFrom || filters.insertDateTo || 
+    filters.flowDateFrom || filters.flowDateTo
+  );
+
+  // Gestione apply con loading state
+  const handleApplyWithLoading = async () => {
+    setIsApplying(true);
+    try {
+      await onApplyFilters();
+    } finally {
+      // Breve delay per migliore UX
+      setTimeout(() => setIsApplying(false), 300);
+    }
+  };
+
+  // Auto-reset quando cambiano i filtri dopo una query applicata
+  useEffect(() => {
+    if (activeFiltersCount > 0) {
+      // Reset automatico dopo ogni modifica ai filtri
+      const timeoutId = setTimeout(() => {
+        setIsApplying(false);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [filters, activeFiltersCount]);
+
+  // Chiudi filtri avanzati se non ci sono più filtri di date
+  useEffect(() => {
+    if (!hasDateFilters && isExpanded) {
+      setIsExpanded(false);
+    }
+  }, [hasDateFilters, isExpanded]);
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-4">
@@ -158,18 +195,27 @@ export default function MovementFiltersAdvanced({
             <Button
               variant="outline"
               size="sm"
-              onClick={onApplyFilters}
-              disabled={isLoading}
-              className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+              onClick={handleApplyWithLoading}
+              disabled={isLoading || isApplying}
+              className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600 min-w-[140px]"
             >
-              {isLoading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
-              Applica Filtri
+              {(isLoading || isApplying) ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                  {isApplying ? "Applicando..." : "Caricamento..."}
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Applica Filtri
+                </>
+              )}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={onResetFilters}
-              disabled={!hasActiveFilters || isLoading}
+              disabled={!hasActiveFilters || isLoading || isApplying}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Reset
@@ -288,12 +334,26 @@ export default function MovementFiltersAdvanced({
         <Separator />
 
         {/* Filtri Avanzati - Collapsible */}
-        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <Collapsible open={isExpanded} onOpenChange={(open) => {
+          if (!hasDateFilters && open) {
+            // Non permettere apertura se non ci sono filtri di date
+            return;
+          }
+          setIsExpanded(open);
+        }}>
           <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-between p-0 h-auto ${!hasDateFilters ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={!hasDateFilters}
+              title={!hasDateFilters ? "Seleziona almeno un filtro di data per accedere ai filtri avanzati" : ""}
+            >
               <div className="flex items-center space-x-2">
                 <Filter className="h-4 w-4" />
                 <span className="font-medium">Filtri Avanzati</span>
+                {!hasDateFilters && (
+                  <span className="text-xs text-gray-500 ml-2">(richiede filtri data)</span>
+                )}
               </div>
               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
@@ -316,7 +376,7 @@ export default function MovementFiltersAdvanced({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le aziende</SelectItem>
-                      {companies?.map((company: any) => (
+                      {Array.isArray(companies) && companies?.map((company: any) => (
                         <SelectItem key={company.id} value={company.id}>
                           {company.name}
                         </SelectItem>
@@ -333,7 +393,7 @@ export default function MovementFiltersAdvanced({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutti i core</SelectItem>
-                      {cores?.map((core: any) => (
+                      {Array.isArray(cores) && cores?.map((core: any) => (
                         <SelectItem key={core.id} value={core.id}>
                           {core.name}
                         </SelectItem>
@@ -350,7 +410,7 @@ export default function MovementFiltersAdvanced({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le sedi</SelectItem>
-                      {offices?.map((office: any) => (
+                      {Array.isArray(offices) && offices?.map((office: any) => (
                         <SelectItem key={office.id} value={office.id}>
                           {office.name}
                         </SelectItem>
@@ -395,7 +455,7 @@ export default function MovementFiltersAdvanced({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutti gli stati</SelectItem>
-                      {statuses?.map((status: any) => (
+                      {Array.isArray(statuses) && statuses?.map((status: any) => (
                         <SelectItem key={status.id} value={status.id}>
                           {status.name}
                         </SelectItem>
@@ -412,7 +472,7 @@ export default function MovementFiltersAdvanced({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le causali</SelectItem>
-                      {reasons?.map((reason: any) => (
+                      {Array.isArray(reasons) && reasons?.map((reason: any) => (
                         <SelectItem key={reason.id} value={reason.id}>
                           {reason.name}
                         </SelectItem>
@@ -429,7 +489,7 @@ export default function MovementFiltersAdvanced({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutti gli IBAN</SelectItem>
-                      {ibans?.map((iban: any) => (
+                      {Array.isArray(ibans) && ibans?.map((iban: any) => (
                         <SelectItem key={iban.id} value={iban.id}>
                           {iban.bankName} - ****{iban.iban.slice(-4)}
                         </SelectItem>
@@ -492,7 +552,7 @@ export default function MovementFiltersAdvanced({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutti i clienti</SelectItem>
-                      {customers?.map((customer: any) => (
+                      {Array.isArray(customers) && customers?.map((customer: any) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}
                         </SelectItem>
@@ -509,7 +569,7 @@ export default function MovementFiltersAdvanced({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutti i fornitori</SelectItem>
-                      {suppliers?.map((supplier: any) => (
+                      {Array.isArray(suppliers) && suppliers?.map((supplier: any) => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           {supplier.name}
                         </SelectItem>
@@ -526,7 +586,7 @@ export default function MovementFiltersAdvanced({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le risorse</SelectItem>
-                      {resources?.map((resource: any) => (
+                      {Array.isArray(resources) && resources?.map((resource: any) => (
                         <SelectItem key={resource.id} value={resource.id}>
                           {resource.firstName} {resource.lastName}
                         </SelectItem>
