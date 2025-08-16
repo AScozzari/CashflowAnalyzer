@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { Eye, Download, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, Download, FileText, ChevronLeft, ChevronRight, Edit } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -34,6 +34,7 @@ export default function AnalyticsTable({
 }: AnalyticsTableProps) {
   const [viewingMovement, setViewingMovement] = useState<MovementWithRelations | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const totalPages = Math.ceil(totalCount / pageSize);
   const startItem = (currentPage - 1) * pageSize + 1;
@@ -64,7 +65,7 @@ export default function AnalyticsTable({
     return type === 'income' ? `+${formatted}` : `-${formatted}`;
   };
 
-  const formatVatInfo = (vatAmount?: string, vatType?: string) => {
+  const formatVatInfo = (vatAmount?: string | null, vatType?: string) => {
     if (!vatAmount || !vatType) return null;
     
     const amount = new Intl.NumberFormat('it-IT', {
@@ -460,6 +461,17 @@ export default function AnalyticsTable({
                     Scarica Allegato
                   </Button>
                 )}
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setIsViewDialogOpen(false);
+                    // Redirect to edit page
+                    window.location.href = `/movements?edit=${viewingMovement.id}`;
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Modifica
+                </Button>
                 <Button variant="secondary" onClick={() => setIsViewDialogOpen(false)}>
                   Chiudi
                 </Button>

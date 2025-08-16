@@ -105,54 +105,35 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
       a.month.localeCompare(b.month)
     );
 
-    // 2. Analisi ragioni sociali - separata per entrate e uscite
-    const companyIncomeData = movements
-      .filter(m => m.type === 'income')
+    // 2. Ragioni sociali combinate per entrate e uscite (grafico orizzontale)
+    const companiesData = movements
       .reduce((acc, movement) => {
         const company = movement.company?.name || 'Senza Ragione Sociale';
-        const companyKey = company.length > 15 ? company.substring(0, 15) + '...' : company;
+        const companyKey = company.length > 25 ? company.substring(0, 25) + '...' : company;
         
         if (!acc[companyKey]) {
           acc[companyKey] = { 
             name: companyKey,
             fullName: company,
-            amount: 0,
-            count: 0
+            entrate: 0,
+            uscite: 0,
+            total: 0
           };
         }
         
-        acc[companyKey].amount += parseFloat(movement.amount);
-        acc[companyKey].count += 1;
-        return acc;
-      }, {} as Record<string, any>);
-
-    const companyExpenseData = movements
-      .filter(m => m.type === 'expense')
-      .reduce((acc, movement) => {
-        const company = movement.company?.name || 'Senza Ragione Sociale';
-        const companyKey = company.length > 15 ? company.substring(0, 15) + '...' : company;
-        
-        if (!acc[companyKey]) {
-          acc[companyKey] = { 
-            name: companyKey,
-            fullName: company,
-            amount: 0,
-            count: 0
-          };
+        const amount = parseFloat(movement.amount);
+        if (movement.type === 'income') {
+          acc[companyKey].entrate += amount;
+        } else {
+          acc[companyKey].uscite += amount;
         }
-        
-        acc[companyKey].amount += parseFloat(movement.amount);
-        acc[companyKey].count += 1;
+        acc[companyKey].total = acc[companyKey].entrate + acc[companyKey].uscite;
         return acc;
       }, {} as Record<string, any>);
 
-    const topIncomeCompanies = Object.values(companyIncomeData)
-      .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 6);
-
-    const topExpenseCompanies = Object.values(companyExpenseData)
-      .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 6);
+    const companiesChartData = Object.values(companiesData)
+      .sort((a: any, b: any) => b.total - a.total)
+      .slice(0, 15); // Top 15 ragioni sociali
 
     // 3. Distribuzione stati con percentuali
     const statusData = movements.reduce((acc, movement) => {
@@ -174,34 +155,14 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
       percentage: ((item.value / totalStatusValue) * 100).toFixed(1)
     }));
 
-    // 4. Analisi IVA professionale
-    const vatData = movements.reduce((acc, movement) => {
-      if (movement.vatType && movement.vatAmount) {
-        const vatTypeMap: Record<string, string> = {
-          'iva_22': 'IVA 22%',
-          'iva_10': 'IVA 10%',
-          'iva_4': 'IVA 4%',
-          'esente': 'Esente'
-        };
-        
-        const vatType = vatTypeMap[movement.vatType] || movement.vatType;
-        
-        if (!acc[vatType]) {
-          acc[vatType] = { name: vatType, amount: 0, count: 0, avgAmount: 0 };
-        }
-        
-        acc[vatType].amount += parseFloat(movement.vatAmount);
-        acc[vatType].count += 1;
-      }
-      return acc;
-    }, {} as Record<string, any>);
+    // 4. Analisi movimenti con trend temporale
+    const movementsCountData = sortedMonthlyData.map((month: any, index: number) => ({
+      month: month.month,
+      movimenti: month.count,
+      trend: index > 0 ? month.count - (sortedMonthlyData[index - 1] as any).count : 0
+    }));
 
-    // Calcola media IVA
-    Object.values(vatData).forEach((vat: any) => {
-      vat.avgAmount = vat.amount / vat.count;
-    });
-
-    const vatChartData = Object.values(vatData);
+    const totalMovements = movements.length;
 
     // 5. Top fornitori con analisi spese
     const supplierData = movements
@@ -283,12 +244,12 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
     );
 
     return {
-      monthly: sortedMonthlyData,
-      incomeCompanies: topIncomeCompanies,
-      expenseCompanies: topExpenseCompanies,
-      status: statusChartData,
-      vat: vatChartData,
-      suppliers: topSuppliers,
+      monthlyTrend: sortedMonthlyData,
+      companiesChart: companiesChartData,
+      statusDistribution: statusChartData,
+      movementsCount: movementsCountData,
+      totalMovements,
+      topSuppliers: topSuppliers,
       weekly: sortedWeeklyData
     };
   }, [movements]);
@@ -495,28 +456,16 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
             <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Bilancio Netto</p>
-                  <p className={`text-2xl font-bold ${
-                    stats.net >= 0 
-                      ? 'text-green-600 dark:text-green-400' 
-                      : 'text-red-600 dark:text-red-400'
-                  }`}>
-                    {formatCurrency(stats.net)}
+                  <p className="text-sm font-medium text-muted-foreground">Movimenti Totali</p>
+                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {chartData.totalMovements}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Profitto: {stats.profitMargin.toFixed(1)}%
+                    {stats.incomeCount} entrate • {stats.expenseCount} uscite
                   </p>
                 </div>
-                <div className={`p-3 rounded-full ${
-                  stats.net >= 0 
-                    ? 'bg-green-100 dark:bg-green-900/30' 
-                    : 'bg-red-100 dark:bg-red-900/30'
-                }`}>
-                  <Euro className={`h-6 w-6 ${
-                    stats.net >= 0 
-                      ? 'text-green-600 dark:text-green-400' 
-                      : 'text-red-600 dark:text-red-400'
-                  }`} />
+                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                  <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </div>
@@ -536,7 +485,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={chartData.monthly} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <LineChart data={chartData.monthlyTrend} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="incomeLineGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={PROFESSIONAL_COLORS.success} stopOpacity={0.8}/>
@@ -589,79 +538,100 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
           </CardContent>
         </Card>
 
-        {/* Top Ragioni Sociali - Entrate */}
-        <Card>
+        {/* Grafico Combinato Ragioni Sociali - Entrate e Uscite */}
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-600" />
-              Top Ragioni Sociali - Entrate
+              <Building2 className="h-5 w-5" />
+              Ragioni Sociali - Entrate e Uscite
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={chartData.incomeCompanies} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart 
+                layout="horizontal"
+                data={chartData.companiesChart} 
+                margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
+              >
                 <CartesianGrid 
                   strokeDasharray="2 2" 
                   stroke="hsl(var(--muted-foreground))" 
                   opacity={0.2}
                 />
                 <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                  interval={0}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                  height={50}
-                />
-                <YAxis 
+                  type="number"
                   tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
+                  tickFormatter={formatCompactCurrency}
+                />
+                <YAxis 
+                  type="category"
+                  dataKey="name" 
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  width={115}
                 />
                 <Tooltip content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
                       <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg p-3">
                         <p className="font-medium text-foreground mb-2">{label}</p>
-                        <p className="text-sm text-green-600">
-                          <span className="font-medium">Operazioni:</span> {payload[0].value}
-                        </p>
+                        {payload.map((entry: any, index: number) => (
+                          <p key={index} className={`text-sm ${
+                            entry.dataKey === 'entrate' ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            <span className="font-medium">{entry.name}:</span> {formatCurrency(entry.value)}
+                          </p>
+                        ))}
                       </div>
                     );
                   }
                   return null;
                 }} />
+                <Legend />
                 <Bar 
-                  dataKey="count" 
+                  dataKey="entrate" 
                   fill={PROFESSIONAL_COLORS.success} 
-                  radius={[4, 4, 0, 0]}
-                  name="N° Operazioni Entrate"
+                  radius={[0, 4, 4, 0]}
+                  name="Entrate"
+                />
+                <Bar 
+                  dataKey="uscite" 
+                  fill={PROFESSIONAL_COLORS.danger} 
+                  radius={[0, 4, 4, 0]}
+                  name="Uscite"
                 />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Top Ragioni Sociali - Uscite */}
+        {/* Analisi Movimenti con Trend */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-red-600" />
-              Top Ragioni Sociali - Uscite
+              <FileText className="h-5 w-5" />
+              Movimenti per Mese
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={chartData.expenseCompanies} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <AreaChart data={chartData.movementsCount} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="movementsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={PROFESSIONAL_COLORS.info} stopOpacity={0.8}/>
+                    <stop offset="100%" stopColor={PROFESSIONAL_COLORS.info} stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid 
                   strokeDasharray="2 2" 
                   stroke="hsl(var(--muted-foreground))" 
                   opacity={0.2}
                 />
                 <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                  interval={0}
+                  dataKey="month" 
+                  tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
-                  height={50}
                 />
                 <YAxis 
                   tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
@@ -669,24 +639,31 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                 />
                 <Tooltip content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
+                    const data = payload[0].payload;
                     return (
                       <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg p-3">
                         <p className="font-medium text-foreground mb-2">{label}</p>
-                        <p className="text-sm text-red-600">
-                          <span className="font-medium">Operazioni:</span> {payload[0].value}
+                        <p className="text-sm text-info">
+                          <span className="font-medium">Movimenti:</span> {data.movimenti}
+                        </p>
+                        <p className={`text-sm ${data.trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className="font-medium">Trend:</span> {data.trend >= 0 ? '+' : ''}{data.trend}
                         </p>
                       </div>
                     );
                   }
                   return null;
                 }} />
-                <Bar 
-                  dataKey="count" 
-                  fill={PROFESSIONAL_COLORS.danger} 
-                  radius={[4, 4, 0, 0]}
-                  name="N° Operazioni Uscite"
+                <Area 
+                  type="monotone" 
+                  dataKey="movimenti" 
+                  stroke={PROFESSIONAL_COLORS.info}
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#movementsGradient)"
+                  name="Numero Movimenti"
                 />
-              </BarChart>
+              </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -703,7 +680,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
             <ResponsiveContainer width="100%" height={320}>
               <PieChart>
                 <Pie
-                  data={chartData.status}
+                  data={chartData.statusDistribution}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -712,7 +689,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {chartData.status.map((entry: any, index: number) => (
+                  {chartData.statusDistribution.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
@@ -721,46 +698,6 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
-        {/* Analisi IVA */}
-        {chartData.vat.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Euro className="h-5 w-5" />
-                Distribuzione IVA
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData.vat} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid 
-                    strokeDasharray="3 3" 
-                    stroke="hsl(var(--muted-foreground))" 
-                    opacity={0.3}
-                  />
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                    tickFormatter={formatCompactCurrency}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="amount" 
-                    fill={PROFESSIONAL_COLORS.purple} 
-                    radius={[4, 4, 0, 0]}
-                    name="Importo IVA"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Top Fornitori */}
         {chartData.suppliers.length > 0 && (
