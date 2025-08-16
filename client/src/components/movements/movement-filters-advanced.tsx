@@ -116,15 +116,29 @@ export default function MovementFiltersAdvanced({
     // Logica di esclusione mutua per cliente/fornitore
     let updatedFilters = { ...filters };
     
-    if (field === 'customerId' && newValue) {
-      // Se selezioniamo un cliente, resettiamo il fornitore
-      updatedFilters.supplierId = undefined;
-    } else if (field === 'supplierId' && newValue) {
-      // Se selezioniamo un fornitore, resettiamo il cliente
-      updatedFilters.customerId = undefined;
+    if (field === 'customerId') {
+      if (newValue) {
+        // Se selezioniamo un cliente, resettiamo il fornitore
+        updatedFilters.supplierId = undefined;
+        updatedFilters.customerId = newValue;
+      } else {
+        // Se deselezioniamo il cliente
+        updatedFilters.customerId = undefined;
+      }
+    } else if (field === 'supplierId') {
+      if (newValue) {
+        // Se selezioniamo un fornitore, resettiamo il cliente
+        updatedFilters.customerId = undefined;
+        updatedFilters.supplierId = newValue;
+      } else {
+        // Se deselezioniamo il fornitore
+        updatedFilters.supplierId = undefined;
+      }
+    } else {
+      // Per tutti gli altri campi
+      updatedFilters[field] = newValue;
     }
     
-    updatedFilters[field] = newValue;
     onFiltersChange(updatedFilters);
   };
 
@@ -192,30 +206,17 @@ export default function MovementFiltersAdvanced({
             )}
           </div>
           <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleApplyWithLoading}
-              disabled={isLoading || isApplying}
-              className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600 min-w-[140px]"
-            >
-              {(isLoading || isApplying) ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                  {isApplying ? "Applicando..." : "Caricamento..."}
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4 mr-2" />
-                  Applica Filtri
-                </>
-              )}
-            </Button>
+            {isLoading && (
+              <div className="flex items-center space-x-2 text-blue-600">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Aggiornando...</span>
+              </div>
+            )}
             <Button
               variant="outline"
               size="sm"
               onClick={onResetFilters}
-              disabled={!hasActiveFilters || isLoading || isApplying}
+              disabled={!hasActiveFilters || isLoading}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Reset

@@ -65,13 +65,17 @@ export default function Movements() {
   }>({
     queryKey,
     enabled: true, // Abilita sempre la query automatica
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const movements = Array.isArray(movementsResponse?.data) ? movementsResponse.data : [];
 
-  // Gestione filtri
+  // Gestione filtri - applica automaticamente al cambio
   const handleFiltersChange = useCallback((newFilters: MovementFilters) => {
     setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
+    // La query si riattiverà automaticamente grazie al cambio dei queryKey
   }, []);
 
   const handleApplyFilters = useCallback(() => {
