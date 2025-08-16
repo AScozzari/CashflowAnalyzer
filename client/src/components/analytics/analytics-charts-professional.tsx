@@ -326,6 +326,19 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
     return value.toString();
   };
 
+  // Calcola il dominio massimo per gli assi Y con step di 1000
+  const calculateYAxisDomain = (data: any[], keys: string[]) => {
+    if (!data || data.length === 0) return [0, 5000];
+    
+    const maxValue = Math.max(...data.map(item => 
+      Math.max(...keys.map(key => parseFloat(item[key]) || 0))
+    ));
+    
+    // Arrotonda al multiplo di 1000 superiore
+    const roundedMax = Math.ceil(maxValue / 1000) * 1000;
+    return [0, Math.max(roundedMax, 5000)]; // Minimo 5K per leggibilità
+  };
+
   // Custom tooltip per grafici
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -540,6 +553,8 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
                   tickFormatter={formatThousands}
+                  domain={calculateYAxisDomain(chartData.dailyTrend, ['income', 'expense'])}
+                  type="number"
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
@@ -599,6 +614,8 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
                   tickFormatter={formatThousands}
+                  domain={calculateYAxisDomain(chartData.companiesChart, ['entrate', 'uscite'])}
+                  type="number"
                 />
                 <Tooltip content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
