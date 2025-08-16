@@ -112,7 +112,7 @@ export default function MovementFiltersAdvanced({
   const handleFieldChange = (field: keyof MovementFilters, value: any) => {
     onFiltersChange({
       ...filters,
-      [field]: value === "" ? undefined : value
+      [field]: value === "" || value === "all" ? undefined : value
     });
   };
 
@@ -299,12 +299,12 @@ export default function MovementFiltersAdvanced({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Ragione Sociale</Label>
-                  <Select value={filters.companyId || ""} onValueChange={(value) => handleFieldChange('companyId', value)}>
+                  <Select value={filters.companyId || "all"} onValueChange={(value) => handleFieldChange('companyId', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tutte le aziende" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tutte le aziende</SelectItem>
+                      <SelectItem value="all">Tutte le aziende</SelectItem>
                       {companies?.map((company: any) => (
                         <SelectItem key={company.id} value={company.id}>
                           {company.name}
@@ -316,12 +316,12 @@ export default function MovementFiltersAdvanced({
 
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Core</Label>
-                  <Select value={filters.coreId || ""} onValueChange={(value) => handleFieldChange('coreId', value)}>
+                  <Select value={filters.coreId || "all"} onValueChange={(value) => handleFieldChange('coreId', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tutti i core" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tutti i core</SelectItem>
+                      <SelectItem value="all">Tutti i core</SelectItem>
                       {cores?.map((core: any) => (
                         <SelectItem key={core.id} value={core.id}>
                           {core.name}
@@ -333,12 +333,12 @@ export default function MovementFiltersAdvanced({
 
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Sede</Label>
-                  <Select value={filters.officeId || ""} onValueChange={(value) => handleFieldChange('officeId', value)}>
+                  <Select value={filters.officeId || "all"} onValueChange={(value) => handleFieldChange('officeId', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tutte le sedi" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tutte le sedi</SelectItem>
+                      <SelectItem value="all">Tutte le sedi</SelectItem>
                       {offices?.map((office: any) => (
                         <SelectItem key={office.id} value={office.id}>
                           {office.name}
@@ -350,12 +350,12 @@ export default function MovementFiltersAdvanced({
 
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Risorsa</Label>
-                  <Select value={filters.resourceId || ""} onValueChange={(value) => handleFieldChange('resourceId', value)}>
+                  <Select value={filters.resourceId || "all"} onValueChange={(value) => handleFieldChange('resourceId', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tutte le risorse" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tutte le risorse</SelectItem>
+                      <SelectItem value="all">Tutte le risorse</SelectItem>
                       {resources?.map((resource: any) => (
                         <SelectItem key={resource.id} value={resource.id}>
                           {resource.firstName} {resource.lastName}
@@ -379,12 +379,12 @@ export default function MovementFiltersAdvanced({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Tipo</Label>
-                  <Select value={filters.type || ""} onValueChange={(value) => handleFieldChange('type', value)}>
+                  <Select value={filters.type || "all"} onValueChange={(value) => handleFieldChange('type', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tutti i tipi" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tutti i tipi</SelectItem>
+                      <SelectItem value="all">Tutti i tipi</SelectItem>
                       <SelectItem value="income">Entrata</SelectItem>
                       <SelectItem value="expense">Uscita</SelectItem>
                     </SelectContent>
@@ -393,12 +393,12 @@ export default function MovementFiltersAdvanced({
 
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Stato</Label>
-                  <Select value={filters.statusId || ""} onValueChange={(value) => handleFieldChange('statusId', value)}>
+                  <Select value={filters.statusId || "all"} onValueChange={(value) => handleFieldChange('statusId', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tutti gli stati" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tutti gli stati</SelectItem>
+                      <SelectItem value="all">Tutti gli stati</SelectItem>
                       {statuses?.map((status: any) => (
                         <SelectItem key={status.id} value={status.id}>
                           {status.name}
@@ -410,12 +410,12 @@ export default function MovementFiltersAdvanced({
 
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Causale</Label>
-                  <Select value={filters.reasonId || ""} onValueChange={(value) => handleFieldChange('reasonId', value)}>
+                  <Select value={filters.reasonId || "all"} onValueChange={(value) => handleFieldChange('reasonId', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tutte le causali" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tutte le causali</SelectItem>
+                      <SelectItem value="all">Tutte le causali</SelectItem>
                       {reasons?.map((reason: any) => (
                         <SelectItem key={reason.id} value={reason.id}>
                           {reason.name}
@@ -427,12 +427,12 @@ export default function MovementFiltersAdvanced({
 
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">IBAN</Label>
-                  <Select value={filters.ibanId || ""} onValueChange={(value) => handleFieldChange('ibanId', value)}>
+                  <Select value={filters.ibanId || "all"} onValueChange={(value) => handleFieldChange('ibanId', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tutti gli IBAN" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tutti gli IBAN</SelectItem>
+                      <SelectItem value="all">Tutti gli IBAN</SelectItem>
                       {ibans?.map((iban: any) => (
                         <SelectItem key={iban.id} value={iban.id}>
                           {iban.bankName} - ****{iban.iban.slice(-4)}
@@ -489,12 +489,12 @@ export default function MovementFiltersAdvanced({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Cliente</Label>
-                  <Select value={filters.customerId || ""} onValueChange={(value) => handleFieldChange('customerId', value)}>
+                  <Select value={filters.customerId || "all"} onValueChange={(value) => handleFieldChange('customerId', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tutti i clienti" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tutti i clienti</SelectItem>
+                      <SelectItem value="all">Tutti i clienti</SelectItem>
                       {customers?.map((customer: any) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}
@@ -506,12 +506,12 @@ export default function MovementFiltersAdvanced({
 
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-600">Fornitore</Label>
-                  <Select value={filters.supplierId || ""} onValueChange={(value) => handleFieldChange('supplierId', value)}>
+                  <Select value={filters.supplierId || "all"} onValueChange={(value) => handleFieldChange('supplierId', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tutti i fornitori" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tutti i fornitori</SelectItem>
+                      <SelectItem value="all">Tutti i fornitori</SelectItem>
                       {suppliers?.map((supplier: any) => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           {supplier.name}
