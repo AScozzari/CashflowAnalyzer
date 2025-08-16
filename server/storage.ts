@@ -1894,7 +1894,7 @@ async getMovements(filters: {
   async exportFilteredMovements(user: any, filters: any, format: string = 'csv'): Promise<string> {
     try {
       // Get all movements (no pagination for export)
-      const result = await this.getFilteredMovements(user, filters, 1, 10000);
+      const result = await this.getFilteredMovements(filters, 1, 10000);
       const movements = result.data;
 
       if (format === 'csv') {

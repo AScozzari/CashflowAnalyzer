@@ -947,7 +947,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tagIds: req.query.tagIds ? (req.query.tagIds as string).split(',') : undefined
       };
 
-      const result = await storage.getFilteredMovements(user, filters, page, pageSize);
+      // Se l'utente ha ruolo "user", può vedere solo i movimenti della sua risorsa
+      if (user.role === 'user' && user.resourceId) {
+        filters.resourceId = user.resourceId;
+      }
+
+      const result = await storage.getFilteredMovements(filters, page, pageSize);
       res.json(result);
     } catch (error) {
       console.error('Error fetching filtered movements:', error);
