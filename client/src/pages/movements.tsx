@@ -55,6 +55,10 @@ export default function Movements() {
     return [`/api/movements/filtered?${params.toString()}`];
   }, [filters, currentPage, pageSize]);
 
+  // Stato per gestire se i filtri sono stati applicati
+  const [filtersApplied, setFiltersApplied] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<MovementFilters>({});
+
   const { data: movementsResponse, isLoading, refetch } = useQuery<{
     data: MovementWithRelations[];
     pagination: {
@@ -63,39 +67,66 @@ export default function Movements() {
       total: number;
     };
   }>({
-    queryKey,
-    enabled: true, // Abilita sempre la query automatica
-    refetchOnMount: true,
+    queryKey: useMemo(() => {
+      const params = new URLSearchParams();
+      
+      // Usa i filtri applicati invece di quelli correnti
+      Object.entries(appliedFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '' && value !== null) {
+          if (Array.isArray(value)) {
+            if (value.length > 0) {
+              params.append(key, value.join(','));
+            }
+          } else {
+            params.append(key, String(value));
+          }
+        }
+      });
+      
+      params.append('page', String(currentPage));
+      params.append('pageSize', String(pageSize));
+      
+      return [`/api/movements/filtered?${params.toString()}`];
+    }, [appliedFilters, currentPage, pageSize]),
+    enabled: filtersApplied, // Abilita solo dopo aver applicato i filtri
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 
   const movements = Array.isArray(movementsResponse?.data) ? movementsResponse.data : [];
 
-  // Gestione filtri - applica automaticamente al cambio
+  // Auto-reset quando i filtri cambiano dopo che sono stati applicati
+  useEffect(() => {
+    if (filtersApplied && JSON.stringify(filters) !== JSON.stringify(appliedFilters)) {
+      // Se i filtri correnti sono diversi da quelli applicati, reset automatico
+      setFiltersApplied(false);
+      console.log("[MOVEMENTS] Filters changed after apply - auto reset");
+    }
+  }, [filters, appliedFilters, filtersApplied]);
+
+  // Gestione filtri
   const handleFiltersChange = useCallback((newFilters: MovementFilters) => {
     setFilters(newFilters);
-    setCurrentPage(1); // Reset to first page when filters change
-    // La query si riattiverà automaticamente grazie al cambio dei queryKey
   }, []);
 
   const handleApplyFilters = useCallback(() => {
     setCurrentPage(1); // Reset to first page when applying new filters
+    setAppliedFilters(filters); // Salva i filtri applicati
+    setFiltersApplied(true); // Abilita la query
     console.log("[MOVEMENTS] Applying filters:", filters);
-    // La query si riattiverà automaticamente grazie al cambio dei queryKey
-    refetch(); // Forza il refetch per feedback immediato
-  }, [filters, refetch]);
+  }, [filters]);
 
   const handleResetFilters = useCallback(() => {
     setFilters({});
+    setAppliedFilters({});
+    setFiltersApplied(false); // Disabilita la query fino al prossimo apply
     setCurrentPage(1);
     console.log("[MOVEMENTS] Resetting filters");
     toast({
       title: "Filtri azzerati",
-      description: "Mostrati gli ultimi 25 movimenti inseriti",
+      description: "Clicca 'Applica Filtri' per visualizzare tutti i movimenti",
     });
-    // La query si riattiverà automaticamente grazie al cambio dei queryKey
-    refetch(); // Forza il refetch per feedback immediato
-  }, [toast, refetch]);
+  }, [toast]);
 
   // Delete movement mutation
   const deleteMutation = useMutation({

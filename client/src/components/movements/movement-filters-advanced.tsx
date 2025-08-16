@@ -206,17 +206,30 @@ export default function MovementFiltersAdvanced({
             )}
           </div>
           <div className="flex items-center space-x-2">
-            {isLoading && (
-              <div className="flex items-center space-x-2 text-blue-600">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Aggiornando...</span>
-              </div>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleApplyWithLoading}
+              disabled={isLoading || isApplying}
+              className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600 min-w-[140px]"
+            >
+              {(isLoading || isApplying) ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                  {isApplying ? "Applicando..." : "Caricamento..."}
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Applica Filtri
+                </>
+              )}
+            </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={onResetFilters}
-              disabled={!hasActiveFilters || isLoading}
+              disabled={!hasActiveFilters || isLoading || isApplying}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Reset
