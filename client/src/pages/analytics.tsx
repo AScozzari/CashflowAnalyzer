@@ -46,7 +46,7 @@ export default function Analytics() {
     refetch 
   } = useQuery({
     queryKey,
-    enabled: false, // Don't auto-fetch until user applies filters
+    enabled: true, // Abilita auto-fetch per mostrare dati iniziali e filtrati
   });
 
   const handleFiltersChange = useCallback((newFilters: AnalyticsFilters) => {
@@ -55,12 +55,13 @@ export default function Analytics() {
 
   const handleApplyFilters = useCallback(() => {
     setCurrentPage(1); // Reset to first page when applying new filters
-    refetch();
-  }, [refetch]);
+    // Non serve più refetch() perché la query è automatica con i nuovi filtri
+  }, []);
 
   const handleResetFilters = useCallback(() => {
     setFilters({});
     setCurrentPage(1);
+    // La query si aggiornerà automaticamente con i filtri vuoti
     toast({
       title: "Filtri azzerati",
       description: "Tutti i filtri sono stati rimossi",

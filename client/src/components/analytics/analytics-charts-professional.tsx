@@ -315,6 +315,17 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
     return formatCurrency(value);
   };
 
+  // Formatter per scala in migliaia (1K, 2K, 3K...)
+  const formatThousands = (value: number) => {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(0)}K`;
+    }
+    return value.toString();
+  };
+
   // Custom tooltip per grafici
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -528,7 +539,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
-                  tickFormatter={formatCompactCurrency}
+                  tickFormatter={formatThousands}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
@@ -587,7 +598,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
-                  tickFormatter={formatCompactCurrency}
+                  tickFormatter={formatThousands}
                 />
                 <Tooltip content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
