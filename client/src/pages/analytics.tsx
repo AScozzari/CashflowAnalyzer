@@ -8,13 +8,19 @@ import FooterSignature from "@/components/layout/footer-signature";
 import AdvancedFiltersNew, { type AnalyticsFilters } from "@/components/analytics/advanced-filters-new";
 import AnalyticsTable from "@/components/analytics/analytics-table";
 import AnalyticsChartsProfessional from "@/components/analytics/analytics-charts-professional";
+import MovementFormNewFixed from "@/components/movements/movement-form-new-fixed";
 import { useToast } from "@/hooks/use-toast";
+import type { MovementWithRelations } from "@shared/schema";
 
 export default function Analytics() {
   const { toast } = useToast();
   const [filters, setFilters] = useState<AnalyticsFilters>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  
+  // Stati per la modifica movimento in Analytics
+  const [editingMovement, setEditingMovement] = useState<MovementWithRelations | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   // Create query key based on filters and pagination
   const queryKey = useMemo(() => {
@@ -76,6 +82,23 @@ export default function Analytics() {
     setPageSize(size);
     setCurrentPage(1);
   }, []);
+
+  // Gestione modifica movimento in Analytics
+  const handleEditMovement = useCallback((movement: MovementWithRelations) => {
+    setEditingMovement(movement);
+    setIsFormOpen(true);
+  }, []);
+
+  const handleMovementUpdated = useCallback(() => {
+    // Ricarica i dati dopo la modifica
+    refetch();
+    setIsFormOpen(false);
+    setEditingMovement(null);
+    toast({
+      title: "Movimento aggiornato",
+      description: "Le modifiche sono state salvate con successo",
+    });
+  }, [refetch, toast]);
 
   const handleExportData = useCallback(async () => {
     try {
@@ -185,6 +208,7 @@ export default function Analytics() {
                 onPageChange={handlePageChange}
                 onPageSizeChange={handlePageSizeChange}
                 onExportData={handleExportData}
+                onEditMovement={handleEditMovement}
               />
             </div>
           </>
@@ -220,6 +244,19 @@ export default function Analytics() {
           </div>
         )}
       </div>
+      
+      {/* Form di modifica movimento integrato in Analytics */}
+      {editingMovement && (
+        <MovementFormNewFixed
+          isOpen={isFormOpen}
+          onClose={() => {
+            setIsFormOpen(false);
+            setEditingMovement(null);
+          }}
+          movement={editingMovement}
+          onMovementCreated={handleMovementUpdated}
+        />
+      )}
       
       <FooterSignature />
     </div>

@@ -20,6 +20,7 @@ interface AnalyticsTableProps {
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (size: number) => void;
   onExportData?: () => void;
+  onEditMovement?: (movement: MovementWithRelations) => void;
 }
 
 export default function AnalyticsTable({
@@ -30,7 +31,8 @@ export default function AnalyticsTable({
   pageSize = 25,
   onPageChange = () => {},
   onPageSizeChange = () => {},
-  onExportData
+  onExportData,
+  onEditMovement
 }: AnalyticsTableProps) {
   const [viewingMovement, setViewingMovement] = useState<MovementWithRelations | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -73,10 +75,11 @@ export default function AnalyticsTable({
       currency: 'EUR'
     }).format(parseFloat(vatAmount));
     
-    const type = vatType.replace('iva_', 'IVA ').replace('_', '%').replace('art_74', 'Art 74');
-    
-    return { amount, type };
+    const typeDisplay = vatType.replace('iva_', 'IVA ').replace('_', '%').replace('art_74', 'Art 74');
+    return `${amount} (${typeDisplay})`;
   };
+
+
 
   const handleViewMovement = (movement: MovementWithRelations) => {
     setViewingMovement(movement);
@@ -451,30 +454,35 @@ export default function AnalyticsTable({
                 </div>
               )}
 
-              <div className="flex justify-end space-x-2 pt-4">
-                {viewingMovement.fileName && (
+              {/* Azioni - Analytics: rimane in pagina per modifica */}
+              <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+                <div className="flex space-x-2">
+                  {viewingMovement.fileName && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDownloadFile(viewingMovement.id, viewingMovement.fileName!)}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Scarica Allegato
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                    Chiudi
+                  </Button>
+                </div>
+                
+                {onEditMovement && (
                   <Button
-                    variant="outline"
-                    onClick={() => handleDownloadFile(viewingMovement.id, viewingMovement.fileName!)}
+                    onClick={() => {
+                      onEditMovement(viewingMovement);
+                      setIsViewDialogOpen(false);
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6"
                   >
-                    <Download className="h-4 w-4 mr-2" />
-                    Scarica Allegato
+                    <Edit className="h-4 w-4 mr-2" />
+                    Modifica Movimento
                   </Button>
                 )}
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setIsViewDialogOpen(false);
-                    // Redirect to edit page
-                    window.location.href = `/movements?edit=${viewingMovement.id}`;
-                  }}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifica
-                </Button>
-                <Button variant="secondary" onClick={() => setIsViewDialogOpen(false)}>
-                  Chiudi
-                </Button>
               </div>
             </div>
           </DialogContent>
