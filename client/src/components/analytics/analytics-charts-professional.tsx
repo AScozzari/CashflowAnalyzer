@@ -68,15 +68,16 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
 
     try {
 
-    // 1. Trend mensile con calcoli dettagliati
-    const monthlyData = movements.reduce((acc, movement) => {
+    // 1. Trend giornaliero con calcoli dettagliati
+    const dailyData = movements.reduce((acc, movement) => {
       const date = new Date(movement.flowDate);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthLabel = date.toLocaleDateString('it-IT', { year: 'numeric', month: 'short' });
+      const dayKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      const dayLabel = date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
       
-      if (!acc[monthKey]) {
-        acc[monthKey] = { 
-          month: monthLabel,
+      if (!acc[dayKey]) {
+        acc[dayKey] = { 
+          day: dayLabel,
+          date: dayKey,
           income: 0, 
           expense: 0,
           net: 0,
@@ -87,24 +88,24 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
       
       const amount = parseFloat(movement.amount);
       if (movement.type === 'income') {
-        acc[monthKey].income += amount;
-        acc[monthKey].net += amount;
+        acc[dayKey].income += amount;
+        acc[dayKey].net += amount;
       } else {
-        acc[monthKey].expense += amount;
-        acc[monthKey].net -= amount;
+        acc[dayKey].expense += amount;
+        acc[dayKey].net -= amount;
       }
-      acc[monthKey].count += 1;
+      acc[dayKey].count += 1;
       
       return acc;
     }, {} as Record<string, any>);
 
     // Calcola media transazioni
-    Object.values(monthlyData).forEach((month: any) => {
-      month.avgTransaction = (month.income + month.expense) / month.count;
+    Object.values(dailyData).forEach((day: any) => {
+      day.avgTransaction = (day.income + day.expense) / day.count;
     });
 
-    const sortedMonthlyData = Object.values(monthlyData).sort((a: any, b: any) => 
-      a.month.localeCompare(b.month)
+    const sortedDailyData = Object.values(dailyData).sort((a: any, b: any) => 
+      a.date.localeCompare(b.date)
     );
 
     // 2. Ragioni sociali combinate per entrate e uscite (grafico orizzontale)
@@ -157,11 +158,12 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
       percentage: ((item.value / totalStatusValue) * 100).toFixed(1)
     }));
 
-    // 4. Analisi movimenti con trend temporale
-    const movementsCountData = sortedMonthlyData.map((month: any, index: number) => ({
-      month: month.month,
-      movimenti: month.count,
-      trend: index > 0 ? month.count - (sortedMonthlyData[index - 1] as any).count : 0
+    // 4. Analisi movimenti con trend temporale giornaliero
+    const movementsCountData = sortedDailyData.map((day: any, index: number) => ({
+      day: day.day,
+      date: day.date,
+      movimenti: day.count,
+      trend: index > 0 ? day.count - (sortedDailyData[index - 1] as any).count : 0
     }));
 
     const totalMovements = movements.length;
@@ -246,7 +248,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
     );
 
     return {
-      monthlyTrend: sortedMonthlyData,
+      dailyTrend: sortedDailyData,
       companiesChart: companiesChartData,
       statusDistribution: statusChartData,
       movementsCount: movementsCountData,
@@ -490,17 +492,17 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
 
       {/* Professional Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Trend Mensile Professionale */}
+        {/* Trend Giornaliero Professionale */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Trend Finanziario Mensile
+              Trend Finanziario
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={chartData.monthlyTrend} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <LineChart data={chartData.dailyTrend} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="incomeLineGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={PROFESSIONAL_COLORS.success} stopOpacity={0.8}/>
@@ -517,7 +519,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   opacity={0.2}
                 />
                 <XAxis 
-                  dataKey="month" 
+                  dataKey="day" 
                   tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
@@ -553,7 +555,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
           </CardContent>
         </Card>
 
-        {/* Grafico Combinato Ragioni Sociali - Entrate e Uscite */}
+        {/* Grafico Ragioni Sociali - Istogrammi Separati */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -564,9 +566,8 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart 
-                layout="horizontal"
                 data={chartData.companiesChart} 
-                margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
+                margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
               >
                 <CartesianGrid 
                   strokeDasharray="2 2" 
@@ -574,17 +575,19 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   opacity={0.2}
                 />
                 <XAxis 
-                  type="number"
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  dataKey="name" 
+                  tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
-                  tickFormatter={formatCompactCurrency}
+                  tickLine={{ stroke: 'hsl(var(--border))' }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
                 />
                 <YAxis 
-                  type="category"
-                  dataKey="name" 
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
-                  width={115}
+                  tickLine={{ stroke: 'hsl(var(--border))' }}
+                  tickFormatter={formatCompactCurrency}
                 />
                 <Tooltip content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
@@ -607,13 +610,13 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                 <Bar 
                   dataKey="entrate" 
                   fill={PROFESSIONAL_COLORS.success} 
-                  radius={[0, 4, 4, 0]}
+                  radius={[4, 4, 0, 0]}
                   name="Entrate"
                 />
                 <Bar 
                   dataKey="uscite" 
                   fill={PROFESSIONAL_COLORS.danger} 
-                  radius={[0, 4, 4, 0]}
+                  radius={[4, 4, 0, 0]}
                   name="Uscite"
                 />
               </BarChart>
@@ -621,12 +624,12 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
           </CardContent>
         </Card>
 
-        {/* Analisi Movimenti con Trend */}
+        {/* Analisi Movimenti con Trend Giornaliero */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Movimenti per Mese
+              Movimenti per Giorno
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -644,7 +647,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   opacity={0.2}
                 />
                 <XAxis 
-                  dataKey="month" 
+                  dataKey="day" 
                   tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                 />
