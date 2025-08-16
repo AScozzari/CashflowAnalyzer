@@ -326,17 +326,23 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
     return value.toString();
   };
 
-  // Calcola il dominio massimo per gli assi Y con step di 1000
-  const calculateYAxisDomain = (data: any[], keys: string[]) => {
-    if (!data || data.length === 0) return [0, 5000];
-    
-    const maxValue = Math.max(...data.map(item => 
+  // Crea ticks fissi con step di 1000€ 
+  const createFixedTicks = (maxValue: number) => {
+    const roundedMax = Math.ceil(maxValue / 1000) * 1000;
+    const finalMax = Math.max(roundedMax, 5000); // Minimo 5K
+    const ticks = [];
+    for (let i = 0; i <= finalMax; i += 1000) {
+      ticks.push(i);
+    }
+    return ticks;
+  };
+
+  // Calcola i valori massimi per i domini
+  const getMaxValue = (data: any[], keys: string[]) => {
+    if (!data || data.length === 0) return 5000;
+    return Math.max(...data.map(item => 
       Math.max(...keys.map(key => parseFloat(item[key]) || 0))
     ));
-    
-    // Arrotonda al multiplo di 1000 superiore
-    const roundedMax = Math.ceil(maxValue / 1000) * 1000;
-    return [0, Math.max(roundedMax, 5000)]; // Minimo 5K per leggibilità
   };
 
   // Custom tooltip per grafici
@@ -553,7 +559,8 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
                   tickFormatter={formatThousands}
-                  domain={calculateYAxisDomain(chartData.dailyTrend, ['income', 'expense'])}
+                  ticks={createFixedTicks(getMaxValue(chartData.dailyTrend, ['income', 'expense']))}
+                  domain={[0, Math.max(5000, Math.ceil(getMaxValue(chartData.dailyTrend, ['income', 'expense']) / 1000) * 1000)]}
                   type="number"
                 />
                 <Tooltip content={<CustomTooltip />} />
@@ -614,7 +621,8 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
                   tickFormatter={formatThousands}
-                  domain={calculateYAxisDomain(chartData.companiesChart, ['entrate', 'uscite'])}
+                  ticks={createFixedTicks(getMaxValue(chartData.companiesChart, ['entrate', 'uscite']))}
+                  domain={[0, Math.max(5000, Math.ceil(getMaxValue(chartData.companiesChart, ['entrate', 'uscite']) / 1000) * 1000)]}
                   type="number"
                 />
                 <Tooltip content={({ active, payload, label }) => {

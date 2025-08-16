@@ -1736,71 +1736,76 @@ export class DatabaseStorage implements IStorage {
       // Log filter details
       console.log('Analytics - Applied filters:', filters);
 
-      // Apply date filters only if they are actually specified
-      // Skip empty string, null, undefined filters
-      const hasValidDateFrom = (filters.insertDateFrom || filters.createdDateFrom) && 
-                               (filters.insertDateFrom || filters.createdDateFrom) !== '';
-      const hasValidDateTo = (filters.insertDateTo || filters.createdDateTo) && 
-                            (filters.insertDateTo || filters.createdDateTo) !== '';
-      
-      if (hasValidDateFrom) {
+      // Apply createdDate filters
+      if (filters.createdDateFrom && filters.createdDateFrom !== '') {
         const beforeFilter = filteredMovements.length;
-        const dateFrom = filters.insertDateFrom || filters.createdDateFrom;
-        const startDate = new Date(dateFrom);
+        const startDate = new Date(filters.createdDateFrom);
         filteredMovements = filteredMovements.filter(m => new Date(m.createdAt) >= startDate);
-        console.log(`Analytics - Insert date from filter (${dateFrom}): ${beforeFilter} -> ${filteredMovements.length}`);
-      } else {
-        console.log('Analytics - No valid date from filter, skipping');
+        console.log(`Analytics - Created date from filter (${filters.createdDateFrom}): ${beforeFilter} -> ${filteredMovements.length}`);
       }
       
-      if (hasValidDateTo) {
+      if (filters.createdDateTo && filters.createdDateTo !== '') {
         const beforeFilter = filteredMovements.length;
-        const dateTo = filters.insertDateTo || filters.createdDateTo;
-        const endDate = new Date(dateTo);
+        const endDate = new Date(filters.createdDateTo);
         endDate.setHours(23, 59, 59, 999);
         filteredMovements = filteredMovements.filter(m => new Date(m.createdAt) <= endDate);
-        console.log(`Analytics - Insert date to filter (${dateTo}): ${beforeFilter} -> ${filteredMovements.length}`);
-      } else {
-        console.log('Analytics - No valid date to filter, skipping');
+        console.log(`Analytics - Created date to filter (${filters.createdDateTo}): ${beforeFilter} -> ${filteredMovements.length}`);
       }
+      // Apply flowDate filters  
       if (filters.flowDateFrom && filters.flowDateFrom !== '') {
         const beforeFilter = filteredMovements.length;
         const startDate = new Date(filters.flowDateFrom);
         filteredMovements = filteredMovements.filter(m => new Date(m.flowDate) >= startDate);
-        console.log(`Analytics - Flow date from filter: ${beforeFilter} -> ${filteredMovements.length}`);
+        console.log(`Analytics - Flow date from filter (${filters.flowDateFrom}): ${beforeFilter} -> ${filteredMovements.length}`);
       }
       if (filters.flowDateTo && filters.flowDateTo !== '') {
         const beforeFilter = filteredMovements.length;
         const endDate = new Date(filters.flowDateTo);
         endDate.setHours(23, 59, 59, 999);
         filteredMovements = filteredMovements.filter(m => new Date(m.flowDate) <= endDate);
-        console.log(`Analytics - Flow date to filter: ${beforeFilter} -> ${filteredMovements.length}`);
+        console.log(`Analytics - Flow date to filter (${filters.flowDateTo}): ${beforeFilter} -> ${filteredMovements.length}`);
       }
 
-      // Apply entity filters
-      if (filters.companyId) {
+      // Apply entity filters with logging
+      if (filters.companyId && filters.companyId !== '') {
+        const beforeFilter = filteredMovements.length;
         filteredMovements = filteredMovements.filter(m => m.companyId === filters.companyId);
+        console.log(`Analytics - Company filter (${filters.companyId}): ${beforeFilter} -> ${filteredMovements.length}`);
       }
-      if (filters.officeId) {
+      if (filters.officeId && filters.officeId !== '') {
+        const beforeFilter = filteredMovements.length;
         filteredMovements = filteredMovements.filter(m => m.officeId === filters.officeId);
+        console.log(`Analytics - Office filter: ${beforeFilter} -> ${filteredMovements.length}`);
       }
-      if (filters.resourceId) {
+      if (filters.resourceId && filters.resourceId !== '') {
+        const beforeFilter = filteredMovements.length;
         filteredMovements = filteredMovements.filter(m => m.resourceId === filters.resourceId);
+        console.log(`Analytics - Resource filter: ${beforeFilter} -> ${filteredMovements.length}`);
       }
-      if (filters.coreId) {
+      if (filters.coreId && filters.coreId !== '') {
+        const beforeFilter = filteredMovements.length;
         filteredMovements = filteredMovements.filter(m => m.coreId === filters.coreId);
+        console.log(`Analytics - Core filter: ${beforeFilter} -> ${filteredMovements.length}`);
       }
-      if (filters.ibanId) {
+      if (filters.ibanId && filters.ibanId !== '') {
+        const beforeFilter = filteredMovements.length;
         filteredMovements = filteredMovements.filter(m => m.ibanId === filters.ibanId);
+        console.log(`Analytics - IBAN filter: ${beforeFilter} -> ${filteredMovements.length}`);
       }
-      if (filters.statusId) {
+      if (filters.statusId && filters.statusId !== '') {
+        const beforeFilter = filteredMovements.length;
         filteredMovements = filteredMovements.filter(m => m.statusId === filters.statusId);
+        console.log(`Analytics - Status filter: ${beforeFilter} -> ${filteredMovements.length}`);
       }
-      if (filters.reasonId) {
+      if (filters.reasonId && filters.reasonId !== '') {
+        const beforeFilter = filteredMovements.length;
         filteredMovements = filteredMovements.filter(m => m.reasonId === filters.reasonId);
+        console.log(`Analytics - Reason filter: ${beforeFilter} -> ${filteredMovements.length}`);
       }
-      if (filters.supplierId) {
+      if (filters.supplierId && filters.supplierId !== '') {
+        const beforeFilter = filteredMovements.length;
         filteredMovements = filteredMovements.filter(m => m.supplierId === filters.supplierId);
+        console.log(`Analytics - Supplier filter: ${beforeFilter} -> ${filteredMovements.length}`);
       }
 
       // Apply type filter

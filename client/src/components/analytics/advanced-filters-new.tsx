@@ -30,9 +30,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Checkbox } from "@/components/ui/checkbox";
 
 export interface AnalyticsFilters {
-  // Date filters (always visible)
-  insertDateFrom?: string;
-  insertDateTo?: string;
+  // Date filters (always visible) - Corretto con backend
+  createdDateFrom?: string;
+  createdDateTo?: string;
   flowDateFrom?: string;
   flowDateTo?: string;
   
@@ -269,16 +269,16 @@ export default function AdvancedFiltersNew({
             <div className="space-y-2">
               <Label>Data Inserimento Da</Label>
               <DatePicker
-                value={filters.insertDateFrom}
-                onChange={(date) => updateFilter('insertDateFrom', date)}
+                value={filters.createdDateFrom}
+                onChange={(date) => updateFilter('createdDateFrom', date)}
                 placeholder="Seleziona data"
               />
             </div>
             <div className="space-y-2">
               <Label>Data Inserimento A</Label>
               <DatePicker
-                value={filters.insertDateTo}
-                onChange={(date) => updateFilter('insertDateTo', date)}
+                value={filters.createdDateTo}
+                onChange={(date) => updateFilter('createdDateTo', date)}
                 placeholder="Seleziona data"
               />
             </div>
