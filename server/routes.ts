@@ -705,7 +705,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("[MOVEMENTS] Filtered results:", movements.data.length, "movements found");
       
-      res.json(movements);
+      // Assicura che la risposta sia nel formato corretto per il frontend
+      res.json({
+        data: movements.data,
+        pagination: {
+          page: movements.pagination.page,
+          limit: movements.pagination.limit,
+          total: movements.pagination.total,
+          totalPages: movements.pagination.totalPages
+        }
+      });
     } catch (error) {
       console.error("Error fetching filtered movements:", error);
       res.status(500).json({ error: "Internal server error" });

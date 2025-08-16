@@ -64,16 +64,8 @@ export default function Movements() {
     };
   }>({
     queryKey,
-    enabled: false, // Non caricare automaticamente - solo con "Applica Filtri" o caricamento iniziale
+    enabled: true, // Abilita sempre la query automatica
   });
-
-  // Caricamento iniziale degli ultimi 25 movimenti
-  useEffect(() => {
-    if (Object.keys(filters).length === 0) {
-      // Primo caricamento: mostra ultimi 25 movimenti
-      refetch();
-    }
-  }, [refetch]);
 
   const movements = Array.isArray(movementsResponse?.data) ? movementsResponse.data : [];
 
@@ -84,18 +76,20 @@ export default function Movements() {
 
   const handleApplyFilters = useCallback(() => {
     setCurrentPage(1); // Reset to first page when applying new filters
-    refetch(); // Esegui la query con i nuovi filtri
-  }, [refetch]);
+    console.log("[MOVEMENTS] Applying filters:", filters);
+    // La query si riattiverà automaticamente grazie al cambio dei queryKey
+  }, [filters]);
 
   const handleResetFilters = useCallback(() => {
     setFilters({});
     setCurrentPage(1);
-    refetch(); // Ricarica con filtri vuoti (ultimi 25 movimenti)
+    console.log("[MOVEMENTS] Resetting filters");
     toast({
       title: "Filtri azzerati",
       description: "Mostrati gli ultimi 25 movimenti inseriti",
     });
-  }, [refetch, toast]);
+    // La query si riattiverà automaticamente grazie al cambio dei queryKey
+  }, [toast]);
 
   // Delete movement mutation
   const deleteMutation = useMutation({
