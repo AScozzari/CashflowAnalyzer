@@ -328,32 +328,20 @@ export default function Movements() {
                             <span className="text-gray-400 text-center block">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center w-24">
-                          <div className="flex items-center justify-center space-x-1">
+                        <TableCell className="text-center w-20">
+                          <div className="flex items-center justify-center space-x-2">
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              title="Visualizza dettagli"
+                              title="Visualizza e modifica"
                               onClick={() => {
                                 setViewingMovement(movement);
                                 setIsViewDialogOpen(true);
                               }}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {canEditMovements(user) && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                title="Modifica movimento"
-                                onClick={() => {
-                                  setEditingMovement(movement);
-                                  setIsFormOpen(true);
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            )}
                             {canDeleteMovements(user) && (
                               <AlertDialog>
                               <AlertDialogTrigger asChild>
