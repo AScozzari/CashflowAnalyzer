@@ -98,6 +98,12 @@ export default function AdvancedFiltersNew({
   const { data: ibans } = useQuery({ queryKey: ["/api/ibans"] });
   const { data: tags } = useQuery({ queryKey: ["/api/tags"] });
 
+  // Check if there are date filters to enable other filters
+  const hasDateFilters = Boolean(
+    filters.createdDateFrom || filters.createdDateTo || 
+    filters.flowDateFrom || filters.flowDateTo
+  );
+
   // Count active filters
   useEffect(() => {
     const count = Object.entries(filters).filter(([key, value]) => {
@@ -174,7 +180,9 @@ export default function AdvancedFiltersNew({
     isExpanded, 
     onToggle, 
     children, 
-    activeCount = 0 
+    activeCount = 0,
+    disabled = false,
+    disabledMessage = ""
   }: {
     title: string;
     icon: any;
@@ -182,34 +190,43 @@ export default function AdvancedFiltersNew({
     onToggle: () => void;
     children: React.ReactNode;
     activeCount?: number;
+    disabled?: boolean;
+    disabledMessage?: string;
   }) => (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
       <CollapsibleTrigger asChild>
         <Button 
           variant="ghost" 
-          className="w-full justify-between p-4 h-auto hover:bg-muted/50"
+          className={`w-full justify-between p-4 h-auto hover:bg-muted/50 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={disabled}
         >
           <div className="flex items-center gap-3">
-            <Icon className="h-5 w-5 text-primary" />
-            <span className="font-medium">{title}</span>
-            {activeCount > 0 && (
+            <Icon className={`h-5 w-5 ${disabled ? 'text-muted-foreground' : 'text-primary'}`} />
+            <span className={`font-medium ${disabled ? 'text-muted-foreground' : ''}`}>
+              {title} {disabled && disabledMessage && (
+                <span className="text-xs text-muted-foreground ml-1">{disabledMessage}</span>
+              )}
+            </span>
+            {activeCount > 0 && !disabled && (
               <Badge variant="secondary" className="ml-2">
                 {activeCount}
               </Badge>
             )}
           </div>
-          {isExpanded ? (
+          {!disabled && (isExpanded ? (
             <ChevronUp className="h-4 w-4" />
           ) : (
             <ChevronDown className="h-4 w-4" />
-          )}
+          ))}
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="px-4 pb-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {children}
-        </div>
-      </CollapsibleContent>
+      {!disabled && (
+        <CollapsibleContent className="px-4 pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {children}
+          </div>
+        </CollapsibleContent>
+      )}
     </Collapsible>
   );
 
@@ -309,15 +326,18 @@ export default function AdvancedFiltersNew({
           <FilterSection
             title="Organizzazione"
             icon={Building2}
-            isExpanded={sectionsExpanded.organization}
-            onToggle={() => toggleSection('organization')}
+            isExpanded={sectionsExpanded.organization && hasDateFilters}
+            onToggle={() => hasDateFilters && toggleSection('organization')}
             activeCount={organizationFilters}
+            disabled={!hasDateFilters}
+            disabledMessage="(richiede filtri data)"
           >
             <div className="space-y-2">
               <Label>Ragione Sociale</Label>
               <Select 
                 value={filters.companyId || 'all'} 
                 onValueChange={(value) => updateFilter('companyId', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutte le aziende" />
@@ -338,6 +358,7 @@ export default function AdvancedFiltersNew({
               <Select 
                 value={filters.coreId || 'all'} 
                 onValueChange={(value) => updateFilter('coreId', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutti i core" />
@@ -360,6 +381,7 @@ export default function AdvancedFiltersNew({
               <Select 
                 value={filters.officeId || 'all'} 
                 onValueChange={(value) => updateFilter('officeId', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutte le sedi" />
@@ -380,15 +402,18 @@ export default function AdvancedFiltersNew({
           <FilterSection
             title="Dati Finanziari"
             icon={DollarSign}
-            isExpanded={sectionsExpanded.financial}
-            onToggle={() => toggleSection('financial')}
+            isExpanded={sectionsExpanded.financial && hasDateFilters}
+            onToggle={() => hasDateFilters && toggleSection('financial')}
             activeCount={financialFilters}
+            disabled={!hasDateFilters}
+            disabledMessage="(richiede filtri data)"
           >
             <div className="space-y-2">
               <Label>Tipo Movimento</Label>
               <Select 
                 value={filters.type || 'all'} 
                 onValueChange={(value) => updateFilter('type', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutti i tipi" />
@@ -408,6 +433,7 @@ export default function AdvancedFiltersNew({
                 placeholder="0.00"
                 value={filters.amountFrom || ''}
                 onChange={(e) => updateFilter('amountFrom', e.target.value ? parseFloat(e.target.value) : undefined)}
+                disabled={!hasDateFilters}
               />
             </div>
 
@@ -418,6 +444,7 @@ export default function AdvancedFiltersNew({
                 placeholder="999999.99"
                 value={filters.amountTo || ''}
                 onChange={(e) => updateFilter('amountTo', e.target.value ? parseFloat(e.target.value) : undefined)}
+                disabled={!hasDateFilters}
               />
             </div>
 
@@ -426,6 +453,7 @@ export default function AdvancedFiltersNew({
               <Select 
                 value={filters.ibanId || 'all'} 
                 onValueChange={(value) => updateFilter('ibanId', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutti gli IBAN" />
@@ -446,15 +474,18 @@ export default function AdvancedFiltersNew({
           <FilterSection
             title="Relazioni Esterne"
             icon={Users}
-            isExpanded={sectionsExpanded.external}
-            onToggle={() => toggleSection('external')}
+            isExpanded={sectionsExpanded.external && hasDateFilters}
+            onToggle={() => hasDateFilters && toggleSection('external')}
             activeCount={externalFilters}
+            disabled={!hasDateFilters}
+            disabledMessage="(richiede filtri data)"
           >
             <div className="space-y-2">
               <Label>Fornitore</Label>
               <Select 
                 value={filters.supplierId || 'all'} 
                 onValueChange={(value) => updateFilter('supplierId', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutti i fornitori" />
@@ -475,6 +506,7 @@ export default function AdvancedFiltersNew({
               <Select 
                 value={filters.resourceId || 'all'} 
                 onValueChange={(value) => updateFilter('resourceId', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutte le risorse" />
@@ -495,6 +527,7 @@ export default function AdvancedFiltersNew({
               <Select 
                 value={filters.customerId || 'all'} 
                 onValueChange={(value) => updateFilter('customerId', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutti i clienti" />
@@ -518,15 +551,18 @@ export default function AdvancedFiltersNew({
           <FilterSection
             title="Filtri Avanzati"
             icon={FileText}
-            isExpanded={sectionsExpanded.advanced}
-            onToggle={() => toggleSection('advanced')}
+            isExpanded={sectionsExpanded.advanced && hasDateFilters}
+            onToggle={() => hasDateFilters && toggleSection('advanced')}
             activeCount={advancedFilters}
+            disabled={!hasDateFilters}
+            disabledMessage="(richiede filtri data)"
           >
             <div className="space-y-2">
               <Label>Stato</Label>
               <Select 
                 value={filters.statusId || 'all'} 
                 onValueChange={(value) => updateFilter('statusId', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutti gli stati" />
@@ -547,6 +583,7 @@ export default function AdvancedFiltersNew({
               <Select 
                 value={filters.reasonId || 'all'} 
                 onValueChange={(value) => updateFilter('reasonId', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutte le causali" />
@@ -567,6 +604,7 @@ export default function AdvancedFiltersNew({
               <Select 
                 value={filters.vatType || 'all'} 
                 onValueChange={(value) => updateFilter('vatType', value)}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutti i tipi IVA" />
@@ -589,6 +627,7 @@ export default function AdvancedFiltersNew({
                     id="hasVat"
                     checked={filters.hasVat || false}
                     onCheckedChange={(checked) => updateFilter('hasVat', checked)}
+                    disabled={!hasDateFilters}
                   />
                   <Label htmlFor="hasVat" className="text-sm">Solo con IVA</Label>
                 </div>
@@ -597,6 +636,7 @@ export default function AdvancedFiltersNew({
                     id="hasDocument"
                     checked={filters.hasDocument || false}
                     onCheckedChange={(checked) => updateFilter('hasDocument', checked)}
+                    disabled={!hasDateFilters}
                   />
                   <Label htmlFor="hasDocument" className="text-sm">Solo con documenti</Label>
                 </div>
@@ -608,6 +648,7 @@ export default function AdvancedFiltersNew({
               <Select 
                 value={filters.tagIds?.join(',') || 'all'} 
                 onValueChange={(value) => updateFilter('tagIds', value === 'all' ? [] : value.split(','))}
+                disabled={!hasDateFilters}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tutti i tag" />
