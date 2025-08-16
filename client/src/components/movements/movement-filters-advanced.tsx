@@ -110,10 +110,21 @@ export default function MovementFiltersAdvanced({
   };
 
   const handleFieldChange = (field: keyof MovementFilters, value: any) => {
-    onFiltersChange({
-      ...filters,
-      [field]: value === "" || value === "all" ? undefined : value
-    });
+    const newValue = value === "" || value === "all" ? undefined : value;
+    
+    // Logica di esclusione mutua per cliente/fornitore
+    let updatedFilters = { ...filters };
+    
+    if (field === 'customerId' && newValue) {
+      // Se selezioniamo un cliente, resettiamo il fornitore
+      updatedFilters.supplierId = undefined;
+    } else if (field === 'supplierId' && newValue) {
+      // Se selezioniamo un fornitore, resettiamo il cliente
+      updatedFilters.customerId = undefined;
+    }
+    
+    updatedFilters[field] = newValue;
+    onFiltersChange(updatedFilters);
   };
 
   const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
@@ -469,6 +480,7 @@ export default function MovementFiltersAdvanced({
               <div className="flex items-center space-x-2 mb-3">
                 <Users className="h-4 w-4 text-gray-600" />
                 <Label className="text-sm font-medium text-gray-700">Relazioni Esterne</Label>
+                <span className="text-xs text-gray-500">(selezione esclusiva cliente/fornitore)</span>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

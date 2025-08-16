@@ -1890,68 +1890,6 @@ async getMovements(filters: {
       throw new Error('Failed to delete notification');
     }
   }
-  async getFilteredMovements(user: any, filters: any, page: number = 1, pageSize: number = 25): Promise<{
-    data: any[];
-    totalCount: number;
-    totalPages: number;
-    currentPage: number;
-  }> {
-    try {
-      // Use the existing getMovements method as a base to avoid complex join issues
-      const allMovements = await this.getMovements();
-      console.log('Analytics - All movements result:', { 
-        hasData: !!allMovements,
-        dataLength: Array.isArray(allMovements) ? allMovements.length : 'not array',
-        isArray: Array.isArray(allMovements)
-      });
-      
-      // Apply filters manually - ensure we have valid data
-      // getMovements returns array directly, not {data: []}
-      let filteredMovements = Array.isArray(allMovements) ? allMovements : [];
-      console.log('Analytics - Initial filtered movements:', filteredMovements.length);
-      
-      // Safety check
-      if (!Array.isArray(filteredMovements)) {
-        console.log('Warning: filteredMovements is not an array:', filteredMovements);
-        filteredMovements = [];
-      }
-
-      // Apply role-based filtering
-      console.log('Analytics - User role:', user.role, 'resourceId:', user.resourceId);
-      if (user.role === 'user' && user.resourceId) {
-        const beforeFilter = filteredMovements.length;
-        filteredMovements = filteredMovements.filter(m => m.resourceId === user.resourceId);
-        console.log(`Analytics - Role filter: ${beforeFilter} -> ${filteredMovements.length}`);
-      }
-
-      // Log filter details
-      console.log('Analytics - Applied filters:', filters);
-      
-      // Debug: mostra le prime 3 date di movimento per verifica
-      if (filteredMovements.length > 0) {
-        console.log('Analytics - Sample movement dates:', 
-          filteredMovements.slice(0, 3).map(m => ({
-            id: m.id.substring(0, 8),
-            insertDate: m.insertDate,
-            flowDate: m.flowDate,
-            createdAt: m.createdAt
-          }))
-        );
-      }
-
-      // Apply createdDate filters - usando insertDate (data inserimento movimento)
-      if (filters.createdDateFrom && filters.createdDateFrom !== '') {
-        const beforeFilter = filteredMovements.length;
-        const startDate = new Date(filters.createdDateFrom);
-        // Usa insertDate invece di createdAt per data inserimento
-        filteredMovements = filteredMovements.filter(m => {
-          const moveDate = new Date(m.insertDate);
-          const result = moveDate >= startDate;
-          if (!result) {
-            console.log(`Analytics - Filtered out movement: ${m.insertDate} < ${filters.createdDateFrom}`);
-          }
-          return result;
-        });
         console.log(`Analytics - Created date from filter (${filters.createdDateFrom}): ${beforeFilter} -> ${filteredMovements.length}`);
       }
       
