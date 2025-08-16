@@ -66,6 +66,8 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
   const chartData = useMemo(() => {
     if (!movements || movements.length === 0) return null;
 
+    try {
+
     // 1. Trend mensile con calcoli dettagliati
     const monthlyData = movements.reduce((acc, movement) => {
       const date = new Date(movement.flowDate);
@@ -252,11 +254,17 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
       topSuppliers: topSuppliers,
       weekly: sortedWeeklyData
     };
+    } catch (error) {
+      console.error('Errore nel calcolo dei dati analytics:', error);
+      return null;
+    }
   }, [movements]);
 
   // Statistiche avanzate
   const stats = useMemo(() => {
     if (!movements || movements.length === 0) return null;
+
+    try {
 
     const income = movements.filter(m => m.type === 'income');
     const expenses = movements.filter(m => m.type === 'expense');
@@ -285,6 +293,10 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
       vatPercentage: (withVat / movements.length) * 100,
       profitMargin: totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0
     };
+    } catch (error) {
+      console.error('Errore nel calcolo delle statistiche:', error);
+      return null;
+    }
   }, [movements]);
 
   const formatCurrency = (value: number) => 
@@ -354,14 +366,17 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
     );
   }
 
-  if (!chartData || !stats) {
+  if (!chartData || !stats || movements.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center h-96 text-center">
           <BarChart3 className="h-16 w-16 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">Nessun dato disponibile</h3>
           <p className="text-muted-foreground max-w-md">
-            Applica i filtri per visualizzare grafici e analisi dettagliate dei tuoi movimenti finanziari.
+            {movements.length === 0 
+              ? "Non ci sono movimenti che corrispondono ai filtri applicati."
+              : "Applica i filtri per visualizzare grafici e analisi dettagliate dei tuoi movimenti finanziari."
+            }
           </p>
         </CardContent>
       </Card>
@@ -700,7 +715,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
         </Card>
 
         {/* Top Fornitori */}
-        {chartData.suppliers.length > 0 && (
+        {chartData.topSuppliers.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -710,7 +725,7 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData.suppliers} margin={{ top: 5, right: 30, left: 20, bottom: 60 }}>
+                <BarChart data={chartData.topSuppliers} margin={{ top: 5, right: 30, left: 20, bottom: 60 }}>
                   <CartesianGrid 
                     strokeDasharray="3 3" 
                     stroke="hsl(var(--muted-foreground))" 
