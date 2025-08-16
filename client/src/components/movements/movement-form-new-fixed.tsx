@@ -895,12 +895,14 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                         <Upload className="h-5 w-5" />
                         <span className="text-sm">Carica Allegato</span>
                       </div>
-                      <Input
-                        type="file"
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xml"
-                        onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
-                        className="file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                      />
+                      <div className="relative">
+                        <Input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xml"
+                          onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                          className="h-12 file:mr-4 file:py-3 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:h-full file:flex file:items-center cursor-pointer"
+                        />
+                      </div>
                       <p className="text-xs text-gray-500 text-center">
                         Formati supportati: PDF, DOC, DOCX, JPG, PNG, XML
                       </p>
