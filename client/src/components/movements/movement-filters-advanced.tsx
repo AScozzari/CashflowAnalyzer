@@ -118,27 +118,32 @@ export default function MovementFiltersAdvanced({
     
     if (field === 'customerId') {
       if (newValue) {
-        // Se selezioniamo un cliente, resettiamo il fornitore
+        // Se selezioniamo un cliente, resettiamo SEMPRE il fornitore
         updatedFilters.supplierId = undefined;
         updatedFilters.customerId = newValue;
+        console.log("[FILTERS] Cliente selezionato, fornitore azzerato:", {customerId: newValue, supplierId: undefined});
       } else {
         // Se deselezioniamo il cliente
         updatedFilters.customerId = undefined;
+        console.log("[FILTERS] Cliente deselezionato");
       }
     } else if (field === 'supplierId') {
       if (newValue) {
-        // Se selezioniamo un fornitore, resettiamo il cliente
+        // Se selezioniamo un fornitore, resettiamo SEMPRE il cliente
         updatedFilters.customerId = undefined;
         updatedFilters.supplierId = newValue;
+        console.log("[FILTERS] Fornitore selezionato, cliente azzerato:", {supplierId: newValue, customerId: undefined});
       } else {
         // Se deselezioniamo il fornitore
         updatedFilters.supplierId = undefined;
+        console.log("[FILTERS] Fornitore deselezionato");
       }
     } else {
       // Per tutti gli altri campi
       updatedFilters[field] = newValue;
     }
     
+    console.log("[FILTERS] Final updatedFilters:", updatedFilters);
     onFiltersChange(updatedFilters);
   };
 
@@ -559,9 +564,18 @@ export default function MovementFiltersAdvanced({
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-600">Cliente</Label>
-                  <Select value={filters.customerId || "all"} onValueChange={(value) => handleFieldChange('customerId', value)}>
-                    <SelectTrigger>
+                  <Label className="text-xs text-gray-600">
+                    Cliente
+                    {filters.supplierId && (
+                      <span className="text-orange-600 ml-1">(disabilitato - fornitore selezionato)</span>
+                    )}
+                  </Label>
+                  <Select 
+                    value={filters.customerId || "all"} 
+                    onValueChange={(value) => handleFieldChange('customerId', value)}
+                    disabled={!!filters.supplierId}
+                  >
+                    <SelectTrigger className={filters.supplierId ? "opacity-50" : ""}>
                       <SelectValue placeholder="Tutti i clienti" />
                     </SelectTrigger>
                     <SelectContent>
@@ -576,9 +590,18 @@ export default function MovementFiltersAdvanced({
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-600">Fornitore</Label>
-                  <Select value={filters.supplierId || "all"} onValueChange={(value) => handleFieldChange('supplierId', value)}>
-                    <SelectTrigger>
+                  <Label className="text-xs text-gray-600">
+                    Fornitore
+                    {filters.customerId && (
+                      <span className="text-orange-600 ml-1">(disabilitato - cliente selezionato)</span>
+                    )}
+                  </Label>
+                  <Select 
+                    value={filters.supplierId || "all"} 
+                    onValueChange={(value) => handleFieldChange('supplierId', value)}
+                    disabled={!!filters.customerId}
+                  >
+                    <SelectTrigger className={filters.customerId ? "opacity-50" : ""}>
                       <SelectValue placeholder="Tutti i fornitori" />
                     </SelectTrigger>
                     <SelectContent>
