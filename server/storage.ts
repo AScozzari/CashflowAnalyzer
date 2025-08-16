@@ -123,6 +123,39 @@ export interface IStorage {
     documentNumber?: string;
     notes?: string;
   }): Promise<MovementWithRelations[]>;
+  
+  // Metodo per filtri avanzati con paginazione
+  getFilteredMovements(filters?: {
+    insertDateFrom?: string;
+    insertDateTo?: string;
+    flowDateFrom?: string;
+    flowDateTo?: string;
+    companyId?: string;
+    coreId?: string;
+    resourceId?: string;
+    officeId?: string;
+    statusId?: string;
+    reasonId?: string;
+    ibanId?: string;
+    type?: 'income' | 'expense';
+    amountFrom?: number;
+    amountTo?: number;
+    customerId?: string;
+    supplierId?: string;
+    vatType?: string;
+    hasVat?: boolean;
+    hasDocument?: boolean;
+    tagIds?: string[];
+  }, page?: number, pageSize?: number): Promise<{
+    data: MovementWithRelations[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>;
+  
   getMovement(id: string): Promise<MovementWithRelations | undefined>;
   createMovement(movement: InsertMovement): Promise<Movement>;
   updateMovement(id: string, movement: Partial<InsertMovement>): Promise<Movement>;

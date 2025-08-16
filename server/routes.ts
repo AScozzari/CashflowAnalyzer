@@ -703,7 +703,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const movements = await storage.getFilteredMovements(filters, page, pageSize);
       
-      console.log("[MOVEMENTS] Filtered results:", movements.data.length, "movements found");
+      console.log("[MOVEMENTS] Filtered results:", movements?.data?.length || 0, "movements found");
+      
+      // Verifica che la risposta sia valida
+      if (!movements || !movements.data || !movements.pagination) {
+        console.error("[MOVEMENTS] Invalid response from getFilteredMovements:", movements);
+        return res.status(500).json({ error: "Invalid movements data structure" });
+      }
       
       // Assicura che la risposta sia nel formato corretto per il frontend
       res.json({
