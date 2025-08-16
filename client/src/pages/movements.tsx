@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import FooterSignature from "@/components/layout/footer-signature";
 import MovementFormNew from "@/components/movements/movement-form-new-fixed";
-import MovementFilters from "@/components/movements/movement-filters";
+import MovementFiltersAdvanced, { type MovementFilters } from "@/components/movements/movement-filters-advanced";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -27,8 +27,35 @@ export default function Movements() {
   const [editingMovement, setEditingMovement] = useState<MovementWithRelations | null>(null);
   const [viewingMovement, setViewingMovement] = useState<MovementWithRelations | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  
+  // Stati per i filtri
+  const [filters, setFilters] = useState<MovementFilters>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
-  const { data: movementsResponse, isLoading } = useQuery<{
+  // Create query key based on filters and pagination
+  const queryKey = useMemo(() => {
+    const params = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '' && value !== null) {
+        if (Array.isArray(value)) {
+          if (value.length > 0) {
+            params.append(key, value.join(','));
+          }
+        } else {
+          params.append(key, String(value));
+        }
+      }
+    });
+    
+    params.append('page', String(currentPage));
+    params.append('pageSize', String(pageSize));
+    
+    return [`/api/movements/filtered?${params.toString()}`];
+  }, [filters, currentPage, pageSize]);
+
+  const { data: movementsResponse, isLoading, refetch } = useQuery<{
     data: MovementWithRelations[];
     pagination: {
       page: number;
@@ -36,10 +63,39 @@ export default function Movements() {
       total: number;
     };
   }>({
-    queryKey: ["/api/movements"],
+    queryKey,
+    enabled: false, // Non caricare automaticamente - solo con "Applica Filtri" o caricamento iniziale
   });
 
+  // Caricamento iniziale degli ultimi 25 movimenti
+  useEffect(() => {
+    if (Object.keys(filters).length === 0) {
+      // Primo caricamento: mostra ultimi 25 movimenti
+      refetch();
+    }
+  }, [refetch]);
+
   const movements = Array.isArray(movementsResponse?.data) ? movementsResponse.data : [];
+
+  // Gestione filtri
+  const handleFiltersChange = useCallback((newFilters: MovementFilters) => {
+    setFilters(newFilters);
+  }, []);
+
+  const handleApplyFilters = useCallback(() => {
+    setCurrentPage(1); // Reset to first page when applying new filters
+    refetch(); // Esegui la query con i nuovi filtri
+  }, [refetch]);
+
+  const handleResetFilters = useCallback(() => {
+    setFilters({});
+    setCurrentPage(1);
+    refetch(); // Ricarica con filtri vuoti (ultimi 25 movimenti)
+    toast({
+      title: "Filtri azzerati",
+      description: "Mostrati gli ultimi 25 movimenti inseriti",
+    });
+  }, [refetch, toast]);
 
   // Delete movement mutation
   const deleteMutation = useMutation({
@@ -149,7 +205,16 @@ export default function Movements() {
         }}
       />
       
-      <div className="p-4 md:p-6">
+      <div className="p-4 md:p-6 space-y-6">
+        {/* Filtri Avanzati per Movimenti */}
+        <MovementFiltersAdvanced
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onApplyFilters={handleApplyFilters}
+          onResetFilters={handleResetFilters}
+          isLoading={isLoading}
+        />
+
         <div className="bg-card dark:bg-card rounded-xl shadow-sm border border-border dark:border-border">
           <div className="p-4 md:p-6">
             <div className="overflow-x-auto">

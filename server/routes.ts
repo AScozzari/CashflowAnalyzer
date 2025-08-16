@@ -646,6 +646,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Get filtered movements with advanced filters (dedicated endpoint for Movements page)
+  app.get("/api/movements/filtered", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const user = req.user;
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = parseInt(req.query.pageSize as string) || 25;
+      
+      console.log("[MOVEMENTS] Filtered request with params:", req.query);
+      
+      // Extract filters from query parameters
+      const filters: any = {};
+      
+      // Date filters - supporto per insert date e flow date
+      if (req.query.insertDateFrom) filters.insertDateFrom = req.query.insertDateFrom as string;
+      if (req.query.insertDateTo) filters.insertDateTo = req.query.insertDateTo as string;
+      if (req.query.flowDateFrom) filters.flowDateFrom = req.query.flowDateFrom as string;
+      if (req.query.flowDateTo) filters.flowDateTo = req.query.flowDateTo as string;
+      
+      // Entity filters
+      if (req.query.companyId) filters.companyId = req.query.companyId as string;
+      if (req.query.coreId) filters.coreId = req.query.coreId as string;
+      if (req.query.resourceId) filters.resourceId = req.query.resourceId as string;
+      if (req.query.officeId) filters.officeId = req.query.officeId as string;
+      
+      // Movement filters
+      if (req.query.type) filters.type = req.query.type as string;
+      if (req.query.statusId) filters.statusId = req.query.statusId as string;
+      if (req.query.reasonId) filters.reasonId = req.query.reasonId as string;
+      if (req.query.ibanId) filters.ibanId = req.query.ibanId as string;
+      
+      // Amount filters
+      if (req.query.amountFrom) filters.amountFrom = parseFloat(req.query.amountFrom as string);
+      if (req.query.amountTo) filters.amountTo = parseFloat(req.query.amountTo as string);
+      
+      // External relations
+      if (req.query.customerId) filters.customerId = req.query.customerId as string;
+      if (req.query.supplierId) filters.supplierId = req.query.supplierId as string;
+      
+      // VAT and documents
+      if (req.query.vatType) filters.vatType = req.query.vatType as string;
+      if (req.query.hasVat !== undefined) filters.hasVat = req.query.hasVat === 'true';
+      if (req.query.hasDocument !== undefined) filters.hasDocument = req.query.hasDocument === 'true';
+      
+      // Tag filters
+      if (req.query.tagIds && typeof req.query.tagIds === 'string') {
+        filters.tagIds = req.query.tagIds.split(',').filter(id => id.trim());
+      }
+
+      // Se l'utente ha ruolo "user", può vedere solo i movimenti della sua risorsa
+      if (user.role === 'user' && user.resourceId) {
+        filters.resourceId = user.resourceId;
+      }
+      
+      console.log("[MOVEMENTS] Applying filters:", filters);
+      
+      const movements = await storage.getFilteredMovements(filters, page, pageSize);
+      
+      console.log("[MOVEMENTS] Filtered results:", movements.data.length, "movements found");
+      
+      res.json(movements);
+    } catch (error) {
+      console.error("Error fetching filtered movements:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }));
+
   app.get("/api/movements/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const user = req.user;

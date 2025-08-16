@@ -27,7 +27,7 @@ import {
 } from "@shared/schema";
 import crypto from 'crypto';
 import { db } from "./db";
-import { eq, desc, and, gte, lte, sql, count, or, isNull, isNotNull } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, count, or, isNull, isNotNull, inArray } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
@@ -779,7 +779,158 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Movements
-  async getMovements(filters: {
+  // Metodo per i filtri avanzati con paginazione (per pagina Movements)
+  async getFilteredMovements(filters: {
+    insertDateFrom?: string;
+    insertDateTo?: string;
+    flowDateFrom?: string;
+    flowDateTo?: string;
+    companyId?: string;
+    coreId?: string;
+    resourceId?: string;
+    officeId?: string;
+    statusId?: string;
+    reasonId?: string;
+    ibanId?: string;
+    type?: 'income' | 'expense';
+    amountFrom?: number;
+    amountTo?: number;
+    customerId?: string;
+    supplierId?: string;
+    vatType?: string;
+    hasVat?: boolean;
+    hasDocument?: boolean;
+    tagIds?: string[];
+  } = {}, page: number = 1, pageSize: number = 25): Promise<{
+    data: MovementWithRelations[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    try {
+      const conditions = [];
+      
+      console.log("[STORAGE] getFilteredMovements called with filters:", filters);
+      
+      // Date filters
+      if (filters.insertDateFrom) {
+        console.log("[STORAGE] Adding insertDate filter from:", filters.insertDateFrom);
+        conditions.push(gte(movements.insertDate, filters.insertDateFrom));
+      }
+      if (filters.insertDateTo) {
+        console.log("[STORAGE] Adding insertDate filter to:", filters.insertDateTo);
+        conditions.push(lte(movements.insertDate, filters.insertDateTo));
+      }
+      if (filters.flowDateFrom) {
+        console.log("[STORAGE] Adding flowDate filter from:", filters.flowDateFrom);
+        conditions.push(gte(movements.flowDate, filters.flowDateFrom));
+      }
+      if (filters.flowDateTo) {
+        console.log("[STORAGE] Adding flowDate filter to:", filters.flowDateTo);
+        conditions.push(lte(movements.flowDate, filters.flowDateTo));
+      }
+      
+      // Entity filters
+      if (filters.companyId) conditions.push(eq(movements.companyId, filters.companyId));
+      if (filters.coreId) conditions.push(eq(movements.coreId, filters.coreId));
+      if (filters.resourceId) conditions.push(eq(movements.resourceId, filters.resourceId));
+      if (filters.officeId) conditions.push(eq(movements.officeId, filters.officeId));
+      if (filters.statusId) conditions.push(eq(movements.statusId, filters.statusId));
+      if (filters.reasonId) conditions.push(eq(movements.reasonId, filters.reasonId));
+      if (filters.ibanId) conditions.push(eq(movements.ibanId, filters.ibanId));
+      if (filters.type) conditions.push(eq(movements.type, filters.type));
+      
+      // Amount filters
+      if (filters.amountFrom !== undefined) {
+        conditions.push(gte(movements.amount, filters.amountFrom.toString()));
+      }
+      if (filters.amountTo !== undefined) {
+        conditions.push(lte(movements.amount, filters.amountTo.toString()));
+      }
+      
+      // External relations
+      if (filters.customerId) conditions.push(eq(movements.customerId, filters.customerId));
+      if (filters.supplierId) conditions.push(eq(movements.supplierId, filters.supplierId));
+      
+      // VAT filters
+      if (filters.vatType) conditions.push(sql`${movements.vatType} = ${filters.vatType}`);
+      if (filters.hasVat !== undefined) {
+        if (filters.hasVat) {
+          conditions.push(isNotNull(movements.vatAmount));
+        } else {
+          conditions.push(isNull(movements.vatAmount));
+        }
+      }
+      
+      // Document filters
+      if (filters.hasDocument !== undefined) {
+        if (filters.hasDocument) {
+          conditions.push(isNotNull(movements.documentPath));
+        } else {
+          conditions.push(isNull(movements.documentPath));
+        }
+      }
+      
+      // Tag filters (multiple tags support)
+      if (filters.tagIds && filters.tagIds.length > 0) {
+        conditions.push(inArray(movements.tagId, filters.tagIds));
+      }
+
+      console.log("[STORAGE] Final conditions count:", conditions.length);
+
+      // First get the total count
+      const totalQuery = await db
+        .select({ count: count() })
+        .from(movements)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
+      
+      const total = totalQuery[0]?.count || 0;
+      
+      console.log("[STORAGE] Total movements matching filters:", total);
+
+      // Then get the paginated results
+      const offset = (page - 1) * pageSize;
+      
+      const results = await db.query.movements.findMany({
+        where: conditions.length > 0 ? and(...conditions) : undefined,
+        with: {
+          company: true,
+          core: true,
+          reason: true,
+          resource: true,
+          office: true,
+          iban: true,
+          tag: true,
+          status: true,
+          supplier: true,
+          customer: true,
+        },
+        orderBy: [desc(movements.insertDate), desc(movements.createdAt)],
+        limit: pageSize,
+        offset: offset,
+      });
+
+      console.log("[STORAGE] Query returned:", results.length, "movements");
+
+      return {
+        data: results as MovementWithRelations[],
+        pagination: {
+          page,
+          limit: pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize)
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching filtered movements:', error);
+      throw new Error('Failed to fetch filtered movements');
+    }
+  }
+
+async getMovements(filters: {
     companyId?: string;
     coreId?: string;
     resourceId?: string;
