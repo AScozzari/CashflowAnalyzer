@@ -559,8 +559,8 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
                   tickFormatter={formatThousands}
-                  ticks={createFixedTicks(getMaxValue(chartData.dailyTrend, ['income', 'expense']))}
                   domain={[0, Math.max(5000, Math.ceil(getMaxValue(chartData.dailyTrend, ['income', 'expense']) / 1000) * 1000)]}
+                  tickCount={Math.max(6, Math.ceil(getMaxValue(chartData.dailyTrend, ['income', 'expense']) / 1000) + 1)}
                   type="number"
                 />
                 <Tooltip content={<CustomTooltip />} />
@@ -621,8 +621,8 @@ export default function AnalyticsChartsProfessional({ movements, isLoading }: An
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
                   tickFormatter={formatThousands}
-                  ticks={createFixedTicks(getMaxValue(chartData.companiesChart, ['entrate', 'uscite']))}
                   domain={[0, Math.max(5000, Math.ceil(getMaxValue(chartData.companiesChart, ['entrate', 'uscite']) / 1000) * 1000)]}
+                  tickCount={Math.max(6, Math.ceil(getMaxValue(chartData.companiesChart, ['entrate', 'uscite']) / 1000) + 1)}
                   type="number"
                 />
                 <Tooltip content={({ active, payload, label }) => {

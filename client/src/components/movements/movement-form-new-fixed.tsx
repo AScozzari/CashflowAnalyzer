@@ -159,6 +159,54 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
     }
   }, [watchedAmount, watchedVatType, form]);
 
+  // Reset form when movement changes (for editing)
+  useEffect(() => {
+    if (movement && isOpen) {
+      form.reset({
+        insertDate: movement.insertDate || new Date().toISOString().split('T')[0],
+        flowDate: movement.flowDate || new Date().toISOString().split('T')[0],
+        type: movement.type as "income" | "expense" || "income",
+        amount: movement.amount?.toString() || "",
+        vatAmount: movement.vatAmount?.toString() || "",
+        vatType: movement.vatType || "",
+        notes: movement.notes || "",
+        documentNumber: movement.documentNumber || "",
+        companyId: movement.companyId || "",
+        coreId: movement.coreId || "",
+        statusId: movement.statusId || "",
+        reasonId: movement.reasonId || "",
+        resourceId: movement.resourceId || "",
+        officeId: movement.officeId || "",
+        ibanId: movement.ibanId || "",
+        tagId: movement.tagId || "",
+        customerId: movement.customerId || "",
+        supplierId: movement.supplierId || "",
+      });
+    } else if (!movement && isOpen) {
+      // Reset to empty for new movement
+      form.reset({
+        insertDate: new Date().toISOString().split('T')[0],
+        flowDate: new Date().toISOString().split('T')[0],
+        type: "income",
+        amount: "",
+        vatAmount: "",
+        vatType: "",
+        notes: "",
+        documentNumber: "",
+        companyId: "",
+        coreId: "",
+        statusId: "",
+        reasonId: "",
+        resourceId: "",
+        officeId: "",
+        ibanId: "",
+        tagId: "",
+        customerId: "",
+        supplierId: "",
+      });
+    }
+  }, [movement, isOpen, form]);
+
   // Reset entity fields when entity type changes
   useEffect(() => {
     if (watchedEntityType) {
