@@ -47,6 +47,7 @@ export function WhatsAppVariablesSimple() {
   const [templateText, setTemplateText] = useState('');
   const [previewResult, setPreviewResult] = useState('');
   const [copiedVariable, setCopiedVariable] = useState<string>('');
+  const [selectedVariables, setSelectedVariables] = useState<string[]>([]);
   
   // Mapping semplificato
   const [mappings, setMappings] = useState<Mapping[]>([
@@ -54,6 +55,15 @@ export function WhatsAppVariablesSimple() {
     { old: '{2}', new: 'movement.amount', label: 'Importo' },
     { old: '{3}', new: 'movement.date', label: 'Data' }
   ]);
+
+  // Funzione per selezionare/deselezionare variabili
+  const toggleVariableSelection = (variableKey: string) => {
+    if (selectedVariables.includes(variableKey)) {
+      setSelectedVariables(selectedVariables.filter(v => v !== variableKey));
+    } else {
+      setSelectedVariables([...selectedVariables, variableKey]);
+    }
+  };
 
   // Funzione per aggiornare mapping
   const updateMapping = (index: number, newVariable: string) => {
@@ -72,6 +82,36 @@ export function WhatsAppVariablesSimple() {
         description: `${newMappings[index].old} → ${variable.label}`
       });
     }
+  };
+
+  // Funzione per usare le variabili selezionate nel mapping automaticamente
+  const applySelectedToMapping = () => {
+    if (selectedVariables.length === 0) {
+      toast({
+        title: "Nessuna variabile selezionata",
+        description: "Seleziona almeno una variabile prima",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newMappings = [...mappings];
+    selectedVariables.slice(0, 3).forEach((variableKey, index) => {
+      const variable = AVAILABLE_VARIABLES.find(v => v.key === variableKey);
+      if (variable) {
+        newMappings[index] = {
+          ...newMappings[index],
+          new: variableKey,
+          label: variable.label
+        };
+      }
+    });
+    
+    setMappings(newMappings);
+    toast({
+      title: "Mapping applicato",
+      description: `Applicate ${Math.min(selectedVariables.length, 3)} variabili al mapping`
+    });
   };
 
   // Funzione per generare anteprima
@@ -170,7 +210,7 @@ Data: {system.date}`
                   Variabili per i tuoi template
                 </h4>
                 <p className="text-sm text-green-700 dark:text-green-300">
-                  Clicca su una variabile per copiarla negli appunti, poi incollala nel tuo template WhatsApp o nella scheda "Testa Template"
+                  <strong>Click</strong>: Seleziona variabile per usarla nel Mapping • <strong>Ctrl+Click</strong>: Copia negli appunti
                 </p>
               </div>
 
@@ -179,18 +219,31 @@ Data: {system.date}`
                   <div 
                     key={variable.key}
                     className={`border rounded-lg p-4 cursor-pointer transition-all duration-300 ${
-                      copiedVariable === variable.key 
+                      selectedVariables.includes(variable.key)
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 ring-2 ring-blue-200'
+                        : copiedVariable === variable.key 
                         ? 'border-green-500 bg-green-50 dark:bg-green-950 scale-105' 
                         : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
                     }`}
-                    onClick={() => {
-                      navigator.clipboard.writeText(`{${variable.key}}`);
-                      setCopiedVariable(variable.key);
-                      setTimeout(() => setCopiedVariable(''), 2000);
-                      toast({
-                        title: "✅ Copiato negli appunti",
-                        description: `{${variable.key}} - Ora puoi incollarlo nella scheda "Testa Template"`
-                      });
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (e.ctrlKey || e.metaKey) {
+                        // Ctrl+Click per copiare
+                        navigator.clipboard.writeText(`{${variable.key}}`);
+                        setCopiedVariable(variable.key);
+                        setTimeout(() => setCopiedVariable(''), 2000);
+                        toast({
+                          title: "✅ Copiato negli appunti",
+                          description: `{${variable.key}} - Ctrl+Click per copiare`
+                        });
+                      } else {
+                        // Click normale per selezionare
+                        toggleVariableSelection(variable.key);
+                        toast({
+                          title: selectedVariables.includes(variable.key) ? "Variabile deselezionata" : "Variabile selezionata",
+                          description: `${variable.label} - Le variabili selezionate possono essere usate nel Mapping`
+                        });
+                      }
                     }}
                   >
                     <div className="flex items-center justify-between">
@@ -205,7 +258,9 @@ Data: {system.date}`
                           Esempio: {variable.example}
                         </div>
                       </div>
-                      {copiedVariable === variable.key ? (
+                      {selectedVariables.includes(variable.key) ? (
+                        <CheckCircle className="w-5 h-5 text-blue-500" />
+                      ) : copiedVariable === variable.key ? (
                         <CheckCircle className="w-4 h-4 text-green-500" />
                       ) : (
                         <Copy className="w-4 h-4 text-gray-400" />
@@ -215,15 +270,49 @@ Data: {system.date}`
                 ))}
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
-                  Come funziona
+              {selectedVariables.length > 0 && (
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-blue-800 dark:text-blue-200">
+                      Variabili Selezionate ({selectedVariables.length})
+                    </h4>
+                    <Button 
+                      onClick={applySelectedToMapping}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Applica al Mapping
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedVariables.map((variableKey) => {
+                      const variable = AVAILABLE_VARIABLES.find(v => v.key === variableKey);
+                      return (
+                        <Badge key={variableKey} variant="secondary" className="font-mono">
+                          {variable?.label} - {`{${variableKey}}`}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-gray-50 dark:bg-gray-800 border rounded-lg p-4">
+                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">
+                  💡 Come funziona il sistema variabili
                 </h4>
-                <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
-                  <p><strong>1. Clicca</strong> su una variabile qui sotto per copiarla</p>
-                  <p><strong>2. Vai</strong> nella scheda "Testa Template" e incollala</p>
-                  <p><strong>3. Oppure</strong> usa le variabili direttamente nei tuoi template WhatsApp</p>
-                  <p><strong>Esempio:</strong> Scrivi "Ciao {`{customer.name}`}" nel template e diventerà "Ciao Mario Rossi"</p>
+                <div className="text-sm text-gray-700 dark:text-gray-300 space-y-2">
+                  <p><strong>Scopo delle variabili:</strong> Sostituiscono automaticamente i placeholder con dati reali del sistema</p>
+                  <p><strong>Esempio pratico:</strong> {`{customer.name}`} diventa "Mario Rossi", {`{movement.amount}`} diventa "€1.250,00"</p>
+                  <p><strong>Selezione:</strong> Clicca per selezionare variabili da usare nel Mapping {`{1}, {2}, {3}`}</p>
+                  <p><strong>Copia rapida:</strong> Ctrl+Click per copiare negli appunti e incollare dove vuoi</p>
+                  <p><strong>Categorie disponibili:</strong></p>
+                  <ul className="ml-4 space-y-1">
+                    <li>• <strong>Customer:</strong> Dati cliente (nome, email, telefono)</li>
+                    <li>• <strong>Company:</strong> Dati azienda (nome, contatti)</li>
+                    <li>• <strong>Movement:</strong> Dati movimento finanziario (importo, data, descrizione)</li>
+                    <li>• <strong>System:</strong> Dati sistema (data corrente, anno)</li>
+                  </ul>
                 </div>
               </div>
             </TabsContent>
@@ -259,6 +348,25 @@ Data: {system.date}`
                             <SelectValue placeholder="Scegli variabile" />
                           </SelectTrigger>
                           <SelectContent>
+                            {selectedVariables.length > 0 && (
+                              <>
+                                <div className="px-2 py-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+                                  Variabili Selezionate:
+                                </div>
+                                {selectedVariables.map((variableKey) => {
+                                  const variable = AVAILABLE_VARIABLES.find(v => v.key === variableKey);
+                                  return variable ? (
+                                    <SelectItem key={variableKey} value={variable.key}>
+                                      ⭐ {variable.label} - {`{${variable.key}}`}
+                                    </SelectItem>
+                                  ) : null;
+                                })}
+                                <div className="border-t my-1"></div>
+                              </>
+                            )}
+                            <div className="px-2 py-1 text-sm font-medium text-gray-600 dark:text-gray-400">
+                              Tutte le variabili:
+                            </div>
                             {AVAILABLE_VARIABLES.map((variable) => (
                               <SelectItem key={variable.key} value={variable.key}>
                                 {variable.label} - {`{${variable.key}}`}
