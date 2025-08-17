@@ -19,6 +19,29 @@ import { apiRequest } from "@/lib/queryClient";
 import { italianBanks } from "@/data/italian-banks";
 import BankingApiSetup from "./banking-api-setup";
 
+// Mappatura intelligente banche -> provider API
+const BANK_API_MAPPING = {
+  "UniCredit": "unicredit",
+  "Intesa Sanpaolo": "intesa",
+  "Banco BPM": "cbi_globe",
+  "BPER Banca": "cbi_globe", 
+  "Credem": "cbi_globe",
+  "UBI Banca": "cbi_globe",
+  "Banche di Credito Cooperativo (BCC)": "cbi_globe",
+  "Monte dei Paschi di Siena": "nexi",
+  "Banco di Sardegna": "banco_bpm_direct",
+  "Banco Desio": "banco_desio_direct"
+};
+
+const PROVIDER_INFO = {
+  unicredit: { name: "UniCredit", status: "✅ Implementato", color: "green" },
+  intesa: { name: "Intesa Sanpaolo", status: "✅ Implementato", color: "green" },
+  cbi_globe: { name: "CBI Globe", status: "✅ Disponibile", color: "green" },
+  nexi: { name: "NEXI", status: "🚧 In sviluppo", color: "orange" },
+  banco_bpm_direct: { name: "Banco BPM", status: "⚠️ Partnership richiesta", color: "yellow" },
+  banco_desio_direct: { name: "Banco Desio", status: "⚠️ Partnership richiesta", color: "yellow" }
+};
+
 interface IbanFormProps {
   iban?: Iban;
   onClose: () => void;
@@ -27,6 +50,11 @@ interface IbanFormProps {
 function IbanForm({ iban, onClose }: IbanFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedBankName, setSelectedBankName] = useState(iban?.bankName || "");
+  const [suggestedProvider, setSuggestedProvider] = useState<string | null>(null);
+  const [showApiSuggestion, setShowApiSuggestion] = useState(false);
+  const [showApiModal, setShowApiModal] = useState(false);
+  const [tempIban, setTempIban] = useState<Partial<Iban> | null>(null);
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
@@ -51,6 +79,23 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
   const getBankValue = (bankName: string) => {
     const bank = italianBanks.find(b => b.label === bankName);
     return bank ? bank.value : "";
+  };
+
+  // Logica intelligente per rilevare API disponibili
+  const checkApiAvailability = (bankName: string) => {
+    const provider = BANK_API_MAPPING[bankName as keyof typeof BANK_API_MAPPING];
+    if (provider) {
+      setSuggestedProvider(provider);
+      setShowApiSuggestion(true);
+      
+      // Auto-seleziona il provider se non è già impostato
+      if (!form.getValues("apiProvider")) {
+        form.setValue("apiProvider", provider);
+      }
+    } else {
+      setSuggestedProvider(null);
+      setShowApiSuggestion(false);
+    }
   };
 
   const mutation = useMutation({
@@ -83,8 +128,9 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="companyId"
@@ -135,12 +181,58 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
                   value={getBankValue(field.value)}
                   onValueChange={(value) => {
                     const selectedBank = italianBanks.find(bank => bank.value === value);
-                    field.onChange(selectedBank ? selectedBank.label : value);
+                    const bankName = selectedBank ? selectedBank.label : value;
+                    
+                    // Aggiorna il form
+                    field.onChange(bankName);
+                    setSelectedBankName(bankName);
+                    
+                    // Controlla disponibilità API
+                    checkApiAvailability(bankName);
                   }}
                   placeholder="Seleziona banca italiana..."
                 />
               </FormControl>
               <FormMessage />
+              
+              {/* Alert per API disponibili */}
+              {showApiSuggestion && suggestedProvider && (
+                <div className="mt-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                      🎉 API Disponibili per {selectedBankName}!
+                    </p>
+                  </div>
+                  <p className="text-xs text-green-600 dark:text-green-300 mt-1">
+                    Provider: {PROVIDER_INFO[suggestedProvider as keyof typeof PROVIDER_INFO]?.status}
+                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-green-600 dark:text-green-300">
+                      Il provider API è stato auto-selezionato.
+                    </p>
+                    <Button
+                      type="button" 
+                      size="sm" 
+                      variant="outline"
+                      className="h-7 text-xs border-green-300 text-green-700 hover:bg-green-50"
+                      onClick={() => {
+                        // Salva temporaneamente i dati del form per configurare API
+                        const formData = form.getValues();
+                        setTempIban({
+                          ...formData,
+                          id: iban?.id || 'temp-' + Date.now(),
+                          bankName: selectedBankName,
+                          apiProvider: suggestedProvider,
+                        } as Partial<Iban>);
+                        setShowApiModal(true);
+                      }}
+                    >
+                      🚀 Configura API Ora
+                    </Button>
+                  </div>
+                </div>
+              )}
             </FormItem>
           )}
         />
@@ -282,8 +374,33 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
             {mutation.isPending ? "Salvando..." : (iban ? "Aggiorna" : "Crea")}
           </Button>
         </div>
-      </form>
-    </Form>
+        </form>
+      </Form>
+      
+      {showApiModal && tempIban && (
+        <Dialog open={showApiModal} onOpenChange={setShowApiModal}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>🚀 Configurazione API per {tempIban.bankName}</DialogTitle>
+              <DialogDescription>
+                Configura l'integrazione API per sincronizzare automaticamente i movimenti bancari
+              </DialogDescription>
+            </DialogHeader>
+            <BankingApiSetup 
+              iban={{
+                ...tempIban,
+                apiProvider: tempIban.apiProvider || undefined,
+                syncFrequency: tempIban.syncFrequency || undefined
+              } as any} 
+              onClose={() => {
+                setShowApiModal(false);
+                setTempIban(null);
+              }} 
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
 
@@ -352,12 +469,62 @@ export default function IbanManagement() {
     return company ? company.name : 'N/A';
   };
 
+  const getSuggestedApiProvider = (bankName: string) => {
+    for (const [bankKey, bankInfo] of Object.entries(ITALIAN_BANKS)) {
+      if (bankName.toLowerCase().includes(bankKey.toLowerCase()) || 
+          bankName.toLowerCase().includes(bankInfo.name.toLowerCase())) {
+        return bankInfo.apiProvider;
+      }
+    }
+    return null;
+  };
+
+  const canUseApi = (bankName: string) => {
+    const provider = getSuggestedApiProvider(bankName);
+    return provider !== null;
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Caricamento...</div>;
   }
 
+  const ibansWithAvailableApi = ibans.filter(iban => 
+    !iban.autoSyncEnabled && canUseApi(iban.bankName)
+  );
+
   return (
     <div>
+      {/* Banner notifica API disponibili */}
+      {ibansWithAvailableApi.length > 0 && (
+        <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+            <h5 className="font-medium text-blue-900 dark:text-blue-100">
+              🚀 API Bancarie Disponibili
+            </h5>
+          </div>
+          <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+            Abbiamo rilevato {ibansWithAvailableApi.length} IBAN con banche che supportano l'integrazione API automatica per la sincronizzazione dei movimenti.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {ibansWithAvailableApi.slice(0, 3).map(iban => (
+              <button
+                key={iban.id}
+                onClick={() => handleConfigureApi(iban)}
+                className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors"
+              >
+                {iban.bankName} - {getSuggestedApiProvider(iban.bankName)}
+              </button>
+            ))}
+            {ibansWithAvailableApi.length > 3 && (
+              <span className="text-xs text-blue-600 dark:text-blue-400 px-2 py-1">
+                +{ibansWithAvailableApi.length - 3} altri...
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <h4 className="text-lg font-medium text-foreground dark:text-foreground">Gestione IBAN</h4>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -416,10 +583,19 @@ export default function IbanManagement() {
                         <Wifi className="w-4 h-4 text-green-600" />
                         <span className="text-sm text-green-600">Attivo</span>
                       </div>
+                    ) : canUseApi(iban.bankName) ? (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                        <span className="text-sm text-blue-600 cursor-pointer" 
+                              onClick={() => handleConfigureApi(iban)}
+                              title="API disponibili - clicca per configurare">
+                          API Disponibili
+                        </span>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-1">
                         <WifiOff className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-500">Non configurato</span>
+                        <span className="text-sm text-gray-500">Non disponibile</span>
                       </div>
                     )}
                   </TableCell>
@@ -433,14 +609,26 @@ export default function IbanManagement() {
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleConfigureApi(iban)}
-                        title="Configura API Bancaria"
-                      >
-                        <Settings2 className="h-3 w-3" />
-                      </Button>
+                      {canUseApi(iban.bankName) && !iban.autoSyncEnabled ? (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          onClick={() => handleConfigureApi(iban)}
+                          title={`Configura API per ${getSuggestedApiProvider(iban.bankName)}`}
+                        >
+                          <Settings2 className="h-3 w-3" />
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleConfigureApi(iban)}
+                          title="Configura API Bancaria"
+                        >
+                          <Settings2 className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="destructive"
