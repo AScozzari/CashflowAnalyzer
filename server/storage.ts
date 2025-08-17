@@ -2852,6 +2852,113 @@ async getMovements(filters: {
       throw error instanceof Error ? error : new Error('Failed to remove from SMS blacklist');
     }
   }
+  // AI Financial Insights methods
+  async getFinancialInsights(userId: string): Promise<any[]> {
+    // Return empty array for now - this would need proper schema implementation
+    return [];
+  }
+
+  async createFinancialInsight(insight: {
+    userId: string;
+    type: string;
+    title: string;
+    description: string;
+    confidence: number;
+    impact: string;
+    category: string;
+    data: any;
+    priority: number;
+  }): Promise<any> {
+    // Mock implementation - would need proper schema
+    return {
+      id: `insight_${Date.now()}`,
+      ...insight,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  async getFinancialInsightsMetrics(userId: string): Promise<any> {
+    // Mock metrics data
+    return {
+      totalInsights: 8,
+      highPriorityAlerts: 2,
+      predictionAccuracy: 0.87,
+      lastUpdateTime: new Date().toISOString(),
+      trendsData: [
+        { period: 'Gen', income: 15000, expense: 8000, net: 7000 },
+        { period: 'Feb', income: 18000, expense: 9500, net: 8500 },
+        { period: 'Mar', income: 22000, expense: 11000, net: 11000 }
+      ],
+      categoryBreakdown: [
+        { name: 'Consulenze', value: 35000, color: '#3b82f6' },
+        { name: 'Prodotti', value: 28000, color: '#ef4444' },
+        { name: 'Servizi', value: 15000, color: '#10b981' }
+      ]
+    };
+  }
+
+  // Document Analysis methods
+  async createDocumentAnalysis(analysis: {
+    userId: string;
+    filename: string;
+    fileType: string;
+    analysis: string;
+    extractedData: any;
+    tokensUsed: number;
+    confidence: number;
+    processingTime: number;
+  }): Promise<any> {
+    // Mock implementation
+    return {
+      id: `doc_analysis_${Date.now()}`,
+      ...analysis,
+      status: 'completed' as const,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  async getDocumentAnalysisHistory(userId: string): Promise<any[]> {
+    // Mock history data
+    return [
+      {
+        id: 'analysis_1',
+        filename: 'fattura_esempio.xml',
+        fileType: 'application/xml',
+        status: 'completed' as const,
+        analysis: 'Fattura elettronica analizzata con successo. Estratti dati fiscali completi.',
+        extractedData: { amount: 1500, vat: 22, supplier: 'Fornitore Esempio' },
+        tokensUsed: 450,
+        confidence: 0.92,
+        processingTime: 3,
+        createdAt: new Date(Date.now() - 86400000).toISOString()
+      }
+    ];
+  }
+
+  // Raw query execution for AI natural language queries
+  async executeRawQuery(sqlQuery: string, userId: string): Promise<any[]> {
+    try {
+      // For security, we should validate and sanitize the query
+      // For now, return mock data based on common query patterns
+      const lowerQuery = sqlQuery.toLowerCase();
+      
+      if (lowerQuery.includes('movements') || lowerQuery.includes('movimenti')) {
+        const movements = await this.getAllMovements(userId);
+        return movements.slice(0, 10); // Limit results
+      }
+      
+      if (lowerQuery.includes('companies') || lowerQuery.includes('aziende')) {
+        const companies = await this.getCompanies();
+        return companies.slice(0, 10);
+      }
+      
+      // Default empty result for safety
+      return [];
+    } catch (error) {
+      console.error('Error executing raw query:', error);
+      throw new Error('Query execution failed');
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

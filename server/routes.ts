@@ -2594,6 +2594,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Get Financial Insights
+  app.get("/api/ai/financial-insights", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const insights = await storage.getFinancialInsights(req.user.id);
+      res.json(insights || []);
+    } catch (error: any) {
+      console.error('Error fetching insights:', error);
+      res.status(500).json({ error: "Errore nel recupero degli insights" });
+    }
+  }));
+
+  // Generate New Insights
+  app.post("/api/ai/financial-insights/generate", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const result = await aiService.generateFinancialInsights(req.user.id, 'last_30_days');
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error generating new insights:', error);
+      res.status(500).json({ error: error.message || "Errore nella generazione degli insights" });
+    }
+  }));
+
+  // Get Insights Metrics
+  app.get("/api/ai/financial-insights/metrics", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const metrics = await storage.getFinancialInsightsMetrics(req.user.id);
+      res.json(metrics);
+    } catch (error: any) {
+      console.error('Error fetching insights metrics:', error);
+      res.status(500).json({ error: "Errore nel recupero delle metriche" });
+    }
+  }));
+
+  // Document Analysis
+  app.post("/api/ai/document-analysis", requireAuth, upload.single('document'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Nessun documento fornito" });
+      }
+
+      const { analysisType = 'financial' } = req.body;
+      const fileContent = req.file.buffer.toString('utf8');
+      
+      const result = await aiService.analyzeDocument(
+        req.user.id,
+        fileContent,
+        req.file.mimetype,
+        { analysisType }
+      );
+      
+      // Save analysis result
+      const analysisRecord = await storage.createDocumentAnalysis({
+        userId: req.user.id,
+        filename: req.file.originalname,
+        fileType: req.file.mimetype,
+        analysis: result.analysis,
+        extractedData: result.extractedData,
+        tokensUsed: result.tokensUsed,
+        confidence: result.confidence || 0.85,
+        processingTime: result.processingTime || 0
+      });
+
+      res.json(analysisRecord);
+    } catch (error: any) {
+      console.error('Error analyzing document:', error);
+      res.status(500).json({ error: error.message || "Errore nell'analisi del documento" });
+    }
+  }));
+
+  // Document Analysis History
+  app.get("/api/ai/document-analysis/history", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const history = await storage.getDocumentAnalysisHistory(req.user.id);
+      res.json(history || []);
+    } catch (error: any) {
+      console.error('Error fetching analysis history:', error);
+      res.status(500).json({ error: "Errore nel recupero della cronologia" });
+    }
+  }));
+
+  // Natural Language Query
+  app.post("/api/ai/natural-query", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { query, maxResults = 100, includeMetadata = true } = req.body;
+      
+      if (!query) {
+        return res.status(400).json({ error: "Query richiesta" });
+      }
+
+      const result = await aiService.executeNaturalLanguageQuery(
+        req.user.id,
+        query,
+        { maxResults, includeMetadata }
+      );
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error executing natural query:', error);
+      res.status(500).json({ error: error.message || "Errore nell'esecuzione della query" });
+    }
+  }));
+
+  // Generate Chart with AI
+  app.post("/api/ai/generate-chart", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { query, chartType, dataSource = 'all', includeInsights = true } = req.body;
+      
+      if (!query) {
+        return res.status(400).json({ error: "Query richiesta per generare il grafico" });
+      }
+
+      const result = await aiService.generateChart(
+        req.user.id,
+        query,
+        { chartType, dataSource, includeInsights }
+      );
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error generating chart:', error);
+      res.status(500).json({ error: error.message || "Errore nella generazione del grafico" });
+    }
+  }));
+
   // === BACKUP ROUTES ===
 
   // Get backup configurations
