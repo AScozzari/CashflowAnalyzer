@@ -34,7 +34,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Info,
-  Zap
+  Zap,
+  Plus
 } from 'lucide-react';
 
 interface SystemConfig {
@@ -165,6 +166,32 @@ export function GeneralSettings() {
       toast({
         title: "Errore riavvio",
         description: error.message || "Impossibile riavviare il servizio",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Generate test logs mutation
+  const generateTestLogsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/system/logs/generate-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Failed to generate test logs');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Log generati",
+        description: "Log di test generati con successo"
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/system/logs'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore generazione",
+        description: error.message || "Impossibile generare log di test",
         variant: "destructive"
       });
     }
@@ -569,13 +596,31 @@ export function GeneralSettings() {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  System Logs
-                </CardTitle>
-                <CardDescription>
-                  Ultimi 50 log di sistema in tempo reale
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      System Logs
+                    </CardTitle>
+                    <CardDescription>
+                      Ultimi 50 log di sistema in tempo reale
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => generateTestLogsMutation.mutate()}
+                    disabled={generateTestLogsMutation.isPending}
+                    data-testid="button-generate-test-logs"
+                  >
+                    {generateTestLogsMutation.isPending ? (
+                      <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
+                    )}
+                    Log di Test
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 max-h-96 overflow-y-auto">

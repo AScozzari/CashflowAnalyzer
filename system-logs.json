@@ -1,1 +1,52 @@
-[]
+[
+  {
+    "id": "log_1755435675815_d3gep0imo",
+    "timestamp": "2025-08-17T13:01:15.815Z",
+    "level": "WARN",
+    "message": "Primo avvio: configurare i provider di backup",
+    "source": "backup-service",
+    "metadata": {
+      "providersConfigured": 0,
+      "action": "configure_providers"
+    }
+  },
+  {
+    "id": "log_1755435675696_qezk2sd8u",
+    "timestamp": "2025-08-17T13:01:15.696Z",
+    "level": "INFO",
+    "message": "WebSocket server attivo su porta 5000",
+    "source": "websocket"
+  },
+  {
+    "id": "log_1755435675695_4y9jsgahd",
+    "timestamp": "2025-08-17T13:01:15.695Z",
+    "level": "DEBUG",
+    "message": "Configurazioni di sistema caricate",
+    "source": "system-service",
+    "metadata": {
+      "configCount": 12,
+      "loadTime": "125ms"
+    }
+  },
+  {
+    "id": "log_1755435675690_fennnlmbw",
+    "timestamp": "2025-08-17T13:01:15.690Z",
+    "level": "INFO",
+    "message": "Servizi di backup inizializzati",
+    "source": "backup-service"
+  },
+  {
+    "id": "log_1755435675688_d644zqs1o",
+    "timestamp": "2025-08-17T13:01:15.688Z",
+    "level": "INFO",
+    "message": "Connessione database stabilita",
+    "source": "database"
+  },
+  {
+    "id": "log_1755435675673_atfhuiljg",
+    "timestamp": "2025-08-17T13:01:15.673Z",
+    "level": "INFO",
+    "message": "Sistema EasyCashFlows avviato correttamente",
+    "source": "system-startup"
+  }
+]

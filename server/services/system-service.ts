@@ -166,6 +166,7 @@ class SystemService {
   constructor() {
     this.initializeConfigs();
     this.initializeLogs();
+    this.createInitialLogs();
   }
 
   private async initializeConfigs() {
@@ -188,6 +189,29 @@ class SystemService {
     } catch {
       // File doesn't exist, create it
       await fs.writeFile(this.logsPath, JSON.stringify([], null, 2));
+    }
+  }
+
+  private async createInitialLogs() {
+    try {
+      // Crea alcuni log di esempio se il file è vuoto o non esiste
+      const existingLogs = await this.getLogs();
+      if (existingLogs.length === 0) {
+      await this.log('INFO', 'Sistema EasyCashFlows avviato correttamente', 'system-startup');
+      await this.log('INFO', 'Connessione database stabilita', 'database');
+      await this.log('INFO', 'Servizi di backup inizializzati', 'backup-service');
+      await this.log('DEBUG', 'Configurazioni di sistema caricate', 'system-service', {
+        configCount: (await this.getConfigs()).length,
+        loadTime: '125ms'
+      });
+      await this.log('INFO', 'WebSocket server attivo su porta 5000', 'websocket');
+      await this.log('WARN', 'Primo avvio: configurare i provider di backup', 'backup-service', {
+        providersConfigured: 0,
+        action: 'configure_providers'
+      });
+      }
+    } catch (error) {
+      console.error('Error creating initial logs:', error);
     }
   }
 

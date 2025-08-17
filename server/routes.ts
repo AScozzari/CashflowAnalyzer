@@ -3338,6 +3338,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Generate test logs
+  app.post("/api/system/logs/generate-test", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Genera alcuni log di test con diversi livelli
+      await systemService.log('INFO', 'Log di test generato manualmente', 'test-generator', {
+        user: req.user?.email || 'admin',
+        timestamp: new Date().toISOString()
+      });
+      
+      await systemService.log('DEBUG', 'Debug: verifica funzionalità logging', 'test-generator', {
+        memory: process.memoryUsage(),
+        uptime: process.uptime()
+      });
+      
+      await systemService.log('WARN', 'Attenzione: log di esempio per test interfaccia', 'test-generator', {
+        level: 'warning',
+        category: 'ui-test'
+      });
+      
+      await systemService.log('ERROR', 'Errore simulato per testing (non reale)', 'test-generator', {
+        errorType: 'simulation',
+        resolved: true
+      });
+
+      res.json({ success: true, message: 'Log di test generati con successo' });
+    } catch (error) {
+      console.error("Error generating test logs:", error);
+      res.status(500).json({ 
+        error: "Failed to generate test logs" 
+      });
+    }
+  }));
+
   // API tracking middleware (put this after all other routes to track them)
   app.use((req: any, res: any, next: any) => {
     const startTime = Date.now();
