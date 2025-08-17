@@ -8,7 +8,7 @@ import { ConnectionStatus } from "@/components/debug/connection-status";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AiSettings from "@/components/settings/ai-settings";
-import { ChannelSettings } from "@/components/settings/channel-settings";
+import { ChannelSettingsDynamic } from "@/components/settings/channel-settings-dynamic";
 import { WebSocketStatus } from "@/components/debug/websocket-status";
 import { OpenAIDiagnostic } from "@/components/debug/openai-diagnostic";
 import { WebhookDiagnostics } from "@/components/debug/webhook-diagnostics";
@@ -45,7 +45,7 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="channels">
-          <ChannelSettings />
+          <ChannelSettingsDynamic />
         </TabsContent>
 
         <TabsContent value="system">

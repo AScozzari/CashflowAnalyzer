@@ -3,16 +3,20 @@
 EasyCashFlows is a comprehensive financial management system for Italian SMEs, offering advanced cash flow tracking, analytics, and integration with Italian fiscal requirements like FatturaPA (electronic invoicing). It features a React-based frontend with a modern dashboard, authentication, file upload, and financial movement tracking with predictive analytics. The project's vision is to provide a multi-channel communication system including email, WhatsApp, SMS, and Telegram, with AI integration for intelligent responses and personalized financial insights.
 
 ## Recent Release - Release 6 (August 17, 2025)
-**Complete WhatsApp Dynamic Variables System Implementation**
+**Complete WhatsApp Dynamic Variables System Implementation + Dynamic Channel Settings**
 - Implemented comprehensive WhatsApp dynamic variables system to replace static {{1}}, {{2}}, {{3}} placeholders
 - Created WhatsApp template resolver service that extracts data from real entities (Companies, Customers, Movements, Suppliers)
 - Built 4-tab interface for WhatsApp variables: Dynamic Variables, Mapping Placeholder, Tester Template, Legacy System
 - Developed variable mapping component showing conversion from {{1}} → {{customer.name}}, {{2}} → {{movement.amount}}, etc.
 - Added interactive template tester with real entity selection and live template resolution
-- Implemented 50+ dynamic variables across entity categories (company.name, customer.email, movement.amount, system.current_date, etc.)
-- Created mock data system for demonstration without authentication dependency
-- Added database schema updates for WhatsApp settings compatibility
-- Template variables now support automatic data type formatting (currency, dates, emails, phones)
+- Implemented 50+ dynamic variables across entity categories organized by: Cliente | Azienda | Movimento Finanziario | Sistema
+- Created intelligent mapping system where selected variables appear prioritized in dropdown with ⭐
+- Variable selection workflow: Click to select → Apply to Mapping → Only selected variables in dropdown
+- Added dual interaction modes: Normal click = select, Ctrl+Click = copy to clipboard
+- Replaced static channel info cards with dynamic interactive components
+- Channel cards now have status indicators, feature badges, and direct configuration access
+- Integrated WhatsApp and Email configuration dialogs directly into channel cards
+- Enhanced UI with proper status visualization (Implemented/Coming Soon) and action buttons
 - Complete working system ready for production use with real entity data integration
 
 # User Preferences
