@@ -28,7 +28,19 @@ EasyCashFlows is a comprehensive financial management system for Italian SMEs, o
 - Added comprehensive authentication requirements including eIDAS certificates and TPP registration
 - System ready for automatic bank transaction verification and movement reconciliation
 
-## Recent Fix - IBAN Creation Authentication Issue (August 17, 2025)
+## Recent Enhancement - UX Improvements & Mobile Fields Integration (August 17, 2025)
+- ✅ **COMPLETED**: Enhanced movement creation form with parent-child field dependencies for better UX
+- Implemented conditional field disabling logic:
+  * Company (parent) → Core, Resource, Office, IBAN (children) - disabled until company selected
+  * Entity Type (parent) → Customer/Supplier selection (children) - disabled until entity type selected
+- Added mobile phone fields to all entity creation forms (Resources, Customers, Suppliers)
+- Updated database schema with mobile fields for enhanced WhatsApp integration
+- Fixed contact search modal in WhatsApp interface to properly display contacts with mobile numbers
+- Enhanced form placeholders to guide users through required field selection sequence
+- Applied visual styling (opacity, cursor states) to clearly indicate disabled form fields
+- Database migration completed: ALTER TABLE operations added mobile columns successfully
+
+## Previous Fix - IBAN Creation Authentication Issue (August 17, 2025)  
 - ✅ **RESOLVED**: Fixed IBAN creation error caused by missing authentication
 - Identified root cause: Frontend session not authenticated, causing 401 errors on POST /api/ibans
 - Tested successfully: IBAN creation works correctly with authenticated session

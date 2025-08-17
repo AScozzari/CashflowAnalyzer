@@ -530,10 +530,14 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Core *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                          disabled={!watchedCompanyId}
+                        >
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona core" />
+                            <SelectTrigger className={!watchedCompanyId ? "opacity-50 cursor-not-allowed" : ""}>
+                              <SelectValue placeholder={!watchedCompanyId ? "Prima seleziona l'azienda" : "Seleziona core"} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -646,10 +650,14 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                               Nuovo
                             </Button>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                            disabled={!watchedEntityType}
+                          >
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleziona cliente" />
+                              <SelectTrigger className={!watchedEntityType ? "opacity-50 cursor-not-allowed" : ""}>
+                                <SelectValue placeholder={!watchedEntityType ? "Prima seleziona tipo entità" : "Seleziona cliente"} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -692,10 +700,14 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                               Nuovo
                             </Button>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                            disabled={!watchedEntityType}
+                          >
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleziona fornitore" />
+                              <SelectTrigger className={!watchedEntityType ? "opacity-50 cursor-not-allowed" : ""}>
+                                <SelectValue placeholder={!watchedEntityType ? "Prima seleziona tipo entità" : "Seleziona fornitore"} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -723,10 +735,14 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Risorsa</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              value={field.value}
+                              disabled={!watchedCompanyId}
+                            >
                               <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleziona risorsa" />
+                                <SelectTrigger className={!watchedCompanyId ? "opacity-50 cursor-not-allowed" : ""}>
+                                  <SelectValue placeholder={!watchedCompanyId ? "Prima seleziona l'azienda" : "Seleziona risorsa"} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -747,10 +763,14 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Sede Operativa</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              value={field.value}
+                              disabled={!watchedCompanyId}
+                            >
                               <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleziona sede (opzionale)" />
+                                <SelectTrigger className={!watchedCompanyId ? "opacity-50 cursor-not-allowed" : ""}>
+                                  <SelectValue placeholder={!watchedCompanyId ? "Prima seleziona l'azienda" : "Seleziona sede (opzionale)"} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -791,10 +811,14 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>IBAN</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                          disabled={!watchedCompanyId}
+                        >
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona IBAN (opzionale)" />
+                            <SelectTrigger className={!watchedCompanyId ? "opacity-50 cursor-not-allowed" : ""}>
+                              <SelectValue placeholder={!watchedCompanyId ? "Prima seleziona l'azienda" : "Seleziona IBAN (opzionale)"} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
