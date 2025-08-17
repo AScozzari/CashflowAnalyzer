@@ -137,9 +137,41 @@ const BANK_PROVIDERS = {
   }
 };
 
+// Mappatura intelligente banche -> provider API
+const BANK_API_MAPPING = {
+  "UniCredit": "unicredit",
+  "Intesa Sanpaolo": "intesa",
+  "Banco BPM": "cbi_globe",
+  "BPER Banca": "cbi_globe", 
+  "Credem": "cbi_globe",
+  "UBI Banca": "cbi_globe",
+  "Banche di Credito Cooperativo (BCC)": "cbi_globe",
+  "Monte dei Paschi di Siena": "nexi",
+  "Banco di Sardegna": "banco_bpm_direct",
+  "Banco Desio": "banco_desio_direct"
+};
+
+// Funzione per auto-selezionare provider basato sulla banca
+const getProviderForBank = (bankName: string) => {
+  const provider = BANK_API_MAPPING[bankName as keyof typeof BANK_API_MAPPING];
+  if (provider) return provider;
+  
+  // Fallback: cerca per match parziale del nome banca
+  for (const [mappedBankName, mappedProvider] of Object.entries(BANK_API_MAPPING)) {
+    if (bankName.toLowerCase().includes(mappedBankName.toLowerCase()) || 
+        mappedBankName.toLowerCase().includes(bankName.toLowerCase())) {
+      return mappedProvider;
+    }
+  }
+  return "";
+};
+
 export default function BankingApiSetup({ iban, onClose }: BankingApiSetupProps) {
   const { toast } = useToast();
-  const [selectedProvider, setSelectedProvider] = useState<string>(iban?.apiProvider || "");
+  
+  // Auto-seleziona il provider corretto basato sulla banca dell'IBAN
+  const autoSelectedProvider = getProviderForBank(iban?.bankName || "");
+  const [selectedProvider, setSelectedProvider] = useState<string>(autoSelectedProvider || iban?.apiProvider || "");
   const [isConfiguring, setIsConfiguring] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"testing" | "connected" | "failed" | null>(null);
   
@@ -246,38 +278,68 @@ export default function BankingApiSetup({ iban, onClose }: BankingApiSetupProps)
         </TabsList>
 
         <TabsContent value="provider" className="space-y-4">
+          {/* Notifica auto-selezione */}
+          {autoSelectedProvider && (
+            <Alert className="border-blue-200 bg-blue-50/30 dark:bg-blue-950/20">
+              <CheckCircle2 className="h-4 w-4 text-blue-600" />
+              <AlertDescription>
+                <strong>Provider Auto-Selezionato:</strong> Basandoci sulla tua banca ({iban?.bankName}), 
+                abbiamo automaticamente selezionato il provider API più appropriato. 
+                Gli altri provider sono disabilitati per mantenere la correlazione.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="grid gap-4">
-            <Label>Seleziona Provider API</Label>
+            <Label>Provider API per {iban?.bankName}</Label>
             
-            {Object.entries(BANK_PROVIDERS).map(([key, provider]) => (
-              <Card 
-                key={key}
-                className={`cursor-pointer transition-all ${
-                  selectedProvider === key 
-                    ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/20' 
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                }`}
-                onClick={() => setSelectedProvider(key)}
-              >
+            {Object.entries(BANK_PROVIDERS).map(([key, provider]) => {
+              const isRecommended = key === autoSelectedProvider;
+              const isDisabled = autoSelectedProvider && key !== autoSelectedProvider;
+              
+              return (
+                <Card 
+                  key={key}
+                  className={`transition-all ${
+                    selectedProvider === key 
+                      ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/20' 
+                      : isDisabled 
+                        ? 'opacity-50 cursor-not-allowed bg-gray-100/50 dark:bg-gray-800/20'
+                        : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                  }`}
+                  onClick={() => !isDisabled && setSelectedProvider(key)}
+                >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{provider.name}</h4>
+                        <h4 className={`font-semibold ${isDisabled ? 'text-gray-400' : ''}`}>
+                          {provider.name}
+                        </h4>
                         <div className="flex gap-1">
+                          {isRecommended && (
+                            <Badge variant="default" className="bg-blue-600 text-white">
+                              🎯 Raccomandato
+                            </Badge>
+                          )}
+                          {isDisabled && (
+                            <Badge variant="outline" className="text-gray-400 border-gray-300">
+                              Non compatibile
+                            </Badge>
+                          )}
                           <Badge variant={
                             provider.status === 'available' ? 'default' :
                             provider.status === 'beta' ? 'secondary' : 'outline'
-                          }>
+                          } className={isDisabled ? 'opacity-50' : ''}>
                             {provider.status === 'available' ? 'Disponibile' :
                              provider.status === 'beta' ? 'Beta' : 'In arrivo'}
                           </Badge>
                           {provider.implemented ? (
-                            <Badge variant="default" className="bg-green-600">
+                            <Badge variant="default" className={`bg-green-600 ${isDisabled ? 'opacity-50' : ''}`}>
                               ✓ Implementato
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-orange-600 border-orange-600">
+                            <Badge variant="outline" className={`text-orange-600 border-orange-600 ${isDisabled ? 'opacity-50' : ''}`}>
                               🚧 In sviluppo
                             </Badge>
                           )}
@@ -330,8 +392,19 @@ export default function BankingApiSetup({ iban, onClose }: BankingApiSetupProps)
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            );
+            })}
           </div>
+          
+          {/* Spiegazione correlazione */}
+          <Alert className="border-green-200 bg-green-50/30 dark:bg-green-950/20">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription>
+              <strong>Correlazione Intelligente:</strong> Il sistema mantiene automaticamente 
+              la correlazione tra la banca selezionata nell'IBAN e il provider API appropriato, 
+              garantendo configurazioni sempre corrette e compatibili.
+            </AlertDescription>
+          </Alert>
         </TabsContent>
 
         <TabsContent value="credentials" className="space-y-4">
