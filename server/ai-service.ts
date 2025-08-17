@@ -60,7 +60,8 @@ export class AIService {
     userId: string,
     message: string,
     sessionId: string,
-    context?: any
+    context?: any,
+    model?: string
   ): Promise<{ response: string; tokensUsed: number }> {
     if (!this.isConfigured) {
       throw new Error('OpenAI API key not configured');
@@ -98,8 +99,11 @@ export class AIService {
     messages.push({ role: 'user', content: message });
 
     try {
+      // Use provided model or fall back to settings default
+      const selectedModel = model || aiSettings.defaultModel || 'gpt-4o';
+      
       const response = await this.openai.chat.completions.create({
-        model: aiSettings.defaultModel || 'gpt-4o',
+        model: selectedModel,
         messages,
         max_tokens: aiSettings.maxTokens || 2000,
         temperature: Number(aiSettings.temperature) || 0.7,
@@ -214,8 +218,7 @@ Privacy Mode: ${aiSettings.privacyMode}`;
       // Get recent movements if requested
       if (queryType.includes('movements') || queryType.includes('recent') || queryType.includes('transazioni')) {
         try {
-          const movementsResult = await storage.getMovements({});
-          const movements = movementsResult.data || movementsResult;
+          const movements = await storage.getMovements({});
           const recentMovements = movements.slice(0, 10).map((m: any) => ({
             type: m.type,
             amount: m.amount,
@@ -352,7 +355,8 @@ Please provide:
     userId: string,
     documentContent: string,
     fileType: string,
-    analysisType: 'movement_extraction' = 'movement_extraction'
+    analysisType: 'movement_extraction' = 'movement_extraction',
+    model?: string
   ): Promise<{ extractedData: any; processingNotes: string[]; tokensUsed: number }> {
     if (!this.isConfigured) {
       throw new Error('OpenAI API key not configured');
@@ -432,8 +436,11 @@ Rispondi SOLO con questo JSON (senza markdown):
 IMPORTANTE: Se non riesci a determinare un campo, omettilo dal JSON. Mantieni alta precisione e confidenza per i dati estratti.`;
 
     try {
+      // Use provided model or default to best model for extraction
+      const selectedModel = model || aiSettings.defaultModel || 'gpt-4o';
+      
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o', // Always use best model for extraction
+        model: selectedModel,
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 1500,
         temperature: 0.1, // Very low temperature for precise extraction
@@ -447,10 +454,10 @@ IMPORTANTE: Se non riesci a determinare un campo, omettilo dal JSON. Mantieni al
       try {
         const content = response.choices[0]?.message?.content || '{}';
         extractedData = JSON.parse(content);
-        processingNotes = extractedData.processingNotes || [];
+        processingNotes = (extractedData as any).processingNotes || [];
         
         // Clean up the response
-        delete extractedData.processingNotes;
+        delete (extractedData as any).processingNotes;
         
         console.log('[AI] Movement extraction successful:', extractedData);
       } catch (e) {

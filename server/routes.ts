@@ -2466,7 +2466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Chat
   app.post("/api/ai/chat", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const { message, sessionId, context } = req.body;
+      const { message, sessionId, context, model } = req.body;
       
       if (!message || !sessionId) {
         return res.status(400).json({ error: "Messaggio e sessionId sono richiesti" });
@@ -2476,7 +2476,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.user.id,
         message,
         sessionId,
-        context
+        context,
+        model
       );
       
       res.json(result);
@@ -2583,6 +2584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filePath = req.file.path;
       const fileName = req.file.originalname;
       const fileType = req.file.mimetype;
+      const { model } = req.body;
 
       // Read file content
       let fileContent = '';
@@ -2603,7 +2605,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await aiService.extractMovementData(
         req.user.id,
         fileContent,
-        fileType || 'unknown'
+        fileType || 'unknown',
+        'movement_extraction',
+        model
       );
 
       // Clean up uploaded file after processing
@@ -2643,7 +2647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Movement Data Extraction (for already uploaded files)
   app.post("/api/ai/extract-movement", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const { documentContent, fileType, fileName } = req.body;
+      const { documentContent, fileType, fileName, model } = req.body;
       
       if (!documentContent) {
         return res.status(400).json({ error: "Contenuto documento richiesto" });
@@ -2652,7 +2656,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await aiService.extractMovementData(
         req.user.id,
         documentContent,
-        fileType || 'unknown'
+        fileType || 'unknown',
+        'movement_extraction',
+        model
       );
 
       res.json({

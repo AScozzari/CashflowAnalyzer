@@ -36,6 +36,7 @@ import { it } from "date-fns/locale";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import type { MovementWithRelations } from "@shared/schema";
 import { ConfigPreviewMini } from "@/components/dashboard/config-preview-mini";
+import { AiToolsWidget } from "@/components/dashboard/ai-tools-widget";
 import MovementFormNew from "@/components/movements/movement-form-new-fixed";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -798,6 +799,9 @@ export default function DashboardProfessional() {
           {/* Quick Actions Sidebar */}
           <div className="space-y-6">
             <QuickActionsWidget onOpenNewMovement={() => setIsNewMovementModalOpen(true)} />
+            
+            {/* AI Tools Widget */}
+            <AiToolsWidget />
             
             {/* Configuration Preview Mini-Dashboard */}
             <ConfigPreviewMini />

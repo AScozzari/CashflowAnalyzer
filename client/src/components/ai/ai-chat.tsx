@@ -6,7 +6,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Bot, User, Loader2, Trash2, Settings, Plus, MoreHorizontal, Copy, ThumbsUp, ThumbsDown, Zap, MessageSquare } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Send, Bot, User, Loader2, Trash2, Settings, Plus, MoreHorizontal, Copy, ThumbsUp, ThumbsDown, Zap, MessageSquare, ChevronDown } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -34,11 +35,32 @@ export function AiChat() {
   const [currentMessage, setCurrentMessage] = useState("");
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>('gpt-4o');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   // Generate new session ID
   const generateSessionId = () => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  // Available AI models
+  const aiModels = [
+    { id: 'gpt-4o', name: 'GPT-4o', description: 'Modello più avanzato' },
+    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', description: 'Bilanciato e veloce' },
+    { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'Economico e rapido' }
+  ];
+
+  // Fetch AI settings to get default model
+  const { data: aiSettings } = useQuery({
+    queryKey: ['/api/ai/settings'],
+    retry: false,
+  });
+
+  // Update selected model when settings load
+  useEffect(() => {
+    if (aiSettings && (aiSettings as any).defaultModel) {
+      setSelectedModel((aiSettings as any).defaultModel);
+    }
+  }, [aiSettings]);
 
   // Fetch chat sessions
   const { data: sessions = [] } = useQuery<ChatSession[]>({
@@ -59,6 +81,7 @@ export function AiChat() {
       const response = await apiRequest('POST', '/api/ai/chat', {
         message,
         sessionId,
+        model: selectedModel, // Include selected model
         context: {
           timestamp: new Date().toISOString(),
           source: 'chat_interface'
@@ -258,16 +281,43 @@ export function AiChat() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
-                GPT-4o-mini
-              </Badge>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0"
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 bg-green-50 text-green-700 border-green-200 hover:bg-green-100 data-testid-model-selector"
+                    data-testid="button-model-selector"
+                  >
+                    {aiModels.find(model => model.id === selectedModel)?.name || selectedModel}
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {aiModels.map((model) => (
+                    <DropdownMenuItem 
+                      key={model.id}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        toast({
+                          title: "Modello cambiato",
+                          description: `Ora stai usando ${model.name}`,
+                        });
+                      }}
+                      className={selectedModel === model.id ? 'bg-primary/10' : ''}
+                      data-testid={`model-${model.id}`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{model.name}</span>
+                        <span className="text-xs text-muted-foreground">{model.description}</span>
+                      </div>
+                      {selectedModel === model.id && (
+                        <div className="ml-auto w-2 h-2 rounded-full bg-green-500" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardHeader>
