@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BackupProviderConfig } from './backup-provider-config';
+import type { BackupJob } from '../../../../shared/backup-schema';
 import { 
   Database, 
   Cloud, 
@@ -179,7 +180,7 @@ export function BackupSettings() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {backupJobs?.slice(0, 5).map((job) => (
+                {backupJobs?.slice(0, 5).map((job: BackupJob) => (
                   <div key={job.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       {getStatusIcon(job.status)}
@@ -195,7 +196,7 @@ export function BackupSettings() {
                         {job.status}
                       </Badge>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {formatBytes(job.backupSizeBytes)}
+                        {formatBytes(job.backupSizeBytes || 0)}
                       </p>
                     </div>
                   </div>
@@ -225,7 +226,7 @@ export function BackupSettings() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {backupJobs?.map((job) => (
+                {backupJobs?.map((job: BackupJob) => (
                   <div key={job.id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
@@ -240,7 +241,7 @@ export function BackupSettings() {
                       <div className="text-right">
                         <Badge variant="default">{job.status}</Badge>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {formatBytes(job.backupSizeBytes)}
+                          {formatBytes(job.backupSizeBytes || 0)}
                         </p>
                       </div>
                     </div>
