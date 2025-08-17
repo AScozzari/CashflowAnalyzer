@@ -116,7 +116,7 @@ export function ChannelSettingsCompact() {
               selectedChannel === channel.id ? 'ring-2 ring-blue-500' : ''
             } ${
               channel.status === 'implemented' 
-                ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950' 
+                ? 'border-green-200 dark:border-green-800' 
                 : 'border-orange-200 dark:border-orange-800'
             }`}
             onClick={() => {
