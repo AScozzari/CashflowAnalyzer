@@ -2821,6 +2821,242 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // AI Tools Endpoints - Advanced Financial AI Features
+  app.post("/api/ai/forecast", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { months = 6, includeSeasonality = true, riskAnalysis = true } = req.body;
+      const user = req.user;
+      
+      // Get historical movement data for forecasting
+      const historicalMovements = await storage.getMovements(user, { limit: 1000 });
+      
+      const forecastPrompt = `Analizza questi movimenti finanziari storici e genera una previsione per i prossimi ${months} mesi.
+      
+Dati storici: ${JSON.stringify(historicalMovements.slice(0, 50))}
+
+Fornisci previsioni specifiche per:
+1. Entrate mensili previste
+2. Uscite mensili previste  
+3. Flusso di cassa netto
+4. Periodi di tensione di liquidità
+5. Opportunità di investimento
+${includeSeasonality ? '6. Analisi stagionalità' : ''}
+${riskAnalysis ? '7. Analisi dei rischi' : ''}
+
+Formato: JSON con campi forecast, trends, risks, opportunities`;
+
+      const result = await aiService.generateResponse(forecastPrompt, {
+        model: 'gpt-4o',
+        temperature: 0.3,
+        maxTokens: 2000
+      });
+
+      res.json({
+        success: true,
+        forecast: JSON.parse(result.content),
+        generated_at: new Date().toISOString(),
+        data_points: historicalMovements.length
+      });
+
+    } catch (error) {
+      console.error('Forecast generation error:', error);
+      res.status(500).json({ error: "Errore nella generazione della previsione" });
+    }
+  }));
+
+  app.post("/api/ai/detect-anomalies", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { checkDuplicates = true, checkOutliers = true, checkPatterns = true } = req.body;
+      const user = req.user;
+      
+      // Get recent movements for anomaly detection
+      const recentMovements = await storage.getMovements(user, { limit: 500 });
+      
+      const anomalyPrompt = `Analizza questi movimenti finanziari per rilevare anomalie:
+      
+Movimenti: ${JSON.stringify(recentMovements)}
+
+Controlla:
+${checkDuplicates ? '- Possibili duplicati (stesso importo, data simile, descrizione)' : ''}
+${checkOutliers ? '- Importi fuori dalla norma (outliers significativi)' : ''}
+${checkPatterns ? '- Pattern inusuali o sospetti' : ''}
+
+Restituisci JSON con:
+- anomalies: array di anomalie rilevate
+- duplicates: array di possibili duplicati
+- outliers: array di importi anomali
+- patterns: pattern sospetti identificati
+- summary: riepilogo dei controlli`;
+
+      const result = await aiService.generateResponse(anomalyPrompt, {
+        model: 'gpt-4o',
+        temperature: 0.1,
+        maxTokens: 1500
+      });
+
+      res.json({
+        success: true,
+        analysis: JSON.parse(result.content),
+        checked_movements: recentMovements.length,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('Anomaly detection error:', error);
+      res.status(500).json({ error: "Errore nel rilevamento anomalie" });
+    }
+  }));
+
+  app.post("/api/ai/smart-categorization", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { movements } = req.body;
+      
+      // Get categories and reasons from the system
+      const reasons = await storage.getMovementReasons();
+      
+      const categorizationPrompt = `Analizza questi movimenti e suggerisci la categoria più appropriata per ognuno:
+
+Movimenti da categorizzare: ${JSON.stringify(movements)}
+
+Categorie disponibili: ${JSON.stringify(reasons)}
+
+Per ogni movimento, fornisci:
+- id del movimento
+- categoria suggerita (da quelle disponibili)
+- confidenza (0-100%)
+- motivo della scelta
+
+Formato: JSON con array di suggested_categories`;
+
+      const result = await aiService.generateResponse(categorizationPrompt, {
+        model: 'gpt-4o',
+        temperature: 0.2,
+        maxTokens: 1500
+      });
+
+      res.json({
+        success: true,
+        categorization: JSON.parse(result.content),
+        processed_movements: movements.length
+      });
+
+    } catch (error) {
+      console.error('Smart categorization error:', error);
+      res.status(500).json({ error: "Errore nella categorizzazione intelligente" });
+    }
+  }));
+
+  app.post("/api/ai/tax-optimizer", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const user = req.user;
+      const year = req.body.year || new Date().getFullYear();
+      
+      // Get movements for tax analysis
+      const yearMovements = await storage.getMovements(user, {
+        dateFrom: `${year}-01-01`,
+        dateTo: `${year}-12-31`,
+        limit: 1000
+      });
+
+      const taxPrompt = `Analizza questi movimenti per l'ottimizzazione fiscale italiana ${year}:
+
+Movimenti: ${JSON.stringify(yearMovements)}
+
+Fornisci suggerimenti per:
+1. Detrazioni mancate o non applicate
+2. Timing ottimale per pagamenti deducibili
+3. Opportunità di risparmio fiscale
+4. Spese deducibili non classificate correttamente
+5. Pianificazione pagamenti per benefici fiscali
+6. Alert per scadenze fiscali importanti
+
+Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_savings`;
+
+      const result = await aiService.generateResponse(taxPrompt, {
+        model: 'gpt-4o',
+        temperature: 0.3,
+        maxTokens: 2000
+      });
+
+      res.json({
+        success: true,
+        tax_optimization: JSON.parse(result.content),
+        analyzed_year: year,
+        movements_count: yearMovements.length
+      });
+
+    } catch (error) {
+      console.error('Tax optimization error:', error);
+      res.status(500).json({ error: "Errore nell'ottimizzazione fiscale" });
+    }
+  }));
+
+  app.post("/api/ai/extract-document", requireAuth, upload.single('file'), handleAsyncErrors(async (req: any, res: any) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "Nessun file caricato" });
+    }
+
+    const filePath = req.file.path;
+    const originalName = req.file.originalname;
+    const fileExtension = path.extname(originalName).toLowerCase();
+
+    try {
+      let extractedData = null;
+
+      if (fileExtension === '.xml') {
+        // Handle XML invoices (FatturaPA)
+        const xmlContent = fs.readFileSync(filePath, 'utf-8');
+        extractedData = await xmlInvoiceParser.parseInvoiceXML(xmlContent);
+      } else if (fileExtension === '.pdf' || ['.jpg', '.jpeg', '.png'].includes(fileExtension)) {
+        // Handle PDF or image files with AI extraction
+        const prompt = `Analizza questo documento e estrai tutte le informazioni finanziarie rilevanti:
+        
+        - Importi (totale, IVA, imponibile)
+        - Date (emissione, scadenza)  
+        - Dati fornitore/cliente
+        - Descrizione servizi/prodotti
+        - Codici di riferimento
+        - Modalità di pagamento
+        
+        Formato: JSON strutturato con tutti i dati estratti.`;
+
+        const result = await aiService.generateResponse(prompt, {
+          model: 'gpt-4o',
+          temperature: 0.1,
+          maxTokens: 1000
+        });
+
+        extractedData = {
+          type: 'ai_extracted',
+          data: JSON.parse(result.content)
+        };
+      } else {
+        throw new Error('Formato file non supportato');
+      }
+
+      // Cleanup temporary file
+      fs.unlinkSync(filePath);
+
+      res.json({
+        success: true,
+        fileName: originalName,
+        extractedData,
+        processing_time: Date.now() - (req as any).uploadStartTime || 0
+      });
+
+    } catch (error) {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      
+      console.error('Document extraction error:', error);
+      res.status(500).json({ 
+        error: "Errore nell'estrazione dati dal documento",
+        details: error instanceof Error ? error.message : "Errore sconosciuto"
+      });
+    }
+  }));
+
   // === BACKUP ROUTES ===
 
   // Get backup configurations

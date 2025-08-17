@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,8 @@ import {
   Download,
   Eye,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Settings
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,6 +36,7 @@ import { useAuth } from "@/hooks/use-auth";
 export default function AiToolsPage() {
   const { user } = useAuth();
   const [selectedTool, setSelectedTool] = useState("smart-forecast");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Get financial data for AI context
   const { data: analytics, isLoading: analyticsLoading } = useQuery({
@@ -123,6 +126,83 @@ export default function AiToolsPage() {
 
   const categories = ["Tutti", "Predizioni", "Documenti", "Controllo", "Automazione", "Fiscale", "Consulenza", "Analytics", "Legale"];
   const [selectedCategory, setSelectedCategory] = useState("Tutti");
+
+  // AI Processing Mutations
+  const processForecastMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/ai/forecast', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          months: 6,
+          includeSeasonality: true,
+          riskAnalysis: true
+        })
+      });
+    }
+  });
+
+  const processAnomalyDetectionMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/ai/detect-anomalies', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          checkDuplicates: true,
+          checkOutliers: true,
+          checkPatterns: true
+        })
+      });
+    }
+  });
+
+  const handleFileUpload = async (file: File | undefined) => {
+    if (!file) return;
+    
+    setIsProcessing(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await fetch('/api/ai/extract-document', {
+        method: 'POST',
+        body: formData
+      });
+      const result = await response.json();
+      console.log('Document processed:', result);
+      // Show success message or update UI
+    } catch (error) {
+      console.error('File upload error:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRunForecast = () => {
+    setIsProcessing(true);
+    processForecastMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        console.log('Forecast generated:', data);
+        setIsProcessing(false);
+      },
+      onError: (error) => {
+        console.error('Forecast error:', error);
+        setIsProcessing(false);
+      }
+    });
+  };
+
+  const handleDetectAnomalies = () => {
+    setIsProcessing(true);
+    processAnomalyDetectionMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        console.log('Anomalies detected:', data);
+        setIsProcessing(false);
+      },
+      onError: (error) => {
+        console.error('Anomaly detection error:', error);
+        setIsProcessing(false);
+      }
+    });
+  };
 
   const filteredTools = aiTools.filter(tool => 
     selectedCategory === "Tutti" || tool.category === selectedCategory
@@ -235,10 +315,20 @@ export default function AiToolsPage() {
               </div>
               
               <div className="space-y-3">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4" />
-                  Raccomandazioni AI
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4" />
+                    Raccomandazioni AI
+                  </h4>
+                  <Button 
+                    size="sm" 
+                    onClick={handleRunForecast}
+                    disabled={isProcessing}
+                    data-testid="button-run-forecast"
+                  >
+                    {isProcessing ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Genera Previsione"}
+                  </Button>
+                </div>
                 <div className="space-y-2">
                   <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border-l-4 border-blue-500">
                     <p className="text-sm"><strong>Stagionalità rilevata:</strong> Le entrate aumentano del 23% a Dicembre. Pianifica investimenti per Novembre.</p>
@@ -259,9 +349,28 @@ export default function AiToolsPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Trascina fatture, ricevute o documenti fiscali per estrazione automatica dei dati
                 </p>
-                <Button data-testid="button-upload-document">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Seleziona File
+                <Button 
+                  data-testid="button-upload-document"
+                  disabled={isProcessing}
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.pdf,.xml,.jpg,.jpeg,.png,.csv,.xlsx';
+                    input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files?.[0]);
+                    input.click();
+                  }}
+                >
+                  {isProcessing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Elaborando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Seleziona File
+                    </>
+                  )}
                 </Button>
               </div>
               
@@ -329,10 +438,20 @@ export default function AiToolsPage() {
               </div>
 
               <div className="space-y-3">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  Controlli Attivi
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    Controlli Attivi
+                  </h4>
+                  <Button 
+                    size="sm" 
+                    onClick={handleDetectAnomalies}
+                    disabled={isProcessing}
+                    data-testid="button-detect-anomalies"
+                  >
+                    {isProcessing ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Scansiona Ora"}
+                  </Button>
+                </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
@@ -396,7 +515,7 @@ export default function AiToolsPage() {
                 </div>
               </div>
 
-              <Button className="w-full" data-testid="button-open-ai-chat">
+              <Button className="w-full" onClick={() => window.location.href = '/ai-chat'} data-testid="button-open-ai-chat">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Inizia Chat AI
               </Button>
@@ -409,8 +528,9 @@ export default function AiToolsPage() {
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-sm text-muted-foreground">AI attiva</span>
               </div>
-              <Button variant="outline" size="sm" data-testid="button-configure-ai">
-                Configura
+              <Button variant="outline" size="sm" onClick={() => window.location.href = '/settings'} data-testid="button-configure-ai">
+                <Settings className="h-4 w-4 mr-1" />
+                Impostazioni AI
               </Button>
             </div>
           </div>
