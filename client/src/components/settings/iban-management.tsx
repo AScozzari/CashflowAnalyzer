@@ -461,7 +461,8 @@ export default function IbanManagement() {
 
       {/* Dialog per configurazione API bancarie */}
       <Dialog open={isApiDialogOpen} onOpenChange={setIsApiDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card dark:bg-card text-card-foreground dark:text-card-foreground border-border dark:border-border">
+        <DialogContent className="max-w-4xl max-h-[90vh] bg-card dark:bg-card text-card-foreground dark:text-card-foreground border-border dark:border-border">
+          <div className="max-h-[calc(90vh-120px)] overflow-y-auto pr-2">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings2 className="w-5 h-5" />
@@ -472,8 +473,16 @@ export default function IbanManagement() {
             </DialogDescription>
           </DialogHeader>
           {selectedIbanForApi && (
-            <BankingApiSetup iban={selectedIbanForApi} onClose={handleCloseApiDialog} />
+            <BankingApiSetup 
+              iban={{
+                ...selectedIbanForApi,
+                apiProvider: selectedIbanForApi.apiProvider || undefined,
+                syncFrequency: selectedIbanForApi.syncFrequency || undefined
+              }} 
+              onClose={handleCloseApiDialog} 
+            />
           )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

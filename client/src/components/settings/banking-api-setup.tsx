@@ -29,37 +29,73 @@ const BANK_PROVIDERS = {
     name: "UniCredit",
     type: "direct",
     status: "available",
-    description: "API dirette UniCredit per PSD2",
+    description: "API dirette UniCredit per PSD2 - Implementazione completa",
     endpoint: "https://api.unicredit.eu/open-banking/v1",
+    sandboxEndpoint: "https://api-sandbox.unicredit.eu/open-banking/v1",
     docs: "https://developer.unicredit.eu",
-    requirements: ["Client ID", "Client Secret", "Certificate PSD2"]
+    supportEmail: "openbanking@unicredit.eu",
+    requirements: ["Client ID", "Client Secret", "Certificate QWAC", "Certificate QSEAL"],
+    implemented: true,
+    fields: {
+      clientId: { label: "Client ID UniCredit", placeholder: "UC_CLIENT_ID_XXXXXXXX" },
+      clientSecret: { label: "Client Secret", placeholder: "uc_secret_xxxxxxxxxxxxxxxx" },
+      certificate: { label: "Certificato QWAC", placeholder: "Certificato PSD2 in formato PEM" },
+      additionalConfig: { label: "Configurazione Aggiuntiva", placeholder: "Eventuali parametri specifici UniCredit" }
+    }
   },
   intesa: {
     name: "Intesa Sanpaolo",
     type: "direct", 
     status: "available",
-    description: "API dirette Intesa Sanpaolo per PSD2",
+    description: "API dirette Intesa Sanpaolo per PSD2 - Implementazione completa",
     endpoint: "https://api.intesasanpaolo.com/openbanking/v1",
+    sandboxEndpoint: "https://api-sandbox.intesasanpaolo.com/openbanking/v1",
     docs: "https://developer.intesasanpaolo.com",
-    requirements: ["Client ID", "Client Secret", "Certificate PSD2"]
+    supportEmail: "TPPsupport@intesasanpaolo.ro",
+    requirements: ["Client ID", "Client Secret", "Certificate QWAC", "Subscription Key"],
+    implemented: true,
+    fields: {
+      clientId: { label: "Client ID Intesa", placeholder: "ISP_CLIENT_ID_XXXXXXXX" },
+      clientSecret: { label: "Client Secret", placeholder: "isp_secret_xxxxxxxxxxxxxxxx" },
+      subscriptionKey: { label: "Subscription Key", placeholder: "Ocp-Apim-Subscription-Key" },
+      certificate: { label: "Certificato QWAC", placeholder: "Certificato PSD2 in formato PEM" }
+    }
   },
   cbi_globe: {
     name: "CBI Globe",
     type: "aggregator",
     status: "beta", 
-    description: "Aggregatore per BPM, BPER, Credem e altre banche",
+    description: "Aggregatore CBI per BPM, BPER, Credem, UBI e altre banche - In sviluppo",
     endpoint: "https://api.cbiglobe.it/psd2/v1",
+    sandboxEndpoint: "https://api-sandbox.cbiglobe.it/psd2/v1",
     docs: "https://developer.cbiglobe.it",
-    requirements: ["CBI Client ID", "TPP License", "QWAC Certificate"]
+    supportEmail: "support@cbiglobe.it",
+    requirements: ["CBI Client ID", "TPP License", "QWAC Certificate", "Partner Agreement"],
+    implemented: false,
+    fields: {
+      clientId: { label: "CBI Client ID", placeholder: "CBI_XXXXXXXXXXXXXXXX" },
+      tppLicense: { label: "TPP License", placeholder: "Licenza TPP rilasciata da Banca d'Italia" },
+      certificate: { label: "Certificato QWAC", placeholder: "Certificato PSD2 qualificato" },
+      partnerCode: { label: "Codice Partner", placeholder: "Codice assegnato da CBI Globe" }
+    }
   },
   nexi: {
     name: "NEXI",
     type: "aggregator",
     status: "coming_soon",
-    description: "Provider per MPS e altre banche partner",
+    description: "Provider NEXI per MPS, Crédit Agricole e banche partner - Prossimamente disponibile",
     endpoint: "https://api.nexi.it/banking/v1", 
+    sandboxEndpoint: "https://api-sandbox.nexi.it/banking/v1",
     docs: "https://developer.nexi.it",
-    requirements: ["NEXI Partner ID", "API Key", "PSD2 Registration"]
+    supportEmail: "developers@nexi.it",
+    requirements: ["NEXI Partner ID", "API Key", "PSD2 Registration", "Partner Agreement"],
+    implemented: false,
+    fields: {
+      partnerId: { label: "NEXI Partner ID", placeholder: "NEXI_PARTNER_XXXXXXXX" },
+      apiKey: { label: "API Key", placeholder: "nexi_api_key_xxxxxxxxxxxxxxxx" },
+      certificate: { label: "Certificato PSD2", placeholder: "Certificato rilasciato da NEXI" },
+      merchantId: { label: "Merchant ID", placeholder: "ID Commerciante NEXI" }
+    }
   }
 };
 
@@ -69,10 +105,18 @@ export default function BankingApiSetup({ iban, onClose }: BankingApiSetupProps)
   const [isConfiguring, setIsConfiguring] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"testing" | "connected" | "failed" | null>(null);
   
-  const [config, setConfig] = useState({
+  const [config, setConfig] = useState<any>({
     clientId: "",
     clientSecret: "",
     certificatePath: "",
+    certificate: "",
+    subscriptionKey: "",
+    tppLicense: "",
+    partnerCode: "",
+    partnerId: "",
+    apiKey: "",
+    merchantId: "",
+    additionalConfig: "",
     sandboxMode: true,
     autoSync: iban?.autoSyncEnabled || false,
     syncFrequency: iban?.syncFrequency || "daily"
@@ -169,13 +213,24 @@ export default function BankingApiSetup({ iban, onClose }: BankingApiSetupProps)
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <h4 className="font-semibold">{provider.name}</h4>
-                        <Badge variant={
-                          provider.status === 'available' ? 'default' :
-                          provider.status === 'beta' ? 'secondary' : 'outline'
-                        }>
-                          {provider.status === 'available' ? 'Disponibile' :
-                           provider.status === 'beta' ? 'Beta' : 'In arrivo'}
-                        </Badge>
+                        <div className="flex gap-1">
+                          <Badge variant={
+                            provider.status === 'available' ? 'default' :
+                            provider.status === 'beta' ? 'secondary' : 'outline'
+                          }>
+                            {provider.status === 'available' ? 'Disponibile' :
+                             provider.status === 'beta' ? 'Beta' : 'In arrivo'}
+                          </Badge>
+                          {provider.implemented ? (
+                            <Badge variant="default" className="bg-green-600">
+                              ✓ Implementato
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-orange-600 border-orange-600">
+                              🚧 In sviluppo
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <p className="text-sm text-muted-foreground">{provider.description}</p>
                       <div className="flex items-center gap-4 text-xs">
@@ -228,55 +283,61 @@ export default function BankingApiSetup({ iban, onClose }: BankingApiSetupProps)
                   <Key className="w-4 h-4" />
                   Configurazione {selectedProviderData?.name}
                 </h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Endpoint: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs">
-                    {selectedProviderData?.endpoint}
-                  </code>
-                </p>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>
+                    Endpoint: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs">
+                      {config.sandboxMode ? selectedProviderData?.sandboxEndpoint : selectedProviderData?.endpoint}
+                    </code>
+                  </p>
+                  <p>
+                    Support: <a href={`mailto:${selectedProviderData?.supportEmail}`} 
+                              className="text-blue-600 hover:underline">
+                      {selectedProviderData?.supportEmail}
+                    </a>
+                  </p>
+                  {!selectedProviderData?.implemented && (
+                    <Alert className="mt-2">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        🚧 Questo provider è in fase di sviluppo. L'integrazione sarà disponibile nelle prossime settimane.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mb-4">
+                <Label htmlFor="sandbox">Modalità Sandbox</Label>
+                <Switch
+                  id="sandbox"
+                  checked={config.sandboxMode}
+                  onCheckedChange={(checked) => setConfig({...config, sandboxMode: checked})}
+                />
               </div>
 
               <div className="grid gap-4">
-                <div>
-                  <Label htmlFor="clientId">Client ID *</Label>
-                  <Input
-                    id="clientId"
-                    type="text"
-                    value={config.clientId}
-                    onChange={(e) => setConfig({...config, clientId: e.target.value})}
-                    placeholder="Il tuo Client ID PSD2"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="clientSecret">Client Secret *</Label>
-                  <Input
-                    id="clientSecret"
-                    type="password"
-                    value={config.clientSecret}
-                    onChange={(e) => setConfig({...config, clientSecret: e.target.value})}
-                    placeholder="Il tuo Client Secret"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="certificate">Certificato PSD2</Label>
-                  <Textarea
-                    id="certificate"
-                    value={config.certificatePath}
-                    onChange={(e) => setConfig({...config, certificatePath: e.target.value})}
-                    placeholder="Percorso o contenuto del certificato QWAC"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="sandbox">Modalità Sandbox</Label>
-                  <Switch
-                    id="sandbox"
-                    checked={config.sandboxMode}
-                    onCheckedChange={(checked) => setConfig({...config, sandboxMode: checked})}
-                  />
-                </div>
+                {selectedProviderData?.fields && Object.entries(selectedProviderData.fields).map(([fieldKey, fieldData]) => (
+                  <div key={fieldKey}>
+                    <Label htmlFor={fieldKey}>{fieldData.label} *</Label>
+                    {fieldKey === 'certificate' || fieldKey === 'tppLicense' || fieldKey === 'additionalConfig' ? (
+                      <Textarea
+                        id={fieldKey}
+                        value={config[fieldKey as keyof typeof config] as string || ""}
+                        onChange={(e) => setConfig({...config, [fieldKey]: e.target.value})}
+                        placeholder={fieldData.placeholder}
+                        rows={3}
+                      />
+                    ) : (
+                      <Input
+                        id={fieldKey}
+                        type={fieldKey.includes('secret') ? 'password' : 'text'}
+                        value={config[fieldKey as keyof typeof config] as string || ""}
+                        onChange={(e) => setConfig({...config, [fieldKey]: e.target.value})}
+                        placeholder={fieldData.placeholder}
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
 
               <div className="flex gap-2">

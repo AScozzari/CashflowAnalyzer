@@ -2,22 +2,23 @@
 
 EasyCashFlows is a comprehensive financial management system for Italian SMEs, offering advanced cash flow tracking, analytics, and integration with Italian fiscal requirements like FatturaPA (electronic invoicing). It features a React-based frontend with a modern dashboard, authentication, file upload, and financial movement tracking with predictive analytics. The project's vision is to provide a multi-channel communication system including email, WhatsApp, SMS, and Telegram, with AI integration for intelligent responses and personalized financial insights.
 
-## Recent Release - Release 6 (August 17, 2025)
-**Complete WhatsApp Dynamic Variables System Implementation + Dynamic Channel Settings**
-- Implemented comprehensive WhatsApp dynamic variables system to replace static {{1}}, {{2}}, {{3}} placeholders
-- Created WhatsApp template resolver service that extracts data from real entities (Companies, Customers, Movements, Suppliers)
-- Built 4-tab interface for WhatsApp variables: Dynamic Variables, Mapping Placeholder, Tester Template, Legacy System
-- Developed variable mapping component showing conversion from {{1}} → {{customer.name}}, {{2}} → {{movement.amount}}, etc.
-- Added interactive template tester with real entity selection and live template resolution
-- Implemented 50+ dynamic variables across entity categories organized by: Cliente | Azienda | Movimento Finanziario | Sistema
-- Created intelligent mapping system where selected variables appear prioritized in dropdown with ⭐
-- Variable selection workflow: Click to select → Apply to Mapping → Only selected variables in dropdown
-- Added dual interaction modes: Normal click = select, Ctrl+Click = copy to clipboard
-- Replaced static channel info cards with dynamic interactive components
-- Channel cards now have status indicators, feature badges, and direct configuration access
-- Integrated WhatsApp and Email configuration dialogs directly into channel cards
-- Enhanced UI with proper status visualization (Implemented/Coming Soon) and action buttons
-- Complete working system ready for production use with real entity data integration
+## Recent Release - Release 7 (August 17, 2025)
+**Complete Banking API Integration System + Advanced Transaction Verification**
+- Implemented comprehensive banking API integration system for Italian banks with PSD2 compliance
+- Added dynamic banking API configuration interface with 3-tab system (Provider, Credentials, Settings)
+- Created provider-specific configuration forms that adapt to each bank's requirements:
+  * UniCredit: Client ID, Client Secret, QWAC Certificate, QSEAL Certificate (✓ Implemented)
+  * Intesa Sanpaolo: Client ID, Client Secret, Subscription Key, QWAC Certificate (✓ Implemented)  
+  * CBI Globe: CBI Client ID, TPP License, QWAC Certificate, Partner Agreement (🚧 In development)
+  * NEXI: Partner ID, API Key, PSD2 Registration, Merchant ID (🚧 Coming soon)
+- Enhanced IBAN management with API status indicators (Active/Not configured) and banking configuration access
+- Added verification column to movements table with red/green indicators for automatic transaction matching
+- Integrated sandbox/production endpoint switching with real-time connection testing
+- Built intelligent form fields that adapt to selected banking provider with proper validation
+- Added support email links and comprehensive documentation references for each provider
+- Implemented automatic synchronization settings with configurable frequency (hourly, daily, weekly)
+- Enhanced modal dialogs with proper vertical scrolling and responsive design
+- System ready for automatic bank transaction verification and movement reconciliation
 
 # User Preferences
 
