@@ -85,10 +85,17 @@ export const ibans = pgTable("ibans", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   iban: text("iban").notNull(),
   bankName: text("bank_name").notNull(),
+  bankCode: text("bank_code"), // Codice ABI/CAB della banca per identificazione API
   description: text("description"),
   companyId: varchar("company_id").notNull(),
   notes: text("notes"),
   isActive: boolean("is_active").notNull().default(true), // attivo = usabile per input, inattivo = solo ricerche
+  // Campi per integrazione API bancarie
+  apiProvider: text("api_provider"), // 'unicredit', 'intesa', 'cbi_globe', 'nexi', etc.
+  apiCredentials: jsonb("api_credentials"), // Credenziali crittografate per API (client_id, etc.)
+  autoSyncEnabled: boolean("auto_sync_enabled").notNull().default(false), // Sincronizzazione automatica attiva
+  lastSyncDate: timestamp("last_sync_date"), // Ultima sincronizzazione movimenti
+  syncFrequency: text("sync_frequency").default('daily'), // 'hourly', 'daily', 'weekly'
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -241,7 +248,43 @@ export const movements = pgTable("movements", {
   vatType: text("vat_type", { enum: ["iva_22", "iva_10", "iva_4", "iva_art_74", "esente"] }), // Tipo di IVA applicata
   netAmount: decimal("net_amount", { precision: 12, scale: 2 }), // Importo netto estratto dall'XML
   
+  // Campi per verifica automatica con API bancarie
+  isVerified: boolean("is_verified").notNull().default(false), // Se il movimento è stato verificato con la banca
+  verificationStatus: text("verification_status").default('pending'), // 'pending', 'matched', 'partial_match', 'no_match', 'error'
+  bankTransactionId: varchar("bank_transaction_id"), // ID della transazione bancaria corrispondente
+  matchScore: decimal("match_score", { precision: 3, scale: 2 }), // Punteggio di matching 0.00-1.00
+  lastVerificationDate: timestamp("last_verification_date"), // Ultima verifica effettuata
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Bank Transactions - Transazioni sincronizzate dalle API bancarie
+export const bankTransactions = pgTable("bank_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ibanId: varchar("iban_id").notNull(), // IBAN di riferimento
+  transactionId: text("transaction_id").notNull(), // ID univoco dalla banca
+  transactionDate: date("transaction_date").notNull(), // Data operazione
+  valueDate: date("value_date").notNull(), // Data valuta
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default('EUR'),
+  description: text("description").notNull(), // Descrizione dalla banca
+  balance: decimal("balance", { precision: 12, scale: 2 }), // Saldo dopo l'operazione
+  
+  // Dati aggiuntivi per matching
+  creditorName: text("creditor_name"), // Nome beneficiario
+  debtorName: text("debtor_name"), // Nome ordinante  
+  remittanceInfo: text("remittance_info"), // Informazioni aggiuntive
+  purposeCode: text("purpose_code"), // Codice causale
+  
+  // Status e matching
+  isMatched: boolean("is_matched").notNull().default(false), // Se è stato fatto il match con un movimento
+  movementId: varchar("movement_id"), // ID del movimento collegato
+  matchedAt: timestamp("matched_at"), // Quando è stato fatto il match
+  
+  // Metadati tecnici
+  rawData: jsonb("raw_data"), // Dati grezzi dall'API bancaria
+  syncedAt: timestamp("synced_at").notNull().defaultNow(), // Quando è stato sincronizzato
+  lastUpdated: timestamp("last_updated").notNull().defaultNow(),
 });
 
 // AI Settings per OpenAI integration
@@ -345,6 +388,7 @@ export const ibansRelations = relations(ibans, ({ one, many }) => ({
     references: [companies.id],
   }),
   movements: many(movements),
+  bankTransactions: many(bankTransactions),
 }));
 
 export const officesRelations = relations(offices, ({ one, many }) => ({
@@ -400,6 +444,10 @@ export const movementsRelations = relations(movements, ({ one }) => ({
     fields: [movements.customerId],
     references: [customers.id],
   }),
+  bankTransaction: one(bankTransactions, {
+    fields: [movements.bankTransactionId],
+    references: [bankTransactions.id],
+  }),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({
@@ -436,6 +484,17 @@ export const aiDocumentJobsRelations = relations(aiDocumentJobs, ({ one }) => ({
   user: one(users, {
     fields: [aiDocumentJobs.userId],
     references: [users.id],
+  }),
+}));
+
+export const bankTransactionsRelations = relations(bankTransactions, ({ one }) => ({
+  iban: one(ibans, {
+    fields: [bankTransactions.ibanId],
+    references: [ibans.id],
+  }),
+  movement: one(movements, {
+    fields: [bankTransactions.movementId],
+    references: [movements.id],
   }),
 }));
 
@@ -576,6 +635,17 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   iban: z.string().optional(),
   bankName: z.string().optional(),
   isActive: z.boolean().optional().default(true),
+});
+
+export const insertBankTransactionSchema = createInsertSchema(bankTransactions).omit({
+  id: true,
+  syncedAt: true,
+  lastUpdated: true,
+}).extend({
+  amount: z.union([z.string(), z.number()]).transform(val => String(val)),
+  balance: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform(val => 
+    val === null || val === undefined || val === "" ? null : String(val)
+  ).optional(),
 });
 
 // Password Reset Tokens

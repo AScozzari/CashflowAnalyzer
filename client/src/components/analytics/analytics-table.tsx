@@ -164,6 +164,7 @@ export default function AnalyticsTable({
                       <TableHead>Importo</TableHead>
                       <TableHead>IVA</TableHead>
                       <TableHead>Stato</TableHead>
+                      <TableHead>Verifica</TableHead>
                       <TableHead>Sede</TableHead>
                       <TableHead>IBAN</TableHead>
                       <TableHead>Data Inserimento</TableHead>
@@ -248,6 +249,20 @@ export default function AnalyticsTable({
                               </Badge>
                             ) : (
                               <Badge variant="secondary">Nessuno stato</Badge>
+                            )}
+                          </TableCell>
+                          
+                          <TableCell>
+                            {movement.verified ? (
+                              <div className="flex items-center gap-1 text-green-600">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-xs font-medium">Verificato</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-red-600">
+                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                <span className="text-xs font-medium">Da verificare</span>
+                              </div>
                             )}
                           </TableCell>
                           

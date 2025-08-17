@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Edit, Trash2, CreditCard } from "lucide-react";
+import { Plus, Edit, Trash2, CreditCard, Wifi, WifiOff, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,10 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { BankSelect } from "@/components/ui/bank-select";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { insertIbanSchema, type Iban, type InsertIban, type Company } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { italianBanks } from "@/data/italian-banks";
+import BankingApiSetup from "./banking-api-setup";
 
 interface IbanFormProps {
   iban?: Iban;
@@ -34,9 +37,13 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
     defaultValues: {
       iban: iban?.iban || "",
       bankName: iban?.bankName || "",
+      bankCode: iban?.bankCode || "",
       description: iban?.description || "",
       notes: iban?.notes || "",
       companyId: iban?.companyId || "",
+      apiProvider: iban?.apiProvider || "",
+      autoSyncEnabled: iban?.autoSyncEnabled || false,
+      syncFrequency: iban?.syncFrequency || "daily",
     },
   });
 
@@ -166,6 +173,107 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
           )}
         />
 
+        {/* Sezione API Bancarie */}
+        <Card className="border-blue-200 bg-blue-50/30 dark:bg-blue-950/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Settings2 className="w-4 h-4" />
+              Integrazione API Bancaria
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Configura la sincronizzazione automatica dei movimenti bancari per verificare automaticamente i flussi inseriti.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="apiProvider"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Provider API</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleziona provider API bancario" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="unicredit">UniCredit - API Dirette</SelectItem>
+                      <SelectItem value="intesa">Intesa Sanpaolo - API Dirette</SelectItem>
+                      <SelectItem value="cbi_globe">CBI Globe - BPM, BPER, Credem, etc.</SelectItem>
+                      <SelectItem value="nexi">NEXI - MPS e altri</SelectItem>
+                      <SelectItem value="manual">Configurazione Manuale</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="bankCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Codice Banca (ABI/CAB)</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="es. 02008.01030" value={field.value || ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="autoSyncEnabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm font-medium">
+                      Sincronizzazione Automatica
+                    </FormLabel>
+                    <div className="text-xs text-muted-foreground">
+                      Attiva la sincronizzazione automatica dei movimenti bancari
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {form.watch('autoSyncEnabled') && (
+              <FormField
+                control={form.control}
+                name="syncFrequency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Frequenza Sincronizzazione</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || "daily"}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleziona frequenza" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="hourly">Ogni ora</SelectItem>
+                        <SelectItem value="daily">Giornaliera</SelectItem>
+                        <SelectItem value="weekly">Settimanale</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </CardContent>
+        </Card>
+
         <div className="flex justify-end space-x-2">
           <Button type="button" variant="outline" onClick={onClose}>
             Annulla
@@ -182,6 +290,8 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
 export default function IbanManagement() {
   const [selectedIban, setSelectedIban] = useState<Iban | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false);
+  const [selectedIbanForApi, setSelectedIbanForApi] = useState<Iban | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -227,6 +337,16 @@ export default function IbanManagement() {
     setIsDialogOpen(false);
   };
 
+  const handleConfigureApi = (iban: Iban) => {
+    setSelectedIbanForApi(iban);
+    setIsApiDialogOpen(true);
+  };
+
+  const handleCloseApiDialog = () => {
+    setSelectedIbanForApi(null);
+    setIsApiDialogOpen(false);
+  };
+
   const getCompanyName = (companyId: string) => {
     const company = companies.find(c => c.id === companyId);
     return company ? company.name : 'N/A';
@@ -269,13 +389,14 @@ export default function IbanManagement() {
               <TableHead>Banca</TableHead>
               <TableHead>Descrizione</TableHead>
               <TableHead>Ragione Sociale</TableHead>
-              <TableHead className="w-24">Azioni</TableHead>
+              <TableHead>API Status</TableHead>
+              <TableHead className="w-32">Azioni</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {ibans.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                   <CreditCard className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   Nessun IBAN trovato
                 </TableCell>
@@ -290,19 +411,42 @@ export default function IbanManagement() {
                   <TableCell>{iban.description || "-"}</TableCell>
                   <TableCell>{getCompanyName(iban.companyId)}</TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
+                    {iban.autoSyncEnabled ? (
+                      <div className="flex items-center gap-1">
+                        <Wifi className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-green-600">Attivo</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <WifiOff className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-500">Non configurato</span>
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleEdit(iban)}
+                        title="Modifica IBAN"
                       >
                         <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleConfigureApi(iban)}
+                        title="Configura API Bancaria"
+                      >
+                        <Settings2 className="h-3 w-3" />
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
                         onClick={() => handleDelete(iban.id)}
                         disabled={deleteMutation.isPending}
+                        title="Elimina IBAN"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -314,6 +458,24 @@ export default function IbanManagement() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Dialog per configurazione API bancarie */}
+      <Dialog open={isApiDialogOpen} onOpenChange={setIsApiDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card dark:bg-card text-card-foreground dark:text-card-foreground border-border dark:border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="w-5 h-5" />
+              Configurazione API Bancaria
+            </DialogTitle>
+            <DialogDescription>
+              Configura l'integrazione automatica per la sincronizzazione dei movimenti bancari
+            </DialogDescription>
+          </DialogHeader>
+          {selectedIbanForApi && (
+            <BankingApiSetup iban={selectedIbanForApi} onClose={handleCloseApiDialog} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
