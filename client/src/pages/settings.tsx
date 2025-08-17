@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/layout/header";
 import EntityConfigHorizontal from "@/components/settings/entity-config-horizontal";
 import SystemConfigHorizontal from "@/components/settings/system-config-horizontal";
+import { GeneralSettings } from "@/components/settings/general-settings";
 import { ConnectionStatus } from "@/components/debug/connection-status";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="system">
-          <SystemConfigHorizontal />
+          <GeneralSettings />
         </TabsContent>
 
         <TabsContent value="debug">
