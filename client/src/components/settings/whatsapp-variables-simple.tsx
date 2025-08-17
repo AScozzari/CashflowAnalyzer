@@ -46,6 +46,7 @@ export function WhatsAppVariablesSimple() {
   const [activeTab, setActiveTab] = useState('variables');
   const [templateText, setTemplateText] = useState('');
   const [previewResult, setPreviewResult] = useState('');
+  const [copiedVariable, setCopiedVariable] = useState<string>('');
   
   // Mapping semplificato
   const [mappings, setMappings] = useState<Mapping[]>([
@@ -154,7 +155,7 @@ Data: {system.date}`
               </TabsTrigger>
               <TabsTrigger value="mapping">
                 <Settings className="w-4 h-4 mr-2" />
-                Conversione {`{1} {2} {3}`}
+                Mapping
               </TabsTrigger>
               <TabsTrigger value="tester">
                 <TestTube className="w-4 h-4 mr-2" />
@@ -166,10 +167,10 @@ Data: {system.date}`
             <TabsContent value="variables" className="space-y-4">
               <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">
-                  Variabili che puoi usare nei template
+                  Variabili per i tuoi template
                 </h4>
                 <p className="text-sm text-green-700 dark:text-green-300">
-                  Copia e incolla queste variabili nei tuoi template WhatsApp
+                  Clicca su una variabile per copiarla negli appunti, poi incollala nel tuo template WhatsApp o nella scheda "Testa Template"
                 </p>
               </div>
 
@@ -177,12 +178,18 @@ Data: {system.date}`
                 {AVAILABLE_VARIABLES.map((variable) => (
                   <div 
                     key={variable.key}
-                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                    className={`border rounded-lg p-4 cursor-pointer transition-all duration-300 ${
+                      copiedVariable === variable.key 
+                        ? 'border-green-500 bg-green-50 dark:bg-green-950 scale-105' 
+                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
                     onClick={() => {
                       navigator.clipboard.writeText(`{${variable.key}}`);
+                      setCopiedVariable(variable.key);
+                      setTimeout(() => setCopiedVariable(''), 2000);
                       toast({
-                        title: "Copiato",
-                        description: `{${variable.key}} copiato negli appunti`
+                        title: "✅ Copiato negli appunti",
+                        description: `{${variable.key}} - Ora puoi incollarlo nella scheda "Testa Template"`
                       });
                     }}
                   >
@@ -198,7 +205,11 @@ Data: {system.date}`
                           Esempio: {variable.example}
                         </div>
                       </div>
-                      <Copy className="w-4 h-4 text-gray-400" />
+                      {copiedVariable === variable.key ? (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-gray-400" />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -206,12 +217,13 @@ Data: {system.date}`
 
               <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
-                  Come usare le variabili
+                  Come funziona
                 </h4>
                 <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
-                  <p>1. Clicca su una variabile per copiarla</p>
-                  <p>2. Incollala nel tuo template WhatsApp</p>
-                  <p>3. La variabile verrà sostituita automaticamente con i dati reali</p>
+                  <p><strong>1. Clicca</strong> su una variabile qui sotto per copiarla</p>
+                  <p><strong>2. Vai</strong> nella scheda "Testa Template" e incollala</p>
+                  <p><strong>3. Oppure</strong> usa le variabili direttamente nei tuoi template WhatsApp</p>
+                  <p><strong>Esempio:</strong> Scrivi "Ciao {`{customer.name}`}" nel template e diventerà "Ciao Mario Rossi"</p>
                 </div>
               </div>
             </TabsContent>
@@ -220,10 +232,11 @@ Data: {system.date}`
             <TabsContent value="mapping" className="space-y-4">
               <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                 <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                  Converti template vecchi in nuovi
+                  Mapping {`{1} {2} {3}`} → Variabili
                 </h4>
                 <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  Se hai template che usano {`{1}, {2}, {3}`}, configurali qui per convertirli automaticamente
+                  Se hai template vecchi che usano {`{1}, {2}, {3}`}, qui puoi decidere a cosa corrispondono. 
+                  Ad esempio: {`{1}`} = Nome Cliente, {`{2}`} = Importo, {`{3}`} = Data
                 </p>
               </div>
 
