@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Mail, Phone, Send, CheckCircle, X } from 'lucide-react';
 import { WhatsAppSettingsWithTabs } from './whatsapp-settings-with-tabs';
-import { SendGridTemplatesManager } from './sendgrid-templates';
+import { SendGridConfigComplete } from './sendgrid-config-complete';
 import { SmsSettingsSkebby } from './sms-settings-skebby';
 
 interface ChannelConfig {
@@ -90,7 +90,7 @@ export function ChannelSettingsCompact() {
           </CardHeader>
           <CardContent>
             {openModal === 'whatsapp' && <WhatsAppSettingsWithTabs />}
-            {openModal === 'email' && <SendGridTemplatesManager />}
+            {openModal === 'email' && <SendGridConfigComplete />}
             {openModal === 'sms' && <SmsSettingsSkebby />}
           </CardContent>
         </Card>
@@ -107,8 +107,8 @@ export function ChannelSettingsCompact() {
         </p>
       </div>
 
-      {/* Griglia compatta 4 card per riga */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Griglia compatta 4 card per riga - Card più piccole */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {channels.map((channel) => (
           <Card 
             key={channel.id}
@@ -121,8 +121,8 @@ export function ChannelSettingsCompact() {
             }`}
             onClick={() => setSelectedChannel(channel.id)}
           >
-            <CardContent className="p-4 text-center space-y-3">
-              <div className={`mx-auto p-3 rounded-lg w-fit ${
+            <CardContent className="p-3 text-center space-y-2">
+              <div className={`mx-auto p-2 rounded-lg w-fit ${
                 channel.status === 'implemented' 
                   ? 'bg-green-100 dark:bg-green-900' 
                   : 'bg-orange-100 dark:bg-orange-900'
@@ -131,13 +131,13 @@ export function ChannelSettingsCompact() {
               </div>
               
               <div>
-                <h3 className="font-semibold text-sm">{channel.name}</h3>
+                <h3 className="font-semibold text-xs">{channel.name}</h3>
                 <p className="text-xs text-muted-foreground mt-1">{channel.description}</p>
               </div>
               
               <Badge 
                 variant={channel.status === 'implemented' ? 'default' : 'secondary'}
-                className="text-xs"
+                className="text-xs px-2 py-1"
               >
                 {channel.statusText}
               </Badge>
@@ -145,7 +145,7 @@ export function ChannelSettingsCompact() {
               <Button 
                 size="sm" 
                 variant={channel.status === 'implemented' ? 'default' : 'secondary'}
-                className="w-full text-xs"
+                className="w-full text-xs py-1"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (channel.status === 'implemented') {
