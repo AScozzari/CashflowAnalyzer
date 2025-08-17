@@ -111,7 +111,8 @@ export function setupWhatsAppRoutes(app: Express): void {
         const settings = await storage.getWhatsappSettings();
         if (settings.length > 0) {
           await storage.updateWhatsappSettings(settings[0].id, {
-            lastMessageSentAt: new Date()
+            // Remove this field as it doesn't exist in the schema
+            // lastMessageSentAt: new Date()
           });
         }
       }
@@ -196,12 +197,14 @@ export function setupWhatsAppRoutes(app: Express): void {
       }
       
       // Update local template status if different
-      const localTemplate = await storage.getWhatsappTemplateByName(req.params.name);
-      if (localTemplate && localTemplate.approvalStatus !== status.status) {
+      const templates = await storage.getWhatsappTemplates();
+      const localTemplate = templates.find(t => t.name === req.params.name);
+      if (localTemplate && localTemplate.status !== status.status) {
         await storage.updateWhatsappTemplate(localTemplate.id, {
-          approvalStatus: status.status,
-          rejectionReason: status.rejectionReason,
-          approvedAt: status.approvedAt
+          status: status.status,
+          // Remove fields that don't exist in schema
+          // rejectionReason: status.rejectionReason,
+          // approvedAt: status.approvedAt
         });
       }
       
