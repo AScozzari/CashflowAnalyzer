@@ -99,6 +99,8 @@ export const ibans = pgTable("ibans", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+
+
 // Sedi Operative (Operational Offices)
 export const offices = pgTable("offices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

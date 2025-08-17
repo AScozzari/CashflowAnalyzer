@@ -2,6 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { aiService } from "./ai-service";
+import { db } from "./db";
+import { eq, desc, sum, count, sql } from "drizzle-orm";
+import { bankTransactions, movements } from "@shared/schema";
 import { 
   insertCompanySchema, insertCoreSchema, insertResourceSchema,
   insertIbanSchema, insertOfficeSchema, insertTagSchema,
@@ -3650,6 +3653,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     next();
   });
+
+  // ===================
+  // BANKING API SYNC ENDPOINTS
+  // ===================
+  
+  // Import banking sync functions
+  const { syncBankTransactions, syncAllEnabledIbans } = await import('./banking-sync');
+  
+  app.post("/api/banking/sync/:ibanId", requireAuth, requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { ibanId } = req.params;
+      console.log(`[API] Richiesta sincronizzazione IBAN: ${ibanId}`);
+      
+      const result = await syncBankTransactions(ibanId);
+      
+      res.json({
+        success: true,
+        message: `Sincronizzazione completata: ${result.synced} transazioni sincronizzate, ${result.matched} movimenti matchati`,
+        ...result
+      });
+    } catch (error: any) {
+      console.error("[API] Errore sincronizzazione:", error);
+      res.status(500).json({
+        success: false,
+        error: error?.message || "Errore durante la sincronizzazione"
+      });
+    }
+  }));
+
+  app.post("/api/banking/sync-all", requireAuth, requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log("[API] Richiesta sincronizzazione globale");
+      
+      const result = await syncAllEnabledIbans();
+      
+      res.json({
+        success: true,
+        message: `Sincronizzazione globale completata: ${result.totalSynced} transazioni, ${result.totalMatched} match`,
+        ...result
+      });
+    } catch (error: any) {
+      console.error("[API] Errore sincronizzazione globale:", error);
+      res.status(500).json({
+        success: false,
+        error: error?.message || "Errore durante la sincronizzazione globale"
+      });
+    }
+  }));
+
+  // Get bank transactions for an IBAN
+  app.get("/api/banking/transactions/:ibanId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { ibanId } = req.params;
+      const transactions = await db.select()
+        .from(bankTransactions)
+        .where(eq(bankTransactions.ibanId, ibanId))
+        .orderBy(desc(bankTransactions.transactionDate))
+        .limit(100);
+      
+      res.json(transactions);
+    } catch (error: any) {
+      console.error("[API] Errore recupero transazioni:", error);
+      res.status(500).json({ 
+        error: "Errore recupero transazioni bancarie",
+        message: error?.message || "Errore sconosciuto"
+      });
+    }
+  }));
+
+  // Get verification statistics
+  app.get("/api/banking/verification-stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const stats = await db.select({
+        total: count(),
+        verified: sum(sql`CASE WHEN is_verified = true THEN 1 ELSE 0 END`),
+        pending: sum(sql`CASE WHEN verification_status = 'pending' THEN 1 ELSE 0 END`),
+        matched: sum(sql`CASE WHEN verification_status = 'matched' THEN 1 ELSE 0 END`),
+        partial: sum(sql`CASE WHEN verification_status = 'partial_match' THEN 1 ELSE 0 END`),
+        noMatch: sum(sql`CASE WHEN verification_status = 'no_match' THEN 1 ELSE 0 END`)
+      }).from(movements);
+      
+      res.json(stats[0] || {
+        total: 0, verified: 0, pending: 0, matched: 0, partial: 0, noMatch: 0
+      });
+    } catch (error: any) {
+      console.error("[API] Errore statistiche verifica:", error);
+      res.status(500).json({ 
+        error: "Errore recupero statistiche",
+        message: error?.message || "Errore sconosciuto"
+      });
+    }
+  }));
 
   const httpServer = createServer(app);
   return httpServer;

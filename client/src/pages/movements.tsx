@@ -12,12 +12,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Eye, Edit, Upload, Trash2, Download, Paperclip } from "lucide-react";
+import { Plus, Eye, Edit, Upload, Trash2, Download, Paperclip, CheckCircle, AlertCircle, Clock, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { MovementWithRelations } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { canCreateMovements, canEditMovements, canDeleteMovements } from "@/lib/permissions";
+import { BankingSyncButton } from "@/components/banking-sync-button";
 
 export default function Movements() {
   const { toast } = useToast();
@@ -208,6 +209,43 @@ export default function Movements() {
     return type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
   };
 
+  const getVerificationIcon = (movement: MovementWithRelations) => {
+    const status = movement.verificationStatus;
+    const isVerified = movement.isVerified;
+    const matchScore = movement.matchScore ? parseFloat(movement.matchScore) : 0;
+
+    if (isVerified && status === 'matched') {
+      return (
+        <div className="flex items-center justify-center" title={`Verificato automaticamente - Score: ${(matchScore * 100).toFixed(0)}%`}>
+          <CheckCircle className="h-4 w-4 text-green-500" />
+        </div>
+      );
+    }
+
+    if (status === 'partial_match') {
+      return (
+        <div className="flex items-center justify-center" title={`Match parziale - Score: ${(matchScore * 100).toFixed(0)}%`}>
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+        </div>
+      );
+    }
+
+    if (status === 'no_match') {
+      return (
+        <div className="flex items-center justify-center" title="Nessun match trovato con le transazioni bancarie">
+          <XCircle className="h-4 w-4 text-red-500" />
+        </div>
+      );
+    }
+
+    // Stato pending o non ancora processato
+    return (
+      <div className="flex items-center justify-center" title="In attesa di verifica">
+        <Clock className="h-4 w-4 text-gray-400" />
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header 
@@ -246,6 +284,9 @@ export default function Movements() {
           isLoading={isLoading}
         />
 
+        {/* Banking Sync Interface */}
+        <BankingSyncButton showFullInterface={true} />
+
         <div className="bg-card dark:bg-card rounded-xl shadow-sm border border-border dark:border-border">
           <div className="p-4 md:p-6">
             <div className="overflow-x-auto">
@@ -281,6 +322,7 @@ export default function Movements() {
                       <TableHead className="w-24">Importo Totale</TableHead>
                       <TableHead className="w-20">Importo IVA</TableHead>
                       <TableHead className="w-20">Stato</TableHead>
+                      <TableHead className="w-16 text-center">Verifica</TableHead>
                       <TableHead className="w-12">File</TableHead>
                       <TableHead className="w-16 text-center">Azioni</TableHead>
                     </TableRow>
@@ -399,6 +441,11 @@ export default function Movements() {
                           ) : (
                             <Badge variant="secondary">Nessuno stato</Badge>
                           )}
+                        </TableCell>
+                        
+                        {/* Verifica Bancaria */}
+                        <TableCell className="text-center">
+                          {getVerificationIcon(movement)}
                         </TableCell>
                         
                         {/* File */}
