@@ -541,6 +541,11 @@ export default function ResourceManagement() {
     return <div className="text-center py-8">Caricamento...</div>;
   }
 
+  // Filtra le risorse escludendo gli utenti di sistema (admin)
+  const filteredResources = resources.filter(resource => 
+    resource.role !== 'admin'
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -578,7 +583,7 @@ export default function ResourceManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {resources.length === 0 ? (
+            {filteredResources.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                   <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -586,7 +591,7 @@ export default function ResourceManagement() {
                 </TableCell>
               </TableRow>
             ) : (
-              resources.map((resource) => (
+              filteredResources.map((resource) => (
                 <TableRow key={resource.id}>
                   <TableCell className="font-medium">
                     {resource.firstName} {resource.lastName}
