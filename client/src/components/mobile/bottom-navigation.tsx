@@ -130,7 +130,7 @@ export function BottomNavigation() {
       <div className="h-20" />
       
       {/* Fixed bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t border-border">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-lg">
         <div className="grid grid-cols-3 lg:grid-cols-4">
           {navItems.map((item) => {
             const Icon = item.icon;
