@@ -78,6 +78,14 @@ export default function MovementFiltersAdvanced({
 }: MovementFiltersAdvancedProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  
+  // Stati per controllare l'apertura dei popover delle date
+  const [datePopoverStates, setDatePopoverStates] = useState({
+    insertDateFrom: false,
+    insertDateTo: false,
+    flowDateFrom: false,
+    flowDateTo: false,
+  });
 
   // Fetch options for dropdowns
   const { data: companies } = useQuery({ queryKey: ["/api/companies"] });
@@ -102,6 +110,11 @@ export default function MovementFiltersAdvanced({
         ...filters,
         [field]: format(date, 'yyyy-MM-dd')
       });
+      // Chiudi il popover automaticamente dopo la selezione della data
+      setDatePopoverStates(prev => ({
+        ...prev,
+        [field]: false
+      }));
     } else {
       onFiltersChange({
         ...filters,
@@ -255,7 +268,7 @@ export default function MovementFiltersAdvanced({
             {/* Data Inserimento Da */}
             <div className="space-y-2">
               <Label className="text-xs text-gray-600">Data Inserimento Da</Label>
-              <Popover>
+              <Popover open={datePopoverStates.insertDateFrom} onOpenChange={(open) => setDatePopoverStates(prev => ({ ...prev, insertDateFrom: open }))}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -279,7 +292,7 @@ export default function MovementFiltersAdvanced({
             {/* Data Inserimento A */}
             <div className="space-y-2">
               <Label className="text-xs text-gray-600">Data Inserimento A</Label>
-              <Popover>
+              <Popover open={datePopoverStates.insertDateTo} onOpenChange={(open) => setDatePopoverStates(prev => ({ ...prev, insertDateTo: open }))}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -303,7 +316,7 @@ export default function MovementFiltersAdvanced({
             {/* Data Flusso Da */}
             <div className="space-y-2">
               <Label className="text-xs text-gray-600">Data Flusso Da</Label>
-              <Popover>
+              <Popover open={datePopoverStates.flowDateFrom} onOpenChange={(open) => setDatePopoverStates(prev => ({ ...prev, flowDateFrom: open }))}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -327,7 +340,7 @@ export default function MovementFiltersAdvanced({
             {/* Data Flusso A */}
             <div className="space-y-2">
               <Label className="text-xs text-gray-600">Data Flusso A</Label>
-              <Popover>
+              <Popover open={datePopoverStates.flowDateTo} onOpenChange={(open) => setDatePopoverStates(prev => ({ ...prev, flowDateTo: open }))}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"

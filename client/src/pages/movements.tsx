@@ -216,32 +216,44 @@ export default function Movements() {
 
     if (isVerified && status === 'matched') {
       return (
-        <div className="flex items-center justify-center" title={`Verificato automaticamente - Score: ${(matchScore * 100).toFixed(0)}%`}>
-          <CheckCircle className="h-4 w-4 text-green-500" />
+        <div className="flex items-center justify-center group" title={`Verificato automaticamente - Score: ${(matchScore * 100).toFixed(0)}%`}>
+          <div className="relative">
+            <CheckCircle className="h-5 w-5 text-green-500 drop-shadow-sm" />
+            <div className="absolute inset-0 bg-green-500 rounded-full opacity-20 animate-pulse"></div>
+          </div>
         </div>
       );
     }
 
     if (status === 'partial_match') {
       return (
-        <div className="flex items-center justify-center" title={`Match parziale - Score: ${(matchScore * 100).toFixed(0)}%`}>
-          <AlertCircle className="h-4 w-4 text-yellow-500" />
+        <div className="flex items-center justify-center group" title={`Match parziale - Score: ${(matchScore * 100).toFixed(0)}%`}>
+          <div className="relative">
+            <AlertCircle className="h-5 w-5 text-amber-500 drop-shadow-sm" />
+            <div className="absolute inset-0 bg-amber-500 rounded-full opacity-15"></div>
+          </div>
         </div>
       );
     }
 
     if (status === 'no_match') {
       return (
-        <div className="flex items-center justify-center" title="Nessun match trovato con le transazioni bancarie">
-          <XCircle className="h-4 w-4 text-red-500" />
+        <div className="flex items-center justify-center group" title="Nessun match trovato con le transazioni bancarie">
+          <div className="relative">
+            <XCircle className="h-5 w-5 text-red-500 drop-shadow-sm" />
+            <div className="absolute inset-0 bg-red-500 rounded-full opacity-15"></div>
+          </div>
         </div>
       );
     }
 
     // Stato pending o non ancora processato
     return (
-      <div className="flex items-center justify-center" title="In attesa di verifica">
-        <Clock className="h-4 w-4 text-gray-400" />
+      <div className="flex items-center justify-center group" title="In attesa di verifica">
+        <div className="relative">
+          <Clock className="h-5 w-5 text-slate-400 drop-shadow-sm" />
+          <div className="absolute inset-0 bg-slate-400 rounded-full opacity-10"></div>
+        </div>
       </div>
     );
   };
@@ -307,8 +319,46 @@ export default function Movements() {
                   </div>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
+                <>
+                  {/* Leggenda Sistema di Matching */}
+                  <div className="mb-4 px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-gray-800 dark:to-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center space-x-6 text-sm">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="font-medium text-slate-700 dark:text-slate-300">Verifica Bancaria:</span>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <div className="relative">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <div className="absolute inset-0 bg-green-500 rounded-full opacity-20 animate-pulse"></div>
+                        </div>
+                        <span className="text-slate-600 dark:text-slate-400">Verificato</span>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <div className="relative">
+                          <AlertCircle className="h-4 w-4 text-amber-500" />
+                          <div className="absolute inset-0 bg-amber-500 rounded-full opacity-15"></div>
+                        </div>
+                        <span className="text-slate-600 dark:text-slate-400">Match Parziale</span>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <div className="relative">
+                          <XCircle className="h-4 w-4 text-red-500" />
+                          <div className="absolute inset-0 bg-red-500 rounded-full opacity-15"></div>
+                        </div>
+                        <span className="text-slate-600 dark:text-slate-400">Non Trovato</span>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <div className="relative">
+                          <Clock className="h-4 w-4 text-slate-400" />
+                          <div className="absolute inset-0 bg-slate-400 rounded-full opacity-10"></div>
+                        </div>
+                        <span className="text-slate-600 dark:text-slate-400">In Attesa</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Table>
+                    <TableHeader>
                     <TableRow>
                       <TableHead className="w-20">Data Inserimento</TableHead>
                       <TableHead className="w-20">Data Flusso</TableHead>
@@ -533,8 +583,10 @@ export default function Movements() {
                         </TableCell>
                       </TableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                    </TableBody>
+                  </Table>
+                </>
+                
               )}
             </div>
           </div>
