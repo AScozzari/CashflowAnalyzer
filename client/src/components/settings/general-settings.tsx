@@ -118,10 +118,13 @@ export function GeneralSettings() {
   // Update configuration mutation
   const updateConfigMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      return apiRequest(`/api/system/config/${key}`, {
+      const response = await fetch(`/api/system/config/${key}`, {
         method: 'PUT',
-        body: { value }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value })
       });
+      if (!response.ok) throw new Error('Failed to update config');
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -144,9 +147,12 @@ export function GeneralSettings() {
   // Restart service mutation
   const restartServiceMutation = useMutation({
     mutationFn: async (service: string) => {
-      return apiRequest(`/api/system/services/${service}/restart`, {
-        method: 'POST'
+      const response = await fetch(`/api/system/services/${service}/restart`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
       });
+      if (!response.ok) throw new Error('Failed to restart service');
+      return response.json();
     },
     onSuccess: (_, service) => {
       toast({
@@ -223,31 +229,21 @@ export function GeneralSettings() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Impostazioni Generali
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Configurazioni globali, parametri sistema, logging e diagnostics avanzati
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['/api/system/config'] });
-              queryClient.invalidateQueries({ queryKey: ['/api/system/stats'] });
-              queryClient.invalidateQueries({ queryKey: ['/api/system/logs'] });
-            }}
-            data-testid="button-refresh-all"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Aggiorna
-          </Button>
-        </div>
+      {/* Refresh Button */}
+      <div className="flex justify-end">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => {
+            queryClient.invalidateQueries({ queryKey: ['/api/system/config'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/system/stats'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/system/logs'] });
+          }}
+          data-testid="button-refresh-all"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Aggiorna
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -410,7 +406,7 @@ export function GeneralSettings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {categoryConfigs.map((config) => (
+                    {(categoryConfigs as SystemConfig[]).map((config: SystemConfig) => (
                       <div key={config.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">

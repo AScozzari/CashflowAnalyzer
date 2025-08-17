@@ -5,9 +5,10 @@ import SystemUsersManagement from "./system-users-management";
 import { SecuritySettings } from "./security-settings";
 import { BackupSettings } from "./backup-settings-fixed";
 import { LocalizationSettings } from "./localization-settings";
+import { GeneralSettings } from "./general-settings";
 
 export default function SystemConfigHorizontal() {
-  const [activeTab, setActiveTab] = useState("security");
+  const [activeTab, setActiveTab] = useState("general");
 
   const tabs = [
     { id: "security", label: "Sicurezza", icon: Shield, color: "bg-red-500" },
@@ -123,12 +124,7 @@ export default function SystemConfigHorizontal() {
                   description="Configurazione upload, storage cloud, processing PDF/XML e template FatturaPA"
                 />
               )}
-              {activeTab === "general" && (
-                <PlaceholderSection 
-                  title="Impostazioni Generali"
-                  description="Configurazioni globali, parametri sistema, logging e diagnostics avanzati"
-                />
-              )}
+              {activeTab === "general" && <GeneralSettings />}
               {activeTab === "users" && <SystemUsersManagement />}
               {activeTab === "backup" && <BackupSettings />}
             </CardContent>

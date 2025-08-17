@@ -49,7 +49,7 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="system">
-          <GeneralSettings />
+          <SystemConfigHorizontal />
         </TabsContent>
 
         <TabsContent value="debug">
