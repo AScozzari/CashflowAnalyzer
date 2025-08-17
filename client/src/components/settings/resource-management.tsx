@@ -45,6 +45,8 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
       lastName: resource?.lastName || "",
       taxCode: resource?.taxCode || "",
       email: resource?.email || "",
+      phone: resource?.phone || "",
+      mobile: resource?.mobile || "",
       address: resource?.address || "",
       zipCode: resource?.zipCode || "",
       city: resource?.city || "",

@@ -66,6 +66,7 @@ const customerFormSchema = z.object({
   // Campi comuni
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional(),
+  mobile: z.string().optional(),
   address: z.string().optional(),
   zipCode: z.string().optional(),
   city: z.string().optional(),
@@ -331,6 +332,7 @@ export function CustomerManagement() {
       bankName: customer.bankName || "",
       email: customer.email || "",
       phone: customer.phone || "",
+      mobile: customer.mobile || "",
       address: customer.address || "",
       zipCode: customer.zipCode || "",
       city: customer.city || "",

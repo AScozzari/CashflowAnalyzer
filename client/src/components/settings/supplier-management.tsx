@@ -38,6 +38,7 @@ function SupplierForm({ supplier, onClose }: SupplierFormProps) {
       country: supplier?.country || "Italia",
       email: supplier?.email || "",
       phone: supplier?.phone || "",
+      mobile: supplier?.mobile || "",
       website: supplier?.website || "",
       contactPerson: supplier?.contactPerson || "",
       taxCode: supplier?.taxCode || "",
