@@ -159,7 +159,7 @@ export function ConfigPreviewMini() {
 
       <CardContent className="space-y-4">
         {/* System Metrics Overview */}
-        <div className="grid grid-cols-3 gap-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+        <div className="grid grid-cols-2 gap-3 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               <TrendingUp className="w-4 h-4 text-blue-600" />
@@ -174,12 +174,40 @@ export function ConfigPreviewMini() {
             </div>
             <div className="text-xl font-bold text-green-600">{metrics.activeChannels}/{metrics.totalChannels}</div>
           </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Shield className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium">Ultimo Aggiornamento</span>
+        </div>
+
+        {/* Monthly Messaging Stats */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-muted-foreground">📊 Messaggi Mese Corrente</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950 rounded-lg">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-green-600" />
+                <span className="text-xs font-medium">WhatsApp</span>
+              </div>
+              <span className="text-sm font-bold text-green-600">247</span>
             </div>
-            <div className="text-xs text-muted-foreground">{metrics.lastUpdate}</div>
+            <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-medium">Email</span>
+              </div>
+              <span className="text-sm font-bold text-blue-600">89</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-950 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-orange-600" />
+                <span className="text-xs font-medium">SMS</span>
+              </div>
+              <span className="text-sm font-bold text-orange-600">34</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-purple-50 dark:bg-purple-950 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Send className="w-4 h-4 text-purple-600" />
+                <span className="text-xs font-medium">Telegram</span>
+              </div>
+              <span className="text-sm font-bold text-purple-600">12</span>
+            </div>
           </div>
         </div>
 

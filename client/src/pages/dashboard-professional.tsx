@@ -426,21 +426,15 @@ function ProfessionalRecentMovements({ movements, isLoading }: { movements: Move
               <p className="text-sm text-muted-foreground mt-1">Ultime transazioni finanziarie</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" className="h-9">
-              <Filter className="w-4 h-4 mr-2" />
-              Filtra
-            </Button>
-            <Button 
-              variant="default" 
-              size="sm" 
-              onClick={() => setLocation('/movements')}
-              className="h-9 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              Vedi Tutti
-            </Button>
-          </div>
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={() => setLocation('/movements')}
+            className="h-9 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Vedi Tutti
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -602,15 +596,17 @@ function QuickActionsWidget() {
       icon: Plus,
       color: "from-blue-500 to-cyan-500",
       textColor: "text-blue-600",
+      bgColor: "bg-blue-50 dark:bg-blue-950/30",
       action: () => setLocation('/movements')
     },
     {
       title: "Analytics",
       description: "Visualizza report",
-      icon: BarChart3,
+      icon: PieChart,
       color: "from-purple-500 to-indigo-500",
       textColor: "text-purple-600",
-      action: () => setLocation('/analytics')
+      bgColor: "bg-purple-50 dark:bg-purple-950/30",
+      action: () => setLocation('/entity-explorer')
     },
     {
       title: "Impostazioni",
@@ -618,6 +614,7 @@ function QuickActionsWidget() {
       icon: Settings,
       color: "from-orange-500 to-amber-500",
       textColor: "text-orange-600",
+      bgColor: "bg-orange-50 dark:bg-orange-950/30",
       action: () => setLocation('/settings')
     },
     {
@@ -626,7 +623,14 @@ function QuickActionsWidget() {
       icon: Download,
       color: "from-green-500 to-emerald-500",
       textColor: "text-green-600",
-      action: () => {}
+      bgColor: "bg-green-50 dark:bg-green-950/30",
+      action: () => {
+        // Simula download
+        const link = document.createElement('a');
+        link.href = 'data:text/csv;charset=utf-8,Nome,Importo,Data,Tipo\nMovimento Esempio,1000,2025-08-17,Entrata';
+        link.download = `movimenti_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+      }
     }
   ];
 
@@ -644,24 +648,31 @@ function QuickActionsWidget() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {actions.map((action, index) => (
-            <Button
+            <button
               key={index}
-              variant="ghost"
-              className="h-auto p-4 justify-start text-left hover:bg-muted/50 group"
               onClick={action.action}
+              className={`group relative p-4 rounded-xl border-2 border-transparent hover:border-primary/20 ${action.bgColor} hover:shadow-md transition-all duration-200 text-left w-full`}
+              data-testid={`action-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
             >
-              <div className="flex items-start space-x-3 w-full">
-                <div className={`p-2.5 rounded-lg bg-gradient-to-r ${action.color} opacity-10 group-hover:opacity-20 transition-opacity`}>
-                  <action.icon className={`w-5 h-5 ${action.textColor}`} />
+              <div className="flex items-center space-x-4 w-full">
+                <div className={`p-3 rounded-xl bg-gradient-to-r ${action.color} shadow-sm group-hover:shadow-md transition-shadow`}>
+                  <action.icon className="w-5 h-5 text-white" />
                 </div>
-                <div className="flex-1 text-left">
-                  <div className="font-medium text-sm">{action.title}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{action.description}</div>
+                <div className="flex-1">
+                  <div className={`font-semibold text-base ${action.textColor} group-hover:text-opacity-80 transition-colors`}>
+                    {action.title}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1 group-hover:text-muted-foreground/80 transition-colors">
+                    {action.description}
+                  </div>
+                </div>
+                <div className={`p-2 rounded-lg ${action.bgColor} opacity-0 group-hover:opacity-100 transition-opacity`}>
+                  <ArrowUpRight className={`w-4 h-4 ${action.textColor}`} />
                 </div>
               </div>
-            </Button>
+            </button>
           ))}
         </div>
       </CardContent>
@@ -798,28 +809,28 @@ export default function DashboardProfessional() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950/30">
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    <span className="text-sm font-medium">Crescita Mensile</span>
+                    <ArrowUpRight className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-medium">Entrate Mensili</span>
                   </div>
-                  <span className="text-sm font-bold text-emerald-600">+12.5%</span>
+                  <span className="text-sm font-bold text-green-600">+8.3%</span>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-950/30">
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <span className="text-sm font-medium">Efficienza Costi</span>
+                    <ArrowDownLeft className="w-4 h-4 text-red-600" />
+                    <span className="text-sm font-medium">Uscite Mensili</span>
                   </div>
-                  <span className="text-sm font-bold text-blue-600">94%</span>
+                  <span className="text-sm font-bold text-red-600">+2.1%</span>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30">
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                    <span className="text-sm font-medium">ROI Trimestrale</span>
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium">EBITDA Mese Corrente</span>
                   </div>
-                  <span className="text-sm font-bold text-purple-600">+18.3%</span>
+                  <span className="text-sm font-bold text-blue-600">+15.7%</span>
                 </div>
               </CardContent>
             </Card>
