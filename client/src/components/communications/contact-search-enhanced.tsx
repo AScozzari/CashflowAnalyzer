@@ -74,34 +74,36 @@ export function ContactSearchEnhanced({
   const allContacts: Contact[] = useMemo(() => {
     const contacts: Contact[] = [];
 
-    // Add resources
+    // Add resources (only those with mobile numbers for WhatsApp)
     if (!filterByType || filterByType.includes('resource')) {
       resources.forEach(resource => {
-        contacts.push({
-          id: `resource-${resource.id}`,
-          name: `${resource.firstName} ${resource.lastName}`,
-          type: 'resource',
-          phone: resource.mobile || resource.phone || undefined,
-          email: resource.email || undefined,
-          status: resource.isActive ? 'active' : 'inactive',
-          lastContact: resource.createdAt
-        });
+        if (resource.mobile) { // Only include if mobile number exists
+          contacts.push({
+            id: `resource-${resource.id}`,
+            name: `${resource.firstName} ${resource.lastName}`,
+            type: 'resource',
+            phone: resource.mobile, // Use mobile for WhatsApp
+            email: resource.email || undefined,
+            status: resource.isActive ? 'active' : 'inactive',
+            lastContact: resource.createdAt
+          });
+        }
       });
     }
 
-    // Add customers
+    // Add customers (only those with mobile numbers for WhatsApp)
     if (!filterByType || filterByType.includes('customer')) {
       customers.forEach(customer => {
         const name = customer.type === 'private' 
           ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
           : customer.name || '';
         
-        if (name) {
+        if (name && customer.mobile) { // Only include if mobile number exists
           contacts.push({
             id: `customer-${customer.id}`,
             name: name,
             type: 'customer',
-            phone: customer.mobile || customer.phone || undefined,
+            phone: customer.mobile, // Use mobile for WhatsApp
             email: customer.email || undefined,
             status: customer.isActive ? 'active' : 'inactive',
             tags: customer.type ? [customer.type] : undefined,
@@ -111,18 +113,20 @@ export function ContactSearchEnhanced({
       });
     }
 
-    // Add suppliers
+    // Add suppliers (only those with mobile numbers for WhatsApp)
     if (!filterByType || filterByType.includes('supplier')) {
       suppliers.forEach(supplier => {
-        contacts.push({
-          id: `supplier-${supplier.id}`,
-          name: supplier.name,
-          type: 'supplier',
-          phone: supplier.mobile || supplier.phone || undefined,
-          email: supplier.email || undefined,
-          status: supplier.isActive ? 'active' : 'inactive',
-          lastContact: supplier.createdAt
-        });
+        if (supplier.mobile) { // Only include if mobile number exists
+          contacts.push({
+            id: `supplier-${supplier.id}`,
+            name: supplier.name,
+            type: 'supplier',
+            phone: supplier.mobile, // Use mobile for WhatsApp
+            email: supplier.email || undefined,
+            status: supplier.isActive ? 'active' : 'inactive',
+            lastContact: supplier.createdAt
+          });
+        }
       });
     }
 
@@ -298,7 +302,7 @@ export function ContactSearchEnhanced({
                         
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           {contact.phone && (
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 text-green-600 font-medium">
                               <Phone className="h-3 w-3" />
                               {contact.phone}
                             </div>

@@ -298,4 +298,60 @@ export function setupWhatsAppRoutes(app: Express): void {
       }
     }
   });
+
+  // Get WhatsApp chats/conversations
+  app.get('/api/whatsapp/chats', async (req, res) => {
+    try {
+      // Get all contacts with phone numbers from different entity types
+      const [resources, customers, suppliers] = await Promise.all([
+        storage.getResources(),
+        storage.getCustomers(), 
+        storage.getSuppliers()
+      ]);
+
+      // Combine all contacts and filter those with phone numbers
+      const allContacts = [
+        ...resources.map((r: any) => ({ ...r, type: 'resource' })),
+        ...customers.map((c: any) => ({ ...c, type: 'customer' })),
+        ...suppliers.map((s: any) => ({ ...s, type: 'supplier' }))
+      ];
+
+      // Filter contacts that have mobile/phone numbers and map to WhatsApp chat format
+      const whatsappChats = allContacts
+        .filter(contact => contact.mobile || contact.phone)
+        .slice(0, 20) // Limit to 20 most recent chats for performance
+        .map(contact => ({
+          id: contact.id,
+          name: contact.name,
+          phone: contact.mobile || contact.phone,
+          avatar: null,
+          lastMessage: 'Nessun messaggio recente',
+          lastSeen: 'Oggi',
+          unreadCount: 0,
+          online: false,
+          type: contact.type,
+          company: contact.company || null
+        }));
+
+      res.json(whatsappChats);
+    } catch (error) {
+      console.error('Error fetching WhatsApp chats:', error);
+      res.status(500).json({ error: 'Failed to fetch chats' });
+    }
+  });
+
+  // Get WhatsApp messages for a specific contact
+  app.get('/api/whatsapp/messages/:contactId', async (req, res) => {
+    try {
+      const contactId = req.params.contactId;
+      
+      // For now, return empty messages array until we implement message storage
+      const messages: any[] = [];
+
+      res.json(messages);
+    } catch (error) {
+      console.error('Error fetching WhatsApp messages:', error);
+      res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+  });
 }

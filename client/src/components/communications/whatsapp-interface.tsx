@@ -87,13 +87,18 @@ export function WhatsAppInterface() {
   const { toast } = useToast();
 
   // Fetch real data
-  const { data: whatsappMessages = [], refetch: refetchMessages } = useQuery({
+  const { data: whatsappMessages = [], refetch: refetchMessages } = useQuery<WhatsAppMessage[]>({
     queryKey: ['/api/whatsapp/messages', selectedContact?.id],
     enabled: !!selectedContact,
   });
 
-  const { data: whatsappTemplates = [] } = useQuery({
+  const { data: whatsappTemplates = [] } = useQuery<WhatsAppTemplate[]>({
     queryKey: ['/api/whatsapp/templates'],
+  });
+
+  // Fetch WhatsApp chats/contacts
+  const { data: whatsappChats = [] } = useQuery<WhatsAppContact[]>({
+    queryKey: ['/api/whatsapp/chats'],
   });
 
   // AI message analysis mutation
@@ -176,11 +181,13 @@ export function WhatsAppInterface() {
     
     try {
       const response = await generateResponseMutation.mutateAsync(messageContent);
-      setMessageInput(response.suggestedResponse || '');
-      toast({
-        title: "Risposta AI generata",
-        description: "Ho generato una risposta suggerita che puoi modificare prima di inviare"
-      });
+      if (response && typeof response === 'object' && 'suggestedResponse' in response) {
+        setMessageInput(response.suggestedResponse || '');
+        toast({
+          title: "Risposta AI generata",
+          description: "Ho generato una risposta suggerita che puoi modificare prima di inviare"
+        });
+      }
     } catch (error) {
       console.error('Error generating AI response:', error);
     }
@@ -191,7 +198,7 @@ export function WhatsAppInterface() {
     
     try {
       const analysis = await analyzeMessageMutation.mutateAsync(messageContent);
-      if (analysis.suggestedResponse && autoResponseEnabled) {
+      if (analysis && typeof analysis === 'object' && 'suggestedResponse' in analysis && analysis.suggestedResponse && autoResponseEnabled) {
         setMessageInput(analysis.suggestedResponse);
       }
     } catch (error) {
@@ -217,6 +224,74 @@ export function WhatsAppInterface() {
     <div className="grid grid-cols-12 gap-6 h-[800px]">
       {/* Contacts Sidebar */}
       <div className="col-span-4 space-y-4">
+        {/* WhatsApp Chats List */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Chat WhatsApp
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[300px]">
+              {whatsappChats.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>Nessuna chat attiva</p>
+                  <p className="text-xs">Seleziona un contatto per iniziare</p>
+                </div>
+              ) : (
+                <div className="space-y-1 p-2">
+                  {whatsappChats.map((chat) => (
+                    <div
+                      key={chat.id}
+                      onClick={() => setSelectedContact(chat)}
+                      className={`flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors ${
+                        selectedContact?.id === chat.id ? 'bg-muted' : ''
+                      }`}
+                      data-testid={`chat-${chat.id}`}
+                    >
+                      <div className="relative">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={chat.avatar} />
+                          <AvatarFallback className="bg-green-100 text-green-700 text-sm">
+                            {chat.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        {chat.online && (
+                          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                        )}
+                        {chat.unreadCount > 0 && (
+                          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="font-medium text-sm truncate">{chat.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {chat.lastSeen}
+                          </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {chat.lastMessage || 'Nessun messaggio'}
+                        </div>
+                        {chat.phone && (
+                          <div className="text-xs text-green-600 font-mono mt-1">
+                            📱 {chat.phone}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
         {/* AI Settings & Contact Search */}
         <Card>
           <CardHeader className="pb-3">
@@ -400,7 +475,7 @@ export function WhatsAppInterface() {
                                   {message.timestamp}
                                 </span>
                                 {message.aiGenerated && (
-                                  <Bot className="h-3 w-3 text-blue-400" title="Risposta generata dall'AI" />
+                                  <Bot className="h-3 w-3 text-blue-400" />
                                 )}
                               </div>
                               {message.isOutgoing && (
