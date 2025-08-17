@@ -3477,7 +3477,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   // ==================== WhatsApp Templates Management API Routes ====================
   
   // Get all WhatsApp templates
-  app.get('/api/whatsapp/templates', requireAuth, async (req, res) => {
+  app.get('/api/whatsapp/templates', async (req, res) => {
     try {
       const templates = await storage.getWhatsappTemplates();
       res.json(templates);

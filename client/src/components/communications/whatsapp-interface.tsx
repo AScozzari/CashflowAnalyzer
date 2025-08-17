@@ -336,21 +336,39 @@ export function WhatsAppInterface() {
               <Dialog open={showContactSearch} onOpenChange={setShowContactSearch}>
                 <DialogTrigger asChild>
                   <Button 
-                    variant="outline" 
-                    className="w-full justify-start text-left" 
-                    size="sm"
+                    variant={selectedContact ? "default" : "outline"}
+                    className="w-full justify-start text-left h-auto p-3 hover:bg-accent transition-colors" 
                     data-testid="open-contact-search"
                   >
-                    <Users className="h-4 w-4 mr-2" />
-                    <div className="flex-1 truncate">
+                    <div className="flex items-center gap-3 w-full">
                       {selectedContact ? (
-                        <div>
-                          <div className="font-medium">{selectedContact.name}</div>
-                          <div className="text-xs text-muted-foreground">{selectedContact.phone}</div>
-                        </div>
+                        <>
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-green-100 text-green-700 text-sm">
+                              {selectedContact.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 text-left">
+                            <div className="font-medium text-sm">{selectedContact.name}</div>
+                            <div className="text-xs opacity-75">{selectedContact.phone}</div>
+                            {selectedContact.type && (
+                              <Badge variant="secondary" className="text-xs mt-1">
+                                {selectedContact.type === 'resource' ? 'Risorsa' : 
+                                 selectedContact.type === 'customer' ? 'Cliente' : 'Fornitore'}
+                              </Badge>
+                            )}
+                          </div>
+                        </>
                       ) : (
-                        "Cerca tra risorse, clienti e fornitori"
+                        <>
+                          <Users className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex-1 text-left">
+                            <div className="font-medium text-sm">Seleziona Contatto</div>
+                            <div className="text-xs text-muted-foreground">Cerca tra risorse, clienti e fornitori</div>
+                          </div>
+                        </>
                       )}
+                      <Plus className="h-4 w-4 opacity-50" />
                     </div>
                   </Button>
                 </DialogTrigger>

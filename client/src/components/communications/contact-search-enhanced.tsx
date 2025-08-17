@@ -173,11 +173,9 @@ export function ContactSearchEnhanced({
   };
 
   const handleContactClick = (contact: Contact) => {
+    onContactSelect(contact);
     if (!multiSelect) {
-      onContactSelect(contact);
-      setIsExpanded(false);
-    } else {
-      onContactSelect(contact);
+      setIsExpanded(false); // Close the search after selection for single select
     }
   };
 
