@@ -801,48 +801,50 @@ export default function DashboardProfessional() {
             
             {/* Configuration Preview Mini-Dashboard */}
             <ConfigPreviewMini />
-            
-            {/* Additional metrics card */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="pb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/5">
-                    <TrendingUp className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl font-semibold">Performance</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">Indicatori chiave</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950/30">
-                  <div className="flex items-center space-x-2">
-                    <ArrowUpRight className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-medium">Entrate Mensili</span>
-                  </div>
-                  <span className="text-sm font-bold text-green-600">+8.3%</span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-950/30">
-                  <div className="flex items-center space-x-2">
-                    <ArrowDownLeft className="w-4 h-4 text-red-600" />
-                    <span className="text-sm font-medium">Uscite Mensili</span>
-                  </div>
-                  <span className="text-sm font-bold text-red-600">+2.1%</span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30">
-                  <div className="flex items-center space-x-2">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium">EBITDA Mese Corrente</span>
-                  </div>
-                  <span className="text-sm font-bold text-blue-600">+15.7%</span>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
+
+        {/* Performance Card - Full Width Below Movements */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/5">
+                <TrendingUp className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold">Performance</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">Indicatori chiave mensili</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 dark:bg-green-950/30">
+                <div className="flex items-center space-x-3">
+                  <ArrowUpRight className="w-5 h-5 text-green-600" />
+                  <span className="font-medium">Entrate Mensili</span>
+                </div>
+                <span className="text-lg font-bold text-green-600">+8.3%</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 rounded-lg bg-red-50 dark:bg-red-950/30">
+                <div className="flex items-center space-x-3">
+                  <ArrowDownLeft className="w-5 h-5 text-red-600" />
+                  <span className="font-medium">Uscite Mensili</span>
+                </div>
+                <span className="text-lg font-bold text-red-600">+2.1%</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30">
+                <div className="flex items-center space-x-3">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium">EBITDA Mese Corrente</span>
+                </div>
+                <span className="text-lg font-bold text-blue-600">+15.7%</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       {/* Modal per Nuovo Movimento */}

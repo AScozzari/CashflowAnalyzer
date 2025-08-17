@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useEffect, useRef } from "react";
 
 interface MobileHeaderProps {
   title: string;
@@ -86,6 +87,29 @@ export function MobileHeader({ title, subtitle }: MobileHeaderProps) {
 export function BottomNavigation() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const navRef = useRef<HTMLElement>(null);
+
+  // Update background color based on theme
+  useEffect(() => {
+    const updateBackgroundColor = () => {
+      if (navRef.current) {
+        const isDark = document.documentElement.classList.contains('dark');
+        navRef.current.style.backgroundColor = isDark ? 'rgb(2, 8, 23)' : 'rgb(255, 255, 255)';
+      }
+    };
+
+    // Initial update
+    updateBackgroundColor();
+
+    // Listen for theme changes
+    const observer = new MutationObserver(updateBackgroundColor);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const getNavItems = () => {
     const baseItems = [
@@ -130,7 +154,15 @@ export function BottomNavigation() {
       <div className="h-20" />
       
       {/* Fixed bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-950 border-t border-border shadow-lg">
+      <nav 
+        ref={navRef}
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-border shadow-lg dark:border-slate-800" 
+        style={{ 
+          backgroundColor: 'rgb(255, 255, 255)',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none'
+        }}
+      >
         <div className="grid grid-cols-3 lg:grid-cols-4">
           {navItems.map((item) => {
             const Icon = item.icon;
