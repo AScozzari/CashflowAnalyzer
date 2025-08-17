@@ -12,6 +12,7 @@ import {
 } from "@shared/schema";
 import { emailService } from './email-service';
 import { SendGridTemplateService } from './sendgrid-templates';
+import { sendGridService } from './services/sendgrid-enhanced';
 import { setupAuth } from "./auth";
 import { loginLimiter, apiLimiter, securityLogger, securityHeaders, sanitizeInput, sessionSecurity } from "./security-middleware";
 import { WebhookRouter } from './webhook-manager';
@@ -2879,21 +2880,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Template ID e email test richiesti' });
       }
 
-      const emailSettings = await storage.getEmailSettings();
-      if (!emailSettings?.sendgridApiKey) {
-        return res.status(400).json({ error: 'SendGrid API key non configurata' });
-      }
-
-      const templateService = new SendGridTemplateService(
-        emailSettings.sendgridApiKey,
-        { email: emailSettings.fromEmail, name: emailSettings.fromName }
+      // Use enhanced SendGrid service
+      const result = await sendGridService.sendTemplateEmail(
+        { 
+          templateId,
+          category: 'test',
+          tags: ['template-test'],
+          customArgs: { test_mode: 'true' }
+        },
+        {
+          to: testEmail,
+          dynamicTemplateData: {
+            test_mode: true,
+            timestamp: new Date().toISOString(),
+            message: 'Questo è un test del template SendGrid Enhanced'
+          },
+          categories: ['test'],
+          customArgs: { template_test: templateId }
+        }
       );
 
-      const success = await templateService.testTemplate(templateId, testEmail);
-      res.json({ success, message: success ? 'Test inviato con successo' : 'Errore nell\'invio del test' });
+      res.json({ 
+        success: result.success, 
+        messageId: result.messageId,
+        message: result.success ? 'Test inviato con successo' : result.error 
+      });
     } catch (error) {
       console.error('Error testing SendGrid template:', error);
       res.status(500).json({ error: 'Errore nel test del template' });
+    }
+  });
+
+  // Enhanced SendGrid endpoints with 2024 best practices
+  app.post('/api/sendgrid/enhanced/test-connection', requireRole("admin"), async (req, res) => {
+    try {
+      const result = await sendGridService.testConnection();
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing SendGrid connection:', error);
+      res.status(500).json({ error: 'Errore nel test della connessione SendGrid' });
+    }
+  });
+
+  app.post('/api/sendgrid/enhanced/send-password-reset', requireAuth, async (req, res) => {
+    try {
+      const { email, resetToken, userName, templateId } = req.body;
+      
+      if (!email || !resetToken || !userName) {
+        return res.status(400).json({ error: 'Email, reset token e nome utente richiesti' });
+      }
+
+      const result = await sendGridService.sendPasswordResetEmail(email, resetToken, userName, templateId);
+      res.json({
+        success: result.success,
+        messageId: result.messageId,
+        message: result.success ? 'Email reset password inviata' : result.error
+      });
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      res.status(500).json({ error: 'Errore invio email reset password' });
+    }
+  });
+
+  app.post('/api/sendgrid/enhanced/send-welcome', requireAuth, async (req, res) => {
+    try {
+      const { email, userName, firstName, templateId } = req.body;
+      
+      if (!email || !userName || !firstName) {
+        return res.status(400).json({ error: 'Email, username e nome richiesti' });
+      }
+
+      const result = await sendGridService.sendWelcomeEmail(email, userName, firstName, templateId);
+      res.json({
+        success: result.success,
+        messageId: result.messageId,
+        message: result.success ? 'Email di benvenuto inviata' : result.error
+      });
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      res.status(500).json({ error: 'Errore invio email di benvenuto' });
+    }
+  });
+
+  app.post('/api/sendgrid/enhanced/send-financial-alert', requireAuth, async (req, res) => {
+    try {
+      const { email, alertType, alertData, templateId } = req.body;
+      
+      if (!email || !alertType || !alertData) {
+        return res.status(400).json({ error: 'Email, tipo alert e dati alert richiesti' });
+      }
+
+      const result = await sendGridService.sendFinancialAlert(email, alertType, alertData, templateId);
+      res.json({
+        success: result.success,
+        messageId: result.messageId,
+        message: result.success ? 'Alert finanziario inviato' : result.error
+      });
+    } catch (error) {
+      console.error('Error sending financial alert:', error);
+      res.status(500).json({ error: 'Errore invio alert finanziario' });
+    }
+  });
+
+  app.post('/api/sendgrid/enhanced/validate-template', requireAuth, async (req, res) => {
+    try {
+      const { templateId } = req.body;
+      
+      if (!templateId) {
+        return res.status(400).json({ error: 'Template ID richiesto' });
+      }
+
+      const result = await sendGridService.validateTemplate(templateId);
+      res.json({
+        valid: result.valid,
+        message: result.valid ? 'Template validato con successo' : result.error
+      });
+    } catch (error) {
+      console.error('Error validating template:', error);
+      res.status(500).json({ error: 'Errore validazione template' });
     }
   });
 
