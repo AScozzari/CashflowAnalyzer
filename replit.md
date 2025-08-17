@@ -28,7 +28,17 @@ EasyCashFlows is a comprehensive financial management system for Italian SMEs, o
 - Added comprehensive authentication requirements including eIDAS certificates and TPP registration
 - System ready for automatic bank transaction verification and movement reconciliation
 
-## Recent Enhancement - UX Improvements & Mobile Fields Integration (August 17, 2025)
+## Latest Fix - Critical Runtime Errors Resolution (August 17, 2025)
+- ✅ **COMPLETED**: Resolved all critical runtime crashes and TypeScript errors
+- Fixed customer creation page crash by adding missing CitySelectWithCap import
+- Corrected WhatsApp interface TypeScript errors with proper null handling for contact names
+- Fixed backend WhatsApp routes to use correct schema fields (removed non-existent fields)
+- Implemented proper type checking for AI response handling in WhatsApp component
+- Backend endpoints /api/whatsapp/chats and /api/whatsapp/messages now fully functional
+- WhatsApp contact list properly displays customers, suppliers, and resources with mobile numbers
+- All LSP diagnostics resolved - no remaining compilation errors
+
+## Previous Enhancement - UX Improvements & Mobile Fields Integration (August 17, 2025)
 - ✅ **COMPLETED**: Enhanced movement creation form with parent-child field dependencies for better UX
 - Implemented conditional field disabling logic:
   * Company (parent) → Core, Resource, Office, IBAN (children) - disabled until company selected
