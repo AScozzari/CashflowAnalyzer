@@ -13,6 +13,7 @@ import { WebSocketStatus } from "@/components/debug/websocket-status";
 import { OpenAIDiagnostic } from "@/components/debug/openai-diagnostic";
 import { WebhookDiagnostics } from "@/components/debug/webhook-diagnostics";
 import { Download, User, Shield } from "lucide-react";
+import { FooterSignature } from "@/components/layout/footer-signature";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("entities");
@@ -74,6 +75,7 @@ export default function Settings() {
           </div>
         </TabsContent>
       </Tabs>
+      <FooterSignature />
     </div>
   );
 }

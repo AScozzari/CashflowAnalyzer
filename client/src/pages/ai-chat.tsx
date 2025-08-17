@@ -2,6 +2,7 @@ import { AiChat } from "@/components/ai/ai-chat";
 import Header from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, MessageSquare, Sparkles } from "lucide-react";
+import { FooterSignature } from "@/components/layout/footer-signature";
 
 export default function AiChatPage() {
   return (
@@ -59,6 +60,7 @@ export default function AiChatPage() {
 
       {/* Main Chat Interface */}
       <AiChat />
+      <FooterSignature />
     </div>
   );
 }

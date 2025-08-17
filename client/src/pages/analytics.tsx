@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
 import Header from "@/components/layout/header";
-import FooterSignature from "@/components/layout/footer-signature";
+import { FooterSignature } from "@/components/layout/footer-signature";
 import AdvancedFiltersNew, { type AnalyticsFilters } from "@/components/analytics/advanced-filters-new";
 import AnalyticsTable from "@/components/analytics/analytics-table";
 import AnalyticsChartsProfessional from "@/components/analytics/analytics-charts-professional";

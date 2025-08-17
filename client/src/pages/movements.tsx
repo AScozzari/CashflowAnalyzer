@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
-import FooterSignature from "@/components/layout/footer-signature";
+import { FooterSignature } from "@/components/layout/footer-signature";
 import MovementFormNew from "@/components/movements/movement-form-new-fixed";
 import MovementFiltersAdvanced, { type MovementFilters } from "@/components/movements/movement-filters-advanced";
 

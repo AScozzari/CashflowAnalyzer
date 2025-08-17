@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import Header from "@/components/layout/header";
+import { FooterSignature } from "@/components/layout/footer-signature";
 import { InstallPrompt } from "@/components/ui/install-prompt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -853,6 +854,7 @@ export default function DashboardProfessional() {
         isOpen={isNewMovementModalOpen}
         onClose={() => setIsNewMovementModalOpen(false)}
       />
+      <FooterSignature />
     </div>
   );
 }

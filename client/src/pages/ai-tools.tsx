@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
+import { FooterSignature } from "@/components/layout/footer-signature";
 
 export default function AiToolsPage() {
   const { user } = useAuth();
@@ -587,6 +588,7 @@ export default function AiToolsPage() {
           </div>
         </div>
       </div>
+      <FooterSignature />
     </div>
   );
 }
