@@ -178,13 +178,17 @@ export default function Analytics() {
       
       <div className="p-4 lg:p-6 space-y-6">
         {/* Advanced Filters - Responsive */}
-        <AdvancedFiltersNew
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onApplyFilters={handleApplyFilters}
-          onResetFilters={handleResetFilters}
-          isLoading={isLoading}
-        />
+        <div>
+          {(
+            <AdvancedFiltersNew
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              onApplyFilters={handleApplyFilters}
+              onResetFilters={handleResetFilters}
+              isLoading={isLoading}
+            />
+          ) as React.ReactNode}
+        </div>
 
         {/* Results Section */}
         {movementsData && (
@@ -252,9 +256,9 @@ export default function Analytics() {
           onClose={() => {
             setIsFormOpen(false);
             setEditingMovement(null);
+            handleMovementUpdated(); // Call the update function when closing
           }}
           movement={editingMovement}
-          onMovementCreated={handleMovementUpdated}
         />
       )}
       
