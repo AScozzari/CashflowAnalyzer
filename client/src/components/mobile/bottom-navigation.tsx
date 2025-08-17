@@ -95,6 +95,8 @@ export function BottomNavigation() {
       if (navRef.current) {
         const isDark = document.documentElement.classList.contains('dark');
         navRef.current.style.backgroundColor = isDark ? 'rgb(2, 8, 23)' : 'rgb(255, 255, 255)';
+        navRef.current.style.background = isDark ? 'rgb(2, 8, 23)' : 'rgb(255, 255, 255)';
+        navRef.current.style.opacity = '1';
       }
     };
 
@@ -156,11 +158,13 @@ export function BottomNavigation() {
       {/* Fixed bottom navigation */}
       <nav 
         ref={navRef}
-        className="fixed bottom-0 left-0 right-0 z-50 border-t border-border shadow-lg dark:border-slate-800" 
+        className="fixed bottom-0 left-0 right-0 z-[9999] border-t border-border shadow-lg dark:border-slate-800" 
         style={{ 
           backgroundColor: 'rgb(255, 255, 255)',
           backdropFilter: 'none',
-          WebkitBackdropFilter: 'none'
+          WebkitBackdropFilter: 'none',
+          opacity: '1',
+          background: 'rgb(255, 255, 255)'
         }}
       >
         <div className="grid grid-cols-3 lg:grid-cols-4">
