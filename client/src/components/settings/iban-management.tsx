@@ -480,10 +480,17 @@ export default function IbanManagement() {
   };
 
   const getSuggestedApiProvider = (bankName: string) => {
-    for (const [bankKey, bankInfo] of Object.entries(ITALIAN_BANKS)) {
-      if (bankName.toLowerCase().includes(bankKey.toLowerCase()) || 
-          bankName.toLowerCase().includes(bankInfo.name.toLowerCase())) {
-        return bankInfo.apiProvider;
+    // Usa la mappatura definita in alto per trovare il provider API appropriato
+    const provider = BANK_API_MAPPING[bankName as keyof typeof BANK_API_MAPPING];
+    if (provider) {
+      return provider;
+    }
+    
+    // Fallback: cerca per match parziale del nome banca
+    for (const [mappedBankName, mappedProvider] of Object.entries(BANK_API_MAPPING)) {
+      if (bankName.toLowerCase().includes(mappedBankName.toLowerCase()) || 
+          mappedBankName.toLowerCase().includes(bankName.toLowerCase())) {
+        return mappedProvider;
       }
     }
     return null;
