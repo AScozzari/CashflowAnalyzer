@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BackupProviderConfig } from './backup-provider-config';
+import { BackupProviderConfigProfessional } from './backup-provider-config-professional';
 import type { BackupJob } from '../../../../shared/backup-schema';
 import { 
   Database, 
@@ -211,9 +211,9 @@ export function BackupSettings() {
           </Card>
         </TabsContent>
 
-        {/* Provider Configuration Tab - FUNCTIONAL BUTTONS */}
+        {/* Provider Configuration Tab - PROFESSIONAL CARDS */}
         <TabsContent value="providers" className="space-y-6">
-          <BackupProviderConfig />
+          <BackupProviderConfigProfessional />
         </TabsContent>
 
         <TabsContent value="jobs" className="space-y-6">
