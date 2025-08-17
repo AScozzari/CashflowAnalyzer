@@ -20,16 +20,17 @@ import {
 } from 'lucide-react';
 import { Link } from 'wouter';
 
-interface ChannelStatus {
+interface ChannelUsage {
   id: string;
   name: string;
   icon: React.ReactNode;
   status: 'configured' | 'partial' | 'not_configured' | 'error';
-  completionRate: number;
-  lastActivity?: string;
-  activeFeatures: number;
-  totalFeatures: number;
-  quickActions: string[];
+  currentUsage: number;
+  monthlyLimit: number;
+  usagePercentage: number;
+  lastUsed?: string;
+  messagesThisMonth: number;
+  cost: string;
 }
 
 interface SystemMetrics {
@@ -40,7 +41,7 @@ interface SystemMetrics {
 }
 
 export function ConfigPreviewMini() {
-  const [channels, setChannels] = useState<ChannelStatus[]>([]);
+  const [channels, setChannels] = useState<ChannelUsage[]>([]);
   const [metrics, setMetrics] = useState<SystemMetrics>({
     totalChannels: 4,
     activeChannels: 0,
@@ -49,51 +50,55 @@ export function ConfigPreviewMini() {
   });
 
   useEffect(() => {
-    // Simulate loading channel statuses
-    const mockChannels: ChannelStatus[] = [
+    // Simulate loading channel usage data
+    const mockChannels: ChannelUsage[] = [
       {
         id: 'whatsapp',
         name: 'WhatsApp',
         icon: <MessageSquare className="w-4 h-4" />,
         status: 'configured',
-        completionRate: 95,
-        lastActivity: '2 ore fa',
-        activeFeatures: 4,
-        totalFeatures: 4,
-        quickActions: ['Template', 'Variabili', 'Test']
+        currentUsage: 4440,
+        monthlyLimit: 10000,
+        usagePercentage: 44,
+        lastUsed: '2 ore fa',
+        messagesThisMonth: 4440,
+        cost: '€22.50'
       },
       {
         id: 'email',
         name: 'Email',
         icon: <Mail className="w-4 h-4" />,
-        status: 'partial',
-        completionRate: 70,
-        lastActivity: '1 giorno fa',
-        activeFeatures: 2,
-        totalFeatures: 3,
-        quickActions: ['API Key', 'Template']
+        status: 'configured',
+        currentUsage: 2340,
+        monthlyLimit: 50000,
+        usagePercentage: 5,
+        lastUsed: '1 giorno fa',
+        messagesThisMonth: 2340,
+        cost: '€8.90'
       },
       {
         id: 'sms',
         name: 'SMS',
         icon: <Phone className="w-4 h-4" />,
         status: 'configured',
-        completionRate: 85,
-        lastActivity: '5 ore fa',
-        activeFeatures: 3,
-        totalFeatures: 4,
-        quickActions: ['Skebby', 'Template']
+        currentUsage: 340,
+        monthlyLimit: 1000,
+        usagePercentage: 34,
+        lastUsed: '5 ore fa',
+        messagesThisMonth: 340,
+        cost: '€15.60'
       },
       {
         id: 'telegram',
         name: 'Telegram',
         icon: <Send className="w-4 h-4" />,
         status: 'not_configured',
-        completionRate: 0,
-        lastActivity: 'Mai',
-        activeFeatures: 0,
-        totalFeatures: 4,
-        quickActions: ['Configura Bot']
+        currentUsage: 0,
+        monthlyLimit: 10000,
+        usagePercentage: 0,
+        lastUsed: 'Mai',
+        messagesThisMonth: 0,
+        cost: '€0.00'
       }
     ];
 
@@ -101,12 +106,12 @@ export function ConfigPreviewMini() {
 
     // Calculate metrics
     const activeChannelsCount = mockChannels.filter(ch => ch.status === 'configured').length;
-    const avgHealth = mockChannels.reduce((acc, ch) => acc + ch.completionRate, 0) / mockChannels.length;
+    const avgUsage = mockChannels.reduce((acc, ch) => acc + ch.usagePercentage, 0) / mockChannels.length;
 
     setMetrics(prev => ({
       ...prev,
       activeChannels: activeChannelsCount,
-      configurationHealth: Math.round(avgHealth)
+      configurationHealth: Math.round(avgUsage)
     }));
   }, []);
 
@@ -146,7 +151,7 @@ export function ConfigPreviewMini() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-blue-600" />
-            <CardTitle className="text-lg font-bold text-blue-900 dark:text-blue-100">⚙️ Configurazione Canali</CardTitle>
+            <CardTitle className="text-lg font-bold text-blue-900 dark:text-blue-100">📊 Utilizzo Canali</CardTitle>
           </div>
           <Link href="/settings">
             <Button variant="outline" size="sm" className="flex items-center gap-2">
@@ -163,7 +168,7 @@ export function ConfigPreviewMini() {
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               <TrendingUp className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium">Salute Sistema</span>
+              <span className="text-sm font-medium">Utilizzo Medio</span>
             </div>
             <div className="text-xl font-bold text-blue-600">{metrics.configurationHealth}%</div>
           </div>
@@ -176,85 +181,58 @@ export function ConfigPreviewMini() {
           </div>
         </div>
 
-        {/* Monthly Messaging Stats */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">📊 Messaggi Mese Corrente</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950 rounded-lg">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-green-600" />
-                <span className="text-xs font-medium">WhatsApp</span>
-              </div>
-              <span className="text-sm font-bold text-green-600">247</span>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-950 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-medium">Email</span>
-              </div>
-              <span className="text-sm font-bold text-blue-600">89</span>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-950 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-orange-600" />
-                <span className="text-xs font-medium">SMS</span>
-              </div>
-              <span className="text-sm font-bold text-orange-600">34</span>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-purple-50 dark:bg-purple-950 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Send className="w-4 h-4 text-purple-600" />
-                <span className="text-xs font-medium">Telegram</span>
-              </div>
-              <span className="text-sm font-bold text-purple-600">12</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Channel Status Grid */}
+        {/* Channel Usage Cards */}
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-muted-foreground">Status Canali</h4>
+          <h4 className="text-sm font-medium text-muted-foreground">📊 Utilizzo Mensile Canali</h4>
           <div className="grid grid-cols-1 gap-3">
             {channels.map((channel) => (
               <div 
                 key={channel.id} 
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                className="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
               >
-                <div className="flex items-center gap-3 flex-1">
+                <div className="flex items-center gap-3 mb-3">
                   <div className={`p-2 rounded-lg ${getStatusColor(channel.status)}`}>
                     {channel.icon}
                   </div>
                   
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-sm">{channel.name}</span>
                       {getStatusIcon(channel.status)}
-                      <Badge variant="outline" className="text-xs">
-                        {getStatusText(channel.status)}
-                      </Badge>
                     </div>
-                    
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>Funzioni: {channel.activeFeatures}/{channel.totalFeatures}</span>
-                      <span>Ultimo: {channel.lastActivity}</span>
+                    <div className="text-xs text-muted-foreground">
+                      Ultimo utilizzo: {channel.lastUsed}
                     </div>
-                    
-                    <div className="mt-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-muted-foreground">Completamento</span>
-                        <span className="text-xs font-medium">{channel.completionRate}%</span>
-                      </div>
-                      <Progress value={channel.completionRate} className="h-1" />
-                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-primary">{channel.cost}</div>
+                    <div className="text-xs text-muted-foreground">Costo mese</div>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  {channel.quickActions.map((action, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
-                      {action}
-                    </Badge>
-                  ))}
+                {/* Usage Stats */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Messaggi inviati</span>
+                    <span className="font-medium">{channel.messagesThisMonth.toLocaleString()}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Limite mensile</span>
+                    <span className="font-medium">{channel.monthlyLimit.toLocaleString()}</span>
+                  </div>
+                  
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-muted-foreground">Utilizzo</span>
+                      <span className="text-xs font-medium">{channel.usagePercentage}%</span>
+                    </div>
+                    <Progress 
+                      value={channel.usagePercentage} 
+                      className="h-2" 
+                    />
+                  </div>
                 </div>
               </div>
             ))}
