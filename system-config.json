@@ -1,0 +1,122 @@
+[
+  {
+    "key": "APP_NAME",
+    "value": "EasyCashFlows",
+    "description": "Nome dell'applicazione",
+    "category": "application",
+    "type": "string",
+    "isEditable": true,
+    "id": "config_1755435027655_4csswtrhz",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "APP_VERSION",
+    "value": "1.0.0",
+    "description": "Versione dell'applicazione",
+    "category": "application",
+    "type": "string",
+    "isEditable": true,
+    "id": "config_1755435027655_zrb59f8hz",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "LOG_LEVEL",
+    "value": "INFO",
+    "description": "Livello di logging (DEBUG, INFO, WARN, ERROR)",
+    "category": "logging",
+    "type": "string",
+    "isEditable": true,
+    "id": "config_1755435027655_fichgo5vd",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "MAX_LOG_ENTRIES",
+    "value": "1000",
+    "description": "Numero massimo di log entries da mantenere",
+    "category": "logging",
+    "type": "number",
+    "isEditable": true,
+    "id": "config_1755435027655_pwgjmtr4o",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "SESSION_TIMEOUT",
+    "value": "3600",
+    "description": "Timeout sessione utente in secondi",
+    "category": "security",
+    "type": "number",
+    "isEditable": true,
+    "id": "config_1755435027655_r6wfazbly",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "RATE_LIMIT_ENABLED",
+    "value": "true",
+    "description": "Abilita rate limiting per le API",
+    "category": "security",
+    "type": "boolean",
+    "isEditable": true,
+    "id": "config_1755435027655_1wfd422is",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "RATE_LIMIT_REQUESTS",
+    "value": "100",
+    "description": "Numero massimo di richieste per finestra temporale",
+    "category": "security",
+    "type": "number",
+    "isEditable": true,
+    "id": "config_1755435027655_kpagabyoz",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "BACKUP_ENABLED",
+    "value": "true",
+    "description": "Abilita backup automatici",
+    "category": "backup",
+    "type": "boolean",
+    "isEditable": true,
+    "id": "config_1755435027655_4jpmunu8k",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "BACKUP_INTERVAL",
+    "value": "86400",
+    "description": "Intervallo backup automatico in secondi",
+    "category": "backup",
+    "type": "number",
+    "isEditable": true,
+    "id": "config_1755435027655_se96r6r57",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "DATABASE_POOL_SIZE",
+    "value": "10",
+    "description": "Dimensione pool connessioni database",
+    "category": "database",
+    "type": "number",
+    "isEditable": true,
+    "id": "config_1755435027655_35qw9mc7v",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "NODE_ENV",
+    "value": "development",
+    "description": "Ambiente di esecuzione",
+    "category": "system",
+    "type": "string",
+    "isEditable": false,
+    "id": "config_1755435027655_rlv16er3b",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  },
+  {
+    "key": "PORT",
+    "value": "5000",
+    "description": "Porta del server",
+    "category": "system",
+    "type": "string",
+    "isEditable": false,
+    "id": "config_1755435027655_kbd53x3qx",
+    "updatedAt": "2025-08-17T12:50:27.655Z"
+  }
+]

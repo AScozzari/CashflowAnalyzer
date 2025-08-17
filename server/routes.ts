@@ -23,6 +23,7 @@ import path from 'path';
 import { z } from 'zod';
 import fs from 'fs';
 import { xmlInvoiceParser, type MovementSuggestion } from './xml-invoice-parser';
+import { systemService } from './services/system-service';
 
 // Ensure uploads directory exists
 const uploadsDir = 'uploads';
@@ -3263,6 +3264,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error(`Error saving provider config ${req.params.provider}:`, error);
       res.status(400).json({ error: error.message });
     }
+  });
+
+  // ========================================
+  // SYSTEM MANAGEMENT API ROUTES
+  // ========================================
+  
+  // Get system configurations
+  app.get("/api/system/config", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const configs = await systemService.getConfigs();
+      res.json(configs);
+    } catch (error) {
+      console.error("Error getting system configs:", error);
+      res.status(500).json({ error: "Failed to get system configurations" });
+    }
+  }));
+
+  // Update system configuration
+  app.put("/api/system/config/:key", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { key } = req.params;
+      const { value } = req.body;
+      
+      if (!value && value !== '') {
+        return res.status(400).json({ error: "Value is required" });
+      }
+      
+      await systemService.updateConfig(key, String(value));
+      res.json({ success: true, message: "Configuration updated successfully" });
+    } catch (error) {
+      console.error("Error updating system config:", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to update configuration" 
+      });
+    }
+  }));
+
+  // Get system statistics
+  app.get("/api/system/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const stats = await systemService.getSystemStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error getting system stats:", error);
+      res.status(500).json({ error: "Failed to get system statistics" });
+    }
+  }));
+
+  // Get system logs
+  app.get("/api/system/logs", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const logs = await systemService.getLogs(limit);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error getting system logs:", error);
+      res.status(500).json({ error: "Failed to get system logs" });
+    }
+  }));
+
+  // Restart system service
+  app.post("/api/system/services/:service/restart", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { service } = req.params;
+      await systemService.restartService(service);
+      res.json({ success: true, message: `Service ${service} restarted successfully` });
+    } catch (error) {
+      console.error("Error restarting service:", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to restart service" 
+      });
+    }
+  }));
+
+  // API tracking middleware (put this after all other routes to track them)
+  app.use((req: any, res: any, next: any) => {
+    const startTime = Date.now();
+    const originalSend = res.json;
+    
+    res.json = function(obj: any) {
+      const responseTime = Date.now() - startTime;
+      const isError = res.statusCode >= 400;
+      systemService.trackApiRequest(responseTime, isError);
+      return originalSend.call(this, obj);
+    };
+    
+    next();
   });
 
   const httpServer = createServer(app);
