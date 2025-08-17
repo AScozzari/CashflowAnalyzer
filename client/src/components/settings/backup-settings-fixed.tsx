@@ -234,16 +234,8 @@ export function BackupSettings() {
 
         {/* Provider Configuration Tab */}
         <TabsContent value="providers" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Cloud className="h-5 w-5 text-blue-500" />
-                <span>Configurazione Provider di Storage</span>
-              </CardTitle>
-              <CardDescription>
-                Configura i provider cloud per il backup. Seleziona il provider principale e inserisci le credenziali di accesso.
-              </CardDescription>
-            </CardHeader>
+          <BackupProviderConfig />
+        </TabsContent>
             <CardContent className="space-y-6">
               
               {/* Provider Selection */}

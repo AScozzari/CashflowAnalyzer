@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Database, Bell, Globe, Palette, FileText, Settings2, Users2, Lock } from "lucide-react";
 import SystemUsersManagement from "./system-users-management";
 import { SecuritySettings } from "./security-settings";
-import { BackupSettings } from "./backup-settings-fixed";
+import { BackupSettings } from "./backup-settings-clean";
 import { LocalizationSettings } from "./localization-settings";
 
 export default function SystemConfigHorizontal() {
