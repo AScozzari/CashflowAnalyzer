@@ -182,7 +182,8 @@ export function WhatsAppInterface() {
     try {
       const response = await generateResponseMutation.mutateAsync(messageContent);
       if (response && typeof response === 'object' && 'suggestedResponse' in response) {
-        setMessageInput(response.suggestedResponse || '');
+        const suggestedResponse = typeof response.suggestedResponse === 'string' ? response.suggestedResponse : '';
+        setMessageInput(suggestedResponse);
         toast({
           title: "Risposta AI generata",
           description: "Ho generato una risposta suggerita che puoi modificare prima di inviare"
@@ -199,7 +200,8 @@ export function WhatsAppInterface() {
     try {
       const analysis = await analyzeMessageMutation.mutateAsync(messageContent);
       if (analysis && typeof analysis === 'object' && 'suggestedResponse' in analysis && analysis.suggestedResponse && autoResponseEnabled) {
-        setMessageInput(analysis.suggestedResponse);
+        const suggestedResponse = typeof analysis.suggestedResponse === 'string' ? analysis.suggestedResponse : '';
+        setMessageInput(suggestedResponse);
       }
     } catch (error) {
       console.error('Error analyzing message:', error);
@@ -255,7 +257,7 @@ export function WhatsAppInterface() {
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={chat.avatar} />
                           <AvatarFallback className="bg-green-100 text-green-700 text-sm">
-                            {chat.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                            {(chat.name || 'N/A').split(' ').map(n => n[0]).join('').substring(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         {chat.online && (
@@ -270,7 +272,7 @@ export function WhatsAppInterface() {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="font-medium text-sm truncate">{chat.name}</div>
+                          <div className="font-medium text-sm truncate">{chat.name || 'Contatto senza nome'}</div>
                           <div className="text-xs text-muted-foreground">
                             {chat.lastSeen}
                           </div>
