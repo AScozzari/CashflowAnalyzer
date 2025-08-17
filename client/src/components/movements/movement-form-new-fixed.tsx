@@ -39,6 +39,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import CompactXMLUploader from "./xml-invoice-uploader-compact";
+import { AiDocumentUpload } from "./ai-document-upload";
 import type { MovementWithRelations, Company, Core, Resource, Office, Iban, Tag, MovementStatus, MovementReason, Supplier, Customer } from "@shared/schema";
 
 // Schema del form con validazione
@@ -76,6 +77,8 @@ interface MovementFormNewProps {
 export default function MovementFormNew({ movement, onClose, isOpen }: MovementFormNewProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const [aiExtractedData, setAiExtractedData] = useState<any>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -215,6 +218,69 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
       form.setValue("resourceId", "");
     }
   }, [watchedEntityType, form]);
+
+  // Handle AI extracted data
+  const handleAiDataExtracted = (extractedData: any) => {
+    setAiExtractedData(extractedData);
+    
+    // Pre-fill form with AI extracted data
+    if (extractedData.amount) {
+      form.setValue("amount", extractedData.amount);
+    }
+    
+    if (extractedData.date) {
+      form.setValue("flowDate", extractedData.date);
+    }
+    
+    if (extractedData.movementType) {
+      form.setValue("type", extractedData.movementType);
+    }
+    
+    if (extractedData.description) {
+      form.setValue("notes", extractedData.description);
+    }
+    
+    if (extractedData.documentNumber) {
+      form.setValue("documentNumber", extractedData.documentNumber);
+    }
+    
+    if (extractedData.vatAmount) {
+      form.setValue("vatAmount", extractedData.vatAmount);
+    }
+    
+    // Auto-match suppliers/customers if found
+    if (extractedData.supplierInfo?.name) {
+      const matchingSupplier = suppliers.find(s => 
+        s.name.toLowerCase().includes(extractedData.supplierInfo.name.toLowerCase()) ||
+        (extractedData.supplierInfo.vatNumber && s.vatNumber === extractedData.supplierInfo.vatNumber)
+      );
+      if (matchingSupplier) {
+        form.setValue("supplierId", matchingSupplier.id);
+        form.setValue("entityType", "supplier");
+      }
+    }
+    
+    if (extractedData.customerInfo?.name) {
+      const matchingCustomer = customers.find(c => 
+        c.name?.toLowerCase().includes(extractedData.customerInfo.name.toLowerCase()) ||
+        (extractedData.customerInfo.vatNumber && c.vatNumber === extractedData.customerInfo.vatNumber)
+      );
+      if (matchingCustomer) {
+        form.setValue("customerId", matchingCustomer.id);
+        form.setValue("entityType", "customer");
+      }
+    }
+    
+    toast({
+      title: "Dati estratti con AI",
+      description: "Form pre-compilato automaticamente con i dati del documento",
+    });
+  };
+
+  const handleAiFileUploaded = (file: File, filePath: string) => {
+    setUploadedFile(file);
+    form.setValue("fileName", file.name);
+  };
 
   const createMovementMutation = useMutation({
     mutationFn: async (data: MovementFormData) => {
@@ -876,52 +942,26 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                   />
                 </div>
 
-                {/* XML Upload - Solo per spese, in alto */}
+                {/* AI-Powered Document Upload Section */}
+                <AiDocumentUpload
+                  onDataExtracted={handleAiDataExtracted}
+                  onFileUploaded={handleAiFileUploaded}
+                  isProcessing={isAiProcessing}
+                  className="w-full"
+                />
+                
+                {/* Fallback: XML Uploader for backward compatibility - Solo per spese */}
                 {watchedType === "expense" && (
-                  <div className="flex justify-end mb-4">
-                    <CompactXMLUploader onDataParsed={handleXMLDataParsed} />
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <label className="text-xs font-medium text-gray-600 mb-2 block">
+                      Caricamento XML Tradizionale (FatturaPA)
+                    </label>
+                    <CompactXMLUploader 
+                      onDataParsed={handleXMLDataParsed}
+                      className="w-full"
+                    />
                   </div>
                 )}
-
-                {/* File Upload */}
-                <div className="space-y-3">
-                  <FormLabel className="text-sm font-medium flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    Allegati Documento
-                  </FormLabel>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 transition-colors bg-gray-50/50">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Upload className="h-5 w-5" />
-                        <span className="text-sm font-medium">Carica Allegato</span>
-                      </div>
-                      <label className="relative cursor-pointer">
-                        <input
-                          type="file"
-                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xml"
-                          onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        <div className="flex items-center justify-center px-6 py-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
-                          <span className="text-sm font-medium text-blue-700">
-                            Scegli file
-                          </span>
-                        </div>
-                      </label>
-                      <p className="text-xs text-gray-500 text-center">
-                        Formati supportati: PDF, DOC, DOCX, JPG, PNG, XML
-                      </p>
-                    </div>
-                  </div>
-                  {uploadedFile && (
-                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <FileText className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-700 font-medium">
-                        File selezionato: {uploadedFile.name}
-                      </span>
-                    </div>
-                  )}
-                </div>
               </CardContent>
             </Card>
 

@@ -2543,7 +2543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  // AI Document Analysis
+  // AI Document Analysis (General)
   app.post("/api/ai/analyze-document", requireAuth, upload.single('document'), handleAsyncErrors(async (req: any, res: any) => {
     try {
       if (!req.file) {
@@ -2570,6 +2570,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(500).json({ error: error.message || "Errore nell'analisi del documento" });
+    }
+  }));
+
+  // AI Movement Document Upload and Analysis
+  app.post("/api/ai/upload-document", requireAuth, upload.single('document'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Nessun documento fornito" });
+      }
+
+      const filePath = req.file.path;
+      const fileName = req.file.originalname;
+      const fileType = req.file.mimetype;
+
+      // Read file content
+      let fileContent = '';
+      try {
+        if (fileType?.startsWith('image/')) {
+          // For images, we'll need to use vision API - for now return error
+          return res.status(400).json({ 
+            error: "Analisi immagini non ancora supportata",
+            notes: ["Carica un documento in formato PDF, XML, DOC, o TXT per ora"] 
+          });
+        } else {
+          fileContent = fs.readFileSync(filePath, 'utf8');
+        }
+      } catch (error) {
+        return res.status(400).json({ error: "Impossibile leggere il file" });
+      }
+
+      const result = await aiService.extractMovementData(
+        req.user.id,
+        fileContent,
+        fileType || 'unknown'
+      );
+
+      // Clean up uploaded file after processing
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (error) {
+        console.warn('Could not clean up file:', error);
+      }
+
+      res.json({
+        ...result,
+        fileName,
+        fileType,
+        uploadSuccess: true
+      });
+    } catch (error: any) {
+      console.error('Error in AI movement analysis:', error);
+      
+      // Clean up uploaded file if it exists
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (e) {
+          console.warn('Could not clean up file after error:', e);
+        }
+      }
+      
+      res.status(500).json({ 
+        error: error.message || "Errore nell'analisi del documento",
+        notes: ["Verifica che il documento contenga informazioni finanziarie leggibili"]
+      });
+    }
+  }));
+
+  // AI Movement Data Extraction (for already uploaded files)
+  app.post("/api/ai/extract-movement", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { documentContent, fileType, fileName } = req.body;
+      
+      if (!documentContent) {
+        return res.status(400).json({ error: "Contenuto documento richiesto" });
+      }
+
+      const result = await aiService.extractMovementData(
+        req.user.id,
+        documentContent,
+        fileType || 'unknown'
+      );
+
+      res.json({
+        ...result,
+        fileName,
+        fileType,
+        extractionSuccess: true
+      });
+    } catch (error: any) {
+      console.error('Error in AI movement data extraction:', error);
+      res.status(500).json({ 
+        error: error.message || "Errore nell'estrazione dati movimento",
+        notes: ["Verifica che il documento contenga informazioni finanziarie leggibili"]
+      });
     }
   }));
 

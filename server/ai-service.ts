@@ -348,6 +348,123 @@ Please provide:
     }
   }
 
+  async extractMovementData(
+    userId: string,
+    documentContent: string,
+    fileType: string,
+    analysisType: 'movement_extraction' = 'movement_extraction'
+  ): Promise<{ extractedData: any; processingNotes: string[]; tokensUsed: number }> {
+    if (!this.isConfigured) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    const aiSettings = await storage.getAiSettings(userId);
+    if (!aiSettings?.documentProcessingEnabled) {
+      throw new Error('Document processing is disabled for this user');
+    }
+
+    // Get existing suppliers and customers for matching
+    let suppliers: any[] = [];
+    let customers: any[] = [];
+    try {
+      suppliers = await storage.getSuppliers();
+      customers = await storage.getCustomers();
+    } catch (error) {
+      console.warn('[AI] Could not fetch suppliers/customers for matching:', error);
+    }
+
+    const suppliersInfo = suppliers.slice(0, 10).map(s => ({
+      name: s.name,
+      vatNumber: s.vatNumber,
+      email: s.email
+    }));
+
+    const customersInfo = customers.slice(0, 10).map(c => ({
+      name: c.name,
+      vatNumber: c.vatNumber,
+      email: c.email
+    }));
+
+    const prompt = `Analizza questo documento ${fileType} ed estrai SOLO i dati finanziari utili per creare un movimento contabile. Rispondi esclusivamente in JSON valido.
+
+DOCUMENTO DA ANALIZZARE:
+${documentContent}
+
+FORNITORI ESISTENTI NEL SISTEMA (per il matching):
+${JSON.stringify(suppliersInfo, null, 2)}
+
+CLIENTI ESISTENTI NEL SISTEMA (per il matching):
+${JSON.stringify(customersInfo, null, 2)}
+
+INSTRUZIONI:
+1. Identifica automaticamente se è un ENTRATA (income) o USCITA (expense)
+2. Estrai l'importo totale (con IVA inclusa se presente)
+3. Trova data del documento o transazione
+4. Identifica fornitore/cliente e fai matching con quelli esistenti
+5. Estrai numero documento se presente
+6. Calcola importo IVA se specificato
+7. Estrai descrizione/causale
+
+Rispondi SOLO con questo JSON (senza markdown):
+{
+  "movementType": "income" | "expense",
+  "confidence": 0.0-1.0,
+  "amount": "123.45",
+  "date": "YYYY-MM-DD",
+  "description": "Descrizione del movimento",
+  "documentNumber": "numero documento se presente",
+  "vatAmount": "importo IVA se specificato",
+  "netAmount": "importo netto senza IVA",
+  "vatRate": "22%" | "10%" | "4%" | "0%",
+  "supplierInfo": {
+    "name": "Nome fornitore se identificato",
+    "vatNumber": "P.IVA se presente", 
+    "matchingId": "ID se corrisponde a fornitore esistente"
+  },
+  "customerInfo": {
+    "name": "Nome cliente se identificato",
+    "vatNumber": "P.IVA se presente",
+    "matchingId": "ID se corrisponde a cliente esistente"
+  },
+  "processingNotes": ["nota1", "nota2"]
+}
+
+IMPORTANTE: Se non riesci a determinare un campo, omettilo dal JSON. Mantieni alta precisione e confidenza per i dati estratti.`;
+
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o', // Always use best model for extraction
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1500,
+        temperature: 0.1, // Very low temperature for precise extraction
+        response_format: { type: "json_object" }
+      });
+
+      const tokensUsed = response.usage?.total_tokens || 0;
+      let extractedData = {};
+      let processingNotes: string[] = [];
+
+      try {
+        const content = response.choices[0]?.message?.content || '{}';
+        extractedData = JSON.parse(content);
+        processingNotes = extractedData.processingNotes || [];
+        
+        // Clean up the response
+        delete extractedData.processingNotes;
+        
+        console.log('[AI] Movement extraction successful:', extractedData);
+      } catch (e) {
+        console.error('[AI] Failed to parse movement extraction JSON:', e);
+        throw new Error('Impossibile interpretare la risposta AI. Documento non riconosciuto.');
+      }
+
+      return { extractedData, processingNotes, tokensUsed };
+    } catch (error: any) {
+      console.error('[AI] Movement extraction failed:', error);
+      throw new Error(error.message || 'Estrazione dati movimento fallita');
+    }
+  }
+
   async generateFinancialInsights(
     userId: string,
     financialData: any
