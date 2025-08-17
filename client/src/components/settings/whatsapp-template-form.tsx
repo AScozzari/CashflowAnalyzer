@@ -218,7 +218,8 @@ export function WhatsAppTemplateForm({
                         <FormLabel>Descrizione</FormLabel>
                         <FormControl>
                           <Input 
-                            {...field} 
+                            value={field.value || ''} 
+                            onChange={field.onChange}
                             placeholder="Promemoria pagamento per clienti" 
                             data-testid="input-description"
                           />
@@ -238,7 +239,7 @@ export function WhatsAppTemplateForm({
                 <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="body.content"
+                    name="body"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Corpo Messaggio</FormLabel>
@@ -261,7 +262,7 @@ export function WhatsAppTemplateForm({
 
                   <FormField
                     control={form.control}
-                    name="footer.content"
+                    name="footer"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Footer (Opzionale)</FormLabel>
