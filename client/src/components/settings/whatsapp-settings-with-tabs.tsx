@@ -3,8 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageSquare, FileText, Settings } from 'lucide-react';
 import { WhatsAppSettingsSimple } from './whatsapp-settings-simple';
 import { WhatsAppTemplates } from './whatsapp-templates';
-import { WhatsAppVariableConfig } from './whatsapp-variable-config';
-import { WhatsAppVariablesExplained } from './whatsapp-variables-explained';
+import { WhatsAppVariablesStandalone } from './whatsapp-variables-standalone';
 
 export function WhatsAppSettingsWithTabs() {
   const [activeTab, setActiveTab] = useState('settings');
@@ -37,8 +36,7 @@ export function WhatsAppSettingsWithTabs() {
 
         <TabsContent value="variables">
           <div className="space-y-6">
-            <WhatsAppVariablesExplained />
-            <WhatsAppVariableConfig />
+            <WhatsAppVariablesStandalone />
           </div>
         </TabsContent>
       </Tabs>
