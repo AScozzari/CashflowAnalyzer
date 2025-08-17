@@ -337,17 +337,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/ibans", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
+      console.log('[IBAN SERVER] Dati ricevuti:', req.body);
+      console.log('[IBAN SERVER] User:', req.user?.username, req.user?.role);
       const validatedData = insertIbanSchema.parse(req.body);
+      console.log('[IBAN SERVER] Dati validati:', validatedData);
       const iban = await storage.createIban(validatedData);
+      console.log('[IBAN SERVER] IBAN creato con successo:', iban.id);
       res.status(201).json(iban);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error('[IBAN SERVER] Errore validazione Zod:', error.errors);
         return res.status(400).json({ 
           message: "Invalid data", 
           errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
         });
       }
-      console.error('Error creating IBAN:', error);
+      console.error('[IBAN SERVER] Errore creazione IBAN:', error);
       res.status(500).json({ message: "Failed to create IBAN" });
     }
   }));

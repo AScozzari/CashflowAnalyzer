@@ -100,10 +100,16 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
 
   const mutation = useMutation({
     mutationFn: async (data: InsertIban) => {
-      if (iban) {
-        return await apiRequest(`/api/ibans/${iban.id}`, "PUT", data);
-      } else {
-        return await apiRequest("/api/ibans", "POST", data);
+      console.log('[IBAN DEBUG] Dati inviati:', data);
+      try {
+        if (iban) {
+          return await apiRequest("PUT", `/api/ibans/${iban.id}`, data);
+        } else {
+          return await apiRequest("POST", "/api/ibans", data);
+        }
+      } catch (error) {
+        console.error('[IBAN ERROR] Errore completo:', error);
+        throw error;
       }
     },
     onSuccess: () => {
@@ -115,6 +121,7 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
       onClose();
     },
     onError: (error: any) => {
+      console.error('[IBAN ERROR] Errore in onError:', error);
       toast({
         title: "Errore",
         description: error.message || "Si è verificato un errore",
@@ -124,6 +131,9 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
   });
 
   const onSubmit = (data: InsertIban) => {
+    console.log('[IBAN FORM] Dati dal form:', data);
+    console.log('[IBAN FORM] Validazione form:', form.formState.errors);
+    console.log('[IBAN FORM] Companies disponibili:', companies);
     mutation.mutate(data);
   };
 
