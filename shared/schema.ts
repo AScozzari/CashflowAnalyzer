@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, timestamp, boolean, date } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, timestamp, boolean, date, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -704,6 +704,35 @@ export const whatsappSettings = pgTable('whatsapp_settings', {
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
+// WhatsApp Templates Schema - 2024 Best Practices
+export const whatsappTemplates = pgTable('whatsapp_templates', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  name: text('name').notNull(),
+  provider: text('provider').notNull(), // 'twilio' | 'linkmobility'
+  category: text('category').notNull(), // 'AUTHENTICATION' | 'UTILITY' | 'MARKETING'
+  language: text('language').default('it'),
+  status: text('status').default('PENDING'), // 'PENDING' | 'APPROVED' | 'REJECTED'
+  
+  // Template Structure
+  header: jsonb('header'), // { type: 'TEXT' | 'IMAGE' | 'VIDEO' | 'DOCUMENT', content: string, variables?: string[] }
+  body: jsonb('body').notNull(), // { content: string, variables?: string[] }
+  footer: jsonb('footer'), // { content?: string }
+  buttons: jsonb('buttons'), // Array of button objects
+  
+  // Metadata
+  tags: text('tags').array(),
+  description: text('description'),
+  qualityScore: text('quality_score'), // 'HIGH' | 'MEDIUM' | 'LOW'
+  
+  // Tracking
+  providerTemplateId: text('provider_template_id'), // ID from Twilio/LinkMobility
+  metaTemplateId: text('meta_template_id'), // ID from Meta WhatsApp
+  lastApprovalRequest: timestamp('last_approval_request'),
+  
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
 export const insertWhatsappSettingsSchema = createInsertSchema(whatsappSettings).omit({
   id: true,
   createdAt: true,
@@ -724,68 +753,44 @@ export const insertWhatsappSettingsSchema = createInsertSchema(whatsappSettings)
 });
 
 export type InsertWhatsappSettings = z.infer<typeof insertWhatsappSettingsSchema>;
-export type WhatsappSettings = typeof whatsappSettings.$inferSelect;
 
-// WhatsApp Template Schema (per template pre-approvati Meta)
-export const whatsappTemplates = pgTable('whatsapp_templates', {
-  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
-  name: text('name').notNull(), // Nome template (snake_case)
-  displayName: text('display_name').notNull(), // Nome mostrato
-  category: text('category').notNull(), // UTILITY, MARKETING, AUTHENTICATION
-  language: text('language').notNull().default('it'), // Codice lingua
-  
-  // Template Content
-  headerType: text('header_type'), // TEXT, IMAGE, VIDEO, DOCUMENT
-  headerText: text('header_text'), // Se header TEXT
-  bodyText: text('body_text').notNull(), // Corpo messaggio con {{1}} variabili
-  footerText: text('footer_text'), // Footer opzionale
-  
-  // Buttons (se presenti)
-  buttonType: text('button_type'), // CALL_TO_ACTION, QUICK_REPLY
-  buttonText: text('button_text'), // Testo bottone
-  buttonUrl: text('button_url'), // URL se call-to-action
-  
-  // Variables
-  variables: text('variables'), // JSON array di variabili: ["nome", "importo"]
-  exampleValues: text('example_values'), // JSON di valori esempio per approvazione
-  
-  // Meta Approval Status
-  metaTemplateId: text('meta_template_id'), // ID template approvato da Meta
-  approvalStatus: text('approval_status').default('pending'), // pending, approved, rejected
-  rejectionReason: text('rejection_reason'), // Motivo rifiuto Meta
-  submittedAt: timestamp('submitted_at'), // Data invio approvazione
-  approvedAt: timestamp('approved_at'), // Data approvazione
-  
-  // Usage
-  isActive: boolean('is_active').default(true),
-  usageCount: integer('usage_count').default(0), // Conteggio utilizzi
-  lastUsedAt: timestamp('last_used_at'), // Ultimo utilizzo
-  
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
+// WhatsApp Template Insert Schema
 export const insertWhatsappTemplateSchema = createInsertSchema(whatsappTemplates).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  providerTemplateId: true,
   metaTemplateId: true,
-  approvedAt: true,
-  submittedAt: true,
-  usageCount: true,
-  lastUsedAt: true
+  lastApprovalRequest: true
 }).extend({
-  name: z.string().regex(/^[a-z0-9_]+$/, "Nome template: solo lettere minuscole, numeri e underscore"),
-  displayName: z.string().min(1, "Nome display richiesto"),
-  category: z.enum(['UTILITY', 'MARKETING', 'AUTHENTICATION']),
-  language: z.string().length(2, "Codice lingua ISO 2 caratteri").default('it'),
-  bodyText: z.string().min(1, "Corpo messaggio richiesto"),
-  headerType: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'DOCUMENT']).optional(),
-  buttonType: z.enum(['CALL_TO_ACTION', 'QUICK_REPLY']).optional(),
-  approvalStatus: z.enum(['pending', 'approved', 'rejected']).default('pending')
+  name: z.string()
+    .min(1, "Nome richiesto")
+    .regex(/^[a-z0-9_]+$/, "Solo lettere minuscole, numeri e underscore")
+    .max(512, "Massimo 512 caratteri"),
+  provider: z.enum(['twilio', 'linkmobility']),
+  category: z.enum(['AUTHENTICATION', 'UTILITY', 'MARKETING']),
+  body: z.object({
+    content: z.string().min(1, "Contenuto richiesto").max(1024, "Massimo 1024 caratteri"),
+    variables: z.array(z.string()).optional()
+  }),
+  header: z.object({
+    type: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'DOCUMENT']).optional(),
+    content: z.string().optional(),
+    variables: z.array(z.string()).optional()
+  }).optional(),
+  footer: z.object({
+    content: z.string().max(60, "Footer massimo 60 caratteri").optional()
+  }).optional(),
+  buttons: z.array(z.object({
+    type: z.enum(['QUICK_REPLY', 'CALL_TO_ACTION', 'URL']),
+    text: z.string().max(25, "Testo pulsante massimo 25 caratteri"),
+    url: z.string().url().optional(),
+    phoneNumber: z.string().optional()
+  })).optional()
 });
 
 export type InsertWhatsappTemplate = z.infer<typeof insertWhatsappTemplateSchema>;
+export type WhatsappSettings = typeof whatsappSettings.$inferSelect;
 export type WhatsappTemplate = typeof whatsappTemplates.$inferSelect;
 
 export const passwordResetSchema = z.object({

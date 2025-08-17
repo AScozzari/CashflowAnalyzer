@@ -232,11 +232,12 @@ export interface IStorage {
 
   // WhatsApp Templates
   getWhatsappTemplates(): Promise<WhatsappTemplate[]>;
-  getWhatsappTemplate(id: string): Promise<WhatsappTemplate | undefined>;
-  getWhatsappTemplateByName(name: string): Promise<WhatsappTemplate | undefined>;
+  getWhatsappTemplateById(id: string): Promise<WhatsappTemplate | undefined>;
+  getWhatsappTemplateByName(name: string, provider: string): Promise<WhatsappTemplate | undefined>;
   createWhatsappTemplate(template: InsertWhatsappTemplate): Promise<WhatsappTemplate>;
-  updateWhatsappTemplate(id: string, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate>;
-  deleteWhatsappTemplate(id: string): Promise<void>;
+  updateWhatsappTemplate(id: string, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate | undefined>;
+  updateWhatsappTemplateStatus(id: string, status: string): Promise<WhatsappTemplate | undefined>;
+  deleteWhatsappTemplate(id: string): Promise<boolean>;
 
   // Session store per autenticazione
   sessionStore: session.Store;
@@ -2479,7 +2480,7 @@ async getMovements(filters: {
     }
   }
 
-  async getWhatsappTemplate(id: string): Promise<WhatsappTemplate | undefined> {
+  async getWhatsappTemplateById(id: string): Promise<WhatsappTemplate | undefined> {
     try {
       const result = await db.select().from(whatsappTemplates).where(eq(whatsappTemplates.id, id));
       return result[0] || undefined;
@@ -2489,9 +2490,11 @@ async getMovements(filters: {
     }
   }
 
-  async getWhatsappTemplateByName(name: string): Promise<WhatsappTemplate | undefined> {
+  async getWhatsappTemplateByName(name: string, provider: string): Promise<WhatsappTemplate | undefined> {
     try {
-      const result = await db.select().from(whatsappTemplates).where(eq(whatsappTemplates.name, name));
+      const result = await db.select().from(whatsappTemplates).where(
+        and(eq(whatsappTemplates.name, name), eq(whatsappTemplates.provider, provider))
+      );
       return result[0] || undefined;
     } catch (error) {
       console.error('Error fetching WhatsApp template by name:', error);
@@ -2509,7 +2512,7 @@ async getMovements(filters: {
     }
   }
 
-  async updateWhatsappTemplate(id: string, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate> {
+  async updateWhatsappTemplate(id: string, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate | undefined> {
     try {
       const result = await db
         .update(whatsappTemplates)
@@ -2517,20 +2520,32 @@ async getMovements(filters: {
         .where(eq(whatsappTemplates.id, id))
         .returning();
       
-      if (result.length === 0) {
-        throw new Error('WhatsApp template not found');
-      }
-      
-      return result[0];
+      return result[0] || undefined;
     } catch (error) {
       console.error('Error updating WhatsApp template:', error);
       throw new Error('Failed to update WhatsApp template');
     }
   }
 
-  async deleteWhatsappTemplate(id: string): Promise<void> {
+  async updateWhatsappTemplateStatus(id: string, status: string): Promise<WhatsappTemplate | undefined> {
     try {
-      await db.delete(whatsappTemplates).where(eq(whatsappTemplates.id, id));
+      const result = await db
+        .update(whatsappTemplates)
+        .set({ status, updatedAt: new Date() })
+        .where(eq(whatsappTemplates.id, id))
+        .returning();
+      
+      return result[0] || undefined;
+    } catch (error) {
+      console.error('Error updating WhatsApp template status:', error);
+      throw new Error('Failed to update WhatsApp template status');
+    }
+  }
+
+  async deleteWhatsappTemplate(id: string): Promise<boolean> {
+    try {
+      const result = await db.delete(whatsappTemplates).where(eq(whatsappTemplates.id, id)).returning();
+      return result.length > 0;
     } catch (error) {
       console.error('Error deleting WhatsApp template:', error);
       throw new Error('Failed to delete WhatsApp template');

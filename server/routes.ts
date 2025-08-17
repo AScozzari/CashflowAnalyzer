@@ -8,7 +8,7 @@ import {
   insertMovementStatusSchema, insertMovementReasonSchema, insertMovementSchema,
   insertNotificationSchema, insertSupplierSchema, insertCustomerSchema, insertEmailSettingsSchema,
   insertUserSchema, passwordResetSchema, resetPasswordSchema, insertSendgridTemplateSchema,
-  insertWhatsappSettingsSchema
+  insertWhatsappSettingsSchema, insertWhatsappTemplateSchema
 } from "@shared/schema";
 import { emailService } from './email-service';
 import { SendGridTemplateService } from './sendgrid-templates';
@@ -2998,6 +2998,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error validating template:', error);
       res.status(500).json({ error: 'Errore validazione template' });
+    }
+  });
+
+  // ==================== WhatsApp Templates Management API Routes ====================
+  
+  // Get all WhatsApp templates
+  app.get('/api/whatsapp/templates', requireAuth, async (req, res) => {
+    try {
+      const templates = await storage.getWhatsappTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error('Error fetching WhatsApp templates:', error);
+      res.status(500).json({ error: 'Errore nel recupero dei template WhatsApp' });
+    }
+  });
+
+  // Create new WhatsApp template
+  app.post('/api/whatsapp/templates', requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertWhatsappTemplateSchema.parse(req.body);
+      
+      // Check for unique template name per provider
+      const existingTemplate = await storage.getWhatsappTemplateByName(validatedData.name, validatedData.provider);
+      if (existingTemplate) {
+        return res.status(400).json({ error: 'Template con questo nome già esistente per questo provider' });
+      }
+
+      const newTemplate = await storage.createWhatsappTemplate(validatedData);
+      
+      // TODO: Submit template to provider (Twilio/LinkMobility) for approval
+      console.log(`[WhatsApp] Template ${newTemplate.name} creato per provider ${newTemplate.provider}`);
+      
+      res.status(201).json(newTemplate);
+    } catch (error: any) {
+      console.error('Error creating WhatsApp template:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Dati template non validi', details: error.errors });
+      }
+      res.status(500).json({ error: 'Errore nella creazione del template WhatsApp' });
+    }
+  });
+
+  // Update WhatsApp template
+  app.put('/api/whatsapp/templates/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertWhatsappTemplateSchema.parse(req.body);
+      
+      const updatedTemplate = await storage.updateWhatsappTemplate(id, validatedData);
+      if (!updatedTemplate) {
+        return res.status(404).json({ error: 'Template non trovato' });
+      }
+
+      // TODO: Re-submit template to provider for re-approval if content changed
+      console.log(`[WhatsApp] Template ${updatedTemplate.name} aggiornato`);
+      
+      res.json(updatedTemplate);
+    } catch (error: any) {
+      console.error('Error updating WhatsApp template:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Dati template non validi', details: error.errors });
+      }
+      res.status(500).json({ error: 'Errore nell\'aggiornamento del template WhatsApp' });
+    }
+  });
+
+  // Delete WhatsApp template
+  app.delete('/api/whatsapp/templates/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const deleted = await storage.deleteWhatsappTemplate(id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Template non trovato' });
+      }
+
+      // TODO: Delete template from provider if it exists
+      console.log(`[WhatsApp] Template ${id} eliminato`);
+      
+      res.json({ success: true, message: 'Template eliminato con successo' });
+    } catch (error) {
+      console.error('Error deleting WhatsApp template:', error);
+      res.status(500).json({ error: 'Errore nell\'eliminazione del template WhatsApp' });
+    }
+  });
+
+  // Submit template for approval (provider-specific)
+  app.post('/api/whatsapp/templates/:id/submit', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const template = await storage.getWhatsappTemplateById(id);
+      if (!template) {
+        return res.status(404).json({ error: 'Template non trovato' });
+      }
+
+      // TODO: Implement provider-specific submission logic
+      if (template.provider === 'twilio') {
+        // Submit to Twilio Content API
+        console.log(`[WhatsApp] Submitting template ${template.name} to Twilio`);
+      } else if (template.provider === 'linkmobility') {
+        // Submit to LinkMobility API
+        console.log(`[WhatsApp] Submitting template ${template.name} to LinkMobility`);
+      }
+
+      // Update status to pending
+      const updatedTemplate = await storage.updateWhatsappTemplateStatus(id, 'PENDING');
+      
+      res.json({ 
+        success: true, 
+        message: 'Template inviato per approvazione',
+        template: updatedTemplate 
+      });
+    } catch (error) {
+      console.error('Error submitting WhatsApp template:', error);
+      res.status(500).json({ error: 'Errore nell\'invio del template per approvazione' });
+    }
+  });
+
+  // Get template by ID
+  app.get('/api/whatsapp/templates/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const template = await storage.getWhatsappTemplateById(id);
+      
+      if (!template) {
+        return res.status(404).json({ error: 'Template non trovato' });
+      }
+      
+      res.json(template);
+    } catch (error) {
+      console.error('Error fetching WhatsApp template:', error);
+      res.status(500).json({ error: 'Errore nel recupero del template WhatsApp' });
+    }
+  });
+
+  // Preview template with sample data
+  app.post('/api/whatsapp/templates/:id/preview', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { sampleData } = req.body;
+      
+      const template = await storage.getWhatsappTemplateById(id);
+      if (!template) {
+        return res.status(404).json({ error: 'Template non trovato' });
+      }
+
+      // Generate preview by replacing placeholders with sample data
+      let previewContent = (template.body as any)?.content || '';
+      
+      if (sampleData) {
+        Object.entries(sampleData).forEach(([key, value]) => {
+          const placeholder = `{{${key}}}`;
+          previewContent = previewContent.replace(new RegExp(placeholder, 'g'), String(value));
+        });
+      }
+
+      res.json({
+        templateId: template.id,
+        templateName: template.name,
+        preview: previewContent,
+        category: template.category,
+        provider: template.provider
+      });
+    } catch (error) {
+      console.error('Error generating template preview:', error);
+      res.status(500).json({ error: 'Errore nella generazione anteprima template' });
     }
   });
 

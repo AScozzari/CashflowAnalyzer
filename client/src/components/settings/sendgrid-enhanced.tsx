@@ -92,7 +92,7 @@ export function SendGridEnhancedSettings() {
   // Test connection mutation
   const testConnectionMutation = useMutation({
     mutationFn: () => apiRequest('/api/sendgrid/enhanced/test-connection', 'POST', {}),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setConnectionStatus(data);
       toast({
         title: data.success ? "✅ Connessione riuscita" : "❌ Errore connessione",
@@ -112,7 +112,7 @@ export function SendGridEnhancedSettings() {
   const testEmailMutation = useMutation({
     mutationFn: (data: z.infer<typeof testEmailSchema>) => 
       apiRequest('/api/sendgrid/templates/test', 'POST', data),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: data.success ? "✅ Test inviato" : "❌ Errore invio",
         description: data.message
@@ -131,7 +131,7 @@ export function SendGridEnhancedSettings() {
   const passwordResetMutation = useMutation({
     mutationFn: (data: z.infer<typeof passwordResetSchema>) => 
       apiRequest('/api/sendgrid/enhanced/send-password-reset', 'POST', data),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: data.success ? "✅ Email inviata" : "❌ Errore invio",
         description: data.message
@@ -150,7 +150,7 @@ export function SendGridEnhancedSettings() {
   const welcomeEmailMutation = useMutation({
     mutationFn: (data: z.infer<typeof welcomeEmailSchema>) => 
       apiRequest('/api/sendgrid/enhanced/send-welcome', 'POST', data),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: data.success ? "✅ Email inviata" : "❌ Errore invio",
         description: data.message
@@ -174,7 +174,7 @@ export function SendGridEnhancedSettings() {
         alertData: { title, message, amount, dueDate, priority }
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: data.success ? "✅ Alert inviato" : "❌ Errore invio",
         description: data.message
@@ -277,10 +277,10 @@ export function SendGridEnhancedSettings() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {emailSettings?.sendgridApiKey ? "✅" : "❌"}
+                  {(emailSettings as any)?.sendgridApiKey ? "✅" : "❌"}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {emailSettings?.sendgridApiKey ? "API Key configurata" : "API Key mancante"}
+                  {(emailSettings as any)?.sendgridApiKey ? "API Key configurata" : "API Key mancante"}
                 </p>
               </CardContent>
             </Card>
