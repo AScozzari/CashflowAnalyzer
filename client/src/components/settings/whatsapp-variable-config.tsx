@@ -1,223 +1,192 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, X, Settings, Eye, Copy } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertTriangle, Lightbulb, Settings, ArrowRight } from 'lucide-react';
+import { WhatsAppDynamicVariables } from './whatsapp-dynamic-variables';
+import { WhatsAppTemplateTester } from './whatsapp-template-tester';
 import { useToast } from '@/hooks/use-toast';
 
-interface Variable {
-  placeholder: string;
-  description: string;
-  example: string;
-  type: 'text' | 'number' | 'date' | 'currency';
-}
-
 interface WhatsAppVariableConfigProps {
-  onVariablesChange?: (variables: Variable[]) => void;
+  onVariableSelect?: (variableKey: string, label: string) => void;
 }
 
-export function WhatsAppVariableConfig({ onVariablesChange }: WhatsAppVariableConfigProps) {
+export function WhatsAppVariableConfig({ onVariableSelect }: WhatsAppVariableConfigProps) {
   const { toast } = useToast();
-  const [variables, setVariables] = useState<Variable[]>([
-    { placeholder: '{{1}}', description: 'Nome cliente/azienda', example: 'Mario Rossi', type: 'text' },
-    { placeholder: '{{2}}', description: 'Importo/Valore', example: '€ 1.250,00', type: 'currency' },
-    { placeholder: '{{3}}', description: 'Data scadenza/evento', example: '31/12/2024', type: 'date' }
-  ]);
+  const [selectedVariables, setSelectedVariables] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState('dynamic');
 
-  const [newVariable, setNewVariable] = useState<Partial<Variable>>({
-    description: '',
-    example: '',
-    type: 'text'
-  });
-
-  const addVariable = () => {
-    if (!newVariable.description || !newVariable.example) {
-      toast({
-        title: "Errore",
-        description: "Completa descrizione ed esempio per la variabile",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const nextIndex = variables.length + 1;
-    const variable: Variable = {
-      placeholder: `{{${nextIndex}}}`,
-      description: newVariable.description,
-      example: newVariable.example,
-      type: newVariable.type || 'text'
-    };
-
-    const updatedVariables = [...variables, variable];
-    setVariables(updatedVariables);
-    onVariablesChange?.(updatedVariables);
-    setNewVariable({ description: '', example: '', type: 'text' });
-
-    toast({
-      title: "Variabile aggiunta",
-      description: `Variabile ${variable.placeholder} aggiunta con successo`
-    });
-  };
-
-  const removeVariable = (index: number) => {
-    const updatedVariables = variables.filter((_, i) => i !== index)
-      .map((variable, i) => ({
-        ...variable,
-        placeholder: `{{${i + 1}}}`
-      }));
+  const handleVariableSelect = (variableKey: string, label: string) => {
+    const isSelected = selectedVariables.includes(variableKey);
     
-    setVariables(updatedVariables);
-    onVariablesChange?.(updatedVariables);
-
-    toast({
-      title: "Variabile rimossa",
-      description: "La variabile è stata rimossa e gli indici riorganizzati"
-    });
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copiato",
-      description: `${text} copiato negli appunti`
-    });
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'text': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'currency': return 'bg-green-100 text-green-800 border-green-200';
-      case 'date': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'number': return 'bg-orange-100 text-orange-800 border-orange-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    let updatedSelection: string[];
+    if (isSelected) {
+      updatedSelection = selectedVariables.filter(v => v !== variableKey);
+      toast({
+        title: "Variabile rimossa",
+        description: `${label} rimossa dalla selezione`
+      });
+    } else {
+      updatedSelection = [...selectedVariables, variableKey];
+      toast({
+        title: "Variabile aggiunta",
+        description: `${label} aggiunta alla selezione`
+      });
     }
+    
+    setSelectedVariables(updatedSelection);
+    onVariableSelect?.(variableKey, label);
+  };
+
+  const clearSelection = () => {
+    setSelectedVariables([]);
+    toast({
+      title: "Selezione pulita",
+      description: "Tutte le variabili sono state deselezionate"
+    });
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings className="h-5 w-5" />
-          Configurazione Variabili Template
-        </CardTitle>
-        <CardDescription>
-          Definisci le variabili utilizzabili nei template WhatsApp. Le variabili devono essere sequenziali ({`{{1}}, {{2}}, {{3}}`}).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Current Variables */}
-        <div>
-          <Label className="text-sm font-medium">Variabili Attualmente Definite</Label>
-          <div className="mt-2 space-y-3">
-            {variables.map((variable, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(variable.placeholder)}
-                    className="font-mono"
-                    data-testid={`button-copy-variable-${index}`}
-                  >
-                    <Copy className="h-3 w-3 mr-1" />
-                    {variable.placeholder}
-                  </Button>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Sistema Variabili Template WhatsApp
+          </CardTitle>
+          <CardDescription>
+            Sistema avanzato per gestire variabili dinamiche nei template WhatsApp.
+            Passa dal sistema statico a variabili che estraggono automaticamente 
+            dati dalle entità del sistema.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="dynamic" className="flex items-center gap-2">
+                <Lightbulb className="w-4 h-4" />
+                Variabili Dinamiche
+              </TabsTrigger>
+              <TabsTrigger value="tester" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Tester Template
+              </TabsTrigger>
+              <TabsTrigger value="legacy" className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Sistema Legacy
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="dynamic" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
+                    ✅ Sistema Dinamico Raccomandato
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Variabili che si collegano automaticamente ai dati reali del sistema
+                  </p>
+                </div>
+                {selectedVariables.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{selectedVariables.length} selezionate</Badge>
+                    <Button variant="outline" size="sm" onClick={clearSelection}>
+                      Pulisci Selezione
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <WhatsAppDynamicVariables 
+                onVariableSelect={handleVariableSelect}
+                selectedVariables={selectedVariables}
+              />
+
+              <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">
+                  💡 Vantaggi del Sistema Dinamico
+                </h4>
+                <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
+                  <li>• <strong>Dati reali</strong>: estrae automaticamente i dati dalle entità del sistema</li>
+                  <li>• <strong>Autocompletamento</strong>: nomi azienda, clienti, importi, date vengono popolati automaticamente</li>
+                  <li>• <strong>Tipizzazione</strong>: formattazione automatica per valute, date, email, telefoni</li>
+                  <li>• <strong>Mantenimento</strong>: nessuna necessità di aggiornamento manuale dei dati</li>
+                  <li>• <strong>Scalabilità</strong>: aggiungi nuove variabili senza modificare i template esistenti</li>
+                </ul>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="tester" className="space-y-4">
+              <WhatsAppTemplateTester />
+            </TabsContent>
+
+            <TabsContent value="legacy" className="space-y-4">
+              <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5" />
                   <div>
-                    <div className="text-sm font-medium">{variable.description}</div>
-                    <div className="text-xs text-gray-500">Esempio: {variable.example}</div>
+                    <h4 className="font-medium text-orange-800 dark:text-orange-200 mb-2">
+                      Sistema Legacy Deprecato
+                    </h4>
+                    <p className="text-sm text-orange-700 dark:text-orange-300 mb-3">
+                      Il sistema attuale con variabili statiche presenta limitazioni:
+                    </p>
+                    <ul className="text-sm text-orange-700 dark:text-orange-300 space-y-1 mb-4">
+                      <li>• Dati statici che richiedono inserimento manuale</li>
+                      <li>• Nessuna connessione con le entità del sistema</li>
+                      <li>• Rischio di errori nel inserimento manuale</li>
+                      <li>• Difficile mantenimento e aggiornamento</li>
+                      <li>• Limitato a 3 variabili sequenziali</li>
+                    </ul>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className={getTypeColor(variable.type)}>
-                    {variable.type}
-                  </Badge>
-                  <Button
-                    variant="ghost"
+              </div>
+
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <h4 className="font-medium mb-3">Variabili Legacy Attuali</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                    <code className="text-sm">{'{{1}}'}</code>
+                    <span className="text-sm text-gray-600">Nome cliente/azienda</span>
+                    <span className="text-xs text-gray-500">Esempio: Mario Rossi</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                    <code className="text-sm">{'{{2}}'}</code>
+                    <span className="text-sm text-gray-600">Importo/Valore</span>
+                    <span className="text-xs text-gray-500">Esempio: € 1.250,00</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                    <code className="text-sm">{'{{3}}'}</code>
+                    <span className="text-sm text-gray-600">Data scadenza/evento</span>
+                    <span className="text-xs text-gray-500">Esempio: 31/12/2024</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center p-6 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg bg-blue-50 dark:bg-blue-950">
+                <div className="text-center">
+                  <ArrowRight className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                  <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                    Migrazione Consigliata
+                  </h4>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Passa al sistema dinamico per ottenere dati reali e automatici
+                  </p>
+                  <Button 
+                    className="mt-3" 
                     size="sm"
-                    onClick={() => removeVariable(index)}
-                    className="text-red-600 hover:text-red-700"
-                    data-testid={`button-remove-variable-${index}`}
+                    onClick={() => setActiveTab('dynamic')}
                   >
-                    <X className="h-4 w-4" />
+                    Usa Sistema Dinamico
                   </Button>
                 </div>
               </div>
-            ))}
-            {variables.length === 0 && (
-              <div className="text-center py-6 text-gray-500">
-                Nessuna variabile configurata
-              </div>
-            )}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Add New Variable */}
-        <div className="space-y-4">
-          <Label className="text-sm font-medium">Aggiungi Nuova Variabile</Label>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div>
-              <Label className="text-xs">Descrizione</Label>
-              <Input
-                placeholder="es. Nome cliente"
-                value={newVariable.description || ''}
-                onChange={(e) => setNewVariable(prev => ({ ...prev, description: e.target.value }))}
-                data-testid="input-new-variable-description"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Esempio</Label>
-              <Input
-                placeholder="es. Mario Rossi"
-                value={newVariable.example || ''}
-                onChange={(e) => setNewVariable(prev => ({ ...prev, example: e.target.value }))}
-                data-testid="input-new-variable-example"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Tipo</Label>
-              <select
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                value={newVariable.type || 'text'}
-                onChange={(e) => setNewVariable(prev => ({ ...prev, type: e.target.value as Variable['type'] }))}
-                data-testid="select-new-variable-type"
-              >
-                <option value="text">Testo</option>
-                <option value="currency">Valuta</option>
-                <option value="date">Data</option>
-                <option value="number">Numero</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <Button
-                onClick={addVariable}
-                className="w-full"
-                data-testid="button-add-variable"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Aggiungi
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Usage Examples */}
-        <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <Eye className="h-4 w-4 text-blue-600" />
-            <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">Esempi di Utilizzo</Label>
-          </div>
-          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <p>• Sollecito: "Ciao {`{{1}}`}, ti ricordiamo il pagamento di {`{{2}}`} entro il {`{{3}}`}"</p>
-            <p>• Conferma: "Grazie {`{{1}}`}, abbiamo ricevuto {`{{2}}`} del {`{{3}}`}"</p>
-            <p>• Marketing: "Offerta speciale per {`{{1}}`}: sconto {`{{2}}`} valido fino al {`{{3}}`}"</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

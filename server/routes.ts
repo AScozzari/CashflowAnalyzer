@@ -3218,6 +3218,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // WhatsApp Template Variable Resolution routes
+  app.post("/api/whatsapp/template/resolve", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { templateBody, context } = req.body;
+      const { WhatsAppTemplateResolver } = await import('./services/whatsapp-template-resolver');
+      const resolver = new WhatsAppTemplateResolver(storage);
+      
+      const resolvedTemplate = await resolver.resolveTemplate(templateBody, context);
+      res.json({ resolvedTemplate });
+    } catch (error) {
+      console.error('Error resolving template:', error);
+      res.status(500).json({ error: "Errore nella risoluzione del template" });
+    }
+  }));
+
+  app.post("/api/whatsapp/template/preview", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { templateBody } = req.body;
+      const { WhatsAppTemplateResolver } = await import('./services/whatsapp-template-resolver');
+      const resolver = new WhatsAppTemplateResolver(storage);
+      
+      const previewTemplate = await resolver.getTemplatePreview(templateBody);
+      res.json({ previewTemplate });
+    } catch (error) {
+      console.error('Error generating template preview:', error);
+      res.status(500).json({ error: "Errore nella generazione anteprima template" });
+    }
+  }));
+
   // Setup webhooks
   WebhookRouter.setupRoutes(app);
 
