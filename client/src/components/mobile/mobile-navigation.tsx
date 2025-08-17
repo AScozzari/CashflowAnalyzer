@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Menu, X, Bot, MessageSquare } from "lucide-react";
+import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Menu, X, Bot, MessageSquare, Brain, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,8 @@ export function MobileNavigation({ className }: MobileNavigationProps) {
       { name: "Dashboard", href: "/dashboard", icon: Home },
       { name: "Movimenti", href: "/movements", icon: RefreshCw },
       { name: "Analytics", href: "/analytics", icon: TrendingUp },
+      { name: "Esplora Entità", href: "/entity-explorer", icon: Search },
+      { name: "AI Tools", href: "/ai-tools", icon: Brain },
       { name: "AI Chat", href: "/ai-chat", icon: Bot },
       { name: "Comunicazioni", href: "/communications", icon: MessageSquare },
     ];
