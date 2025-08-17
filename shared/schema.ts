@@ -67,6 +67,8 @@ export const resources = pgTable("resources", {
   lastName: text("last_name").notNull(),
   taxCode: text("tax_code").notNull(),
   email: text("email"),
+  phone: text("phone"), // Telefono fisso
+  mobile: text("mobile"), // Cellulare/WhatsApp
   address: text("address"),
   zipCode: text("zip_code"),
   city: text("city"),
@@ -146,7 +148,8 @@ export const suppliers = pgTable("suppliers", {
   city: text("city"),
   country: text("country").default('Italia'),
   email: text("email"),
-  phone: text("phone"),
+  phone: text("phone"), // Telefono fisso
+  mobile: text("mobile"), // Cellulare/WhatsApp
   website: text("website"),
   contactPerson: text("contact_person"), // referente
   taxCode: text("tax_code"), // codice fiscale
@@ -166,7 +169,8 @@ export const customers = pgTable("customers", {
   
   // Campi comuni
   email: text("email"),
-  phone: text("phone"),
+  phone: text("phone"), // Telefono fisso
+  mobile: text("mobile"), // Cellulare/WhatsApp
   address: text("address"),
   zipCode: text("zip_code"),
   city: text("city"),
@@ -530,6 +534,8 @@ export const insertResourceSchema = createInsertSchema(resources).omit({
   taxCode: z.string(),
   companyId: z.string(),
   email: z.string().email().optional(),
+  phone: z.string().optional(),
+  mobile: z.string().optional(),
   role: z.enum(['user']).default('user'), // Solo ruolo user per dipendenti
 });
 
@@ -599,6 +605,7 @@ export const insertSupplierSchema = createInsertSchema(suppliers).omit({
   vatNumber: z.string().min(11, "Partita IVA deve avere almeno 11 caratteri"),
   email: z.string().email().optional(),
   phone: z.string().optional(),
+  mobile: z.string().optional(),
   website: z.string().url().optional().or(z.literal("")),
   legalForm: z.string().optional(),
   taxCode: z.string().optional(),
@@ -618,6 +625,7 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   // Campi comuni
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional(),
+  mobile: z.string().optional(),
   address: z.string().optional(),
   zipCode: z.string().optional(),
   city: z.string().optional(),

@@ -79,14 +79,12 @@ export function ContactSearchEnhanced({
       resources.forEach(resource => {
         contacts.push({
           id: `resource-${resource.id}`,
-          name: resource.name,
+          name: `${resource.firstName} ${resource.lastName}`,
           type: 'resource',
-          phone: resource.phone || undefined,
+          phone: resource.mobile || resource.phone || undefined,
           email: resource.email || undefined,
-          company: resource.department || undefined,
           status: resource.isActive ? 'active' : 'inactive',
-          tags: resource.skills ? [resource.skills] : undefined,
-          lastContact: resource.updatedAt
+          lastContact: resource.createdAt
         });
       });
     }
@@ -94,17 +92,22 @@ export function ContactSearchEnhanced({
     // Add customers
     if (!filterByType || filterByType.includes('customer')) {
       customers.forEach(customer => {
-        contacts.push({
-          id: `customer-${customer.id}`,
-          name: customer.name || customer.businessName || 'Cliente',
-          type: 'customer',
-          phone: customer.phone || undefined,
-          email: customer.email || undefined,
-          company: customer.businessName || undefined,
-          status: 'active', // customers don't have status field
-          tags: customer.type ? [customer.type] : undefined,
-          lastContact: customer.updatedAt
-        });
+        const name = customer.type === 'private' 
+          ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
+          : customer.name || '';
+        
+        if (name) {
+          contacts.push({
+            id: `customer-${customer.id}`,
+            name: name,
+            type: 'customer',
+            phone: customer.mobile || customer.phone || undefined,
+            email: customer.email || undefined,
+            status: customer.isActive ? 'active' : 'inactive',
+            tags: customer.type ? [customer.type] : undefined,
+            lastContact: customer.createdAt
+          });
+        }
       });
     }
 
@@ -115,12 +118,10 @@ export function ContactSearchEnhanced({
           id: `supplier-${supplier.id}`,
           name: supplier.name,
           type: 'supplier',
-          phone: supplier.phone || undefined,
+          phone: supplier.mobile || supplier.phone || undefined,
           email: supplier.email || undefined,
-          company: supplier.company || undefined,
-          status: 'active', // suppliers don't have status field
-          tags: supplier.category ? [supplier.category] : undefined,
-          lastContact: supplier.updatedAt
+          status: supplier.isActive ? 'active' : 'inactive',
+          lastContact: supplier.createdAt
         });
       });
     }

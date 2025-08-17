@@ -682,25 +682,26 @@ export function CustomerManagement() {
                 </TabsContent>
 
                 <TabsContent value="contact" className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-email"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="email"
-                              {...field}
-                              value={field.value || ""}
-                              data-testid="input-email"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                     <FormField
                       control={form.control}
                       name="phone"
@@ -710,8 +711,27 @@ export function CustomerManagement() {
                           <FormControl>
                             <Input
                               {...field}
+                              placeholder="es. 06 123456789"
                               value={field.value || ""}
                               data-testid="input-phone"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="mobile"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cellulare/WhatsApp</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="es. +39 333 1234567"
+                              value={field.value || ""}
+                              data-testid="input-mobile"
                             />
                           </FormControl>
                           <FormMessage />

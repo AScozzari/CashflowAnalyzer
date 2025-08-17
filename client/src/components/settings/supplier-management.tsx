@@ -218,15 +218,29 @@ function SupplierForm({ supplier, onClose }: SupplierFormProps) {
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input {...field} type="email" placeholder="info@fornitore.it" value={field.value || ""} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="email"
+            name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Telefono</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" placeholder="info@fornitore.it" value={field.value || ""} />
+                  <Input {...field} placeholder="es. 06 123456789" value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -235,12 +249,12 @@ function SupplierForm({ supplier, onClose }: SupplierFormProps) {
 
           <FormField
             control={form.control}
-            name="phone"
+            name="mobile"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Telefono</FormLabel>
+                <FormLabel>Cellulare/WhatsApp</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="+39 02 1234567" value={field.value || ""} />
+                  <Input {...field} placeholder="es. +39 333 1234567" value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

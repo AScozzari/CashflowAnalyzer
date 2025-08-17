@@ -330,6 +330,35 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
             )}
           />
 
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefono</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="es. 06 123456789" value={field.value || ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="mobile"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cellulare/WhatsApp</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="es. +39 333 1234567" value={field.value || ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
         </div>
 
