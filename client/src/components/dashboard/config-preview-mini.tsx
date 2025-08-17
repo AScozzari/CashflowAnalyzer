@@ -261,22 +261,7 @@ export function ConfigPreviewMini() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="pt-3 border-t">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Azioni Rapide</span>
-            <div className="flex gap-2">
-              <Link href="/settings?tab=channels">
-                <Button size="sm" variant="outline" className="text-xs">
-                  Configura Tutto
-                </Button>
-              </Link>
-              <Button size="sm" className="text-xs">
-                Test Canali
-              </Button>
-            </div>
-          </div>
-        </div>
+
       </CardContent>
     </Card>
   );
