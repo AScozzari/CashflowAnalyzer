@@ -45,14 +45,14 @@ export function ChannelSettings() {
           </CardContent>
         </Card>
 
-        <Card className="border-blue-200 dark:border-blue-800">
+        <Card className="border-green-200 dark:border-green-800">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Mail className="w-5 h-5 text-blue-600" />
+                <Mail className="w-5 h-5 text-green-600" />
                 <span className="font-medium">Email</span>
               </div>
-              <Badge variant="default">Migrato da System Settings</Badge>
+              <Badge variant="default" className="bg-green-600">Implementato</Badge>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
               SendGrid configurato
