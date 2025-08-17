@@ -106,7 +106,7 @@ export function BackupSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <HardDrive className="h-4 w-4" />
             <span>Overview</span>
@@ -115,21 +115,17 @@ export function BackupSettings() {
             <Cloud className="h-4 w-4" />
             <span>Provider</span>
           </TabsTrigger>
-          <TabsTrigger value="configurations" className="flex items-center space-x-2">
-            <Settings className="h-4 w-4" />
-            <span>Configurazioni</span>
-          </TabsTrigger>
           <TabsTrigger value="jobs" className="flex items-center space-x-2">
             <Clock className="h-4 w-4" />
             <span>Jobs</span>
           </TabsTrigger>
           <TabsTrigger value="restore" className="flex items-center space-x-2">
             <Archive className="h-4 w-4" />
-            <span>Restore Points</span>
+            <span>Restore</span>
           </TabsTrigger>
-          <TabsTrigger value="disaster" className="flex items-center space-x-2">
-            <Shield className="h-4 w-4" />
-            <span>Disaster Recovery</span>
+          <TabsTrigger value="configurations" className="flex items-center space-x-2">
+            <Settings className="h-4 w-4" />
+            <span>Config</span>
           </TabsTrigger>
         </TabsList>
 

@@ -3223,6 +3223,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup modern WhatsApp Business API routes (Twilio 2024 & LinkMobility)
   setupWhatsAppRoutes(app);
 
+  // Backup provider management routes
+  app.get('/api/backup/providers/status', async (req, res) => {
+    try {
+      const { backupProviderManager } = await import('./services/backup-provider-manager');
+      const status = await backupProviderManager.getProviderStatus();
+      res.json(status);
+    } catch (error: any) {
+      console.error('Error getting provider status:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/backup/providers/:provider/test', async (req, res) => {
+    try {
+      const { provider } = req.params;
+      const config = req.body;
+      
+      const { backupProviderManager } = await import('./services/backup-provider-manager');
+      const isAvailable = await backupProviderManager.testProvider(provider, config);
+      
+      res.json({ success: true, available: isAvailable });
+    } catch (error: any) {
+      console.error(`Error testing provider ${req.params.provider}:`, error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/backup/providers/:provider/config', async (req, res) => {
+    try {
+      const { provider } = req.params;
+      const config = req.body;
+      
+      const { backupProviderManager } = await import('./services/backup-provider-manager');
+      await backupProviderManager.saveProviderConfig(provider, config);
+      
+      res.json({ success: true, message: `${provider.toUpperCase()} configured successfully` });
+    } catch (error: any) {
+      console.error(`Error saving provider config ${req.params.provider}:`, error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
