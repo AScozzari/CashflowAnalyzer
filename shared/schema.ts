@@ -1071,3 +1071,4 @@ export type UserWithResource = User & {
 export * from "./user-schema";
 export * from "./security-schema";
 export * from "./backup-schema";
+export * from "./sms-schema";

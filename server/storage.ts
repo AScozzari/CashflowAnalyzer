@@ -1,5 +1,6 @@
 import {
   companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens, sendgridTemplates, whatsappSettings, whatsappTemplates,
+  smsSettings, smsTemplates, smsMessages, smsBlacklist, smsStatistics,
   aiSettings, aiChatHistory, aiDocumentJobs,
   securitySettings, loginAuditLog, activeSessions, passwordHistory, twoFactorAuth,
   type Company, type InsertCompany,
@@ -25,7 +26,12 @@ import {
   type AiChatHistory, type InsertAiChatHistory,
   type AiDocumentJob, type InsertAiDocumentJob,
   type SecuritySettings, type InsertSecuritySettings,
-  type LoginAuditLog, type ActiveSession, type PasswordHistory, type TwoFactorAuth
+  type LoginAuditLog, type ActiveSession, type PasswordHistory, type TwoFactorAuth,
+  type SmsSettings, type InsertSmsSettings,
+  type SmsTemplate, type InsertSmsTemplate,
+  type SmsMessage, type InsertSmsMessage,
+  type SmsBlacklist, type InsertSmsBlacklist,
+  type SmsStatistics, type InsertSmsStatistics
 } from "@shared/schema";
 import crypto from 'crypto';
 import { db } from "./db";
@@ -238,6 +244,31 @@ export interface IStorage {
   updateWhatsappTemplate(id: string, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate | undefined>;
   updateWhatsappTemplateStatus(id: string, status: string): Promise<WhatsappTemplate | undefined>;
   deleteWhatsappTemplate(id: string): Promise<boolean>;
+
+  // SMS Settings
+  getSmsSettings(): Promise<SmsSettings | undefined>;
+  createSmsSettings(settings: InsertSmsSettings): Promise<SmsSettings>;
+  updateSmsSettings(id: number, settings: Partial<InsertSmsSettings>): Promise<SmsSettings>;
+  deleteSmsSettings(id: number): Promise<void>;
+
+  // SMS Templates
+  getSmsTemplates(): Promise<SmsTemplate[]>;
+  getSmsTemplate(id: number): Promise<SmsTemplate | undefined>;
+  createSmsTemplate(template: InsertSmsTemplate): Promise<SmsTemplate>;
+  updateSmsTemplate(id: number, template: Partial<InsertSmsTemplate>): Promise<SmsTemplate>;
+  deleteSmsTemplate(id: number): Promise<void>;
+
+  // SMS Messages
+  getSmsMessages(limit?: number): Promise<SmsMessage[]>;
+  getSmsMessage(id: number): Promise<SmsMessage | undefined>;
+  createSmsMessage(message: InsertSmsMessage): Promise<SmsMessage>;
+  updateSmsMessage(id: number, message: Partial<InsertSmsMessage>): Promise<SmsMessage>;
+  deleteSmsMessage(id: number): Promise<void>;
+
+  // SMS Blacklist
+  getSmsBlacklist(): Promise<SmsBlacklist[]>;
+  addToSmsBlacklist(entry: InsertSmsBlacklist): Promise<SmsBlacklist>;
+  removeFromSmsBlacklist(phoneNumber: string): Promise<void>;
 
   // Session store per autenticazione
   sessionStore: session.Store;
@@ -2606,6 +2637,219 @@ async getMovements(filters: {
     } catch (error) {
       console.error('WhatsApp connection test error:', error);
       return { success: false, message: `Errore test connessione: ${error}` };
+    }
+  }
+
+  // SMS Settings
+  async getSmsSettings(): Promise<SmsSettings | undefined> {
+    try {
+      const [settings] = await db.select().from(smsSettings).limit(1);
+      return settings;
+    } catch (error) {
+      console.error('Error fetching SMS settings:', error);
+      throw new Error('Failed to fetch SMS settings');
+    }
+  }
+
+  async createSmsSettings(settings: InsertSmsSettings): Promise<SmsSettings> {
+    try {
+      const [newSettings] = await db.insert(smsSettings).values(settings).returning();
+      return newSettings;
+    } catch (error) {
+      console.error('Error creating SMS settings:', error);
+      throw new Error('Failed to create SMS settings');
+    }
+  }
+
+  async updateSmsSettings(id: number, settings: Partial<InsertSmsSettings>): Promise<SmsSettings> {
+    try {
+      const [updatedSettings] = await db
+        .update(smsSettings)
+        .set(settings)
+        .where(eq(smsSettings.id, id))
+        .returning();
+      
+      if (!updatedSettings) {
+        throw new Error('SMS settings not found');
+      }
+      
+      return updatedSettings;
+    } catch (error) {
+      console.error('Error updating SMS settings:', error);
+      throw new Error('Failed to update SMS settings');
+    }
+  }
+
+  async deleteSmsSettings(id: number): Promise<void> {
+    try {
+      const result = await db.delete(smsSettings).where(eq(smsSettings.id, id));
+      
+      if (result.rowCount === 0) {
+        throw new Error('SMS settings not found');
+      }
+    } catch (error) {
+      console.error('Error deleting SMS settings:', error);
+      throw error instanceof Error ? error : new Error('Failed to delete SMS settings');
+    }
+  }
+
+  // SMS Templates
+  async getSmsTemplates(): Promise<SmsTemplate[]> {
+    try {
+      return await db.select().from(smsTemplates).orderBy(desc(smsTemplates.createdAt));
+    } catch (error) {
+      console.error('Error fetching SMS templates:', error);
+      throw new Error('Failed to fetch SMS templates');
+    }
+  }
+
+  async getSmsTemplate(id: number): Promise<SmsTemplate | undefined> {
+    try {
+      const [template] = await db.select().from(smsTemplates).where(eq(smsTemplates.id, id));
+      return template;
+    } catch (error) {
+      console.error('Error fetching SMS template:', error);
+      throw new Error('Failed to fetch SMS template');
+    }
+  }
+
+  async createSmsTemplate(template: InsertSmsTemplate): Promise<SmsTemplate> {
+    try {
+      const [newTemplate] = await db.insert(smsTemplates).values(template).returning();
+      return newTemplate;
+    } catch (error) {
+      console.error('Error creating SMS template:', error);
+      throw new Error('Failed to create SMS template');
+    }
+  }
+
+  async updateSmsTemplate(id: number, template: Partial<InsertSmsTemplate>): Promise<SmsTemplate> {
+    try {
+      const [updatedTemplate] = await db
+        .update(smsTemplates)
+        .set(template)
+        .where(eq(smsTemplates.id, id))
+        .returning();
+      
+      if (!updatedTemplate) {
+        throw new Error('SMS template not found');
+      }
+      
+      return updatedTemplate;
+    } catch (error) {
+      console.error('Error updating SMS template:', error);
+      throw new Error('Failed to update SMS template');
+    }
+  }
+
+  async deleteSmsTemplate(id: number): Promise<void> {
+    try {
+      const result = await db.delete(smsTemplates).where(eq(smsTemplates.id, id));
+      
+      if (result.rowCount === 0) {
+        throw new Error('SMS template not found');
+      }
+    } catch (error) {
+      console.error('Error deleting SMS template:', error);
+      throw error instanceof Error ? error : new Error('Failed to delete SMS template');
+    }
+  }
+
+  // SMS Messages
+  async getSmsMessages(limit: number = 50): Promise<SmsMessage[]> {
+    try {
+      return await db.select().from(smsMessages).orderBy(desc(smsMessages.createdAt)).limit(limit);
+    } catch (error) {
+      console.error('Error fetching SMS messages:', error);
+      throw new Error('Failed to fetch SMS messages');
+    }
+  }
+
+  async getSmsMessage(id: number): Promise<SmsMessage | undefined> {
+    try {
+      const [message] = await db.select().from(smsMessages).where(eq(smsMessages.id, id));
+      return message;
+    } catch (error) {
+      console.error('Error fetching SMS message:', error);
+      throw new Error('Failed to fetch SMS message');
+    }
+  }
+
+  async createSmsMessage(message: InsertSmsMessage): Promise<SmsMessage> {
+    try {
+      const [newMessage] = await db.insert(smsMessages).values(message).returning();
+      return newMessage;
+    } catch (error) {
+      console.error('Error creating SMS message:', error);
+      throw new Error('Failed to create SMS message');
+    }
+  }
+
+  async updateSmsMessage(id: number, message: Partial<InsertSmsMessage>): Promise<SmsMessage> {
+    try {
+      const [updatedMessage] = await db
+        .update(smsMessages)
+        .set(message)
+        .where(eq(smsMessages.id, id))
+        .returning();
+      
+      if (!updatedMessage) {
+        throw new Error('SMS message not found');
+      }
+      
+      return updatedMessage;
+    } catch (error) {
+      console.error('Error updating SMS message:', error);
+      throw new Error('Failed to update SMS message');
+    }
+  }
+
+  async deleteSmsMessage(id: number): Promise<void> {
+    try {
+      const result = await db.delete(smsMessages).where(eq(smsMessages.id, id));
+      
+      if (result.rowCount === 0) {
+        throw new Error('SMS message not found');
+      }
+    } catch (error) {
+      console.error('Error deleting SMS message:', error);
+      throw error instanceof Error ? error : new Error('Failed to delete SMS message');
+    }
+  }
+
+  // SMS Blacklist
+  async getSmsBlacklist(): Promise<SmsBlacklist[]> {
+    try {
+      return await db.select().from(smsBlacklist).where(eq(smsBlacklist.isActive, true)).orderBy(desc(smsBlacklist.createdAt));
+    } catch (error) {
+      console.error('Error fetching SMS blacklist:', error);
+      throw new Error('Failed to fetch SMS blacklist');
+    }
+  }
+
+  async addToSmsBlacklist(entry: InsertSmsBlacklist): Promise<SmsBlacklist> {
+    try {
+      const [newEntry] = await db.insert(smsBlacklist).values(entry).returning();
+      return newEntry;
+    } catch (error) {
+      console.error('Error adding to SMS blacklist:', error);
+      throw new Error('Failed to add to SMS blacklist');
+    }
+  }
+
+  async removeFromSmsBlacklist(phoneNumber: string): Promise<void> {
+    try {
+      const result = await db
+        .update(smsBlacklist)
+        .set({ isActive: false })
+        .where(and(eq(smsBlacklist.phoneNumber, phoneNumber), eq(smsBlacklist.isActive, true)));
+      
+      if (result.rowCount === 0) {
+        throw new Error('Phone number not found in blacklist');
+      }
+    } catch (error) {
+      console.error('Error removing from SMS blacklist:', error);
+      throw error instanceof Error ? error : new Error('Failed to remove from SMS blacklist');
     }
   }
 }

@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { WhatsAppSettingsWithTabs } from './whatsapp-settings-with-tabs';
 import { SendGridTemplatesManager } from './sendgrid-templates';
+import { SmsSettingsSkebby } from './sms-settings-skebby';
 
 interface ChannelConfig {
   id: string;
@@ -102,16 +103,16 @@ export function ChannelSettingsDynamic() {
     {
       id: 'sms',
       name: 'SMS',
-      description: 'Twilio SMS API',
+      description: 'Skebby SMS API Italia',
       icon: <Phone className="w-6 h-6" />,
-      status: 'coming_soon',
-      statusText: 'Prossimamente',
-      details: 'Notifiche SMS per eventi critici e promemoria',
-      features: ['Twilio API', 'SMS internazionali', 'Delivery status', 'Template brevi'],
+      status: 'implemented',
+      statusText: 'Implementato',
+      details: 'Invio SMS professionale tramite Skebby API italiana',
+      features: ['Skebby API', 'Template dinamici', 'Qualità High/Medium/Low', '100 SMS gratis'],
       action: {
-        text: 'Attiva SMS',
-        onClick: () => setSelectedChannel('sms'),
-        variant: 'outline'
+        text: 'Configura SMS',
+        onClick: () => setOpenConfigDialog('sms'),
+        variant: 'default'
       }
     },
     {
@@ -238,15 +239,7 @@ export function ChannelSettingsDynamic() {
           <div className="mt-4">
             {openConfigDialog === 'whatsapp' && <WhatsAppSettingsWithTabs />}
             {openConfigDialog === 'email' && <SendGridTemplatesManager />}
-            {openConfigDialog === 'sms' && (
-              <div className="text-center py-8">
-                <Clock className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">SMS in arrivo</h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  L'integrazione SMS con Twilio sarà disponibile presto
-                </p>
-              </div>
-            )}
+            {openConfigDialog === 'sms' && <SmsSettingsSkebby />}
             {openConfigDialog === 'telegram' && (
               <div className="text-center py-8">
                 <Send className="w-12 h-12 text-blue-500 mx-auto mb-4" />

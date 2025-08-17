@@ -8,7 +8,8 @@ import {
   insertMovementStatusSchema, insertMovementReasonSchema, insertMovementSchema,
   insertNotificationSchema, insertSupplierSchema, insertCustomerSchema, insertEmailSettingsSchema,
   insertUserSchema, passwordResetSchema, resetPasswordSchema, insertSendgridTemplateSchema,
-  insertWhatsappSettingsSchema, insertWhatsappTemplateSchema
+  insertWhatsappSettingsSchema, insertWhatsappTemplateSchema,
+  insertSmsSettingsSchema, insertSmsTemplateSchema, insertSmsMessageSchema
 } from "@shared/schema";
 import { emailService } from './email-service';
 import { SendGridTemplateService } from './sendgrid-templates';
@@ -3397,6 +3398,236 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: "Failed to generate test logs" 
       });
+    }
+  }));
+
+  // ===================
+  // SMS ENDPOINTS (Skebby Integration)
+  // ===================
+
+  // SMS Settings Routes
+  app.get("/api/sms/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getSmsSettings();
+      if (settings) {
+        // Mask sensitive data
+        res.json({
+          ...settings,
+          password: settings.password ? '***CONFIGURED***' : null
+        });
+      } else {
+        res.json(null);
+      }
+    } catch (error) {
+      console.error('Error getting SMS settings:', error);
+      res.status(500).json({ error: "Errore nel recupero delle impostazioni SMS" });
+    }
+  }));
+
+  app.post("/api/sms/settings", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = insertSmsSettingsSchema.parse(req.body);
+      const existingSettings = await storage.getSmsSettings();
+      
+      let savedSettings;
+      if (existingSettings) {
+        savedSettings = await storage.updateSmsSettings(existingSettings.id, settings);
+      } else {
+        savedSettings = await storage.createSmsSettings(settings);
+      }
+      
+      res.json({ success: true, message: "Impostazioni SMS salvate con successo" });
+    } catch (error) {
+      console.error('Error saving SMS settings:', error);
+      res.status(500).json({ error: "Errore nel salvataggio delle impostazioni SMS" });
+    }
+  }));
+
+  app.post("/api/sms/test-connection", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { SkebbyService } = await import('./services/skebby-sms-service');
+      const settings = await storage.getSmsSettings();
+      
+      if (!settings || !settings.username || !settings.password) {
+        return res.status(400).json({
+          success: false,
+          message: "Configurazione SMS non trovata o incompleta"
+        });
+      }
+
+      const skebbyService = new SkebbyService(settings.username, settings.password);
+      const result = await skebbyService.testConnection();
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing SMS connection:', error);
+      res.status(500).json({
+        success: false,
+        message: "Errore nel test della connessione SMS"
+      });
+    }
+  }));
+
+  // SMS Templates Routes
+  app.get("/api/sms/templates", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const templates = await storage.getSmsTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error('Error getting SMS templates:', error);
+      res.status(500).json({ error: "Errore nel recupero dei template SMS" });
+    }
+  }));
+
+  app.post("/api/sms/templates", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const template = insertSmsTemplateSchema.parse(req.body);
+      const savedTemplate = await storage.createSmsTemplate(template);
+      res.json(savedTemplate);
+    } catch (error) {
+      console.error('Error creating SMS template:', error);
+      res.status(500).json({ error: "Errore nella creazione del template SMS" });
+    }
+  }));
+
+  app.put("/api/sms/templates/:id", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      const updates = insertSmsTemplateSchema.partial().parse(req.body);
+      const updatedTemplate = await storage.updateSmsTemplate(templateId, updates);
+      res.json(updatedTemplate);
+    } catch (error) {
+      console.error('Error updating SMS template:', error);
+      res.status(500).json({ error: "Errore nell'aggiornamento del template SMS" });
+    }
+  }));
+
+  app.delete("/api/sms/templates/:id", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      await storage.deleteSmsTemplate(templateId);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting SMS template:', error);
+      res.status(500).json({ error: "Errore nell'eliminazione del template SMS" });
+    }
+  }));
+
+  // SMS Sending Routes
+  app.post("/api/sms/send", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const messageData = insertSmsMessageSchema.parse(req.body);
+      const settings = await storage.getSmsSettings();
+      
+      if (!settings || !settings.isActive) {
+        return res.status(400).json({
+          error: "Servizio SMS non attivo o non configurato"
+        });
+      }
+
+      const { SkebbyService } = await import('./services/skebby-sms-service');
+      const skebbyService = new SkebbyService(settings.username, settings.password);
+      
+      // Send SMS
+      const result = await skebbyService.sendSMS({
+        recipient: messageData.recipient,
+        messageBody: messageData.messageBody,
+        sender: settings.defaultSender,
+        messageType: settings.messageType
+      });
+
+      // Save message record
+      const savedMessage = await storage.createSmsMessage({
+        ...messageData,
+        externalId: result.orderId || null,
+        status: 'sent',
+        sentAt: new Date()
+      });
+
+      res.json({
+        success: true,
+        message: "SMS inviato con successo",
+        messageId: savedMessage.id,
+        externalId: result.orderId
+      });
+    } catch (error) {
+      console.error('Error sending SMS:', error);
+      res.status(500).json({ error: "Errore nell'invio SMS" });
+    }
+  }));
+
+  // SMS Messages History
+  app.get("/api/sms/messages", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const messages = await storage.getSmsMessages(limit);
+      res.json(messages);
+    } catch (error) {
+      console.error('Error getting SMS messages:', error);
+      res.status(500).json({ error: "Errore nel recupero dei messaggi SMS" });
+    }
+  }));
+
+  // SMS Blacklist Routes
+  app.get("/api/sms/blacklist", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const blacklist = await storage.getSmsBlacklist();
+      res.json(blacklist);
+    } catch (error) {
+      console.error('Error getting SMS blacklist:', error);
+      res.status(500).json({ error: "Errore nel recupero della blacklist SMS" });
+    }
+  }));
+
+  app.post("/api/sms/blacklist", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { phoneNumber, reason } = req.body;
+      
+      const blacklistEntry = await storage.addToSmsBlacklist({
+        phoneNumber,
+        reason: reason || 'Aggiunto manualmente',
+        isActive: true
+      });
+      
+      res.json(blacklistEntry);
+    } catch (error) {
+      console.error('Error adding to SMS blacklist:', error);
+      res.status(500).json({ error: "Errore nell'aggiunta alla blacklist SMS" });
+    }
+  }));
+
+  app.delete("/api/sms/blacklist/:phoneNumber", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const phoneNumber = decodeURIComponent(req.params.phoneNumber);
+      await storage.removeFromSmsBlacklist(phoneNumber);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error removing from SMS blacklist:', error);
+      res.status(500).json({ error: "Errore nella rimozione dalla blacklist SMS" });
+    }
+  }));
+
+  // SMS Statistics
+  app.get("/api/sms/statistics", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // For now, return basic stats - can be enhanced later
+      const messages = await storage.getSmsMessages(100);
+      const totalSent = messages.length;
+      const todaySent = messages.filter((m: any) => {
+        const today = new Date();
+        const messageDate = new Date(m.createdAt);
+        return messageDate.toDateString() === today.toDateString();
+      }).length;
+      
+      res.json({
+        totalSent,
+        todaySent,
+        deliveryRate: 0, // To be calculated with real delivery reports
+        lastSent: messages[0]?.createdAt || null
+      });
+    } catch (error) {
+      console.error('Error getting SMS statistics:', error);
+      res.status(500).json({ error: "Errore nel recupero delle statistiche SMS" });
     }
   }));
 
