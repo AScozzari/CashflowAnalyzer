@@ -16,6 +16,7 @@ import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
 import AiChatPage from "@/pages/ai-chat";
 import Communications from "@/pages/communications";
+import EntityExplorer from "@/pages/entity-explorer";
 import AuthPage from "@/pages/auth-page";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
@@ -160,6 +161,12 @@ function Router() {
       <ProtectedRoute path="/communications" component={() => (
         <AppLayout>
           <Communications />
+        </AppLayout>
+      )} />
+      
+      <ProtectedRoute path="/entity-explorer" component={() => (
+        <AppLayout>
+          <EntityExplorer />
         </AppLayout>
       )} />
       
