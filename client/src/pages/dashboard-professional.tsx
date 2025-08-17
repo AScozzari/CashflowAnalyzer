@@ -37,6 +37,7 @@ import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, 
 import type { MovementWithRelations } from "@shared/schema";
 import { ConfigPreviewMini } from "@/components/dashboard/config-preview-mini";
 import MovementFormNew from "@/components/movements/movement-form-new-fixed";
+import { useAuth } from "@/hooks/use-auth";
 
 // Colors for charts
 const CHART_COLORS = {
@@ -589,17 +590,10 @@ function ProfessionalRecentMovements({ movements, isLoading }: { movements: Move
 // Quick Actions Widget
 function QuickActionsWidget({ onOpenNewMovement }: { onOpenNewMovement: () => void }) {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   
-  const actions = [
-    {
-      title: "Nuovo Movimento",
-      description: "Registra entrata o uscita",
-      icon: Plus,
-      color: "from-blue-500 to-cyan-500",
-      textColor: "text-blue-600",
-      bgColor: "bg-blue-50 dark:bg-blue-950/30",
-      action: onOpenNewMovement
-    },
+  // Base actions array
+  let actions = [
     {
       title: "Esplora Entità",
       description: "Gestione entità aziendali",
@@ -608,15 +602,6 @@ function QuickActionsWidget({ onOpenNewMovement }: { onOpenNewMovement: () => vo
       textColor: "text-purple-600",
       bgColor: "bg-purple-50 dark:bg-purple-950/30",
       action: () => setLocation('/entity-explorer')
-    },
-    {
-      title: "Impostazioni",
-      description: "Configura sistema",
-      icon: Settings,
-      color: "from-orange-500 to-amber-500",
-      textColor: "text-orange-600",
-      bgColor: "bg-orange-50 dark:bg-orange-950/30",
-      action: () => setLocation('/settings')
     },
     {
       title: "Analytics",
@@ -628,6 +613,32 @@ function QuickActionsWidget({ onOpenNewMovement }: { onOpenNewMovement: () => vo
       action: () => setLocation('/analytics')
     }
   ];
+
+  // Aggiungi "Nuovo Movimento" solo per admin e finance
+  if (user && (user.role === "admin" || user.role === "finance")) {
+    actions.unshift({
+      title: "Nuovo Movimento",
+      description: "Registra entrata o uscita",
+      icon: Plus,
+      color: "from-blue-500 to-cyan-500",
+      textColor: "text-blue-600",
+      bgColor: "bg-blue-50 dark:bg-blue-950/30",
+      action: onOpenNewMovement
+    });
+  }
+
+  // Aggiungi impostazioni solo per admin e finance
+  if (user && (user.role === "admin" || user.role === "finance")) {
+    actions.push({
+      title: "Impostazioni",
+      description: "Configura sistema",
+      icon: Settings,
+      color: "from-orange-500 to-amber-500",
+      textColor: "text-orange-600",
+      bgColor: "bg-orange-50 dark:bg-orange-950/30",
+      action: () => setLocation('/settings')
+    });
+  }
 
   return (
     <Card className="border-0 shadow-lg">
