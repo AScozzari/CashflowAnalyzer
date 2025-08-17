@@ -600,8 +600,8 @@ function QuickActionsWidget() {
       action: () => setLocation('/movements')
     },
     {
-      title: "Analytics",
-      description: "Visualizza report",
+      title: "Esplora Entità",
+      description: "Gestione entità aziendali",
       icon: PieChart,
       color: "from-purple-500 to-indigo-500",
       textColor: "text-purple-600",
@@ -618,19 +618,13 @@ function QuickActionsWidget() {
       action: () => setLocation('/settings')
     },
     {
-      title: "Esporta Dati",
-      description: "Download report",
-      icon: Download,
+      title: "Analytics",
+      description: "Visualizza report e grafici",
+      icon: BarChart3,
       color: "from-green-500 to-emerald-500",
       textColor: "text-green-600",
       bgColor: "bg-green-50 dark:bg-green-950/30",
-      action: () => {
-        // Simula download
-        const link = document.createElement('a');
-        link.href = 'data:text/csv;charset=utf-8,Nome,Importo,Data,Tipo\nMovimento Esempio,1000,2025-08-17,Entrata';
-        link.download = `movimenti_${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
-      }
+      action: () => setLocation('/analytics')
     }
   ];
 
