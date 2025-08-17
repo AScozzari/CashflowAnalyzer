@@ -116,10 +116,15 @@ export function ChannelSettingsCompact() {
               selectedChannel === channel.id ? 'ring-2 ring-blue-500' : ''
             } ${
               channel.status === 'implemented' 
-                ? 'border-green-200 dark:border-green-800' 
+                ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950' 
                 : 'border-orange-200 dark:border-orange-800'
             }`}
-            onClick={() => setSelectedChannel(channel.id)}
+            onClick={() => {
+              setSelectedChannel(channel.id);
+              if (channel.status === 'implemented') {
+                setOpenModal(channel.id);
+              }
+            }}
           >
             <CardContent className="p-3 text-center space-y-2">
               <div className={`mx-auto p-2 rounded-lg w-fit ${
@@ -137,25 +142,18 @@ export function ChannelSettingsCompact() {
               
               <Badge 
                 variant={channel.status === 'implemented' ? 'default' : 'secondary'}
-                className="text-xs px-2 py-1"
+                className={`text-xs px-2 py-1 ${
+                  channel.status === 'implemented' 
+                    ? 'bg-green-600 text-white' 
+                    : ''
+                }`}
               >
                 {channel.statusText}
               </Badge>
               
-              <Button 
-                size="sm" 
-                variant={channel.status === 'implemented' ? 'default' : 'secondary'}
-                className="w-full text-xs py-1"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (channel.status === 'implemented') {
-                    setOpenModal(channel.id);
-                  }
-                }}
-                disabled={channel.status === 'coming_soon'}
-              >
-                {channel.status === 'implemented' ? 'Configura' : 'Attiva'}
-              </Button>
+              <div className="text-xs text-muted-foreground">
+                {channel.status === 'implemented' ? 'Click per configurare' : 'Prossimamente'}
+              </div>
             </CardContent>
           </Card>
         ))}

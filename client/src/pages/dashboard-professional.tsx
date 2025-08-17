@@ -35,6 +35,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import type { MovementWithRelations } from "@shared/schema";
+import { ConfigPreviewMini } from "@/components/dashboard/config-preview-mini";
 
 // Colors for charts
 const CHART_COLORS = {
@@ -779,6 +780,9 @@ export default function DashboardProfessional() {
           {/* Quick Actions Sidebar */}
           <div className="space-y-6">
             <QuickActionsWidget />
+            
+            {/* Configuration Preview Mini-Dashboard */}
+            <ConfigPreviewMini />
             
             {/* Additional metrics card */}
             <Card className="border-0 shadow-lg">
