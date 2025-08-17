@@ -13,27 +13,55 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Variabili disponibili organizzate in modo semplice
-const AVAILABLE_VARIABLES = [
-  // Cliente
-  { key: 'customer.name', label: 'Nome Cliente', example: 'Mario Rossi' },
-  { key: 'customer.email', label: 'Email Cliente', example: 'mario@email.it' },
-  { key: 'customer.phone', label: 'Telefono Cliente', example: '+39 333 1234567' },
-  
-  // Azienda
-  { key: 'company.name', label: 'Nome Azienda', example: 'La Mia Azienda S.r.l.' },
-  { key: 'company.email', label: 'Email Azienda', example: 'info@azienda.it' },
-  { key: 'company.phone', label: 'Telefono Azienda', example: '+39 02 1234567' },
-  
-  // Movimento finanziario
-  { key: 'movement.amount', label: 'Importo', example: '€1.250,00' },
-  { key: 'movement.description', label: 'Descrizione', example: 'Fattura servizi' },
-  { key: 'movement.date', label: 'Data', example: '15/03/2024' },
-  
-  // Sistema
-  { key: 'system.date', label: 'Data Oggi', example: new Date().toLocaleDateString('it-IT') },
-  { key: 'system.year', label: 'Anno', example: new Date().getFullYear().toString() }
-];
+// Variabili organizzate per categoria
+const VARIABLE_CATEGORIES = {
+  customer: {
+    title: 'Cliente',
+    description: 'Dati del cliente (fatturazione, contatti)',
+    variables: [
+      { key: 'customer.name', label: 'Nome Cliente', example: 'Mario Rossi' },
+      { key: 'customer.email', label: 'Email Cliente', example: 'mario@email.it' },
+      { key: 'customer.phone', label: 'Telefono Cliente', example: '+39 333 1234567' },
+      { key: 'customer.company', label: 'Azienda Cliente', example: 'Rossi S.r.l.' },
+      { key: 'customer.address', label: 'Indirizzo Cliente', example: 'Via Roma 123, Milano' }
+    ]
+  },
+  company: {
+    title: 'Azienda',
+    description: 'Dati della tua azienda (mittente)',
+    variables: [
+      { key: 'company.name', label: 'Nome Azienda', example: 'La Mia Azienda S.r.l.' },
+      { key: 'company.email', label: 'Email Azienda', example: 'info@azienda.it' },
+      { key: 'company.phone', label: 'Telefono Azienda', example: '+39 02 1234567' },
+      { key: 'company.address', label: 'Indirizzo Azienda', example: 'Via Verdi 456, Roma' },
+      { key: 'company.vat', label: 'Partita IVA', example: 'IT12345678901' }
+    ]
+  },
+  movement: {
+    title: 'Movimento Finanziario',
+    description: 'Dati del movimento/fattura/pagamento',
+    variables: [
+      { key: 'movement.amount', label: 'Importo', example: '€1.250,00' },
+      { key: 'movement.description', label: 'Descrizione', example: 'Fattura servizi consulenza' },
+      { key: 'movement.date', label: 'Data Movimento', example: '15/03/2024' },
+      { key: 'movement.dueDate', label: 'Data Scadenza', example: '30/03/2024' },
+      { key: 'movement.invoiceNumber', label: 'Numero Fattura', example: 'FT-2024-001' }
+    ]
+  },
+  system: {
+    title: 'Sistema',
+    description: 'Dati automatici del sistema',
+    variables: [
+      { key: 'system.date', label: 'Data Oggi', example: new Date().toLocaleDateString('it-IT') },
+      { key: 'system.time', label: 'Ora Attuale', example: new Date().toLocaleTimeString('it-IT') },
+      { key: 'system.year', label: 'Anno Corrente', example: new Date().getFullYear().toString() },
+      { key: 'system.month', label: 'Mese Corrente', example: new Date().toLocaleDateString('it-IT', { month: 'long' }) }
+    ]
+  }
+};
+
+// Lista piatta per compatibilità
+const AVAILABLE_VARIABLES = Object.values(VARIABLE_CATEGORIES).flatMap(category => category.variables);
 
 interface Mapping {
   old: string;
@@ -214,57 +242,77 @@ Data: {system.date}`
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {AVAILABLE_VARIABLES.map((variable) => (
-                  <div 
-                    key={variable.key}
-                    className={`border rounded-lg p-4 cursor-pointer transition-all duration-300 ${
-                      selectedVariables.includes(variable.key)
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 ring-2 ring-blue-200'
-                        : copiedVariable === variable.key 
-                        ? 'border-green-500 bg-green-50 dark:bg-green-950 scale-105' 
-                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (e.ctrlKey || e.metaKey) {
-                        // Ctrl+Click per copiare
-                        navigator.clipboard.writeText(`{${variable.key}}`);
-                        setCopiedVariable(variable.key);
-                        setTimeout(() => setCopiedVariable(''), 2000);
-                        toast({
-                          title: "✅ Copiato negli appunti",
-                          description: `{${variable.key}} - Ctrl+Click per copiare`
-                        });
-                      } else {
-                        // Click normale per selezionare
-                        toggleVariableSelection(variable.key);
-                        toast({
-                          title: selectedVariables.includes(variable.key) ? "Variabile deselezionata" : "Variabile selezionata",
-                          description: `${variable.label} - Le variabili selezionate possono essere usate nel Mapping`
-                        });
-                      }
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-mono text-sm font-medium text-blue-600 dark:text-blue-400">
-                          {`{${variable.key}}`}
+              <div className="space-y-6">
+                {Object.entries(VARIABLE_CATEGORIES).map(([categoryKey, category]) => (
+                  <div key={categoryKey} className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        {category.title}
+                      </h3>
+                      <Badge variant="outline" className="text-xs">
+                        {category.variables.length} variabili
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      {category.description}
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {category.variables.map((variable) => (
+                        <div 
+                          key={variable.key}
+                          className={`border rounded-lg p-3 cursor-pointer transition-all duration-300 ${
+                            selectedVariables.includes(variable.key)
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 ring-2 ring-blue-200'
+                              : copiedVariable === variable.key 
+                              ? 'border-green-500 bg-green-50 dark:bg-green-950 scale-105' 
+                              : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          }`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (e.ctrlKey || e.metaKey) {
+                              // Ctrl+Click per copiare
+                              navigator.clipboard.writeText(`{${variable.key}}`);
+                              setCopiedVariable(variable.key);
+                              setTimeout(() => setCopiedVariable(''), 2000);
+                              toast({
+                                title: "✅ Copiato negli appunti",
+                                description: `{${variable.key}} - Ctrl+Click per copiare`
+                              });
+                            } else {
+                              // Click normale per selezionare
+                              toggleVariableSelection(variable.key);
+                              toast({
+                                title: selectedVariables.includes(variable.key) ? "Variabile deselezionata" : "Variabile selezionata",
+                                description: `${variable.label} - Le variabili selezionate possono essere usate nel Mapping`
+                              });
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="font-mono text-sm font-medium text-blue-600 dark:text-blue-400">
+                                {`{${variable.key}}`}
+                              </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                {variable.label}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Esempio: {variable.example}
+                              </div>
+                            </div>
+                            <div className="ml-3">
+                              {selectedVariables.includes(variable.key) ? (
+                                <CheckCircle className="w-5 h-5 text-blue-500" />
+                              ) : copiedVariable === variable.key ? (
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                              ) : (
+                                <Copy className="w-4 h-4 text-gray-400" />
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                          {variable.label}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Esempio: {variable.example}
-                        </div>
-                      </div>
-                      {selectedVariables.includes(variable.key) ? (
-                        <CheckCircle className="w-5 h-5 text-blue-500" />
-                      ) : copiedVariable === variable.key ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Copy className="w-4 h-4 text-gray-400" />
-                      )}
+                      ))}
                     </div>
                   </div>
                 ))}
@@ -348,10 +396,10 @@ Data: {system.date}`
                             <SelectValue placeholder="Scegli variabile" />
                           </SelectTrigger>
                           <SelectContent>
-                            {selectedVariables.length > 0 && (
+                            {selectedVariables.length > 0 ? (
                               <>
                                 <div className="px-2 py-1 text-sm font-medium text-blue-600 dark:text-blue-400">
-                                  Variabili Selezionate:
+                                  Variabili Selezionate ({selectedVariables.length}):
                                 </div>
                                 {selectedVariables.map((variableKey) => {
                                   const variable = AVAILABLE_VARIABLES.find(v => v.key === variableKey);
@@ -361,17 +409,12 @@ Data: {system.date}`
                                     </SelectItem>
                                   ) : null;
                                 })}
-                                <div className="border-t my-1"></div>
                               </>
+                            ) : (
+                              <div className="px-2 py-2 text-sm text-gray-500 italic">
+                                Nessuna variabile selezionata. Vai in "Variabili Disponibili" per selezionarne.
+                              </div>
                             )}
-                            <div className="px-2 py-1 text-sm font-medium text-gray-600 dark:text-gray-400">
-                              Tutte le variabili:
-                            </div>
-                            {AVAILABLE_VARIABLES.map((variable) => (
-                              <SelectItem key={variable.key} value={variable.key}>
-                                {variable.label} - {`{${variable.key}}`}
-                              </SelectItem>
-                            ))}
                           </SelectContent>
                         </Select>
                       </div>
