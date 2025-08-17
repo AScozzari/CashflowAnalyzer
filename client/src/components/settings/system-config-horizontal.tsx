@@ -4,6 +4,7 @@ import { Shield, Database, Bell, Globe, Palette, FileText, Settings2, Users2, Lo
 import SystemUsersManagement from "./system-users-management";
 import { SecuritySettings } from "./security-settings";
 import { BackupSettings } from "./backup-settings-fixed";
+import { LocalizationSettings } from "./localization-settings";
 
 export default function SystemConfigHorizontal() {
   const [activeTab, setActiveTab] = useState("security");
@@ -109,12 +110,7 @@ export default function SystemConfigHorizontal() {
                   description="Configurazione WebSocket, email alerts, notifiche push e template personalizzati"
                 />
               )}
-              {activeTab === "localization" && (
-                <PlaceholderSection 
-                  title="Localizzazione"
-                  description="Impostazioni lingua, formato date, valute, fuso orario e adattamenti regionali"
-                />
-              )}
+              {activeTab === "localization" && <LocalizationSettings />}
               {activeTab === "themes" && (
                 <PlaceholderSection 
                   title="Temi e Interfaccia"
