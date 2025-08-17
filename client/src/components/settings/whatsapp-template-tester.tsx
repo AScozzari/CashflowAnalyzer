@@ -67,10 +67,9 @@ Data odierna: {{system.current_date}}`
 
   const handlePreviewTemplate = async () => {
     try {
-      const result = await templatePreview.mutateAsync({
-        templateBody
-      });
-      setResolvedResult({ resolvedTemplate: result.previewTemplate, variables: [] });
+      // Simula la risoluzione con dati di esempio direttamente sul frontend
+      const mockResult = simulateTemplateResolution(templateBody, context);
+      setResolvedResult(mockResult);
       toast({
         title: "Anteprima generata",
         description: "Template processato con dati di esempio"
@@ -82,6 +81,62 @@ Data odierna: {{system.current_date}}`
         variant: "destructive"
       });
     }
+  };
+
+  // Simula la risoluzione del template con i dati mock
+  const simulateTemplateResolution = (template: string, ctx: VariableContext) => {
+    let resolvedTemplate = template;
+    const usedVariables: any[] = [];
+
+    // Trova le variabili nel template
+    const variableMatches = template.match(/\{\{([^}]+)\}\}/g) || [];
+    
+    for (const match of variableMatches) {
+      const variableName = match.replace(/[{}]/g, '');
+      let value = `[${variableName} non trovato]`;
+      
+      // Risolvi le variabili con i dati mock
+      if (variableName.startsWith('customer.') && ctx.customerId) {
+        const customer = customers.find(c => c.id === ctx.customerId);
+        const field = variableName.split('.')[1];
+        value = customer?.[field as keyof typeof customer] || value;
+      } else if (variableName.startsWith('company.') && ctx.companyId) {
+        const company = companies.find(c => c.id === ctx.companyId);
+        const field = variableName.split('.')[1];
+        value = company?.[field as keyof typeof company] || value;
+      } else if (variableName.startsWith('movement.') && ctx.movementId) {
+        const movement = movements.find(m => m.id === ctx.movementId);
+        const field = variableName.split('.')[1];
+        if (field === 'amount') {
+          value = `€${movement?.amount?.toFixed(2) || '0.00'}`;
+        } else {
+          value = movement?.[field as keyof typeof movement] || value;
+        }
+      } else if (variableName.startsWith('supplier.') && ctx.supplierId) {
+        const supplier = suppliers.find(s => s.id === ctx.supplierId);
+        const field = variableName.split('.')[1];
+        value = supplier?.[field as keyof typeof supplier] || value;
+      } else if (variableName.startsWith('system.')) {
+        const field = variableName.split('.')[1];
+        if (field === 'current_date') value = new Date().toLocaleDateString('it-IT');
+        else if (field === 'company_name') value = 'EasyCashFlows';
+        else if (field === 'year') value = new Date().getFullYear().toString();
+        else if (field === 'month') value = new Date().toLocaleDateString('it-IT', { month: 'long' });
+      }
+      
+      resolvedTemplate = resolvedTemplate.replace(new RegExp(match.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+      usedVariables.push({
+        key: variableName,
+        value: value,
+        type: 'text',
+        formatted: value
+      });
+    }
+
+    return {
+      resolvedTemplate,
+      variables: usedVariables
+    };
   };
 
   const copyToClipboard = (text: string) => {

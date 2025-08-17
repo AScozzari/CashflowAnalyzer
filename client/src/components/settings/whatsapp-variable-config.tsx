@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle, Lightbulb, Settings, ArrowRight } from 'lucide-react';
 import { WhatsAppDynamicVariables } from './whatsapp-dynamic-variables';
 import { WhatsAppTemplateTester } from './whatsapp-template-tester';
+import { WhatsAppVariableMapper } from './whatsapp-variable-mapper';
 import { useToast } from '@/hooks/use-toast';
 
 interface WhatsAppVariableConfigProps {
@@ -64,10 +65,14 @@ export function WhatsAppVariableConfig({ onVariableSelect }: WhatsAppVariableCon
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="dynamic" className="flex items-center gap-2">
                 <Lightbulb className="w-4 h-4" />
                 Variabili Dinamiche
+              </TabsTrigger>
+              <TabsTrigger value="mapper" className="flex items-center gap-2">
+                <ArrowRight className="w-4 h-4" />
+                Mapping Placeholder
               </TabsTrigger>
               <TabsTrigger value="tester" className="flex items-center gap-2">
                 <Settings className="w-4 h-4" />
@@ -116,6 +121,10 @@ export function WhatsAppVariableConfig({ onVariableSelect }: WhatsAppVariableCon
                   <li>• <strong>Scalabilità</strong>: aggiungi nuove variabili senza modificare i template esistenti</li>
                 </ul>
               </div>
+            </TabsContent>
+
+            <TabsContent value="mapper" className="space-y-4">
+              <WhatsAppVariableMapper />
             </TabsContent>
 
             <TabsContent value="tester" className="space-y-4">

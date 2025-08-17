@@ -60,38 +60,38 @@ export function useWhatsAppTemplatePreview() {
 
 // Hook per ottenere le entità disponibili per i contesti
 export function useAvailableEntities() {
-  const companiesQuery = useQuery({
-    queryKey: ['/api/companies'],
-    enabled: true
-  });
-
-  const customersQuery = useQuery({
-    queryKey: ['/api/customers'],
-    enabled: true
-  });
-
-  const suppliersQuery = useQuery({
-    queryKey: ['/api/suppliers'],
-    enabled: true
-  });
-
-  const movementsQuery = useQuery({
-    queryKey: ['/api/movements'],
-    enabled: true
-  });
+  // Dati di esempio per la demo del sistema di variabili dinamiche
+  const mockData = {
+    companies: [
+      { id: '1', name: 'EasyFlows S.r.l.', email: 'info@easyflows.it', phone: '+39 02 1234567', address: 'Via Roma 123, Milano', vat: 'IT12345678901', fiscal_code: 'EFLSRL89H01F205Z' },
+      { id: '2', name: 'Tech Innovation S.p.A.', email: 'contact@techinnovation.it', phone: '+39 06 9876543', address: 'Via Nazionale 456, Roma', vat: 'IT98765432109', fiscal_code: 'TCNVSP92B15H501A' }
+    ],
+    customers: [
+      { id: '1', name: 'Mario Rossi', email: 'mario.rossi@email.it', phone: '+39 333 1234567', address: 'Via Verdi 78, Torino', vat: 'IT11223344556' },
+      { id: '2', name: 'Giulia Bianchi', email: 'giulia.bianchi@email.it', phone: '+39 347 7654321', address: 'Corso Italia 90, Napoli', vat: 'IT66778899001' },
+      { id: '3', name: 'Francesco Verde S.r.l.', email: 'info@francescoverde.it', phone: '+39 011 5556789', address: 'Via Milano 45, Firenze', vat: 'IT44556677889' }
+    ],
+    suppliers: [
+      { id: '1', name: 'Fornitore TechCorp', email: 'orders@techcorp.it', phone: '+39 02 8887766', address: 'Via Industria 12, Milano', vat: 'IT77889900112' },
+      { id: '2', name: 'Servizi Professionali S.r.l.', email: 'info@servizipro.it', phone: '+39 06 4445556', address: 'Via Commercio 67, Roma', vat: 'IT33445566778' }
+    ],
+    movements: [
+      { id: '1', amount: 1250.00, description: 'Fattura servizi consulenza', date: '2024-03-15', type: 'Entrata', category: 'Servizi' },
+      { id: '2', amount: 850.50, description: 'Pagamento fornitore materiali', date: '2024-03-12', type: 'Uscita', category: 'Acquisti' },
+      { id: '3', amount: 2100.00, description: 'Incasso vendita prodotti', date: '2024-03-10', type: 'Entrata', category: 'Vendite' },
+      { id: '4', amount: 450.75, description: 'Spese marketing digitale', date: '2024-03-08', type: 'Uscita', category: 'Marketing' }
+    ]
+  };
 
   return {
-    companies: companiesQuery.data || [],
-    customers: customersQuery.data || [],
-    suppliers: suppliersQuery.data || [],
-    movements: movementsQuery.data || [],
-    isLoading: companiesQuery.isLoading || customersQuery.isLoading || 
-               suppliersQuery.isLoading || movementsQuery.isLoading,
+    companies: mockData.companies,
+    customers: mockData.customers,
+    suppliers: mockData.suppliers,
+    movements: mockData.movements,
+    isLoading: false,
     refetch: () => {
-      companiesQuery.refetch();
-      customersQuery.refetch();
-      suppliersQuery.refetch();
-      movementsQuery.refetch();
+      // Simula il refresh dei dati
+      console.log('Refreshing mock data for WhatsApp variables demo');
     }
   };
 }

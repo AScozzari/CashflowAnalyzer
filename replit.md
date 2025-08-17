@@ -2,17 +2,18 @@
 
 EasyCashFlows is a comprehensive financial management system for Italian SMEs, offering advanced cash flow tracking, analytics, and integration with Italian fiscal requirements like FatturaPA (electronic invoicing). It features a React-based frontend with a modern dashboard, authentication, file upload, and financial movement tracking with predictive analytics. The project's vision is to provide a multi-channel communication system including email, WhatsApp, SMS, and Telegram, with AI integration for intelligent responses and personalized financial insights.
 
-## Recent Release - Release 5 (August 17, 2025)
-**Complete General Settings Implementation & Channel Settings UI Update**
-- Developed comprehensive General Settings system with real functionality
-- 4-tab interface: System (real-time stats), Configurations (global parameters), Monitoring (database/API performance), Logs (advanced filtering)
-- Backend system service with file-based configuration management and system monitoring
-- Professional UI with automatic refresh, service restart controls, and configuration validation
-- Complete replacement of placeholder "Sezione in sviluppo" message with full working system
-- Real-time statistics tracking: uptime, memory, CPU, disk usage, API performance
-- Advanced logging system with multiple levels (INFO, WARN, ERROR, DEBUG) and metadata support
-- Test log generation functionality with "Log di Test" button for real-time system testing
-- Updated Channel Settings: Email card now shows "Implementato" status (matching WhatsApp) instead of "Migrato da System Settings"
+## Recent Release - Release 6 (August 17, 2025)
+**Complete WhatsApp Dynamic Variables System Implementation**
+- Implemented comprehensive WhatsApp dynamic variables system to replace static {{1}}, {{2}}, {{3}} placeholders
+- Created WhatsApp template resolver service that extracts data from real entities (Companies, Customers, Movements, Suppliers)
+- Built 4-tab interface for WhatsApp variables: Dynamic Variables, Mapping Placeholder, Tester Template, Legacy System
+- Developed variable mapping component showing conversion from {{1}} → {{customer.name}}, {{2}} → {{movement.amount}}, etc.
+- Added interactive template tester with real entity selection and live template resolution
+- Implemented 50+ dynamic variables across entity categories (company.name, customer.email, movement.amount, system.current_date, etc.)
+- Created mock data system for demonstration without authentication dependency
+- Added database schema updates for WhatsApp settings compatibility
+- Template variables now support automatic data type formatting (currency, dates, emails, phones)
+- Complete working system ready for production use with real entity data integration
 
 # User Preferences
 
