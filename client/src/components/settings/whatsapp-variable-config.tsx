@@ -124,10 +124,28 @@ export function WhatsAppVariableConfig({ onVariableSelect }: WhatsAppVariableCon
             </TabsContent>
 
             <TabsContent value="mapper" className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                  🔗 Sistema di Mapping Placeholder
+                </h4>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Questo strumento ti permette di configurare come i placeholder numerici del sistema legacy 
+                  (come {`{1}, {2}, {3}`}) vengono convertiti nelle nuove variabili dinamiche.
+                </p>
+              </div>
               <WhatsAppVariableMapper />
             </TabsContent>
 
             <TabsContent value="tester" className="space-y-4">
+              <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">
+                  🧪 Template Tester Avanzato
+                </h4>
+                <p className="text-sm text-green-700 dark:text-green-300">
+                  Testa i template WhatsApp con variabili dinamiche usando dati di esempio. 
+                  Questo ti permette di vedere come le variabili vengono risolte in tempo reale.
+                </p>
+              </div>
               <WhatsAppTemplateTester />
             </TabsContent>
 
