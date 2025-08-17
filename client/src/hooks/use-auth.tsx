@@ -26,15 +26,6 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
-  const {
-    data: user,
-    error,
-    isLoading,
-  } = useQuery<User | undefined, Error>({
-    queryKey: ["/api/auth/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-  });
-
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       try {
@@ -70,6 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
   });
+
+  const {
+    data: user,
+    error,
+    isLoading,
+  } = useQuery<User | undefined, Error>({
+    queryKey: ["/api/auth/user"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+  });
+
+
 
   const logoutMutation = useMutation({
     mutationFn: async () => {

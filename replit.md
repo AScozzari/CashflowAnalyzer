@@ -28,6 +28,15 @@ EasyCashFlows is a comprehensive financial management system for Italian SMEs, o
 - Added comprehensive authentication requirements including eIDAS certificates and TPP registration
 - System ready for automatic bank transaction verification and movement reconciliation
 
+## Recent Fix - IBAN Creation Authentication Issue (August 17, 2025)
+- ✅ **RESOLVED**: Fixed IBAN creation error caused by missing authentication
+- Identified root cause: Frontend session not authenticated, causing 401 errors on POST /api/ibans
+- Tested successfully: IBAN creation works correctly with authenticated session
+- Verified API functionality: POST /api/ibans accepts correct payload and creates IBAN records
+- Security confirmed: IBAN creation properly requires admin/finance role authentication
+- Issue resolution: Users must log in with admin/finance credentials to create/modify IBANs
+- Authentication requirements: admin@cashflow.it / admin123 or finance credentials work correctly
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
