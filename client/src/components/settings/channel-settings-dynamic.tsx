@@ -37,51 +37,21 @@ interface ChannelConfig {
 
 export function ChannelSettingsDynamic() {
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
-  const [openConfigDialog, setOpenConfigDialog] = useState<string | null>(null);
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'implemented':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'coming_soon':
-        return <Clock className="w-5 h-5 text-orange-500" />;
-      case 'error':
-        return <AlertTriangle className="w-5 h-5 text-red-500" />;
-      case 'configuring':
-        return <Settings className="w-5 h-5 text-blue-500 animate-spin" />;
-      default:
-        return <Clock className="w-5 h-5 text-gray-400" />;
-    }
-  };
-
-  const getStatusBadge = (status: string, statusText: string) => {
-    const variants = {
-      implemented: 'default',
-      coming_soon: 'secondary',
-      error: 'destructive',
-      configuring: 'outline'
-    } as const;
-    
-    return (
-      <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>
-        {statusText}
-      </Badge>
-    );
-  };
+  const [openConfigModal, setOpenConfigModal] = useState<string | null>(null);
 
   const channels: ChannelConfig[] = [
     {
       id: 'whatsapp',
       name: 'WhatsApp Business',
-      description: 'API Business + Template Pre-approvati',
-      icon: <MessageSquare className="w-6 h-6" />,
+      description: 'Template dinamici',
+      icon: <MessageSquare className="w-5 h-5 text-green-600" />,
       status: 'implemented',
       statusText: 'Implementato',
       details: 'Sistema completo con template dinamici e variabili avanzate',
       features: ['Template dinamici', 'Variabili automatiche', 'Webhook integrati', 'API Business'],
       action: {
-        text: 'Configura WhatsApp',
-        onClick: () => setOpenConfigDialog('whatsapp'),
+        text: 'Configura',
+        onClick: () => setOpenConfigModal('whatsapp'),
         variant: 'default'
       }
     },
@@ -89,29 +59,29 @@ export function ChannelSettingsDynamic() {
       id: 'email',
       name: 'Email',
       description: 'SendGrid configurato',
-      icon: <Mail className="w-6 h-6" />,
+      icon: <Mail className="w-5 h-5 text-blue-600" />,
       status: 'implemented',
       statusText: 'Implementato',
       details: 'Sistema email professionale con template personalizzabili',
       features: ['SendGrid API', 'Template HTML', 'Invio massivo', 'Tracking aperture'],
       action: {
-        text: 'Configura Email',
-        onClick: () => setOpenConfigDialog('email'),
+        text: 'Configura',
+        onClick: () => setOpenConfigModal('email'),
         variant: 'default'
       }
     },
     {
       id: 'sms',
       name: 'SMS',
-      description: 'Skebby SMS API Italia',
-      icon: <Phone className="w-6 h-6" />,
+      description: 'Skebby API Italia',
+      icon: <Phone className="w-5 h-5 text-orange-600" />,
       status: 'implemented',
       statusText: 'Implementato',
-      details: 'Invio SMS professionale tramite Skebby API italiana',
-      features: ['Skebby API', 'Template dinamici', 'Qualità High/Medium/Low', '100 SMS gratis'],
+      details: 'Sistema SMS italiano GDPR-compliant con Skebby',
+      features: ['Skebby API', 'SMS Italia', 'Delivery status', 'Template brevi'],
       action: {
-        text: 'Configura SMS',
-        onClick: () => setOpenConfigDialog('sms'),
+        text: 'Configura',
+        onClick: () => setOpenConfigModal('sms'),
         variant: 'default'
       }
     },
@@ -119,15 +89,15 @@ export function ChannelSettingsDynamic() {
       id: 'telegram',
       name: 'Telegram',
       description: 'Bot API gratuita',
-      icon: <Send className="w-6 h-6" />,
+      icon: <Send className="w-5 h-5 text-sky-600" />,
       status: 'coming_soon',
       statusText: 'Prossimamente',
       details: 'Bot Telegram per notifiche istantanee e interazioni',
       features: ['Bot API gratuita', 'Messaggi istantanei', 'Comandi interattivi', 'File sharing'],
       action: {
-        text: 'Attiva Telegram',
+        text: 'Attiva',
         onClick: () => setSelectedChannel('telegram'),
-        variant: 'outline'
+        variant: 'secondary'
       }
     }
   ];
