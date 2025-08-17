@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import Header from "@/components/layout/header";
 import { InstallPrompt } from "@/components/ui/install-prompt";
@@ -36,6 +36,7 @@ import { it } from "date-fns/locale";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import type { MovementWithRelations } from "@shared/schema";
 import { ConfigPreviewMini } from "@/components/dashboard/config-preview-mini";
+import MovementFormNew from "@/components/movements/movement-form-new-fixed";
 
 // Colors for charts
 const CHART_COLORS = {
@@ -586,7 +587,7 @@ function ProfessionalRecentMovements({ movements, isLoading }: { movements: Move
 }
 
 // Quick Actions Widget
-function QuickActionsWidget() {
+function QuickActionsWidget({ onOpenNewMovement }: { onOpenNewMovement: () => void }) {
   const [, setLocation] = useLocation();
   
   const actions = [
@@ -597,7 +598,7 @@ function QuickActionsWidget() {
       color: "from-blue-500 to-cyan-500",
       textColor: "text-blue-600",
       bgColor: "bg-blue-50 dark:bg-blue-950/30",
-      action: () => setLocation('/movements')
+      action: onOpenNewMovement
     },
     {
       title: "Esplora Entità",
@@ -676,6 +677,7 @@ function QuickActionsWidget() {
 
 export default function DashboardProfessional() {
   const [, setLocation] = useLocation();
+  const [isNewMovementModalOpen, setIsNewMovementModalOpen] = useState(false);
   
   // Get current month and year for filtering
   const currentDate = new Date();
@@ -784,7 +786,7 @@ export default function DashboardProfessional() {
           
           {/* Quick Actions Sidebar */}
           <div className="space-y-6">
-            <QuickActionsWidget />
+            <QuickActionsWidget onOpenNewMovement={() => setIsNewMovementModalOpen(true)} />
             
             {/* Configuration Preview Mini-Dashboard */}
             <ConfigPreviewMini />
@@ -831,6 +833,12 @@ export default function DashboardProfessional() {
           </div>
         </div>
       </div>
+      
+      {/* Modal per Nuovo Movimento */}
+      <MovementFormNew
+        isOpen={isNewMovementModalOpen}
+        onClose={() => setIsNewMovementModalOpen(false)}
+      />
     </div>
   );
 }
