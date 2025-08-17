@@ -141,12 +141,12 @@ export function ConfigPreviewMini() {
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full border-blue-200 dark:border-blue-800 shadow-lg bg-gradient-to-br from-blue-50/50 to-purple-50/30 dark:from-blue-950/50 dark:to-purple-950/30">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-blue-600" />
-            <CardTitle className="text-lg">Configurazione Canali</CardTitle>
+            <CardTitle className="text-lg font-bold text-blue-900 dark:text-blue-100">⚙️ Configurazione Canali</CardTitle>
           </div>
           <Link href="/settings">
             <Button variant="outline" size="sm" className="flex items-center gap-2">
