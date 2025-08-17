@@ -1,5 +1,55 @@
 [
   {
+    "id": "log_1755435825894_jaufpo6fq",
+    "timestamp": "2025-08-17T13:03:45.894Z",
+    "level": "ERROR",
+    "message": "Errore simulato per testing (non reale)",
+    "source": "test-generator",
+    "metadata": {
+      "errorType": "simulation",
+      "resolved": true
+    }
+  },
+  {
+    "id": "log_1755435825885_4lrvea3pe",
+    "timestamp": "2025-08-17T13:03:45.885Z",
+    "level": "WARN",
+    "message": "Attenzione: log di esempio per test interfaccia",
+    "source": "test-generator",
+    "metadata": {
+      "level": "warning",
+      "category": "ui-test"
+    }
+  },
+  {
+    "id": "log_1755435825880_llw9rhlml",
+    "timestamp": "2025-08-17T13:03:45.880Z",
+    "level": "DEBUG",
+    "message": "Debug: verifica funzionalità logging",
+    "source": "test-generator",
+    "metadata": {
+      "memory": {
+        "rss": 302981120,
+        "heapTotal": 143065088,
+        "heapUsed": 138307504,
+        "external": 11793838,
+        "arrayBuffers": 955559
+      },
+      "uptime": 119.333130517
+    }
+  },
+  {
+    "id": "log_1755435825871_vdz2nqd8b",
+    "timestamp": "2025-08-17T13:03:45.871Z",
+    "level": "INFO",
+    "message": "Log di test generato manualmente",
+    "source": "test-generator",
+    "metadata": {
+      "user": "admin@cashflow.it",
+      "timestamp": "2025-08-17T13:03:45.870Z"
+    }
+  },
+  {
     "id": "log_1755435675815_d3gep0imo",
     "timestamp": "2025-08-17T13:01:15.815Z",
     "level": "WARN",
