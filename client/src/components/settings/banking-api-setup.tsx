@@ -64,19 +64,57 @@ const BANK_PROVIDERS = {
   cbi_globe: {
     name: "CBI Globe",
     type: "aggregator",
-    status: "beta", 
-    description: "Aggregatore CBI per BPM, BPER, Credem, UBI e altre banche - In sviluppo",
-    endpoint: "https://api.cbiglobe.it/psd2/v1",
-    sandboxEndpoint: "https://api-sandbox.cbiglobe.it/psd2/v1",
-    docs: "https://developer.cbiglobe.it",
-    supportEmail: "support@cbiglobe.it",
-    requirements: ["CBI Client ID", "TPP License", "QWAC Certificate", "Partner Agreement"],
+    status: "available", 
+    description: "Piattaforma CBI per BCC (317+ banche), BPER, Banco BPM e altre - Completamente operativo",
+    endpoint: "https://www.cbiglobe.com/api/psd2/v1",
+    sandboxEndpoint: "https://bperlu.psd2-sandbox.eu/",
+    docs: "https://www.cbiglobe.com/Wiki/index.php/1.1_API_and_PSD2",
+    supportEmail: "info@cbiglobe.com",
+    requirements: ["Registrazione TPP", "Certificato eIDAS QWAC", "Certificato QSEAL", "Autorizzazione NCA"],
+    implemented: true,
+    banksCovered: ["BCC (317+ banche cooperative)", "BPER Banca", "Banco BPM", "Credem", "UBI Banca"],
+    fields: {
+      tppId: { label: "TPP Registration ID", placeholder: "ID TPP rilasciato da Autorità Competente Nazionale" },
+      clientId: { label: "CBI Globe Client ID", placeholder: "CBI_CLIENT_XXXXXXXXXXXXXXXX" },
+      qwacCertificate: { label: "Certificato eIDAS QWAC", placeholder: "Certificato di autenticazione qualificato" },
+      qsealCertificate: { label: "Certificato eIDAS QSEAL", placeholder: "Certificato di sigillo elettronico qualificato" },
+      ncaAuthorization: { label: "Autorizzazione NCA", placeholder: "Numero autorizzazione Banca d'Italia o altra NCA europea" }
+    }
+  },
+  banco_bpm_direct: {
+    name: "Banco BPM - Diretto", 
+    type: "direct",
+    status: "available",
+    description: "API dirette Banco BPM (richiede partnership) - Contatto diretto necessario",
+    endpoint: "https://api.bancobpm.it/psd2/v1",
+    sandboxEndpoint: "https://api-sandbox.bancobpm.it/psd2/v1",
+    docs: "Documentazione fornita su richiesta",
+    supportEmail: "api.support@bancobpm.it",
+    requirements: ["Partnership commerciale", "Client ID", "Client Secret", "Certificato QWAC"],
     implemented: false,
     fields: {
-      clientId: { label: "CBI Client ID", placeholder: "CBI_XXXXXXXXXXXXXXXX" },
-      tppLicense: { label: "TPP License", placeholder: "Licenza TPP rilasciata da Banca d'Italia" },
-      certificate: { label: "Certificato QWAC", placeholder: "Certificato PSD2 qualificato" },
-      partnerCode: { label: "Codice Partner", placeholder: "Codice assegnato da CBI Globe" }
+      partnerId: { label: "Partner ID Banco BPM", placeholder: "BPM_PARTNER_XXXXXXXX" },
+      clientId: { label: "Client ID", placeholder: "bpm_client_xxxxxxxxxxxxxxxx" },
+      clientSecret: { label: "Client Secret", placeholder: "bpm_secret_xxxxxxxxxxxxxxxx" },
+      certificate: { label: "Certificato QWAC", placeholder: "Certificato PSD2 fornito da Banco BPM" }
+    }
+  },
+  banco_desio_direct: {
+    name: "Banco Desio - Diretto",
+    type: "direct", 
+    status: "coming_soon",
+    description: "API dirette Banco Desio (documentazione non pubblica) - In fase di sviluppo parnership",
+    endpoint: "https://api.bancodesio.it/psd2/v1",
+    sandboxEndpoint: "https://api-sandbox.bancodesio.it/psd2/v1",
+    docs: "https://www.bancodesio.it/content/open-banking-psd2",
+    supportEmail: "openbanking@bancodesio.it",
+    requirements: ["Accordo commerciale", "Certificato QWAC", "Autorizzazione specifica"],
+    implemented: false,
+    fields: {
+      partnershipId: { label: "Partnership ID", placeholder: "DESIO_PARTNER_XXXXXXXX" },
+      clientId: { label: "Client ID Banco Desio", placeholder: "desio_client_xxxxxxxxxxxxxxxx" },
+      certificate: { label: "Certificato QWAC", placeholder: "Certificato fornito da Banco Desio" },
+      agreementNumber: { label: "Numero Accordo", placeholder: "Numero contratto partnership API" }
     }
   },
   nexi: {
@@ -106,20 +144,33 @@ export default function BankingApiSetup({ iban, onClose }: BankingApiSetupProps)
   const [connectionStatus, setConnectionStatus] = useState<"testing" | "connected" | "failed" | null>(null);
   
   const [config, setConfig] = useState<any>({
+    // Campo comuni
     clientId: "",
     clientSecret: "",
     certificatePath: "",
     certificate: "",
-    subscriptionKey: "",
-    tppLicense: "",
-    partnerCode: "",
-    partnerId: "",
-    apiKey: "",
-    merchantId: "",
-    additionalConfig: "",
     sandboxMode: true,
     autoSync: iban?.autoSyncEnabled || false,
-    syncFrequency: iban?.syncFrequency || "daily"
+    syncFrequency: iban?.syncFrequency || "daily",
+    // Intesa Sanpaolo
+    subscriptionKey: "",
+    // CBI Globe
+    tppId: "",
+    qwacCertificate: "",
+    qsealCertificate: "",
+    ncaAuthorization: "",
+    // Banco BPM
+    partnerId: "",
+    // Banco Desio
+    partnershipId: "",
+    agreementNumber: "",
+    // NEXI
+    apiKey: "",
+    merchantId: "",
+    // Campi generici
+    tppLicense: "",
+    partnerCode: "",
+    additionalConfig: ""
   });
 
   const handleTestConnection = async () => {
@@ -252,15 +303,30 @@ export default function BankingApiSetup({ iban, onClose }: BankingApiSetupProps)
                     )}
                   </div>
                   
-                  <div className="mt-3 pt-3 border-t">
-                    <p className="text-xs text-muted-foreground mb-2">Requisiti:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {provider.requirements.map((req, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {req}
-                        </Badge>
-                      ))}
+                  <div className="mt-3 pt-3 border-t space-y-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Requisiti:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {provider.requirements.map((req, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {req}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
+                    
+                    {provider.banksCovered && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">Banche coperte:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {provider.banksCovered.map((bank, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                              {bank}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

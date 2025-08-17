@@ -18,6 +18,14 @@ EasyCashFlows is a comprehensive financial management system for Italian SMEs, o
 - Added support email links and comprehensive documentation references for each provider
 - Implemented automatic synchronization settings with configurable frequency (hourly, daily, weekly)
 - Enhanced modal dialogs with proper vertical scrolling and responsive design
+- Completed comprehensive research on Italian banking API availability and documentation
+- Added real provider configurations with accurate endpoints and requirements:
+  * **CBI Globe**: Confirmed as centralized platform covering 317+ BCC banks, BPER Banca, and Banco BPM
+  * **Banco BPM Direct**: Available through partnership, requires direct contact for API access
+  * **Banco Desio Direct**: Limited public API documentation, partnership-based access required
+- Integrated provider-specific field configurations that adapt dynamically to selected bank
+- Enhanced UI with "Banche coperte" section showing which banks each provider supports
+- Added comprehensive authentication requirements including eIDAS certificates and TPP registration
 - System ready for automatic bank transaction verification and movement reconciliation
 
 # User Preferences
