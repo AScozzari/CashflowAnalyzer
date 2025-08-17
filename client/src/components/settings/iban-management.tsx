@@ -140,171 +140,35 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="companyId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ragione Sociale *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleziona ragione sociale" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name} ({company.legalForm})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="iban"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>IBAN *</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="IT00 0000 0000 0000 0000 0000 000" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="bankName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Banca *</FormLabel>
-              <FormControl>
-                <BankSelect
-                  value={getBankValue(field.value)}
-                  onValueChange={(value) => {
-                    const selectedBank = italianBanks.find(bank => bank.value === value);
-                    const bankName = selectedBank ? selectedBank.label : value;
-                    
-                    // Aggiorna il form
-                    field.onChange(bankName);
-                    setSelectedBankName(bankName);
-                    
-                    // Controlla disponibilità API
-                    checkApiAvailability(bankName);
-                  }}
-                  placeholder="Seleziona banca italiana..."
-                />
-              </FormControl>
-              <FormMessage />
-              
-              {/* Alert per API disponibili */}
-              {showApiSuggestion && suggestedProvider && (
-                <div className="mt-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                      🎉 API Disponibili per {selectedBankName}!
-                    </p>
-                  </div>
-                  <p className="text-xs text-green-600 dark:text-green-300 mt-1">
-                    Provider: {PROVIDER_INFO[suggestedProvider as keyof typeof PROVIDER_INFO]?.status}
-                  </p>
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-xs text-green-600 dark:text-green-300">
-                      Il provider API è stato auto-selezionato.
-                    </p>
-                    <Button
-                      type="button" 
-                      size="sm" 
-                      variant="outline"
-                      className="h-7 text-xs border-green-300 text-green-700 hover:bg-green-50"
-                      onClick={() => {
-                        // Salva temporaneamente i dati del form per configurare API
-                        const formData = form.getValues();
-                        setTempIban({
-                          ...formData,
-                          id: iban?.id || 'temp-' + Date.now(),
-                          bankName: selectedBankName,
-                          apiProvider: suggestedProvider,
-                        } as Partial<Iban>);
-                        setShowApiModal(true);
-                      }}
-                    >
-                      🚀 Configura API Ora
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrizione</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="es. Conto Corrente Principale" value={field.value || ""} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Note</FormLabel>
-              <FormControl>
-                <Textarea {...field} placeholder="Note aggiuntive" value={field.value || ""} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Sezione API Bancarie */}
-        <Card className="border-blue-200 bg-blue-50/30 dark:bg-blue-950/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Settings2 className="w-4 h-4" />
-              Integrazione API Bancaria
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Configura la sincronizzazione automatica dei movimenti bancari per verificare automaticamente i flussi inseriti.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Sezione 1: Informazioni Base */}
+          <div className="space-y-4">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Informazioni Base</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Inserisci i dati principali del conto IBAN</p>
+            </div>
+            
             <FormField
               control={form.control}
-              name="apiProvider"
+              name="companyId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Provider API</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                  <FormLabel className="flex items-center gap-2">
+                    <span>Azienda</span>
+                    <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleziona provider API bancario" />
+                        <SelectValue placeholder="Seleziona l'azienda proprietaria del conto" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="unicredit">UniCredit - API Dirette</SelectItem>
-                      <SelectItem value="intesa">Intesa Sanpaolo - API Dirette</SelectItem>
-                      <SelectItem value="cbi_globe">CBI Globe - BPM, BPER, Credem, etc.</SelectItem>
-                      <SelectItem value="nexi">NEXI - MPS e altri</SelectItem>
-                      <SelectItem value="manual">Configurazione Manuale</SelectItem>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name} ({company.legalForm})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -314,13 +178,23 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
 
             <FormField
               control={form.control}
-              name="bankCode"
+              name="iban"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Codice Banca (ABI/CAB)</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <span>Codice IBAN</span>
+                    <span className="text-red-500">*</span>
+                  </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="es. 02008.01030" value={field.value || ""} />
+                    <Input 
+                      {...field} 
+                      placeholder="IT00 0000 0000 0000 0000 0000 000"
+                      className="font-mono text-sm"
+                    />
                   </FormControl>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Inserisci il codice IBAN completo di 27 caratteri
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -328,62 +202,121 @@ function IbanForm({ iban, onClose }: IbanFormProps) {
 
             <FormField
               control={form.control}
-              name="autoSyncEnabled"
+              name="bankName"
               render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-sm font-medium">
-                      Sincronizzazione Automatica
-                    </FormLabel>
-                    <div className="text-xs text-muted-foreground">
-                      Attiva la sincronizzazione automatica dei movimenti bancari
-                    </div>
-                  </div>
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <span>Banca</span>
+                    <span className="text-red-500">*</span>
+                  </FormLabel>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                    <BankSelect
+                      value={getBankValue(field.value)}
+                      onValueChange={(value) => {
+                        const selectedBank = italianBanks.find(bank => bank.value === value);
+                        const bankName = selectedBank ? selectedBank.label : value;
+                        
+                        field.onChange(bankName);
+                        setSelectedBankName(bankName);
+                        checkApiAvailability(bankName);
+                      }}
+                      placeholder="Seleziona la banca del conto corrente"
                     />
                   </FormControl>
+                  <FormMessage />
+                  
+                  {/* Notifica API Disponibili - Più discreta */}
+                  {showApiSuggestion && suggestedProvider && (
+                    <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border-l-2 border-blue-400 rounded-r">
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                        <span className="text-blue-800 dark:text-blue-200 font-medium">
+                          Sincronizzazione automatica disponibile
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                        Potrai configurare l'API dopo aver salvato l'IBAN
+                      </p>
+                    </div>
+                  )}
                 </FormItem>
               )}
             />
 
-            {form.watch('autoSyncEnabled') && (
-              <FormField
-                control={form.control}
-                name="syncFrequency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Frequenza Sincronizzazione</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "daily"}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona frequenza" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="hourly">Ogni ora</SelectItem>
-                        <SelectItem value="daily">Giornaliera</SelectItem>
-                        <SelectItem value="weekly">Settimanale</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </CardContent>
-        </Card>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrizione</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder="es. Conto Corrente Aziendale Principale" 
+                      value={field.value || ""} 
+                    />
+                  </FormControl>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Una descrizione per identificare facilmente questo conto
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-        <div className="flex justify-end space-x-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Annulla
-          </Button>
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? "Salvando..." : (iban ? "Aggiorna" : "Crea")}
-          </Button>
-        </div>
+          {/* Sezione 2: Dettagli Aggiuntivi */}
+          <div className="space-y-4">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Dettagli Aggiuntivi</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Informazioni opzionali per una migliore gestione</p>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Note</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Note aggiuntive, codici interni, limiti operativi, ecc."
+                      value={field.value || ""} 
+                      rows={3}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Pulsanti azione */}
+          <div className="flex justify-between pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="min-w-[100px]"
+            >
+              Annulla
+            </Button>
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="min-w-[120px]"
+            >
+              {mutation.isPending ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Salvataggio...
+                </>
+              ) : (
+                iban ? "Aggiorna IBAN" : "Crea IBAN"
+              )}
+            </Button>
+          </div>
         </form>
       </Form>
       
