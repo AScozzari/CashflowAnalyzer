@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -85,7 +85,7 @@ export function ContactSearchEnhanced({
             phone: resource.mobile, // Use mobile for WhatsApp
             email: resource.email || undefined,
             status: resource.isActive ? 'active' : 'inactive',
-            lastContact: resource.createdAt
+            lastContact: resource.createdAt ? new Date(resource.createdAt).toISOString() : undefined
           });
         }
       });
@@ -107,7 +107,7 @@ export function ContactSearchEnhanced({
             email: customer.email || undefined,
             status: customer.isActive ? 'active' : 'inactive',
             tags: customer.type ? [customer.type] : undefined,
-            lastContact: customer.createdAt
+            lastContact: customer.createdAt ? new Date(customer.createdAt).toISOString() : undefined
           });
         }
       });
@@ -124,7 +124,7 @@ export function ContactSearchEnhanced({
             phone: supplier.mobile, // Use mobile for WhatsApp
             email: supplier.email || undefined,
             status: supplier.isActive ? 'active' : 'inactive',
-            lastContact: supplier.createdAt
+            lastContact: supplier.createdAt ? new Date(supplier.createdAt).toISOString() : undefined
           });
         }
       });
