@@ -758,6 +758,132 @@ Genera configurazione in JSON:
     Note: Tutti i filtri devono includere userId per sicurezza.
     `;
   }
+
+  // WhatsApp AI Communication Methods
+  async analyzeMessage(params: {
+    content: string;
+    channel: string;
+    sender?: string;
+  }): Promise<{
+    sentiment: string;
+    urgency: string;
+    category: string;
+    suggestedResponse?: string;
+    confidence: number;
+  }> {
+    if (!this.isConfigured) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    try {
+      const prompt = `Analizza questo messaggio WhatsApp e fornisci informazioni strutturate:
+
+Messaggio: "${params.content}"
+Canale: ${params.channel}
+${params.sender ? `Mittente: ${params.sender}` : ''}
+
+Fornisci la tua analisi in formato JSON con i seguenti campi:
+{
+  "sentiment": "positivo|neutro|negativo",
+  "urgency": "bassa|media|alta",
+  "category": "informazione|richiesta|reclamo|vendita|supporto|altro",
+  "suggestedResponse": "breve risposta suggerita (opzionale)",
+  "confidence": 0.85
+}
+
+Considera il contesto business italiano e le comunicazioni WhatsApp aziendali.`;
+
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'Sei un assistente AI specializzato nell\'analisi di messaggi WhatsApp Business per aziende italiane. Rispondi sempre in formato JSON valido.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 500,
+        temperature: 0.3,
+        response_format: { type: "json_object" }
+      });
+
+      const analysis = JSON.parse(response.choices[0].message.content || '{}');
+      
+      return {
+        sentiment: analysis.sentiment || 'neutro',
+        urgency: analysis.urgency || 'media',
+        category: analysis.category || 'altro',
+        suggestedResponse: analysis.suggestedResponse,
+        confidence: analysis.confidence || 0.7
+      };
+    } catch (error: any) {
+      console.error('[AI] Error analyzing message:', error);
+      throw new Error(`Errore nell'analisi del messaggio: ${error.message}`);
+    }
+  }
+
+  async generateResponse(params: {
+    originalMessage: string;
+    channel: string;
+    context?: any;
+  }): Promise<{
+    response: string;
+    tone: string;
+    confidence: number;
+    alternatives?: string[];
+  }> {
+    if (!this.isConfigured) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    try {
+      const prompt = `Genera una risposta professionale per questo messaggio WhatsApp Business:
+
+Messaggio originale: "${params.originalMessage}"
+Canale: ${params.channel}
+${params.context ? `Contesto: ${JSON.stringify(params.context)}` : ''}
+
+Linee guida per la risposta:
+- Tono professionale ma cordiale
+- Linguaggio italiano aziendale appropriato
+- Risposta concisa e utile
+- Considera che è un canale WhatsApp Business
+
+Fornisci la risposta in formato JSON:
+{
+  "response": "tua risposta principale",
+  "tone": "professionale|cordiale|formale",
+  "confidence": 0.85,
+  "alternatives": ["risposta alternativa 1", "risposta alternativa 2"]
+}`;
+
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'Sei un assistente AI per il customer service WhatsApp Business di aziende italiane. Genera sempre risposte professionali e appropriate al contesto aziendale.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 800,
+        temperature: 0.4,
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      
+      return {
+        response: result.response || 'Grazie per il suo messaggio. La ricontatteremo presto.',
+        tone: result.tone || 'professionale',
+        confidence: result.confidence || 0.7,
+        alternatives: result.alternatives || []
+      };
+    } catch (error: any) {
+      console.error('[AI] Error generating response:', error);
+      throw new Error(`Errore nella generazione della risposta: ${error.message}`);
+    }
+  }
 }
 
 export const aiService = new AIService();

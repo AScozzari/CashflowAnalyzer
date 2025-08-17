@@ -4209,7 +4209,95 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
     }
   }));
 
+  // ==================== WhatsApp AI Communication Routes ====================
+  
+  // Get WhatsApp messages for a contact
+  app.get('/api/whatsapp/messages/:contactId', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const contactId = req.params.contactId;
+      // In a real implementation, this would fetch messages from WhatsApp Business API
+      // For now, return empty array as data comes from WhatsApp webhook
+      res.json([]);
+    } catch (error) {
+      console.error('Error fetching WhatsApp messages:', error);
+      res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+  }));
+
+  // Send WhatsApp message
+  app.post('/api/whatsapp/send', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { content, to } = req.body;
+      
+      if (!content || !to) {
+        return res.status(400).json({ error: 'Content and recipient are required' });
+      }
+
+      // In a real implementation, this would send via WhatsApp Business API
+      console.log(`[WhatsApp] Message sent by ${req.user?.username || 'unknown'} to ${to}: ${content}`);
+      
+      res.json({ 
+        success: true, 
+        messageId: `msg_${Date.now()}`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error sending WhatsApp message:', error);
+      res.status(500).json({ error: 'Failed to send message' });
+    }
+  }));
+
+  // AI Message Analysis
+  app.post('/api/ai/analyze-message', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { message, channel, sender } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: 'Message is required' });
+      }
+
+      // Use AI service to analyze message
+      const analysis = await aiService.analyzeMessage({
+        content: message,
+        channel: channel || 'whatsapp',
+        sender: sender
+      });
+
+      res.json(analysis);
+    } catch (error) {
+      console.error('Error analyzing message with AI:', error);
+      res.status(500).json({ error: 'Failed to analyze message' });
+    }
+  }));
+
+  // AI Response Generation
+  app.post('/api/ai/generate-response', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { message, channel, context } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: 'Message is required' });
+      }
+
+      // Use AI service to generate response
+      const response = await aiService.generateResponse({
+        originalMessage: message,
+        channel: channel || 'whatsapp',
+        context: context
+      });
+
+      res.json(response);
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+      res.status(500).json({ error: 'Failed to generate response' });
+    }
+  }));
+
   const httpServer = createServer(app);
+  
+  console.log('✅ All routes registered successfully');
+  console.log('🤖 AI Communication endpoints ready');
+  
   return httpServer;
 }
 

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { ContactSearchEnhanced } from "./contact-search-enhanced";
 import { 
   MessageSquare, 
   Send, 
@@ -18,7 +23,14 @@ import {
   Mic,
   Bot,
   Clock,
-  CheckCheck
+  CheckCheck,
+  Brain,
+  Zap,
+  TrendingUp,
+  AlertCircle,
+  Plus,
+  Settings,
+  Users
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -33,6 +45,12 @@ interface WhatsAppMessage {
   delivered: boolean;
   read: boolean;
   aiGenerated?: boolean;
+  analysis?: {
+    sentiment: 'positive' | 'neutral' | 'negative';
+    urgency: 'low' | 'medium' | 'high';
+    category: string;
+    suggestedResponse?: string;
+  };
 }
 
 interface WhatsAppContact {
@@ -44,6 +62,8 @@ interface WhatsAppContact {
   lastSeen: string;
   unreadCount: number;
   online: boolean;
+  type?: 'resource' | 'customer' | 'supplier';
+  company?: string;
 }
 
 interface WhatsAppTemplate {
@@ -52,6 +72,7 @@ interface WhatsAppTemplate {
   content: string;
   category: string;
   variables: string[];
+  aiGenerated?: boolean;
 }
 
 export function WhatsAppInterface() {
@@ -59,120 +80,136 @@ export function WhatsAppInterface() {
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<WhatsAppTemplate | null>(null);
+  const [showContactSearch, setShowContactSearch] = useState(false);
+  const [aiAssistanceEnabled, setAiAssistanceEnabled] = useState(true);
+  const [autoResponseEnabled, setAutoResponseEnabled] = useState(false);
+  const [showMessageAnalysis, setShowMessageAnalysis] = useState(false);
+  const { toast } = useToast();
 
-  // Mock WhatsApp data
-  const contacts: WhatsAppContact[] = [
-    {
-      id: "1",
-      name: "Mario Rossi",
-      phone: "+39 333 123 4567",
-      lastMessage: "Grazie per la consulenza!",
-      lastSeen: "2 minuti fa",
-      unreadCount: 2,
-      online: true
+  // Fetch real data
+  const { data: whatsappMessages = [], refetch: refetchMessages } = useQuery({
+    queryKey: ['/api/whatsapp/messages', selectedContact?.id],
+    enabled: !!selectedContact,
+  });
+
+  const { data: whatsappTemplates = [] } = useQuery({
+    queryKey: ['/api/whatsapp/templates'],
+  });
+
+  // AI message analysis mutation
+  const analyzeMessageMutation = useMutation({
+    mutationFn: (message: string) => 
+      apiRequest('/api/ai/analyze-message', 'POST', { 
+        message,
+        channel: 'whatsapp',
+        sender: selectedContact 
+      }),
+  });
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: ({ content, to }: { content: string; to: string }) =>
+      apiRequest('/api/whatsapp/send', 'POST', { content, to }),
+    onSuccess: () => {
+      setMessageInput("");
+      refetchMessages();
+      toast({
+        title: "Messaggio inviato",
+        description: "Il messaggio WhatsApp è stato inviato con successo"
+      });
     },
-    {
-      id: "2",
-      name: "Anna Verdi",
-      phone: "+39 347 987 6543",
-      lastMessage: "Quando possiamo fare una call?",
-      lastSeen: "1 ora fa",
+    onError: (error: any) => {
+      toast({
+        title: "Errore invio messaggio",
+        description: error.message || "Impossibile inviare il messaggio",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Generate AI response mutation
+  const generateResponseMutation = useMutation({
+    mutationFn: (originalMessage: string) =>
+      apiRequest('/api/ai/generate-response', 'POST', {
+        message: originalMessage,
+        channel: 'whatsapp',
+        context: selectedContact
+      }),
+  });
+
+  // Contact selection handler
+  const handleContactSelect = (contact: any) => {
+    const whatsappContact: WhatsAppContact = {
+      id: contact.id,
+      name: contact.name,
+      phone: contact.phone || '',
+      lastMessage: '',
+      lastSeen: 'Mai',
       unreadCount: 0,
-      online: false
-    },
-    {
-      id: "3",
-      name: "Giuseppe Bianchi",
-      phone: "+39 320 555 7890",
-      lastMessage: "Ho bisogno della fattura",
-      lastSeen: "3 ore fa",
-      unreadCount: 1,
-      online: false
-    }
-  ];
+      online: false,
+      type: contact.type,
+      company: contact.company
+    };
+    setSelectedContact(whatsappContact);
+    setShowContactSearch(false);
+  };
 
-  const messages: WhatsAppMessage[] = [
-    {
-      id: "1",
-      from: "+39 333 123 4567",
-      to: "me",
-      content: "Buongiorno, avrei bisogno di informazioni sui vostri servizi",
-      timestamp: "09:30",
-      type: 'text',
-      isOutgoing: false,
-      delivered: true,
-      read: true
-    },
-    {
-      id: "2",
-      from: "me",
-      to: "+39 333 123 4567",
-      content: "Buongiorno Mario! Sarò felice di aiutarla. Che tipo di servizi la interessano di più?",
-      timestamp: "09:32",
-      type: 'text',
-      isOutgoing: true,
-      delivered: true,
-      read: true,
-      aiGenerated: true
-    },
-    {
-      id: "3",
-      from: "+39 333 123 4567",
-      to: "me",
-      content: "Principalmente la gestione della fatturazione elettronica",
-      timestamp: "09:35",
-      type: 'text',
-      isOutgoing: false,
-      delivered: true,
-      read: true
-    },
-    {
-      id: "4",
-      from: "me",
-      to: "+39 333 123 4567",
-      content: "Perfetto! EasyCashFlows offre una soluzione completa per la fatturazione elettronica. Posso inviarle una demo?",
-      timestamp: "09:37",
-      type: 'text',
-      isOutgoing: true,
-      delivered: true,
-      read: false
+  // Functions
+  const sendMessage = async () => {
+    if (!messageInput.trim() || !selectedContact?.phone) {
+      toast({
+        title: "Errore",
+        description: "Inserisci un messaggio e seleziona un contatto",
+        variant: "destructive"
+      });
+      return;
     }
-  ];
 
-  const templates: WhatsAppTemplate[] = [
-    {
-      id: "1",
-      name: "Benvenuto Nuovo Cliente",
-      content: "Ciao {nome}! Benvenuto in EasyCashFlows. Sono qui per aiutarti con qualsiasi domanda sui nostri servizi.",
-      category: "onboarding",
-      variables: ["nome"]
-    },
-    {
-      id: "2",
-      name: "Reminder Pagamento",
-      content: "Ciao {nome}, ti ricordo che la fattura {numero_fattura} di €{importo} è in scadenza il {data_scadenza}.",
-      category: "payments",
-      variables: ["nome", "numero_fattura", "importo", "data_scadenza"]
-    },
-    {
-      id: "3",
-      name: "Conferma Appuntamento",
-      content: "Ciao {nome}! Confermo il nostro appuntamento per {data} alle {ora}. A presto!",
-      category: "appointments", 
-      variables: ["nome", "data", "ora"]
-    }
-  ];
+    sendMessageMutation.mutate({
+      content: messageInput,
+      to: selectedContact.phone
+    });
+  };
 
-  const sendMessage = () => {
-    if (!messageInput.trim() || !selectedContact) return;
+  const generateAIResponse = async (messageContent: string) => {
+    if (!aiAssistanceEnabled) return;
     
-    // Logic to send message
-    console.log("Sending message:", messageInput, "to:", selectedContact.phone);
-    setMessageInput("");
+    try {
+      const response = await generateResponseMutation.mutateAsync(messageContent);
+      setMessageInput(response.suggestedResponse || '');
+      toast({
+        title: "Risposta AI generata",
+        description: "Ho generato una risposta suggerita che puoi modificare prima di inviare"
+      });
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+    }
+  };
+
+  const analyzeMessage = async (messageContent: string) => {
+    if (!aiAssistanceEnabled || !messageContent.trim()) return;
+    
+    try {
+      const analysis = await analyzeMessageMutation.mutateAsync(messageContent);
+      if (analysis.suggestedResponse && autoResponseEnabled) {
+        setMessageInput(analysis.suggestedResponse);
+      }
+    } catch (error) {
+      console.error('Error analyzing message:', error);
+    }
   };
 
   const useTemplate = (template: WhatsAppTemplate) => {
-    setMessageInput(template.content);
+    let content = template.content;
+    
+    // Simple variable replacement with contact info
+    if (selectedContact) {
+      content = content.replace(/{nome}/g, selectedContact.name);
+      content = content.replace(/{telefono}/g, selectedContact.phone);
+      content = content.replace(/{azienda}/g, selectedContact.company || '');
+    }
+    
+    setMessageInput(content);
     setSelectedTemplate(template);
   };
 
@@ -180,67 +217,101 @@ export function WhatsAppInterface() {
     <div className="grid grid-cols-12 gap-6 h-[800px]">
       {/* Contacts Sidebar */}
       <div className="col-span-4 space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Cerca contatti..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          <Button size="sm" variant="outline">
-            <Phone className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <Card className="h-[740px] overflow-hidden">
+        {/* AI Settings & Contact Search */}
+        <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Chat
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[650px]">
-              {contacts.map((contact) => (
-                <div
-                  key={contact.id}
-                  className={`p-4 border-b cursor-pointer hover:bg-muted/50 ${
-                    selectedContact?.id === contact.id ? 'bg-muted' : ''
-                  }`}
-                  onClick={() => setSelectedContact(contact)}
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Brain className="h-4 w-4" />
+                Assistente AI
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant={aiAssistanceEnabled ? "default" : "secondary"} className="text-xs">
+                  {aiAssistanceEnabled ? "Attivo" : "Disattivo"}
+                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setAiAssistanceEnabled(!aiAssistanceEnabled)}
+                  data-testid="toggle-ai-assistance"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={contact.avatar} />
-                        <AvatarFallback>
-                          {contact.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      {contact.online && (
-                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                  <Settings className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span>Risposte automatiche</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setAutoResponseEnabled(!autoResponseEnabled)}
+                className={autoResponseEnabled ? "text-green-600" : "text-muted-foreground"}
+                data-testid="toggle-auto-response"
+              >
+                <Zap className="h-3 w-3" />
+              </Button>
+            </div>
+            
+            <div className="border-t pt-3">
+              <Label className="text-xs font-medium mb-2 block">Seleziona Contatto</Label>
+              <Dialog open={showContactSearch} onOpenChange={setShowContactSearch}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start text-left" 
+                    size="sm"
+                    data-testid="open-contact-search"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    <div className="flex-1 truncate">
+                      {selectedContact ? (
+                        <div>
+                          <div className="font-medium">{selectedContact.name}</div>
+                          <div className="text-xs text-muted-foreground">{selectedContact.phone}</div>
+                        </div>
+                      ) : (
+                        "Cerca tra risorse, clienti e fornitori"
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-medium truncate">{contact.name}</h4>
-                        <span className="text-xs text-muted-foreground">{contact.lastSeen}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">{contact.lastMessage}</p>
-                      <p className="text-xs text-muted-foreground">{contact.phone}</p>
-                    </div>
-                    {contact.unreadCount > 0 && (
-                      <Badge className="bg-green-500 text-white min-w-[20px] h-5 text-xs">
-                        {contact.unreadCount}
-                      </Badge>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Seleziona Contatto WhatsApp</DialogTitle>
+                  </DialogHeader>
+                  <ContactSearchEnhanced
+                    onContactSelect={handleContactSelect}
+                    placeholder="Cerca contatti con numero di telefono..."
+                    filterByType={['resource', 'customer', 'supplier']}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {selectedContact && (
+              <div className="border-t pt-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs bg-green-100 text-green-700">
+                      {selectedContact.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{selectedContact.name}</div>
+                    <div className="text-xs text-muted-foreground">{selectedContact.phone}</div>
+                    {selectedContact.company && (
+                      <div className="text-xs text-muted-foreground truncate">{selectedContact.company}</div>
                     )}
                   </div>
+                  <Badge variant="outline" className="text-xs">
+                    {selectedContact.type === 'resource' ? 'Risorsa' : 
+                     selectedContact.type === 'customer' ? 'Cliente' : 'Fornitore'}
+                  </Badge>
                 </div>
-              ))}
-            </ScrollArea>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -272,11 +343,24 @@ export function WhatsAppInterface() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    <Video className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Phone className="h-4 w-4" />
+                  {aiAssistanceEnabled && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowMessageAnalysis(!showMessageAnalysis)}
+                      data-testid="toggle-message-analysis"
+                    >
+                      <TrendingUp className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => generateAIResponse("Genera una risposta di cortesia")}
+                    disabled={!aiAssistanceEnabled}
+                    data-testid="generate-ai-response"
+                  >
+                    <Bot className="h-4 w-4" />
                   </Button>
                   <Button variant="outline" size="sm">
                     <MoreHorizontal className="h-4 w-4" />
@@ -289,39 +373,90 @@ export function WhatsAppInterface() {
             <CardContent className="flex-1 p-4 overflow-hidden">
               <ScrollArea className="h-[500px] pr-4">
                 <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.isOutgoing ? 'justify-end' : 'justify-start'}`}
-                    >
+                  {whatsappMessages.length === 0 ? (
+                    <div className="text-center py-8">
+                      <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">Nessun messaggio ancora</p>
+                      <p className="text-sm text-muted-foreground">Inizia la conversazione con {selectedContact.name}</p>
+                    </div>
+                  ) : (
+                    whatsappMessages.map((message: WhatsAppMessage) => (
                       <div
-                        className={`max-w-[70%] rounded-lg px-3 py-2 ${
-                          message.isOutgoing
-                            ? 'bg-green-500 text-white'
-                            : 'bg-muted'
-                        }`}
+                        key={message.id}
+                        className={`flex ${message.isOutgoing ? 'justify-end' : 'justify-start'}`}
                       >
-                        <p className="text-sm">{message.content}</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <div className="flex items-center gap-1">
-                            <span className={`text-xs ${message.isOutgoing ? 'text-green-100' : 'text-muted-foreground'}`}>
-                              {message.timestamp}
-                            </span>
-                            {message.aiGenerated && (
-                              <Bot className="h-3 w-3 text-blue-400" title="Risposta generata dall'AI" />
-                            )}
-                          </div>
-                          {message.isOutgoing && (
-                            <div className="flex items-center">
-                              {message.delivered && (
-                                <CheckCheck className={`h-3 w-3 ${message.read ? 'text-blue-400' : 'text-green-100'}`} />
+                        <div className="max-w-[70%] group">
+                          <div
+                            className={`rounded-lg px-3 py-2 ${
+                              message.isOutgoing
+                                ? 'bg-green-500 text-white'
+                                : 'bg-muted'
+                            }`}
+                          >
+                            <p className="text-sm">{message.content}</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <div className="flex items-center gap-1">
+                                <span className={`text-xs ${message.isOutgoing ? 'text-green-100' : 'text-muted-foreground'}`}>
+                                  {message.timestamp}
+                                </span>
+                                {message.aiGenerated && (
+                                  <Bot className="h-3 w-3 text-blue-400" title="Risposta generata dall'AI" />
+                                )}
+                              </div>
+                              {message.isOutgoing && (
+                                <div className="flex items-center">
+                                  {message.delivered && (
+                                    <CheckCheck className={`h-3 w-3 ${message.read ? 'text-blue-400' : 'text-green-100'}`} />
+                                  )}
+                                </div>
                               )}
+                            </div>
+                          </div>
+                          
+                          {/* AI Analysis */}
+                          {message.analysis && showMessageAnalysis && aiAssistanceEnabled && (
+                            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950 rounded-md text-xs">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Brain className="h-3 w-3 text-blue-600" />
+                                <span className="font-medium text-blue-700 dark:text-blue-300">Analisi AI</span>
+                              </div>
+                              <div className="space-y-1 text-blue-600 dark:text-blue-400">
+                                <div>Sentiment: <Badge variant="outline" className="text-xs">{message.analysis.sentiment}</Badge></div>
+                                <div>Urgenza: <Badge variant="outline" className="text-xs">{message.analysis.urgency}</Badge></div>
+                                <div>Categoria: {message.analysis.category}</div>
+                                {message.analysis.suggestedResponse && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="mt-1 h-6 text-xs"
+                                    onClick={() => setMessageInput(message.analysis?.suggestedResponse || '')}
+                                  >
+                                    Usa risposta suggerita
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Generate AI Response for incoming messages */}
+                          {!message.isOutgoing && aiAssistanceEnabled && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 text-xs"
+                                onClick={() => generateAIResponse(message.content)}
+                                disabled={generateResponseMutation.isPending}
+                              >
+                                <Bot className="h-3 w-3 mr-1" />
+                                Genera risposta
+                              </Button>
                             </div>
                           )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -329,66 +464,175 @@ export function WhatsAppInterface() {
             {/* Message Input */}
             <div className="border-t p-4 space-y-3">
               {/* Template Selection */}
-              <div className="space-y-2">
-                <Label className="text-sm">Template Rapidi</Label>
-                <Select onValueChange={(value) => {
-                  const template = templates.find(t => t.id === value);
-                  if (template) useTemplate(template);
-                }}>
-                  <SelectTrigger className="h-8">
-                    <SelectValue placeholder="Seleziona template..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        <div className="flex items-center gap-2">
-                          <MessageSquare className="h-3 w-3" />
-                          <span className="text-sm">{template.name}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {template.category}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {whatsappTemplates.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm flex items-center gap-2">
+                    Template Rapidi
+                    {whatsappTemplates.some(t => t.aiGenerated) && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Bot className="h-3 w-3 mr-1" />
+                        AI
+                      </Badge>
+                    )}
+                  </Label>
+                  <Select onValueChange={(value) => {
+                    const template = whatsappTemplates.find(t => t.id === value);
+                    if (template) useTemplate(template);
+                  }}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue placeholder="Seleziona template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {whatsappTemplates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          <div className="flex items-center gap-2">
+                            {template.aiGenerated ? (
+                              <Bot className="h-3 w-3 text-blue-500" />
+                            ) : (
+                              <MessageSquare className="h-3 w-3" />
+                            )}
+                            <span className="text-sm">{template.name}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {template.category}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* AI Message Analysis */}
+              {aiAssistanceEnabled && messageInput.trim() && (
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  {analyzeMessageMutation.isPending ? (
+                    <>
+                      <Brain className="h-3 w-3 animate-pulse" />
+                      Analizzando messaggio...
+                    </>
+                  ) : (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 text-xs p-0"
+                      onClick={() => analyzeMessage(messageInput)}
+                    >
+                      <Brain className="h-3 w-3 mr-1" />
+                      Analizza con AI
+                    </Button>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-end gap-2">
                 <div className="flex-1 relative">
                   <Input
-                    placeholder="Scrivi un messaggio..."
+                    placeholder={selectedContact ? `Scrivi a ${selectedContact.name}...` : "Seleziona un contatto per iniziare..."}
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    className="pr-20"
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                    className="pr-24"
+                    disabled={!selectedContact}
+                    data-testid="message-input"
                   />
                   <div className="absolute right-2 top-2 flex items-center gap-1">
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 w-6 p-0"
+                      title="Allegati"
+                      disabled={!selectedContact}
+                    >
                       <Paperclip className="h-3 w-3" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <Smile className="h-3 w-3" />
-                    </Button>
+                    {aiAssistanceEnabled && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 w-6 p-0"
+                        onClick={() => generateAIResponse("Genera una risposta appropriata")}
+                        disabled={!selectedContact || generateResponseMutation.isPending}
+                        title="Genera risposta AI"
+                      >
+                        {generateResponseMutation.isPending ? (
+                          <Bot className="h-3 w-3 animate-pulse" />
+                        ) : (
+                          <Bot className="h-3 w-3" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <Button onClick={sendMessage} size="sm" className="flex items-center gap-1">
-                  {messageInput.trim() ? (
-                    <Send className="h-4 w-4" />
+                <Button 
+                  onClick={sendMessage} 
+                  size="sm" 
+                  className="flex items-center gap-1"
+                  disabled={!messageInput.trim() || !selectedContact || sendMessageMutation.isPending}
+                  data-testid="send-message"
+                >
+                  {sendMessageMutation.isPending ? (
+                    <div className="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full" />
                   ) : (
-                    <Mic className="h-4 w-4" />
+                    <Send className="h-4 w-4" />
                   )}
+                  Invia
                 </Button>
               </div>
+
+              {/* AI Status Indicators */}
+              {(analyzeMessageMutation.isPending || generateResponseMutation.isPending || sendMessageMutation.isPending) && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <div className="h-2 w-2 animate-pulse bg-blue-500 rounded-full" />
+                    {analyzeMessageMutation.isPending && "Analisi AI in corso..."}
+                    {generateResponseMutation.isPending && "Generazione risposta AI..."}
+                    {sendMessageMutation.isPending && "Invio messaggio..."}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         ) : (
           <Card className="h-full flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto" />
-              <div>
-                <h3 className="text-lg font-semibold">Seleziona una chat</h3>
-                <p className="text-muted-foreground">Scegli un contatto per iniziare a chattare</p>
+            <div className="text-center space-y-6 max-w-md">
+              <div className="relative">
+                <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                {aiAssistanceEnabled && (
+                  <div className="absolute -top-2 -right-2">
+                    <Bot className="h-8 w-8 text-blue-500 bg-white rounded-full p-1 shadow-lg" />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">WhatsApp Business con AI</h3>
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p>Seleziona un contatto dalla sezione sopra per iniziare a chattare</p>
+                  {aiAssistanceEnabled && (
+                    <div className="flex items-center justify-center gap-2 text-blue-600">
+                      <Brain className="h-4 w-4" />
+                      <span>Assistente AI attivo per risposte intelligenti</span>
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-6 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-green-600" />
+                    <span>Cerca contatti reali</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-blue-600" />
+                    <span>Risposte AI</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-purple-600" />
+                    <span>Analisi messaggi</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-yellow-600" />
+                    <span>Template automatici</span>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
