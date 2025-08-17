@@ -7,13 +7,15 @@ import {
   insertIbanSchema, insertOfficeSchema, insertTagSchema,
   insertMovementStatusSchema, insertMovementReasonSchema, insertMovementSchema,
   insertNotificationSchema, insertSupplierSchema, insertCustomerSchema, insertEmailSettingsSchema,
-  insertUserSchema, passwordResetSchema, resetPasswordSchema, insertSendgridTemplateSchema
+  insertUserSchema, passwordResetSchema, resetPasswordSchema, insertSendgridTemplateSchema,
+  insertWhatsappSettingsSchema
 } from "@shared/schema";
 import { emailService } from './email-service';
 import { SendGridTemplateService } from './sendgrid-templates';
 import { setupAuth } from "./auth";
 import { loginLimiter, apiLimiter, securityLogger, securityHeaders, sanitizeInput, sessionSecurity } from "./security-middleware";
 import { WebhookRouter } from './webhook-manager';
+import { setupWhatsAppRoutes } from './routes/whatsapp';
 import multer from 'multer';
 import type { Request } from 'express';
 import path from 'path';
@@ -2901,7 +2903,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup webhook routes for multi-channel notifications
   WebhookRouter.setupRoutes(app);
 
-  const httpServer = createServer(app);
   // WhatsApp Settings routes
   app.get("/api/whatsapp/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
@@ -2945,6 +2946,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Setup webhooks
+  WebhookRouter.setupRoutes(app);
+
+  // Setup modern WhatsApp Business API routes (Twilio 2024 & LinkMobility)
+  setupWhatsAppRoutes(app);
+
+  const httpServer = createServer(app);
   return httpServer;
 }
 

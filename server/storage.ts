@@ -1,5 +1,5 @@
 import {
-  companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens, sendgridTemplates, whatsappSettings,
+  companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens, sendgridTemplates, whatsappSettings, whatsappTemplates,
   aiSettings, aiChatHistory, aiDocumentJobs,
   securitySettings, loginAuditLog, activeSessions, passwordHistory, twoFactorAuth,
   type Company, type InsertCompany,
@@ -19,6 +19,8 @@ import {
   type Customer, type InsertCustomer,
   type EmailSettings, type InsertEmailSettings,
   type SendgridTemplate, type InsertSendgridTemplate,
+  type WhatsappSettings, type InsertWhatsappSettings,
+  type WhatsappTemplate, type InsertWhatsappTemplate,
   type AiSettings, type InsertAiSettings,
   type AiChatHistory, type InsertAiChatHistory,
   type AiDocumentJob, type InsertAiDocumentJob,
@@ -221,6 +223,20 @@ export interface IStorage {
   createAiDocumentJob(job: InsertAiDocumentJob): Promise<AiDocumentJob>;
   updateAiDocumentJob(id: string, job: Partial<AiDocumentJob>): Promise<AiDocumentJob>;
   deleteAiDocumentJob(id: string): Promise<void>;
+
+  // WhatsApp Settings
+  getWhatsappSettings(): Promise<WhatsappSettings[]>;
+  createWhatsappSettings(settings: InsertWhatsappSettings): Promise<WhatsappSettings>;
+  updateWhatsappSettings(id: string, settings: Partial<InsertWhatsappSettings>): Promise<WhatsappSettings>;
+  deleteWhatsappSettings(id: string): Promise<void>;
+
+  // WhatsApp Templates
+  getWhatsappTemplates(): Promise<WhatsappTemplate[]>;
+  getWhatsappTemplate(id: string): Promise<WhatsappTemplate | undefined>;
+  getWhatsappTemplateByName(name: string): Promise<WhatsappTemplate | undefined>;
+  createWhatsappTemplate(template: InsertWhatsappTemplate): Promise<WhatsappTemplate>;
+  updateWhatsappTemplate(id: string, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate>;
+  deleteWhatsappTemplate(id: string): Promise<void>;
 
   // Session store per autenticazione
   sessionStore: session.Store;
@@ -2406,34 +2422,142 @@ async getMovements(filters: {
   }
 
   // WhatsApp Settings methods
-  async getWhatsappSettings(): Promise<WhatsappSettings | null> {
-    const result = await db.select().from(whatsappSettings).limit(1);
-    return result[0] || null;
+  async getWhatsappSettings(): Promise<WhatsappSettings[]> {
+    try {
+      return await db.select().from(whatsappSettings).orderBy(desc(whatsappSettings.createdAt));
+    } catch (error) {
+      console.error('Error fetching WhatsApp settings:', error);
+      throw new Error('Failed to fetch WhatsApp settings');
+    }
   }
 
-  async saveWhatsappSettings(data: InsertWhatsappSettings): Promise<WhatsappSettings> {
-    const existing = await this.getWhatsappSettings();
-    
-    if (existing) {
+  async createWhatsappSettings(settings: InsertWhatsappSettings): Promise<WhatsappSettings> {
+    try {
+      const result = await db.insert(whatsappSettings).values(settings).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating WhatsApp settings:', error);
+      throw new Error('Failed to create WhatsApp settings');
+    }
+  }
+
+  async updateWhatsappSettings(id: string, settings: Partial<InsertWhatsappSettings>): Promise<WhatsappSettings> {
+    try {
       const result = await db
         .update(whatsappSettings)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(whatsappSettings.id, existing.id))
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(whatsappSettings.id, id))
         .returning();
+      
+      if (result.length === 0) {
+        throw new Error('WhatsApp settings not found');
+      }
+      
       return result[0];
+    } catch (error) {
+      console.error('Error updating WhatsApp settings:', error);
+      throw new Error('Failed to update WhatsApp settings');
+    }
+  }
+
+  async deleteWhatsappSettings(id: string): Promise<void> {
+    try {
+      await db.delete(whatsappSettings).where(eq(whatsappSettings.id, id));
+    } catch (error) {
+      console.error('Error deleting WhatsApp settings:', error);
+      throw new Error('Failed to delete WhatsApp settings');
+    }
+  }
+
+  // WhatsApp Templates methods
+  async getWhatsappTemplates(): Promise<WhatsappTemplate[]> {
+    try {
+      return await db.select().from(whatsappTemplates).orderBy(desc(whatsappTemplates.createdAt));
+    } catch (error) {
+      console.error('Error fetching WhatsApp templates:', error);
+      throw new Error('Failed to fetch WhatsApp templates');
+    }
+  }
+
+  async getWhatsappTemplate(id: string): Promise<WhatsappTemplate | undefined> {
+    try {
+      const result = await db.select().from(whatsappTemplates).where(eq(whatsappTemplates.id, id));
+      return result[0] || undefined;
+    } catch (error) {
+      console.error('Error fetching WhatsApp template:', error);
+      throw new Error('Failed to fetch WhatsApp template');
+    }
+  }
+
+  async getWhatsappTemplateByName(name: string): Promise<WhatsappTemplate | undefined> {
+    try {
+      const result = await db.select().from(whatsappTemplates).where(eq(whatsappTemplates.name, name));
+      return result[0] || undefined;
+    } catch (error) {
+      console.error('Error fetching WhatsApp template by name:', error);
+      throw new Error('Failed to fetch WhatsApp template by name');
+    }
+  }
+
+  async createWhatsappTemplate(template: InsertWhatsappTemplate): Promise<WhatsappTemplate> {
+    try {
+      const result = await db.insert(whatsappTemplates).values(template).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating WhatsApp template:', error);
+      throw new Error('Failed to create WhatsApp template');
+    }
+  }
+
+  async updateWhatsappTemplate(id: string, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate> {
+    try {
+      const result = await db
+        .update(whatsappTemplates)
+        .set({ ...template, updatedAt: new Date() })
+        .where(eq(whatsappTemplates.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error('WhatsApp template not found');
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error updating WhatsApp template:', error);
+      throw new Error('Failed to update WhatsApp template');
+    }
+  }
+
+  async deleteWhatsappTemplate(id: string): Promise<void> {
+    try {
+      await db.delete(whatsappTemplates).where(eq(whatsappTemplates.id, id));
+    } catch (error) {
+      console.error('Error deleting WhatsApp template:', error);
+      throw new Error('Failed to delete WhatsApp template');
+    }
+  }
+
+  // Legacy compatibility methods
+  async saveWhatsappSettings(data: InsertWhatsappSettings): Promise<WhatsappSettings> {
+    // Use modern unified method
+    const settingsList = await this.getWhatsappSettings();
+    
+    if (settingsList.length > 0) {
+      return await this.updateWhatsappSettings(settingsList[0].id, data);
     } else {
-      const result = await db.insert(whatsappSettings).values(data).returning();
-      return result[0];
+      return await this.createWhatsappSettings(data);
     }
   }
 
   async testWhatsappConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      const settings = await this.getWhatsappSettings();
+      const settingsList = await this.getWhatsappSettings();
       
-      if (!settings) {
+      if (settingsList.length === 0) {
         return { success: false, message: "Configurazione WhatsApp non trovata" };
       }
+
+      const settings = settingsList[0];
 
       if (!settings.isActive) {
         return { success: false, message: "Configurazione WhatsApp disabilitata" };
@@ -2444,10 +2568,10 @@ async getMovements(filters: {
           return { success: false, message: "Credenziali Twilio mancanti" };
         }
         
-        await db
-          .update(whatsappSettings)
-          .set({ lastTestAt: new Date(), isApiConnected: true })
-          .where(eq(whatsappSettings.id, settings.id));
+        await this.updateWhatsappSettings(settings.id, {
+          lastTestAt: new Date(),
+          isApiConnected: true
+        });
         
         return { success: true, message: "Connessione Twilio WhatsApp verificata con successo" };
       } else if (settings.provider === 'linkmobility') {
@@ -2455,10 +2579,10 @@ async getMovements(filters: {
           return { success: false, message: "API Key LinkMobility mancante" };
         }
         
-        await db
-          .update(whatsappSettings)
-          .set({ lastTestAt: new Date(), isApiConnected: true })
-          .where(eq(whatsappSettings.id, settings.id));
+        await this.updateWhatsappSettings(settings.id, {
+          lastTestAt: new Date(),
+          isApiConnected: true
+        });
         
         return { success: true, message: "Connessione LinkMobility WhatsApp verificata" };
       }

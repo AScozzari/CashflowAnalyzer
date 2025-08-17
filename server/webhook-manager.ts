@@ -63,10 +63,10 @@ export class WhatsAppWebhookHandler {
     this.aiHandler = new AIWebhookHandler(storage);
   }
   
-  // Handle Twilio WhatsApp webhook
+  // Handle Twilio WhatsApp webhook (2024 API Compatible)
   static async handleTwilioWebhook(req: Request, res: Response): Promise<void> {
     try {
-      const { Body, From, To, MessageSid, SmsStatus } = req.body;
+      const { Body, From, To, MessageSid, SmsStatus, AccountSid, MessagingServiceSid } = req.body;
       
       // Validate signature (in production)
       const twilioSignature = req.headers['x-twilio-signature'] as string;
