@@ -63,6 +63,79 @@ EasyCashFlows is a comprehensive financial management system for Italian SMEs, o
 
 Preferred communication style: Simple, everyday language.
 
+## Strategic Planning Sessions (August 2025)
+
+### Multi-Tenant Analysis
+**Feasibility**: Possible but highly complex (70-80% codebase impact)
+- Database multi-tenant with tenant_id approach most viable
+- Requires complete rework of authentication, database layer, API routes
+- **Recommendation**: Complete core features first, consider separate instances for large clients instead
+- **User Decision**: Deferred pending business need validation
+
+### Modular System Architecture 
+**Feasibility**: High - much more practical than multi-tenant (30-40% impact)
+- Feature flags + conditional rendering approach
+- Super admin panel for module activation/deactivation
+- **Identified Modules**: Core Base, Financial Management, Communications, Banking Integration, AI Assistant, Document Processing, Backup System, Advanced Analytics
+- **Business Benefits**: Tiered pricing, customization, performance optimization
+- **Implementation**: Gradual rollout starting with feature flags
+- **User Interest**: High priority for future development
+
+### Modulo Cassa (POS/Fiscal Module) - Strategic Business Opportunity
+**Market Timing**: Perfect - Italy transitioning from physical fiscal registers to cloud APIs (2025-2026)
+**API Solutions Identified**: 
+- Fiskaly SIGN IT (European leader, RESTful APIs)
+- Openapi Electronic Receipt (Italy-focused, €0.009/receipt)
+
+**Complete Ecosystem Requirements**:
+1. **Product Management**
+   - EAN, SKU, IMEI codes
+   - Variants, categories, subcategories (tipologie)
+   - Brand, supplier linkage
+   - Images, descriptions
+   - IVA nature codes
+   
+2. **Advanced Product Schema**
+   - Unit of measure, weight/dimensions
+   - MSRP, minimum margins
+   - Product status, customs codes
+   - Country of origin, certifications
+   - Expiration dates, lot numbers
+   - Stock thresholds, lead times
+   - Warehouse locations
+   
+3. **Price List Management**
+   - Base price lists, supplier costs
+   - Promotional pricing, custom client rates
+   - Multi-currency support, temporal validity
+   
+4. **Intelligent Inventory**
+   - Real-time stock levels
+   - Automatic movements from sales
+   - Multi-location support
+   - Reorder alerts, lot/expiry tracking
+
+**Database Schema Extensions Required**:
+- products, product_variants
+- price_lists, price_list_items  
+- inventory_locations, inventory_movements
+- stock_levels
+
+**Integration with Existing Modules**:
+- Financial: Automatic accounting movements
+- Suppliers: Integrated reorder management
+- AI Assistant: Sales analytics, reorder suggestions
+- Communications: Stock alerts via WhatsApp
+- Banking: Automatic sales reconciliation
+
+**Development Phases**:
+1. Products + Basic price lists
+2. Simplified inventory management
+3. Fiscal API integration (Fiskaly/Openapi)
+4. Advanced analytics and AI insights
+
+**Business Assessment**: Highest ROI potential module for Italian SMEs - addresses complete commercial cycle from purchase to fiscal compliance.
+
 # System Architecture
 
 ## Frontend Architecture
