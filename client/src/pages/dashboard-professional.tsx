@@ -568,55 +568,7 @@ function ProfessionalRecentMovements({ movements, isLoading }: { movements: Move
               );
             })}
             
-            {/* Report movimenti con paginazione */}
-            <div className="pt-4 border-t border-border/50">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-medium text-sm">Report Movimenti (primi 10)</h4>
-                <Button variant="outline" size="sm">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filtra
-                </Button>
-              </div>
-              
-              {/* Lista paginata movimenti (primi 10) */}
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {movements.slice(0, 10).map((movement) => (
-                  <div key={`report-${movement.id}`} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${movement.type === 'income' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      <div>
-                        <p className="font-medium text-sm truncate max-w-32">
-                          {movement.reason?.name || 'Senza causale'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(movement.flowDate || movement.insertDate), 'dd/MM', { locale: it })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`font-medium text-sm ${movement.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                        {movement.type === 'income' ? '+' : '-'}{new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(Math.abs(parseFloat(movement.amount)))}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Paginazione semplice */}
-              <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/30">
-                <p className="text-xs text-muted-foreground">
-                  Mostra 10 di {movements.length} movimenti del mese
-                </p>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setLocation('/movements')}
-                >
-                  Vedi tutti su Movimenti
-                  <ArrowUpRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </div>
+
           </div>
         )}
       </CardContent>
