@@ -21,6 +21,7 @@ import { setupAuth } from "./auth";
 import { loginLimiter, apiLimiter, securityLogger, securityHeaders, sanitizeInput, sessionSecurity } from "./security-middleware";
 import { WebhookRouter } from './webhook-manager';
 import { setupWhatsAppRoutes } from './routes/whatsapp';
+import { setupTelegramRoutes } from './routes/telegram';
 import multer from 'multer';
 import type { Request } from 'express';
 import path from 'path';
@@ -3738,6 +3739,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
 
   // Setup modern WhatsApp Business API routes (Twilio 2024 & LinkMobility)
   setupWhatsAppRoutes(app);
+  setupTelegramRoutes(app);
 
   // AI Routes for Insights and Anomaly Detection  
   const aiInsightsRoutes = await import("./routes/ai-insights");

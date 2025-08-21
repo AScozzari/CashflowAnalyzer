@@ -896,6 +896,169 @@ export type InsertWhatsappTemplate = z.infer<typeof insertWhatsappTemplateSchema
 export type WhatsappSettings = typeof whatsappSettings.$inferSelect;
 export type WhatsappTemplate = typeof whatsappTemplates.$inferSelect;
 
+// === TELEGRAM INTEGRATION ===
+
+// Telegram Bot Settings
+export const telegramSettings = pgTable("telegram_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  botToken: text("bot_token").notNull(),
+  botUsername: text("bot_username").notNull(), // @username del bot
+  webhookUrl: text("webhook_url"),
+  webhookSecret: text("webhook_secret"),
+  allowedUpdates: jsonb("allowed_updates").default(['message', 'callback_query']), // tipi di update consentiti
+  // Bot Configuration
+  botDescription: text("bot_description"),
+  botShortDescription: text("bot_short_description"),
+  // Security & Permissions
+  allowedChatTypes: jsonb("allowed_chat_types").default(['private', 'group']), // 'private', 'group', 'supergroup', 'channel'
+  adminChatIds: jsonb("admin_chat_ids").default([]), // chat ID degli admin
+  maxMessageLength: integer("max_message_length").default(4096),
+  rateLimitPerMinute: integer("rate_limit_per_minute").default(30),
+  // Business Hours
+  enableBusinessHours: boolean("enable_business_hours").default(false),
+  businessHoursStart: text("business_hours_start").default('09:00'),
+  businessHoursEnd: text("business_hours_end").default('18:00'),
+  businessDays: jsonb("business_days").default(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']),
+  autoReplyOutsideHours: boolean("auto_reply_outside_hours").default(true),
+  outOfHoursMessage: text("out_of_hours_message"),
+  // Auto Reply & AI
+  enableAutoReply: boolean("enable_auto_reply").default(false),
+  enableAiResponses: boolean("enable_ai_responses").default(false),
+  aiModel: text("ai_model").default('gpt-4o'),
+  aiSystemPrompt: text("ai_system_prompt"),
+  // Status
+  isActive: boolean("is_active").notNull().default(false),
+  lastTested: timestamp("last_tested"),
+  lastMessageSent: timestamp("last_message_sent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Telegram Templates/Commands
+export const telegramTemplates = pgTable("telegram_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  type: text("type").notNull().default('message'), // 'message', 'command', 'inline_keyboard'
+  command: text("command"), // Solo per type='command' es: '/start'
+  category: text("category").notNull(), // 'welcome', 'support', 'info', 'marketing'
+  language: text("language").default('it'),
+  
+  // Template Content
+  content: text("content").notNull(),
+  parseMode: text("parse_mode").default('HTML'), // 'HTML', 'Markdown', 'MarkdownV2'
+  disableWebPagePreview: boolean("disable_web_page_preview").default(false),
+  
+  // Inline Keyboard (solo per messaggi interattivi)
+  inlineKeyboard: jsonb("inline_keyboard"), // Array di righe di bottoni
+  
+  // Variables & Personalization
+  variables: jsonb("variables").default([]), // Array di variabili tipo {{nome}}
+  personalizationEnabled: boolean("personalization_enabled").default(false),
+  
+  // Metadata
+  tags: text("tags").array(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  usageCount: integer("usage_count").default(0),
+  lastUsed: timestamp("last_used"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Telegram Chat History (per tracciare conversazioni)
+export const telegramChats = pgTable("telegram_chats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  telegramChatId: text("telegram_chat_id").notNull().unique(),
+  chatType: text("chat_type").notNull(), // 'private', 'group', 'supergroup', 'channel'
+  title: text("title"), // Nome del gruppo/canale
+  username: text("username"), // Username del chat (se esiste)
+  firstName: text("first_name"), // Solo per private chats
+  lastName: text("last_name"), // Solo per private chats
+  
+  // User Information
+  phoneNumber: text("phone_number"),
+  languageCode: text("language_code"),
+  
+  // Chat Settings
+  isBlocked: boolean("is_blocked").default(false),
+  isPremium: boolean("is_premium").default(false),
+  isBot: boolean("is_bot").default(false),
+  
+  // Conversation Tracking
+  lastMessageId: integer("last_message_id"),
+  lastMessageAt: timestamp("last_message_at"),
+  messageCount: integer("message_count").default(0),
+  
+  // Business Integration
+  linkedCustomerId: varchar("linked_customer_id").references(() => customers.id),
+  linkedResourceId: varchar("linked_resource_id").references(() => resources.id),
+  
+  // Metadata
+  notes: text("notes"),
+  tags: jsonb("tags").default([]),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Telegram Schema Validazioni
+export const insertTelegramSettingsSchema = createInsertSchema(telegramSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastTested: true,
+  lastMessageSent: true
+}).extend({
+  botToken: z.string().regex(/^\d+:[A-Za-z0-9_-]{35}$/, "Token bot Telegram non valido"),
+  botUsername: z.string().regex(/^@[A-Za-z0-9_]{5,32}$/, "Username bot deve iniziare con @ e essere 5-32 caratteri"),
+  webhookUrl: z.string().url("URL webhook non valido").optional().or(z.literal("")),
+  maxMessageLength: z.number().min(1).max(4096).default(4096),
+  rateLimitPerMinute: z.number().min(1).max(300).default(30),
+  businessHoursStart: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato ora non valido (HH:MM)"),
+  businessHoursEnd: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato ora non valido (HH:MM)"),
+  aiModel: z.enum(['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo']).default('gpt-4o')
+});
+
+export const insertTelegramTemplateSchema = createInsertSchema(telegramTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  usageCount: true,
+  lastUsed: true
+}).extend({
+  name: z.string().min(1, "Nome richiesto").max(100, "Massimo 100 caratteri"),
+  type: z.enum(['message', 'command', 'inline_keyboard']).default('message'),
+  command: z.string().regex(/^\/[a-z_]+$/, "Comando deve iniziare con / e contenere solo lettere minuscole e _").optional(),
+  category: z.enum(['welcome', 'support', 'info', 'marketing', 'automation']),
+  content: z.string().min(1, "Contenuto richiesto").max(4096, "Massimo 4096 caratteri"),
+  parseMode: z.enum(['HTML', 'Markdown', 'MarkdownV2']).default('HTML')
+});
+
+export const insertTelegramChatSchema = createInsertSchema(telegramChats).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  messageCount: true,
+  lastMessageAt: true
+}).extend({
+  telegramChatId: z.string().min(1, "Chat ID richiesto"),
+  chatType: z.enum(['private', 'group', 'supergroup', 'channel']),
+  firstName: z.string().max(64, "Massimo 64 caratteri").optional(),
+  lastName: z.string().max(64, "Massimo 64 caratteri").optional(),
+  phoneNumber: z.string().regex(/^\+[1-9]\d{1,14}$/, "Formato telefono non valido").optional()
+});
+
+// Telegram Types
+export type TelegramSettings = typeof telegramSettings.$inferSelect;
+export type InsertTelegramSettings = z.infer<typeof insertTelegramSettingsSchema>;
+
+export type TelegramTemplate = typeof telegramTemplates.$inferSelect;
+export type InsertTelegramTemplate = z.infer<typeof insertTelegramTemplateSchema>;
+
+export type TelegramChat = typeof telegramChats.$inferSelect;
+export type InsertTelegramChat = z.infer<typeof insertTelegramChatSchema>;
+
 export const passwordResetSchema = z.object({
   email: z.string().email("Email non valida"),
 });

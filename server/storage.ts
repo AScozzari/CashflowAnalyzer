@@ -1,5 +1,6 @@
 import {
   companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens, sendgridTemplates, whatsappSettings, whatsappTemplates,
+  telegramSettings, telegramTemplates, telegramChats,
   smsSettings, smsTemplates, smsMessages, smsBlacklist, smsStatistics,
   aiSettings, aiChatHistory, aiDocumentJobs,
   securitySettings, loginAuditLog, activeSessions, passwordHistory, twoFactorAuth,
@@ -22,6 +23,9 @@ import {
   type SendgridTemplate, type InsertSendgridTemplate,
   type WhatsappSettings, type InsertWhatsappSettings,
   type WhatsappTemplate, type InsertWhatsappTemplate,
+  type TelegramSettings, type InsertTelegramSettings,
+  type TelegramTemplate, type InsertTelegramTemplate,
+  type TelegramChat, type InsertTelegramChat,
   type AiSettings, type InsertAiSettings,
   type AiChatHistory, type InsertAiChatHistory,
   type AiDocumentJob, type InsertAiDocumentJob,
@@ -244,6 +248,26 @@ export interface IStorage {
   updateWhatsappTemplate(id: string, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate | undefined>;
   updateWhatsappTemplateStatus(id: string, status: string): Promise<WhatsappTemplate | undefined>;
   deleteWhatsappTemplate(id: string): Promise<boolean>;
+
+  // Telegram Settings
+  getTelegramSettings(): Promise<TelegramSettings[]>;
+  createTelegramSettings(settings: InsertTelegramSettings): Promise<TelegramSettings>;
+  updateTelegramSettings(id: string, settings: Partial<InsertTelegramSettings>): Promise<TelegramSettings>;
+  deleteTelegramSettings(id: string): Promise<void>;
+
+  // Telegram Templates  
+  getTelegramTemplates(): Promise<TelegramTemplate[]>;
+  getTelegramTemplate(id: string): Promise<TelegramTemplate | undefined>;
+  createTelegramTemplate(template: InsertTelegramTemplate): Promise<TelegramTemplate>;
+  updateTelegramTemplate(id: string, template: Partial<InsertTelegramTemplate>): Promise<TelegramTemplate>;
+  deleteTelegramTemplate(id: string): Promise<void>;
+
+  // Telegram Chats
+  getTelegramChats(): Promise<TelegramChat[]>;
+  getTelegramChat(id: string): Promise<TelegramChat | undefined>;
+  createTelegramChat(chat: InsertTelegramChat): Promise<TelegramChat>;
+  updateTelegramChat(id: string, chat: Partial<InsertTelegramChat>): Promise<TelegramChat>;
+  deleteTelegramChat(id: string): Promise<void>;
 
   // SMS Settings
   getSmsSettings(): Promise<SmsSettings | undefined>;
@@ -2586,6 +2610,170 @@ async getMovements(filters: {
     } catch (error) {
       console.error('Error deleting WhatsApp template:', error);
       throw new Error('Failed to delete WhatsApp template');
+    }
+  }
+
+  // Telegram Settings methods
+  async getTelegramSettings(): Promise<TelegramSettings[]> {
+    try {
+      return await db.select().from(telegramSettings).orderBy(desc(telegramSettings.createdAt));
+    } catch (error) {
+      console.error('Error fetching Telegram settings:', error);
+      throw new Error('Failed to fetch Telegram settings');
+    }
+  }
+
+  async createTelegramSettings(settings: InsertTelegramSettings): Promise<TelegramSettings> {
+    try {
+      const result = await db.insert(telegramSettings).values(settings).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating Telegram settings:', error);
+      throw new Error('Failed to create Telegram settings');
+    }
+  }
+
+  async updateTelegramSettings(id: string, settings: Partial<InsertTelegramSettings>): Promise<TelegramSettings> {
+    try {
+      const result = await db
+        .update(telegramSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(telegramSettings.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error('Telegram settings not found');
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error updating Telegram settings:', error);
+      throw new Error('Failed to update Telegram settings');
+    }
+  }
+
+  async deleteTelegramSettings(id: string): Promise<void> {
+    try {
+      await db.delete(telegramSettings).where(eq(telegramSettings.id, id));
+    } catch (error) {
+      console.error('Error deleting Telegram settings:', error);
+      throw new Error('Failed to delete Telegram settings');
+    }
+  }
+
+  // Telegram Templates methods
+  async getTelegramTemplates(): Promise<TelegramTemplate[]> {
+    try {
+      return await db.select().from(telegramTemplates).orderBy(desc(telegramTemplates.createdAt));
+    } catch (error) {
+      console.error('Error fetching Telegram templates:', error);
+      throw new Error('Failed to fetch Telegram templates');
+    }
+  }
+
+  async getTelegramTemplate(id: string): Promise<TelegramTemplate | undefined> {
+    try {
+      const result = await db.select().from(telegramTemplates).where(eq(telegramTemplates.id, id));
+      return result[0] || undefined;
+    } catch (error) {
+      console.error('Error fetching Telegram template:', error);
+      throw new Error('Failed to fetch Telegram template');
+    }
+  }
+
+  async createTelegramTemplate(template: InsertTelegramTemplate): Promise<TelegramTemplate> {
+    try {
+      const result = await db.insert(telegramTemplates).values(template).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating Telegram template:', error);
+      throw new Error('Failed to create Telegram template');
+    }
+  }
+
+  async updateTelegramTemplate(id: string, template: Partial<InsertTelegramTemplate>): Promise<TelegramTemplate> {
+    try {
+      const result = await db
+        .update(telegramTemplates)
+        .set({ ...template, updatedAt: new Date() })
+        .where(eq(telegramTemplates.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error('Telegram template not found');
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error updating Telegram template:', error);
+      throw new Error('Failed to update Telegram template');
+    }
+  }
+
+  async deleteTelegramTemplate(id: string): Promise<void> {
+    try {
+      await db.delete(telegramTemplates).where(eq(telegramTemplates.id, id));
+    } catch (error) {
+      console.error('Error deleting Telegram template:', error);
+      throw new Error('Failed to delete Telegram template');
+    }
+  }
+
+  // Telegram Chats methods
+  async getTelegramChats(): Promise<TelegramChat[]> {
+    try {
+      return await db.select().from(telegramChats).orderBy(desc(telegramChats.lastMessageAt));
+    } catch (error) {
+      console.error('Error fetching Telegram chats:', error);
+      throw new Error('Failed to fetch Telegram chats');
+    }
+  }
+
+  async getTelegramChat(id: string): Promise<TelegramChat | undefined> {
+    try {
+      const result = await db.select().from(telegramChats).where(eq(telegramChats.id, id));
+      return result[0] || undefined;
+    } catch (error) {
+      console.error('Error fetching Telegram chat:', error);
+      throw new Error('Failed to fetch Telegram chat');
+    }
+  }
+
+  async createTelegramChat(chat: InsertTelegramChat): Promise<TelegramChat> {
+    try {
+      const result = await db.insert(telegramChats).values(chat).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating Telegram chat:', error);
+      throw new Error('Failed to create Telegram chat');
+    }
+  }
+
+  async updateTelegramChat(id: string, chat: Partial<InsertTelegramChat>): Promise<TelegramChat> {
+    try {
+      const result = await db
+        .update(telegramChats)
+        .set({ ...chat, updatedAt: new Date() })
+        .where(eq(telegramChats.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error('Telegram chat not found');
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error updating Telegram chat:', error);
+      throw new Error('Failed to update Telegram chat');
+    }
+  }
+
+  async deleteTelegramChat(id: string): Promise<void> {
+    try {
+      await db.delete(telegramChats).where(eq(telegramChats.id, id));
+    } catch (error) {
+      console.error('Error deleting Telegram chat:', error);
+      throw new Error('Failed to delete Telegram chat');
     }
   }
 

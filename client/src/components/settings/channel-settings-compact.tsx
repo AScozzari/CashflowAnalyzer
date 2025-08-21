@@ -6,6 +6,7 @@ import { MessageSquare, Mail, Phone, Send, CheckCircle, X } from 'lucide-react';
 import { WhatsAppSettingsWithTabs } from './whatsapp-settings-with-tabs';
 import { SendGridConfigComplete } from './sendgrid-config-complete';
 import { SmsSettingsSkebby } from './sms-settings-skebby';
+import { TelegramSettings } from './telegram-settings';
 
 interface ChannelConfig {
   id: string;
@@ -56,12 +57,12 @@ export function ChannelSettingsCompact() {
     {
       id: 'telegram',
       name: 'Telegram',
-      description: 'Bot API gratuita',
+      description: 'Bot API implementato',
       icon: <Send className="w-6 h-6 text-sky-600" />,
-      status: 'coming_soon',
-      statusText: 'Prossimamente',
-      details: 'Bot Telegram per notifiche istantanee e interazioni',
-      features: ['Bot API gratuita', 'Messaggi istantanei', 'Comandi interattivi', 'File sharing']
+      status: 'implemented',
+      statusText: 'Implementato',
+      details: 'Sistema completo Telegram Bot con webhook e AI integrato',
+      features: ['Bot API gratuita', 'Messaggi istantanei', 'Comandi interattivi', 'AI Assistant', 'Webhook system']
     }
   ];
 
@@ -92,6 +93,7 @@ export function ChannelSettingsCompact() {
             {openModal === 'whatsapp' && <WhatsAppSettingsWithTabs />}
             {openModal === 'email' && <SendGridConfigComplete />}
             {openModal === 'sms' && <SmsSettingsSkebby />}
+            {openModal === 'telegram' && <TelegramSettings />}
           </CardContent>
         </Card>
       </div>
