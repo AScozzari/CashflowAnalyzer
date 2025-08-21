@@ -18,6 +18,7 @@ import AiChatPage from "@/pages/ai-chat";
 import AiToolsNewPage from "@/pages/ai-tools-new";
 import Communications from "@/pages/communications";
 import EntityExplorer from "@/pages/entity-explorer";
+import Reports from "@/pages/reports";
 import AuthPage from "@/pages/auth-page";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
@@ -174,6 +175,12 @@ function Router() {
       <ProtectedRoute path="/entity-explorer" component={() => (
         <AppLayout>
           <EntityExplorer />
+        </AppLayout>
+      )} />
+      
+      <ProtectedRoute path="/reports" component={() => (
+        <AppLayout>
+          <Reports />
         </AppLayout>
       )} />
       

@@ -971,11 +971,14 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
-      // Document filters
+      // Document filters  
       if (filters.hasDocument !== undefined) {
         if (filters.hasDocument) {
           conditions.push(isNotNull(movements.documentPath));
         } else {
+          conditions.push(isNull(movements.documentPath));
+        }
+      }
           conditions.push(isNull(movements.documentPath));
         }
       }

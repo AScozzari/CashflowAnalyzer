@@ -723,6 +723,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.query.customerId) filters.customerId = req.query.customerId as string;
       if (req.query.supplierId) filters.supplierId = req.query.supplierId as string;
       
+      // Document filter for reports
+      if (req.query.hasDocument === 'true') filters.hasDocument = true;
+      
       // VAT and documents
       if (req.query.vatType) filters.vatType = req.query.vatType as string;
       if (req.query.hasVat !== undefined) filters.hasVat = req.query.hasVat === 'true';
@@ -1012,12 +1015,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  // Dashboard endpoint - movimenti recenti (solo 5 per sidebar)
+  // Dashboard endpoint - TUTTI i movimenti del mese corrente per grafici
   app.get("/api/movements/recent", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const user = req.user;
       
-      const filters: any = {};
+      // Calcola il primo e ultimo giorno del mese corrente
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      
+      const filters: any = {
+        startDate: startOfMonth.toISOString().split('T')[0],
+        endDate: endOfMonth.toISOString().split('T')[0]
+      };
+      
       // User con role 'user' vedono solo i loro movimenti
       if (user.role === 'user' && user.resourceId) {
         filters.resourceId = user.resourceId;
@@ -1025,12 +1037,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const movements = await dbStorage.getMovements(filters);
       
-      // Ordina per data più recente e prendi solo i primi 5
-      const recentMovements = movements
-        .sort((a, b) => new Date(b.flowDate).getTime() - new Date(a.flowDate).getTime())
-        .slice(0, 5);
+      // Ordina per data più recente - TUTTI i movimenti del mese corrente
+      const currentMonthMovements = movements
+        .sort((a, b) => new Date(b.flowDate).getTime() - new Date(a.flowDate).getTime());
       
-      res.json(recentMovements);
+      console.log(`[DASHBOARD] Found ${currentMonthMovements.length} movements for current month`);
+      
+      res.json(currentMonthMovements);
     } catch (error) {
       console.error('Error fetching recent movements:', error);
       res.status(500).json({ message: "Failed to fetch recent movements" });

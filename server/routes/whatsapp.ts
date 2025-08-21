@@ -319,8 +319,8 @@ export function setupWhatsAppRoutes(app: Express): void {
         ...suppliers.map((s: any) => ({ ...s, type: 'supplier' }))
       ];
 
-      // Filter contacts that have mobile/phone numbers and map to WhatsApp chat format
-      const whatsappChats = allContacts
+      // Add demo chats if no real chats exist
+      let whatsappChats = allContacts
         .filter(contact => contact.mobile || contact.phone)
         .slice(0, 20) // Limit to 20 most recent chats for performance
         .map(contact => ({
@@ -335,6 +335,36 @@ export function setupWhatsAppRoutes(app: Express): void {
           type: contact.type,
           company: contact.company || null
         }));
+
+      // If no WhatsApp chats, add demo data for testing
+      if (whatsappChats.length === 0) {
+        whatsappChats = [
+          {
+            id: 'demo-1',
+            name: 'Demo Cliente',
+            phone: '+39 123 456 7890',
+            avatar: null,
+            lastMessage: 'Chat demo per testing',
+            lastSeen: 'Online',
+            unreadCount: 2,
+            online: true,
+            type: 'customer',
+            company: 'Demo SRL'
+          },
+          {
+            id: 'demo-2',
+            name: 'Demo Fornitore',
+            phone: '+39 098 765 4321',
+            avatar: null,
+            lastMessage: 'Fornitore demo',
+            lastSeen: '5 min fa',
+            unreadCount: 0,
+            online: false,
+            type: 'supplier',
+            company: 'Demo Suppliers SpA'
+          }
+        ];
+      }
 
       res.json(whatsappChats);
     } catch (error) {
