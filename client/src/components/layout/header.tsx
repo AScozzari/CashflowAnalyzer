@@ -89,20 +89,6 @@ export default function Header({ title, subtitle, action }: HeaderProps) {
           </Link>
           
           <ThemeToggle />
-          
-          {/* AI Assistant Button */}
-          <Link href="/ai-chat">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="relative hover:bg-primary/10 hover:text-primary transition-colors"
-              title="AI Assistant"
-              data-testid="button-ai-assistant"
-            >
-              <Bot className="h-5 w-5" />
-            </Button>
-          </Link>
-          
           <NotificationsBell />
           
           {user && (
