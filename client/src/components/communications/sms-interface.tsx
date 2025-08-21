@@ -19,6 +19,7 @@ import {
   Users,
   FileText
 } from "lucide-react";
+import { ContactSearchEnhanced } from "./contact-search-enhanced";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SMSMessage {
@@ -202,15 +203,30 @@ export function SMSInterface() {
           </Button>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cerca contatti..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
-          />
-        </div>
+        {/* Contact Search */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Cerca Contatti</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <ContactSearchEnhanced
+              onContactSelect={(contact: any) => {
+                const smsContact: SMSContact = {
+                  id: contact.id,
+                  name: contact.name,
+                  phone: contact.phone || '',
+                  lastMessage: 'Nessun SMS precedente',
+                  lastSeen: 'Mai',
+                  messageCount: 0
+                };
+                setSelectedContact(smsContact);
+                setComposing(false);
+              }}
+              placeholder="Cerca contatti con numero di telefono..."
+              filterByType={['resource', 'customer', 'supplier']}
+            />
+          </CardContent>
+        </Card>
 
         <Card className="h-[680px] overflow-hidden">
           <CardHeader className="pb-3">

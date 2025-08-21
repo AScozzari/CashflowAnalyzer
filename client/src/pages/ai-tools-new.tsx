@@ -158,6 +158,32 @@ export default function AiToolsNewPage() {
           </div>
         </div>
 
+        {/* Status Info */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-blue-600" />
+            Stato AI Tools - Dettagli Completi
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span><strong>Analytics AI</strong>: VERI e FUNZIONANTI (GPT-4o)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-blue-500" />
+              <span><strong>Chat Assistant</strong>: Prossimamente (non implementato)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span><strong>Document AI</strong>: ATTIVO (parsing FatturaPA)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-orange-500" />
+              <span><strong>Tax AI</strong>: In sviluppo (demo)</span>
+            </div>
+          </div>
+        </div>
+
         {/* AI Features Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {aiFeatures.map((feature) => (
