@@ -74,15 +74,16 @@ export function ContactSearchEnhanced({
   const allContacts: Contact[] = useMemo(() => {
     const contacts: Contact[] = [];
 
-    // Add resources (only those with mobile numbers for WhatsApp)
+    // Add resources (use mobile or phone number)
     if (!filterByType || filterByType.includes('resource')) {
       resources.forEach(resource => {
-        if (resource.mobile) { // Only include if mobile number exists
+        const phoneNumber = resource.mobile || resource.phone; // Try mobile first, then phone
+        if (phoneNumber) { // Only include if any phone number exists
           contacts.push({
             id: `resource-${resource.id}`,
             name: `${resource.firstName} ${resource.lastName}`,
             type: 'resource',
-            phone: resource.mobile, // Use mobile for WhatsApp
+            phone: phoneNumber, // Use available phone number
             email: resource.email || undefined,
             status: resource.isActive ? 'active' : 'inactive',
             lastContact: resource.createdAt ? new Date(resource.createdAt).toISOString() : undefined
@@ -91,19 +92,20 @@ export function ContactSearchEnhanced({
       });
     }
 
-    // Add customers (only those with mobile numbers for WhatsApp)
+    // Add customers (use mobile or phone number)
     if (!filterByType || filterByType.includes('customer')) {
       customers.forEach(customer => {
         const name = customer.type === 'private' 
           ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
           : customer.name || '';
         
-        if (name && customer.mobile) { // Only include if mobile number exists
+        const phoneNumber = customer.mobile || customer.phone; // Try mobile first, then phone
+        if (name && phoneNumber) { // Only include if name and any phone number exists
           contacts.push({
             id: `customer-${customer.id}`,
             name: name,
             type: 'customer',
-            phone: customer.mobile, // Use mobile for WhatsApp
+            phone: phoneNumber, // Use available phone number
             email: customer.email || undefined,
             status: customer.isActive ? 'active' : 'inactive',
             tags: customer.type ? [customer.type] : undefined,
@@ -113,15 +115,16 @@ export function ContactSearchEnhanced({
       });
     }
 
-    // Add suppliers (only those with mobile numbers for WhatsApp)
+    // Add suppliers (use mobile or phone number)
     if (!filterByType || filterByType.includes('supplier')) {
       suppliers.forEach(supplier => {
-        if (supplier.mobile) { // Only include if mobile number exists
+        const phoneNumber = supplier.mobile || supplier.phone; // Try mobile first, then phone
+        if (phoneNumber) { // Only include if any phone number exists
           contacts.push({
             id: `supplier-${supplier.id}`,
             name: supplier.name,
             type: 'supplier',
-            phone: supplier.mobile, // Use mobile for WhatsApp
+            phone: phoneNumber, // Use available phone number
             email: supplier.email || undefined,
             status: supplier.isActive ? 'active' : 'inactive',
             lastContact: supplier.createdAt ? new Date(supplier.createdAt).toISOString() : undefined
