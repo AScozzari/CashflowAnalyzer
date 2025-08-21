@@ -1,10 +1,5 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-// Function to get storage (avoids circular dependency)
-async function getStorage() {
-  const storageModule = await import('./storage');
-  return storageModule.storage;
-}
 import { aiService } from "./ai-service";
 import { db } from "./db";
 import { eq, desc, sum, count, sql } from "drizzle-orm";
@@ -69,8 +64,8 @@ const handleAsyncErrors = (fn: Function) => (req: any, res: any, next: any) => {
 // Helper function to create notifications based on user roles
 async function createMovementNotifications(movementId: string, type: 'new_movement' | 'movement_updated', createdByUserId?: string) {
   try {
-    const users = await storage.getUsers();
-    const movement = await storage.getMovement(movementId);
+    const users = await storageAPI.getUsers();
+    const movement = await storageAPI.getMovement(movementId);
     
     if (!movement) return;
     
@@ -95,7 +90,7 @@ async function createMovementNotifications(movementId: string, type: 'new_moveme
       }
       
       if (shouldNotify) {
-        await storage.createNotification({
+        await storageAPI.createNotification({
           userId: user.id,
           movementId: movementId,
           type: type,
@@ -154,6 +149,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   const { requireAuth, requireRole } = setupAuth(app);
   
+  // Import storage after all other modules to avoid circular dependency
+  const storageModule = await import('./storage');
+  const storageAPI = storageModule.storage;
+
   // Debug middleware for API routes
   app.use('/api', (req, res, next) => {
     console.log(`API Request: ${req.method} ${req.path}`);
@@ -162,8 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Companies
   app.get("/api/companies", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const storage = await getStorage();
-      const companies = await storage.getCompanies();
+      const companies = await storageAPI.getCompanies();
       res.json(companies);
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -173,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/companies/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const company = await storage.getCompanyWithRelations(req.params.id);
+      const company = await storageAPI.getCompanyWithRelations(req.params.id);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
@@ -187,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/companies", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCompanySchema.parse(req.body);
-      const company = await storage.createCompany(validatedData);
+      const company = await storageAPI.createCompany(validatedData);
       res.status(201).json(company);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -204,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/companies/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCompanySchema.partial().parse(req.body);
-      const company = await storage.updateCompany(req.params.id, validatedData);
+      const company = await storageAPI.updateCompany(req.params.id, validatedData);
       res.json(company);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -220,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/companies/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.deleteCompany(req.params.id);
+      await storageAPI.deleteCompany(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting company:', error);
@@ -233,8 +231,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { companyId } = req.query;
       const cores = companyId 
-        ? await storage.getCoresByCompany(companyId as string)
-        : await storage.getCores();
+        ? await storageAPI.getCoresByCompany(companyId as string)
+        : await storageAPI.getCores();
       res.json(cores);
     } catch (error) {
       console.error('Error fetching cores:', error);
@@ -245,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cores", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCoreSchema.parse(req.body);
-      const core = await storage.createCore(validatedData);
+      const core = await storageAPI.createCore(validatedData);
       res.status(201).json(core);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -262,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/cores/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCoreSchema.partial().parse(req.body);
-      const core = await storage.updateCore(req.params.id, validatedData);
+      const core = await storageAPI.updateCore(req.params.id, validatedData);
       res.json(core);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -278,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/cores/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.deleteCore(req.params.id);
+      await storageAPI.deleteCore(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting core:', error);
@@ -291,8 +289,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { companyId } = req.query;
       const resources = companyId 
-        ? await storage.getResourcesByCompany(companyId as string)
-        : await storage.getResources();
+        ? await storageAPI.getResourcesByCompany(companyId as string)
+        : await storageAPI.getResources();
       res.json(resources);
     } catch (error) {
       console.error('Error fetching resources:', error);
@@ -303,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/resources", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertResourceSchema.parse(req.body);
-      const resource = await storage.createResource(validatedData);
+      const resource = await storageAPI.createResource(validatedData);
       res.status(201).json(resource);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -320,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/resources/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertResourceSchema.partial().parse(req.body);
-      const resource = await storage.updateResource(req.params.id, validatedData);
+      const resource = await storageAPI.updateResource(req.params.id, validatedData);
       res.json(resource);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -336,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/resources/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.deleteResource(req.params.id);
+      await storageAPI.deleteResource(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting resource:', error);
@@ -349,8 +347,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { companyId } = req.query;
       const ibans = companyId 
-        ? await storage.getIbansByCompany(companyId as string)
-        : await storage.getIbans();
+        ? await storageAPI.getIbansByCompany(companyId as string)
+        : await storageAPI.getIbans();
       res.json(ibans);
     } catch (error) {
       console.error('Error fetching IBANs:', error);
@@ -364,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[IBAN SERVER] User:', req.user?.username, req.user?.role);
       const validatedData = insertIbanSchema.parse(req.body);
       console.log('[IBAN SERVER] Dati validati:', validatedData);
-      const iban = await storage.createIban(validatedData);
+      const iban = await storageAPI.createIban(validatedData);
       console.log('[IBAN SERVER] IBAN creato con successo:', iban.id);
       res.status(201).json(iban);
     } catch (error) {
@@ -383,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/ibans/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertIbanSchema.partial().parse(req.body);
-      const iban = await storage.updateIban(req.params.id, validatedData);
+      const iban = await storageAPI.updateIban(req.params.id, validatedData);
       res.json(iban);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -399,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/ibans/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.deleteIban(req.params.id);
+      await storageAPI.deleteIban(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting IBAN:', error);
@@ -412,8 +410,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { companyId } = req.query;
       const offices = companyId 
-        ? await storage.getOfficesByCompany(companyId as string)
-        : await storage.getOffices();
+        ? await storageAPI.getOfficesByCompany(companyId as string)
+        : await storageAPI.getOffices();
       res.json(offices);
     } catch (error) {
       console.error('Error fetching offices:', error);
@@ -424,7 +422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/offices", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertOfficeSchema.parse(req.body);
-      const office = await storage.createOffice(validatedData);
+      const office = await storageAPI.createOffice(validatedData);
       res.status(201).json(office);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -441,7 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/offices/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertOfficeSchema.partial().parse(req.body);
-      const office = await storage.updateOffice(req.params.id, validatedData);
+      const office = await storageAPI.updateOffice(req.params.id, validatedData);
       res.json(office);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -457,7 +455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/offices/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.deleteOffice(req.params.id);
+      await storageAPI.deleteOffice(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting office:', error);
@@ -468,7 +466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tags
   app.get("/api/tags", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const tags = await storage.getTags();
+      const tags = await storageAPI.getTags();
       res.json(tags);
     } catch (error) {
       console.error('Error fetching tags:', error);
@@ -479,7 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tags", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertTagSchema.parse(req.body);
-      const tag = await storage.createTag(validatedData);
+      const tag = await storageAPI.createTag(validatedData);
       res.status(201).json(tag);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -496,7 +494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/tags/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertTagSchema.partial().parse(req.body);
-      const tag = await storage.updateTag(req.params.id, validatedData);
+      const tag = await storageAPI.updateTag(req.params.id, validatedData);
       res.json(tag);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -512,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/tags/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.deleteTag(req.params.id);
+      await storageAPI.deleteTag(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting tag:', error);
@@ -523,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Movement Statuses
   app.get("/api/movement-statuses", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const statuses = await storage.getMovementStatuses();
+      const statuses = await storageAPI.getMovementStatuses();
       res.json(statuses);
     } catch (error) {
       console.error('Error fetching movement statuses:', error);
@@ -534,7 +532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Movement Reasons API
   app.get("/api/movement-reasons", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const reasons = await storage.getMovementReasons();
+      const reasons = await storageAPI.getMovementReasons();
       res.json(reasons);
     } catch (error) {
       console.error('Error fetching movement reasons:', error);
@@ -545,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/movement-reasons", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementReasonSchema.parse(req.body);
-      const reason = await storage.createMovementReason(validatedData);
+      const reason = await storageAPI.createMovementReason(validatedData);
       res.status(201).json(reason);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -562,7 +560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/movement-reasons/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementReasonSchema.partial().parse(req.body);
-      const reason = await storage.updateMovementReason(req.params.id, validatedData);
+      const reason = await storageAPI.updateMovementReason(req.params.id, validatedData);
       res.json(reason);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -578,7 +576,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/movement-reasons/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.deleteMovementReason(req.params.id);
+      await storageAPI.deleteMovementReason(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting movement reason:', error);
@@ -589,7 +587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/movement-statuses", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementStatusSchema.parse(req.body);
-      const status = await storage.createMovementStatus(validatedData);
+      const status = await storageAPI.createMovementStatus(validatedData);
       res.status(201).json(status);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -606,7 +604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/movement-statuses/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementStatusSchema.partial().parse(req.body);
-      const status = await storage.updateMovementStatus(req.params.id, validatedData);
+      const status = await storageAPI.updateMovementStatus(req.params.id, validatedData);
       res.json(status);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -622,7 +620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/movement-statuses/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.deleteMovementStatus(req.params.id);
+      await storageAPI.deleteMovementStatus(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting movement status:', error);
@@ -654,8 +652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validFilters.resourceId = user.resourceId;
       }
 
-      const storage = await getStorage();
-      const movements = await storage.getMovements(validFilters);
+      const movements = await storageAPI.getMovements(validFilters);
       
       // Apply pagination
       const pageNum = parseInt(page as string, 10);
@@ -735,7 +732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("[MOVEMENTS] Applying filters:", filters);
       
-      const movements = await storage.getFilteredMovements(filters, page, pageSize);
+      const movements = await storageAPI.getFilteredMovements(filters, page, pageSize);
       
       console.log("[MOVEMENTS] Filtered results:", movements?.data?.length || 0, "movements found");
       
@@ -764,7 +761,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/movements/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const user = req.user;
-      const movement = await storage.getMovement(req.params.id);
+      const movement = await storageAPI.getMovement(req.params.id);
       if (!movement) {
         return res.status(404).json({ message: "Movement not found" });
       }
@@ -789,7 +786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const validatedData = insertMovementSchema.parse(movementData);
-      const movement = await storage.createMovement(validatedData);
+      const movement = await storageAPI.createMovement(validatedData);
       
       // Create notifications for new movement
       await createMovementNotifications(movement.id, 'new_movement', req.user.id);
@@ -814,7 +811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...(req.file && { documentPath: req.file.path }),
       };
       const validatedData = insertMovementSchema.partial().parse(updateData);
-      const movement = await storage.updateMovement(req.params.id, validatedData);
+      const movement = await storageAPI.updateMovement(req.params.id, validatedData);
       
       // Create notifications for updated movement
       await createMovementNotifications(movement.id, 'movement_updated', req.user.id);
@@ -834,7 +831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/movements/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.deleteMovement(req.params.id);
+      await storageAPI.deleteMovement(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting movement:', error);
@@ -845,7 +842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Download movement document
   app.get("/api/movements/:id/document", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const movement = await storage.getMovement(req.params.id);
+      const movement = await storageAPI.getMovement(req.params.id);
       if (!movement) {
         return res.status(404).json({ message: "Movement not found" });
       }
@@ -906,8 +903,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resourceIdFilter = user.resourceId;
       }
       
-      const storage = await getStorage();
-      const stats = await storage.getMovementStats(period, resourceIdFilter);
+      const stats = await storageAPI.getMovementStats(period, resourceIdFilter);
       res.json(stats);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -935,7 +931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resourceIdFilter = user.resourceId;
       }
       
-      const data = await storage.getCashFlowData(days, resourceIdFilter);
+      const data = await storageAPI.getCashFlowData(days, resourceIdFilter);
       res.json(data);
     } catch (error) {
       console.error('Error fetching cash flow data:', error);
@@ -945,7 +941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/analytics/status-distribution", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const data = await storage.getMovementStatusDistribution();
+      const data = await storageAPI.getMovementStatusDistribution();
       res.json(data);
     } catch (error) {
       console.error('Error fetching status distribution:', error);
@@ -987,7 +983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filters.resourceId = user.resourceId;
       }
 
-      const result = await storage.getFilteredMovements(filters, page, pageSize);
+      const result = await storageAPI.getFilteredMovements(filters, page, pageSize);
       res.json(result);
     } catch (error) {
       console.error('Error fetching filtered movements:', error);
@@ -1023,7 +1019,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tagIds: req.query.tagIds ? (req.query.tagIds as string).split(',') : undefined
       };
 
-      const exportData = await storage.exportFilteredMovements(user, filters, format);
+      const exportData = await storageAPI.exportFilteredMovements(user, filters, format);
       
       if (format === 'csv') {
         res.setHeader('Content-Type', 'text/csv');
@@ -1044,7 +1040,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/movements/:id/download", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const movementId = req.params.id;
-      const movement = await storage.getMovement(movementId);
+      const movement = await storageAPI.getMovement(movementId);
       
       if (!movement) {
         return res.status(404).json({ message: "Movement not found" });
@@ -1077,7 +1073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { isRead } = req.query;
       const readStatus = isRead !== undefined ? isRead === 'true' : undefined;
-      const notifications = await storage.getNotifications(req.user.id, readStatus);
+      const notifications = await storageAPI.getNotifications(req.user.id, readStatus);
       res.json(notifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -1087,7 +1083,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/notifications/unread-count", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const count = await storage.getUnreadNotificationsCount(req.user.id);
+      const count = await storageAPI.getUnreadNotificationsCount(req.user.id);
       res.json({ count });
     } catch (error) {
       console.error('Error fetching unread count:', error);
@@ -1097,7 +1093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/notifications/:id/read", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.markNotificationAsRead(req.params.id);
+      await storageAPI.markNotificationAsRead(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -1107,7 +1103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/notifications/mark-all-read", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.markAllNotificationsAsRead(req.user.id);
+      await storageAPI.markAllNotificationsAsRead(req.user.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
@@ -1117,7 +1113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/notifications/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await storage.deleteNotification(req.params.id);
+      await storageAPI.deleteNotification(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting notification:', error);
@@ -1166,7 +1162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const objectPath = objectStorageService.normalizeObjectEntityPath(req.body.avatarUrl);
 
       // Update resource with avatar path
-      const resource = await storage.updateResource(req.params.id, { 
+      const resource = await storageAPI.updateResource(req.params.id, { 
         avatar: objectPath 
       });
 
@@ -1182,30 +1178,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Suppliers API routes
   app.get('/api/suppliers', requireRole("admin", "finance", "user"), handleAsyncErrors(async (req: any, res: any) => {
-    const suppliers = await storage.getSuppliers();
+    const suppliers = await storageAPI.getSuppliers();
     res.json(suppliers);
   }));
 
   app.post('/api/suppliers', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     const parsedData = insertSupplierSchema.parse(req.body);
-    const supplier = await storage.createSupplier(parsedData);
+    const supplier = await storageAPI.createSupplier(parsedData);
     res.status(201).json(supplier);
   }));
 
   app.put('/api/suppliers/:id', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     const parsedData = insertSupplierSchema.parse(req.body);
-    const supplier = await storage.updateSupplier(req.params.id, parsedData);
+    const supplier = await storageAPI.updateSupplier(req.params.id, parsedData);
     res.json(supplier);
   }));
 
   app.delete('/api/suppliers/:id', requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
-    await storage.deleteSupplier(req.params.id);
+    await storageAPI.deleteSupplier(req.params.id);
     res.status(204).send();
   }));
 
   // API per ottenere fornitore tramite partita IVA (per matching XML)
   app.get('/api/suppliers/by-vat/:vatNumber', requireRole("admin", "finance", "user"), handleAsyncErrors(async (req: any, res: any) => {
-    const supplier = await storage.getSupplierByVatNumber(req.params.vatNumber);
+    const supplier = await storageAPI.getSupplierByVatNumber(req.params.vatNumber);
     if (!supplier) {
       return res.status(404).json({ error: "Fornitore non trovato" });
     }
@@ -1214,29 +1210,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Customers API routes
   app.get('/api/customers', requireRole("admin", "finance", "user"), handleAsyncErrors(async (req: any, res: any) => {
-    const customers = await storage.getCustomers();
+    const customers = await storageAPI.getCustomers();
     res.json(customers);
   }));
 
   app.post('/api/customers', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     const parsedData = insertCustomerSchema.parse(req.body);
-    const customer = await storage.createCustomer(parsedData);
+    const customer = await storageAPI.createCustomer(parsedData);
     res.status(201).json(customer);
   }));
 
   app.put('/api/customers/:id', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     const parsedData = insertCustomerSchema.parse(req.body);
-    const customer = await storage.updateCustomer(req.params.id, parsedData);
+    const customer = await storageAPI.updateCustomer(req.params.id, parsedData);
     res.json(customer);
   }));
 
   app.delete('/api/customers/:id', requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
-    await storage.deleteCustomer(req.params.id);
+    await storageAPI.deleteCustomer(req.params.id);
     res.status(204).send();
   }));
 
   app.get('/api/customers/by-vat/:vatNumber', requireRole("admin", "finance", "user"), handleAsyncErrors(async (req: any, res: any) => {
-    const customer = await storage.getCustomerByVatNumber(req.params.vatNumber);
+    const customer = await storageAPI.getCustomerByVatNumber(req.params.vatNumber);
     if (!customer) {
       return res.status(404).json({ error: "Cliente non trovato" });
     }
@@ -1244,7 +1240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get('/api/customers/by-tax-code/:taxCode', requireRole("admin", "finance", "user"), handleAsyncErrors(async (req: any, res: any) => {
-    const customer = await storage.getCustomerByTaxCode(req.params.taxCode);
+    const customer = await storageAPI.getCustomerByTaxCode(req.params.taxCode);
     if (!customer) {
       return res.status(404).json({ error: "Cliente non trovato" });
     }
@@ -1880,7 +1876,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verifica se il fornitore esiste o va creato
       let supplierInfo = null;
       if (parsedData.supplier.vatNumber) {
-        const existingSupplier = await storage.getSupplierByVatNumber(parsedData.supplier.vatNumber);
+        const existingSupplier = await storageAPI.getSupplierByVatNumber(parsedData.supplier.vatNumber);
         if (!existingSupplier) {
           // Suggerisci la creazione del fornitore
           supplierInfo = {
@@ -1940,13 +1936,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verifica che non esista già
-      const existingSupplier = await storage.getSupplierByVatNumber(supplierData.vatNumber);
+      const existingSupplier = await storageAPI.getSupplierByVatNumber(supplierData.vatNumber);
       if (existingSupplier) {
         return res.status(409).json({ error: "Fornitore già esistente con questa Partita IVA" });
       }
 
       // Crea il nuovo fornitore
-      const newSupplier = await storage.createSupplier({
+      const newSupplier = await storageAPI.createSupplier({
         name: supplierData.name,
         vatNumber: supplierData.vatNumber,
         taxCode: supplierData.taxCode || '',
@@ -2018,7 +2014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               filePath: null
             });
 
-            const movement = await storage.createMovement(movementData);
+            const movement = await storageAPI.createMovement(movementData);
             createdMovements.push(movement);
 
             // Crea notifica per il nuovo movimento
@@ -2051,7 +2047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Users API routes (for system user management)
   app.get("/api/users", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const users = await storage.getUsers();
+      const users = await storageAPI.getUsers();
       // Map database snake_case to frontend camelCase
       const mappedUsers = users.map(user => ({
         ...user,
@@ -2073,7 +2069,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userData = insertUserSchema.parse(req.body);
       const hashedPassword = await hashPassword(userData.password);
       
-      const user = await storage.createUser({
+      const user = await storageAPI.createUser({
         ...userData,
         password: hashedPassword,
       });
@@ -2103,7 +2099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userData.password = await hashPassword(userData.password);
       }
       
-      const user = await storage.updateUser(req.params.id, userData);
+      const user = await storageAPI.updateUser(req.params.id, userData);
       
       // Don't return password in response
       const { password, ...userResponse } = user;
@@ -2127,7 +2123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
       
-      await storage.deleteUser(req.params.id);
+      await storageAPI.deleteUser(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -2140,13 +2136,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email } = passwordResetSchema.parse(req.body);
       
-      const user = await storage.getUserByEmail(email);
+      const user = await storageAPI.getUserByEmail(email);
       if (!user) {
         // Don't reveal if email exists or not for security
         return res.json({ success: true, message: "Se l'email esiste, riceverai le istruzioni per il reset" });
       }
       
-      const token = await storage.createPasswordResetToken(user.id);
+      const token = await storageAPI.createPasswordResetToken(user.id);
       const emailSent = await emailService.sendPasswordResetEmail(user.email, token, user.username);
       
       if (emailSent) {
@@ -2164,7 +2160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token, password } = resetPasswordSchema.parse(req.body);
       
-      const success = await storage.resetUserPassword(token, password);
+      const success = await storageAPI.resetUserPassword(token, password);
       
       if (success) {
         res.json({ success: true, message: "Password reimpostata con successo" });
@@ -2180,7 +2176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/password-reset/validate/:token", async (req, res) => {
     try {
       const { token } = req.params;
-      const user = await storage.validatePasswordResetToken(token);
+      const user = await storageAPI.validatePasswordResetToken(token);
       
       if (user) {
         res.json({ valid: true });
@@ -2196,7 +2192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Email settings management
   app.get("/api/email-settings", requireAuth, requireRole('admin'), async (req, res) => {
     try {
-      const settings = await storage.getEmailSettings();
+      const settings = await storageAPI.getEmailSettings();
       if (settings) {
         // Don't expose sensitive data like API keys
         const { sendgridApiKey, smtpPassword, ...safeSettings } = settings;
@@ -2217,7 +2213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/email-settings", requireAuth, requireRole('admin'), async (req, res) => {
     try {
       const settings = insertEmailSettingsSchema.parse(req.body);
-      const savedSettings = await storage.saveEmailSettings(settings);
+      const savedSettings = await storageAPI.saveEmailSettings(settings);
       
       // Reload email service settings
       await emailService.loadSettings();
@@ -2232,7 +2228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Security Settings Routes
   app.get('/api/security/settings', requireAuth, requireRole('admin'), async (req, res) => {
     try {
-      const settings = await storage.getSecuritySettings();
+      const settings = await storageAPI.getSecuritySettings();
       res.json(settings);
     } catch (error) {
       console.error('Error fetching security settings:', error);
@@ -2242,7 +2238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/security/settings', requireAuth, requireRole('admin'), async (req, res) => {
     try {
-      const settings = await storage.updateSecuritySettings(req.body);
+      const settings = await storageAPI.updateSecuritySettings(req.body);
       res.json(settings);
     } catch (error) {
       console.error('Error updating security settings:', error);
@@ -2252,7 +2248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/security/stats', requireAuth, requireRole('admin'), async (req, res) => {
     try {
-      const stats = await storage.getSecurityStats();
+      const stats = await storageAPI.getSecurityStats();
       res.json(stats);
     } catch (error) {
       console.error('Error fetching security stats:', error);
@@ -2423,7 +2419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Settings
   app.get("/api/ai/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const settings = await storage.getAiSettings(req.user.id);
+      const settings = await storageAPI.getAiSettings(req.user.id);
       if (settings) {
         // Don't expose OpenAI API key
         const { openaiApiKey, ...safeSettings } = settings;
@@ -2445,7 +2441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { openaiApiKey, ...otherSettings } = req.body;
       
       // Check if settings exist
-      const existingSettings = await storage.getAiSettings(req.user.id);
+      const existingSettings = await storageAPI.getAiSettings(req.user.id);
       
       let savedSettings;
       if (existingSettings) {
@@ -2455,7 +2451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (openaiApiKey && openaiApiKey !== '***CONFIGURED***') {
           updateData.openaiApiKey = openaiApiKey;
         }
-        savedSettings = await storage.updateAiSettings(req.user.id, updateData);
+        savedSettings = await storageAPI.updateAiSettings(req.user.id, updateData);
       } else {
         // Create new settings
         const createData = { 
@@ -2465,7 +2461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (openaiApiKey && openaiApiKey !== '***CONFIGURED***') {
           createData.openaiApiKey = openaiApiKey;
         }
-        savedSettings = await storage.createAiSettings(createData);
+        savedSettings = await storageAPI.createAiSettings(createData);
       }
       
       res.json({ success: true, message: "Impostazioni AI salvate con successo" });
@@ -2512,7 +2508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get chat sessions
   app.get("/api/ai/chat/sessions", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const sessions = await storage.getAiChatSessions(req.user.id);
+      const sessions = await storageAPI.getAiChatSessions(req.user.id);
       res.json(sessions);
     } catch (error) {
       console.error('Error getting chat sessions:', error);
@@ -2524,7 +2520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/ai/chat/messages/:sessionId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { sessionId } = req.params;
-      const messages = await storage.getAiChatHistory(req.user.id, sessionId);
+      const messages = await storageAPI.getAiChatHistory(req.user.id, sessionId);
       res.json(messages);
     } catch (error) {
       console.error('Error getting chat messages:', error);
@@ -2536,7 +2532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/ai/chat/sessions/:sessionId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { sessionId } = req.params;
-      await storage.deleteAiChatSession(req.user.id, sessionId);
+      await storageAPI.deleteAiChatSession(req.user.id, sessionId);
       res.json({ success: true, message: "Sessione chat eliminata" });
     } catch (error) {
       console.error('Error deleting chat session:', error);
@@ -2547,7 +2543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/ai/chat/history/:sessionId?", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { sessionId } = req.params;
-      const history = await storage.getAiChatHistory(req.user.id, sessionId);
+      const history = await storageAPI.getAiChatHistory(req.user.id, sessionId);
       res.json(history);
     } catch (error) {
       console.error('Error getting chat history:', error);
@@ -2558,7 +2554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/ai/chat/:sessionId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { sessionId } = req.params;
-      await storage.deleteAiChatSession(req.user.id, sessionId);
+      await storageAPI.deleteAiChatSession(req.user.id, sessionId);
       res.json({ success: true, message: "Sessione chat eliminata" });
     } catch (error) {
       console.error('Error deleting chat session:', error);
@@ -2722,7 +2718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Financial Insights
   app.get("/api/ai/financial-insights", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const insights = await storage.getFinancialInsights(req.user.id);
+      const insights = await storageAPI.getFinancialInsights(req.user.id);
       res.json(insights || []);
     } catch (error: any) {
       console.error('Error fetching insights:', error);
@@ -2744,7 +2740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Insights Metrics
   app.get("/api/ai/financial-insights/metrics", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const metrics = await storage.getFinancialInsightsMetrics(req.user.id);
+      const metrics = await storageAPI.getFinancialInsightsMetrics(req.user.id);
       res.json(metrics);
     } catch (error: any) {
       console.error('Error fetching insights metrics:', error);
@@ -2770,7 +2766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Save analysis result
-      const analysisRecord = await storage.createDocumentAnalysis({
+      const analysisRecord = await storageAPI.createDocumentAnalysis({
         userId: req.user.id,
         filename: req.file.originalname,
         fileType: req.file.mimetype,
@@ -2791,7 +2787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Document Analysis History
   app.get("/api/ai/document-analysis/history", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const history = await storage.getDocumentAnalysisHistory(req.user.id);
+      const history = await storageAPI.getDocumentAnalysisHistory(req.user.id);
       res.json(history || []);
     } catch (error: any) {
       console.error('Error fetching analysis history:', error);
@@ -2850,7 +2846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = req.user;
       
       // Get historical movement data for forecasting
-      const historicalMovements = await storage.getMovements(user, { limit: 1000 });
+      const historicalMovements = await storageAPI.getMovements(user, { limit: 1000 });
       
       const forecastPrompt = `Analizza questi movimenti finanziari storici e genera una previsione per i prossimi ${months} mesi.
       
@@ -2892,7 +2888,7 @@ Formato: JSON con campi forecast, trends, risks, opportunities`;
       const user = req.user;
       
       // Get recent movements for anomaly detection
-      const recentMovements = await storage.getMovements(user, { limit: 500 });
+      const recentMovements = await storageAPI.getMovements(user, { limit: 500 });
       
       const anomalyPrompt = `Analizza questi movimenti finanziari per rilevare anomalie:
       
@@ -2934,7 +2930,7 @@ Restituisci JSON con:
       const { movements } = req.body;
       
       // Get categories and reasons from the system
-      const reasons = await storage.getMovementReasons();
+      const reasons = await storageAPI.getMovementReasons();
       
       const categorizationPrompt = `Analizza questi movimenti e suggerisci la categoria più appropriata per ognuno:
 
@@ -2974,7 +2970,7 @@ Formato: JSON con array di suggested_categories`;
       const year = req.body.year || new Date().getFullYear();
       
       // Get movements for tax analysis
-      const yearMovements = await storage.getMovements(user, {
+      const yearMovements = await storageAPI.getMovements(user, {
         dateFrom: `${year}-01-01`,
         dateTo: `${year}-12-31`,
         limit: 1000
@@ -3089,7 +3085,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
         return res.status(403).json({ error: 'Accesso negato' });
       }
 
-      const configurations = await storage.getBackupConfigurations();
+      const configurations = await storageAPI.getBackupConfigurations();
       res.json(configurations);
     } catch (error) {
       console.error('Error fetching backup configurations:', error);
@@ -3105,10 +3101,10 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
         return res.status(403).json({ error: 'Solo gli amministratori possono creare configurazioni backup' });
       }
 
-      const configuration = await storage.createBackupConfiguration(req.body);
+      const configuration = await storageAPI.createBackupConfiguration(req.body);
       
       // Log audit
-      await storage.createBackupAuditLog({
+      await storageAPI.createBackupAuditLog({
         action: 'configuration_created',
         resourceType: 'backup_configuration',
         resourceId: configuration.id,
@@ -3134,7 +3130,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       }
 
       const limit = parseInt(req.query.limit as string) || 50;
-      const jobs = await storage.getBackupJobs(limit);
+      const jobs = await storageAPI.getBackupJobs(limit);
       res.json(jobs);
     } catch (error) {
       console.error('Error fetching backup jobs:', error);
@@ -3153,14 +3149,14 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       const configId = req.params.configId;
       
       // Create backup job
-      const job = await storage.createBackupJob({
+      const job = await storageAPI.createBackupJob({
         configurationId: configId,
         status: 'pending',
         type: 'database' // Will be determined by config
       });
 
       // Log audit
-      await storage.createBackupAuditLog({
+      await storageAPI.createBackupAuditLog({
         action: 'backup_started',
         resourceType: 'backup_job',
         resourceId: job.id,
@@ -3174,7 +3170,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       // For now, we'll simulate it by updating the job status
       setTimeout(async () => {
         try {
-          await storage.updateBackupJob(job.id, {
+          await storageAPI.updateBackupJob(job.id, {
             status: 'completed',
             startedAt: new Date(),
             completedAt: new Date(),
@@ -3203,7 +3199,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
         return res.status(403).json({ error: 'Accesso negato' });
       }
 
-      const restorePoints = await storage.getRestorePoints();
+      const restorePoints = await storageAPI.getRestorePoints();
       res.json(restorePoints);
     } catch (error) {
       console.error('Error fetching restore points:', error);
@@ -3220,7 +3216,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       }
 
       // Create backup job for the restore point
-      const backupJob = await storage.createBackupJob({
+      const backupJob = await storageAPI.createBackupJob({
         configurationId: 'manual', // Special ID for manual jobs
         status: 'pending',
         type: req.body.include_database && req.body.include_files ? 'full' : 
@@ -3228,7 +3224,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       });
 
       // Create restore point
-      const restorePoint = await storage.createRestorePoint({
+      const restorePoint = await storageAPI.createRestorePoint({
         name: req.body.name,
         description: req.body.description,
         backupJobId: backupJob.id,
@@ -3237,7 +3233,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       });
 
       // Log audit
-      await storage.createBackupAuditLog({
+      await storageAPI.createBackupAuditLog({
         action: 'restore_point_created',
         resourceType: 'restore_point',
         resourceId: restorePoint.id,
@@ -3250,7 +3246,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       // Simulate backup completion
       setTimeout(async () => {
         try {
-          await storage.updateBackupJob(backupJob.id, {
+          await storageAPI.updateBackupJob(backupJob.id, {
             status: 'completed',
             startedAt: new Date(),
             completedAt: new Date(),
@@ -3260,7 +3256,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
             checksum: 'sha256:def456...'
           });
 
-          await storage.updateRestorePoint(restorePoint.id, {
+          await storageAPI.updateRestorePoint(restorePoint.id, {
             totalSizeBytes: 1024 * 1024 * 100,
             verificationStatus: 'verified',
             verificationDate: new Date()
@@ -3292,7 +3288,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       }
 
       // Log audit
-      await storage.createBackupAuditLog({
+      await storageAPI.createBackupAuditLog({
         action: 'restore_started',
         resourceType: 'restore_point',
         resourceId: restore_point_id,
@@ -3324,7 +3320,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
         return res.status(403).json({ error: 'Accesso negato' });
       }
 
-      const stats = await storage.getBackupStats();
+      const stats = await storageAPI.getBackupStats();
       res.json(stats);
     } catch (error) {
       console.error('Error fetching backup stats:', error);
@@ -3335,7 +3331,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   // SendGrid Templates API routes
   app.get('/api/sendgrid/templates', requireAuth, async (req, res) => {
     try {
-      const templates = await storage.getSendgridTemplates();
+      const templates = await storageAPI.getSendgridTemplates();
       res.json(templates);
     } catch (error) {
       console.error('Error fetching SendGrid templates:', error);
@@ -3346,7 +3342,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.post('/api/sendgrid/templates', requireAuth, async (req, res) => {
     try {
       const templateData = insertSendgridTemplateSchema.parse(req.body);
-      const template = await storage.createSendgridTemplate(templateData);
+      const template = await storageAPI.createSendgridTemplate(templateData);
       res.status(201).json(template);
     } catch (error) {
       console.error('Error creating SendGrid template:', error);
@@ -3356,7 +3352,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
 
   app.delete('/api/sendgrid/templates/:id', requireAuth, async (req, res) => {
     try {
-      const success = await storage.deleteSendgridTemplate(req.params.id);
+      const success = await storageAPI.deleteSendgridTemplate(req.params.id);
       if (success) {
         res.json({ success: true });
       } else {
@@ -3501,7 +3497,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   // Get all WhatsApp templates
   app.get('/api/whatsapp/templates', async (req, res) => {
     try {
-      const templates = await storage.getWhatsappTemplates();
+      const templates = await storageAPI.getWhatsappTemplates();
       res.json(templates);
     } catch (error) {
       console.error('Error fetching WhatsApp templates:', error);
@@ -3515,12 +3511,12 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       const validatedData = insertWhatsappTemplateSchema.parse(req.body);
       
       // Check for unique template name per provider
-      const existingTemplate = await storage.getWhatsappTemplateByName(validatedData.name, validatedData.provider);
+      const existingTemplate = await storageAPI.getWhatsappTemplateByName(validatedData.name, validatedData.provider);
       if (existingTemplate) {
         return res.status(400).json({ error: 'Template con questo nome già esistente per questo provider' });
       }
 
-      const newTemplate = await storage.createWhatsappTemplate(validatedData);
+      const newTemplate = await storageAPI.createWhatsappTemplate(validatedData);
       
       // TODO: Submit template to provider (Twilio/LinkMobility) for approval
       console.log(`[WhatsApp] Template ${newTemplate.name} creato per provider ${newTemplate.provider}`);
@@ -3541,7 +3537,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       const { id } = req.params;
       const validatedData = insertWhatsappTemplateSchema.parse(req.body);
       
-      const updatedTemplate = await storage.updateWhatsappTemplate(id, validatedData);
+      const updatedTemplate = await storageAPI.updateWhatsappTemplate(id, validatedData);
       if (!updatedTemplate) {
         return res.status(404).json({ error: 'Template non trovato' });
       }
@@ -3564,7 +3560,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
     try {
       const { id } = req.params;
       
-      const deleted = await storage.deleteWhatsappTemplate(id);
+      const deleted = await storageAPI.deleteWhatsappTemplate(id);
       if (!deleted) {
         return res.status(404).json({ error: 'Template non trovato' });
       }
@@ -3584,7 +3580,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
     try {
       const { id } = req.params;
       
-      const template = await storage.getWhatsappTemplateById(id);
+      const template = await storageAPI.getWhatsappTemplateById(id);
       if (!template) {
         return res.status(404).json({ error: 'Template non trovato' });
       }
@@ -3599,7 +3595,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       }
 
       // Update status to pending
-      const updatedTemplate = await storage.updateWhatsappTemplateStatus(id, 'PENDING');
+      const updatedTemplate = await storageAPI.updateWhatsappTemplateStatus(id, 'PENDING');
       
       res.json({ 
         success: true, 
@@ -3616,7 +3612,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.get('/api/whatsapp/templates/:id', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const template = await storage.getWhatsappTemplateById(id);
+      const template = await storageAPI.getWhatsappTemplateById(id);
       
       if (!template) {
         return res.status(404).json({ error: 'Template non trovato' });
@@ -3635,7 +3631,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       const { id } = req.params;
       const { sampleData } = req.body;
       
-      const template = await storage.getWhatsappTemplateById(id);
+      const template = await storageAPI.getWhatsappTemplateById(id);
       if (!template) {
         return res.status(404).json({ error: 'Template non trovato' });
       }
@@ -3672,7 +3668,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   // WhatsApp Settings routes
   app.get("/api/whatsapp/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const settings = await storage.getWhatsappSettings();
+      const settings = await storageAPI.getWhatsappSettings();
       res.json(settings);
     } catch (error) {
       console.error('Error fetching WhatsApp settings:', error);
@@ -3683,7 +3679,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.post("/api/whatsapp/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertWhatsappSettingsSchema.parse(req.body);
-      const settings = await storage.saveWhatsappSettings(validatedData);
+      const settings = await storageAPI.saveWhatsappSettings(validatedData);
       res.json(settings);
     } catch (error) {
       console.error('Error saving WhatsApp settings:', error);
@@ -3694,7 +3690,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.put("/api/whatsapp/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertWhatsappSettingsSchema.parse(req.body);
-      const settings = await storage.saveWhatsappSettings(validatedData);
+      const settings = await storageAPI.saveWhatsappSettings(validatedData);
       res.json(settings);
     } catch (error) {
       console.error('Error updating WhatsApp settings:', error);
@@ -3704,7 +3700,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
 
   app.post("/api/whatsapp/test-connection", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const result = await storage.testWhatsappConnection();
+      const result = await storageAPI.testWhatsappConnection();
       res.json(result);
     } catch (error) {
       console.error('Error testing WhatsApp connection:', error);
@@ -3908,7 +3904,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   // SMS Settings Routes
   app.get("/api/sms/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const settings = await storage.getSmsSettings();
+      const settings = await storageAPI.getSmsSettings();
       if (settings) {
         // Mask sensitive data
         res.json({
@@ -3927,13 +3923,13 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.post("/api/sms/settings", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const settings = insertSmsSettingsSchema.parse(req.body);
-      const existingSettings = await storage.getSmsSettings();
+      const existingSettings = await storageAPI.getSmsSettings();
       
       let savedSettings;
       if (existingSettings) {
-        savedSettings = await storage.updateSmsSettings(existingSettings.id, settings);
+        savedSettings = await storageAPI.updateSmsSettings(existingSettings.id, settings);
       } else {
-        savedSettings = await storage.createSmsSettings(settings);
+        savedSettings = await storageAPI.createSmsSettings(settings);
       }
       
       res.json({ success: true, message: "Impostazioni SMS salvate con successo" });
@@ -3946,7 +3942,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.post("/api/sms/test-connection", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { SkebbyService } = await import('./services/skebby-sms-service');
-      const settings = await storage.getSmsSettings();
+      const settings = await storageAPI.getSmsSettings();
       
       if (!settings || !settings.username || !settings.password) {
         return res.status(400).json({
@@ -3971,7 +3967,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   // SMS Templates Routes
   app.get("/api/sms/templates", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const templates = await storage.getSmsTemplates();
+      const templates = await storageAPI.getSmsTemplates();
       res.json(templates);
     } catch (error) {
       console.error('Error getting SMS templates:', error);
@@ -3982,7 +3978,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.post("/api/sms/templates", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const template = insertSmsTemplateSchema.parse(req.body);
-      const savedTemplate = await storage.createSmsTemplate(template);
+      const savedTemplate = await storageAPI.createSmsTemplate(template);
       res.json(savedTemplate);
     } catch (error) {
       console.error('Error creating SMS template:', error);
@@ -3994,7 +3990,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
     try {
       const templateId = parseInt(req.params.id);
       const updates = insertSmsTemplateSchema.partial().parse(req.body);
-      const updatedTemplate = await storage.updateSmsTemplate(templateId, updates);
+      const updatedTemplate = await storageAPI.updateSmsTemplate(templateId, updates);
       res.json(updatedTemplate);
     } catch (error) {
       console.error('Error updating SMS template:', error);
@@ -4005,7 +4001,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.delete("/api/sms/templates/:id", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const templateId = parseInt(req.params.id);
-      await storage.deleteSmsTemplate(templateId);
+      await storageAPI.deleteSmsTemplate(templateId);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting SMS template:', error);
@@ -4017,7 +4013,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.post("/api/sms/send", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const messageData = insertSmsMessageSchema.parse(req.body);
-      const settings = await storage.getSmsSettings();
+      const settings = await storageAPI.getSmsSettings();
       
       if (!settings || !settings.isActive) {
         return res.status(400).json({
@@ -4037,7 +4033,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
       });
 
       // Save message record
-      const savedMessage = await storage.createSmsMessage({
+      const savedMessage = await storageAPI.createSmsMessage({
         ...messageData,
         externalId: result.orderId || null,
         status: 'sent',
@@ -4060,7 +4056,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.get("/api/sms/messages", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-      const messages = await storage.getSmsMessages(limit);
+      const messages = await storageAPI.getSmsMessages(limit);
       res.json(messages);
     } catch (error) {
       console.error('Error getting SMS messages:', error);
@@ -4071,7 +4067,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   // SMS Blacklist Routes
   app.get("/api/sms/blacklist", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const blacklist = await storage.getSmsBlacklist();
+      const blacklist = await storageAPI.getSmsBlacklist();
       res.json(blacklist);
     } catch (error) {
       console.error('Error getting SMS blacklist:', error);
@@ -4083,7 +4079,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
     try {
       const { phoneNumber, reason } = req.body;
       
-      const blacklistEntry = await storage.addToSmsBlacklist({
+      const blacklistEntry = await storageAPI.addToSmsBlacklist({
         phoneNumber,
         reason: reason || 'Aggiunto manualmente',
         isActive: true
@@ -4099,7 +4095,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.delete("/api/sms/blacklist/:phoneNumber", requireAuth, requireRole('admin'), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const phoneNumber = decodeURIComponent(req.params.phoneNumber);
-      await storage.removeFromSmsBlacklist(phoneNumber);
+      await storageAPI.removeFromSmsBlacklist(phoneNumber);
       res.status(204).send();
     } catch (error) {
       console.error('Error removing from SMS blacklist:', error);
@@ -4111,7 +4107,7 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   app.get("/api/sms/statistics", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       // For now, return basic stats - can be enhanced later
-      const messages = await storage.getSmsMessages(100);
+      const messages = await storageAPI.getSmsMessages(100);
       const totalSent = messages.length;
       const todaySent = messages.filter((m: any) => {
         const today = new Date();
