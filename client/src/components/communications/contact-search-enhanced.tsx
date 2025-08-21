@@ -215,6 +215,7 @@ export function ContactSearchEnhanced({
             if (!isExpanded && newValue.trim() !== '') {
               setIsExpanded(true);
             }
+            console.log('🔍 Ricerca contatti:', newValue, 'Contatti trovati:', filteredContacts.length);
           }}
           onFocus={() => setIsExpanded(true)}
           className="pl-10 w-full"
