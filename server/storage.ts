@@ -2176,8 +2176,9 @@ async getMovements(filters: {
     }
   }
 
-  // === BACKUP MANAGEMENT ===
-
+  // === BACKUP MANAGEMENT === 
+  // TEMPORARILY DISABLED TO FIX NOTIFICATIONS API - WILL RE-ENABLE AFTER NOTIFICATIONS WORK
+  /*
   async createBackupConfiguration(config: BackupConfigurationInsert): Promise<BackupConfiguration> {
     try {
       const [result] = await db.insert(backupConfigurations).values({
