@@ -756,7 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Tag filters
       if (req.query.tagIds && typeof req.query.tagIds === 'string') {
-        filters.tagIds = req.query.tagIds.split(',').filter(id => id.trim());
+        filters.tagIds = req.query.tagIds.split(',').filter((id: string) => id.trim());
       }
 
       // Se l'utente ha ruolo "user", può vedere solo i movimenti della sua risorsa
@@ -1120,12 +1120,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           webhookSecret: settings.webhookSecret || undefined,
           allowedUpdates: settings.allowedUpdates as string[],
           enableBusinessHours: settings.enableBusinessHours || false,
-          businessHoursStart: settings.businessHoursStart,
-          businessHoursEnd: settings.businessHoursEnd,
+          businessHoursStart: settings.businessHoursStart || '09:00',
+          businessHoursEnd: settings.businessHoursEnd || '18:00',
           businessDays: settings.businessDays as string[],
           enableAutoReply: settings.enableAutoReply || false,
           enableAiResponses: settings.enableAiResponses || false,
-          aiModel: settings.aiModel,
+          aiModel: settings.aiModel || 'gpt-4o',
           aiSystemPrompt: settings.aiSystemPrompt || undefined
         });
         

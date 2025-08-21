@@ -176,12 +176,12 @@ export function setupTelegramRoutes(app: Express): void {
           webhookSecret: telegramConfig.webhookSecret || undefined,
           allowedUpdates: telegramConfig.allowedUpdates as string[],
           enableBusinessHours: telegramConfig.enableBusinessHours || false,
-          businessHoursStart: telegramConfig.businessHoursStart,
-          businessHoursEnd: telegramConfig.businessHoursEnd,
+          businessHoursStart: telegramConfig.businessHoursStart || '09:00',
+          businessHoursEnd: telegramConfig.businessHoursEnd || '18:00',
           businessDays: telegramConfig.businessDays as string[],
           enableAutoReply: telegramConfig.enableAutoReply || false,
           enableAiResponses: telegramConfig.enableAiResponses || false,
-          aiModel: telegramConfig.aiModel,
+          aiModel: telegramConfig.aiModel || 'gpt-4o',
           aiSystemPrompt: telegramConfig.aiSystemPrompt || undefined
         });
         console.log('[TELEGRAM WEBHOOK] ✅ TelegramService inizializzato');
