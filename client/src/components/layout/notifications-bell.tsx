@@ -22,6 +22,33 @@ export function NotificationsBell() {
   
   const { data: unreadCount = 0 } = useUnreadNotificationsCount();
   const { data: notifications = [], isLoading } = useNotifications();
+  
+  // Function to get category color
+  const getCategoryColor = (category: string): string => {
+    switch (category) {
+      case 'telegram': return 'bg-purple-500';
+      case 'whatsapp': return 'bg-green-500';
+      case 'movement': return 'bg-yellow-500';
+      case 'email': return 'bg-blue-500';
+      case 'sms': return 'bg-red-500';
+      case 'messenger': return 'bg-indigo-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  // Get unread notifications by category
+  const unreadByCategory = notifications
+    .filter(n => !n.isRead)
+    .reduce((acc: any, notification: any) => {
+      const cat = notification.category || 'other';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {});
+  
+  // Get primary category (most notifications)
+  const primaryCategory = Object.keys(unreadByCategory).reduce((a, b) => 
+    unreadByCategory[a] > unreadByCategory[b] ? a : b, 'movement'
+  );
   const markAsReadMutation = useMarkNotificationAsRead();
   const markAllAsReadMutation = useMarkAllNotificationsAsRead();
   const deleteNotificationMutation = useDeleteNotification();
@@ -123,8 +150,7 @@ export function NotificationsBell() {
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+              className={`absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs text-white ${getCategoryColor(primaryCategory)}`}
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
@@ -172,14 +198,17 @@ export function NotificationsBell() {
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-sm font-medium leading-tight">
-                        {notification.title}
-                        {!notification.isRead && (
-                          <Badge variant="secondary" className="ml-2 text-xs">
-                            Nuovo
-                          </Badge>
-                        )}
-                      </CardTitle>
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full ${getCategoryColor(notification.category)}`} />
+                        <CardTitle className="text-sm font-medium leading-tight">
+                          {notification.title}
+                          {!notification.isRead && (
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              Nuovo
+                            </Badge>
+                          )}
+                        </CardTitle>
+                      </div>
                       <div className="flex space-x-1">
                         {!notification.isRead && (
                           <Button

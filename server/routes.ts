@@ -1089,7 +1089,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/notifications/unread-count", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const userId = req.user.id;
-      const count = await dbStorage.getUnreadNotificationsCount(userId);
+      // Get count manually since getUnreadNotificationsCount doesn't exist  
+      const notifications = await dbStorage.getNotifications(userId, false);
+      const count = notifications.length;
       res.json({ count });
     } catch (error) {
       console.error('Error fetching unread count:', error);
