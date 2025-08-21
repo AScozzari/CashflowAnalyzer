@@ -52,9 +52,10 @@ export function setupTelegramRoutes(app: Express): void {
       res.json(result);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error('🔴 TELEGRAM VALIDATION ERROR:', error.errors);
         res.status(400).json({ error: 'Validation failed', details: error.errors });
       } else {
-        console.error('Error updating Telegram settings:', error);
+        console.error('🔴 TELEGRAM SETTINGS ERROR:', error);
         res.status(500).json({ error: 'Failed to update settings' });
       }
     }
