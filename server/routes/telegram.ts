@@ -145,7 +145,7 @@ export function setupTelegramRoutes(app: Express): void {
   });
 
   // Webhook endpoint for receiving Telegram updates
-  app.post('/webhook/telegram', async (req, res) => {
+  app.post('/api/telegram/webhook', async (req, res) => {
     try {
       const update = req.body;
       console.log('[TELEGRAM WEBHOOK] Messaggio ricevuto:', JSON.stringify(update, null, 2));
