@@ -1050,6 +1050,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Setup communication routes
+  setupWhatsAppRoutes(app);
+  setupTelegramRoutes(app);
+
   // Create and return HTTP server
   const httpServer = createServer(app);
   return httpServer;

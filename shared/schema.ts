@@ -896,6 +896,58 @@ export type InsertWhatsappTemplate = z.infer<typeof insertWhatsappTemplateSchema
 export type WhatsappSettings = typeof whatsappSettings.$inferSelect;
 export type WhatsappTemplate = typeof whatsappTemplates.$inferSelect;
 
+// WhatsApp Chat History (per tracciare conversazioni)
+export const whatsappChats = pgTable("whatsapp_chats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  whatsappNumber: text("whatsapp_number").notNull(), // Numero WhatsApp del contatto
+  contactName: text("contact_name"), // Nome del contatto
+  profileName: text("profile_name"), // Nome profilo WhatsApp
+  
+  // User Information
+  phoneNumber: text("phone_number"),
+  isBusinessAccount: boolean("is_business_account").default(false),
+  
+  // Chat Settings
+  isBlocked: boolean("is_blocked").default(false),
+  isMuted: boolean("is_muted").default(false),
+  
+  // Conversation Tracking
+  lastMessageId: text("last_message_id"),
+  lastMessageAt: timestamp("last_message_at"),
+  lastMessageText: text("last_message_text"),
+  messageCount: integer("message_count").default(0),
+  
+  // Business Integration
+  linkedCustomerId: varchar("linked_customer_id").references(() => customers.id),
+  linkedResourceId: varchar("linked_resource_id").references(() => resources.id),
+  
+  // Chat Status
+  status: text("status").default("active"), // active, archived, deleted
+  
+  // Metadata
+  notes: text("notes"),
+  tags: jsonb("tags").default([]),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// WhatsApp Chat Insert Schema
+export const insertWhatsappChatSchema = createInsertSchema(whatsappChats).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  messageCount: true,
+  lastMessageAt: true
+}).extend({
+  whatsappNumber: z.string().regex(/^\+[1-9]\d{1,14}$/, "Numero WhatsApp non valido"),
+  contactName: z.string().max(100, "Massimo 100 caratteri").optional(),
+  phoneNumber: z.string().regex(/^\+[1-9]\d{1,14}$/, "Formato telefono non valido").optional()
+});
+
+export type WhatsappChat = typeof whatsappChats.$inferSelect;
+export type InsertWhatsappChat = z.infer<typeof insertWhatsappChatSchema>;
+
 // === TELEGRAM INTEGRATION ===
 
 // Telegram Bot Settings

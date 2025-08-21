@@ -319,22 +319,40 @@ export function setupWhatsAppRoutes(app: Express): void {
         ...suppliers.map((s: any) => ({ ...s, type: 'supplier' }))
       ];
 
-      // Add demo chats if no real chats exist
+      // Add demo chats with interesting messages
       let whatsappChats = allContacts
         .filter(contact => contact.mobile || contact.phone)
         .slice(0, 20) // Limit to 20 most recent chats for performance
-        .map(contact => ({
-          id: contact.id,
-          name: contact.name,
-          phone: contact.mobile || contact.phone,
-          avatar: null,
-          lastMessage: 'Nessun messaggio recente',
-          lastSeen: 'Oggi',
-          unreadCount: 0,
-          online: false,
-          type: contact.type,
-          company: contact.company || null
-        }));
+        .map((contact, index) => {
+          // Demo messages per rendere le chat più interessanti
+          const demoMessages = [
+            'Ciao! Quando possiamo organizzare la riunione? 📅',
+            'Perfetto, confermo la consegna per domani mattina ✅',
+            'Grazie per il preventivo, molto competitivo! 💰',
+            'Ho bisogno di chiarimenti sui pagamenti 🤔',
+            'Tutto ok per la fatturazione elettronica? 📄',
+            'Buongiorno! Come stai? Senti, per il progetto...',
+            'Ti mando la documentazione via email 📧',
+            'Quando ci sentiamo per definire i dettagli? 📞'
+          ];
+          
+          const demoTimes = ['5 min fa', '1 ora fa', '2 ore fa', 'Ieri', 'Online', '10 min fa', '30 min fa', '3 ore fa'];
+          const demoUnread = [0, 1, 2, 0, 3, 0, 1, 0];
+          const demoOnline = [false, true, false, true, false, true, false, false];
+          
+          return {
+            id: contact.id,
+            name: contact.name || `Contatto ${contact.type}`,
+            phone: contact.mobile || contact.phone,
+            avatar: null,
+            lastMessage: demoMessages[index % demoMessages.length],
+            lastSeen: demoTimes[index % demoTimes.length],
+            unreadCount: demoUnread[index % demoUnread.length],
+            online: demoOnline[index % demoOnline.length],
+            type: contact.type,
+            company: contact.company || null
+          };
+        });
 
       // If no WhatsApp chats, add demo data for testing
       if (whatsappChats.length === 0) {
