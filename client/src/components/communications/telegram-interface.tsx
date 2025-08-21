@@ -65,32 +65,39 @@ export function TelegramInterface() {
   const { data: chats, isLoading: chatsLoading } = useQuery({
     queryKey: ['/api/telegram/chats'],
     enabled: true
-  });
+  }) as { data: TelegramChat[], isLoading: boolean };
 
   const { data: templates, isLoading: templatesLoading } = useQuery({
     queryKey: ['/api/telegram/templates'],
     enabled: true
-  });
+  }) as { data: TelegramTemplate[], isLoading: boolean };
 
   const { data: stats } = useQuery({
     queryKey: ['/api/telegram/stats'],
     enabled: true
-  });
+  }) as { data: any };
 
   const { data: customers } = useQuery({
     queryKey: ['/api/customers'],
     enabled: true
-  });
+  }) as { data: any[] };
 
   const { data: resources } = useQuery({
     queryKey: ['/api/resources'],
     enabled: true
-  });
+  }) as { data: any[] };
 
   // Mutations
   const sendMessageMutation = useMutation({
-    mutationFn: (data: { chatId: string; message: string; parseMode?: string }) => 
-      apiRequest('/api/telegram/send', { method: 'POST', body: data }),
+    mutationFn: async (data: { chatId: string; message: string; parseMode?: string }) => {
+      const response = await fetch('/api/telegram/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to send message');
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Messaggio Telegram inviato con successo!" });
       setMessage('');
@@ -106,8 +113,15 @@ export function TelegramInterface() {
   });
 
   const sendTemplateMutation = useMutation({
-    mutationFn: (data: { chatId: string; templateId: string; variables?: Record<string, string> }) => 
-      apiRequest('/api/telegram/send-template', { method: 'POST', body: data }),
+    mutationFn: async (data: { chatId: string; templateId: string; variables?: Record<string, string> }) => {
+      const response = await fetch('/api/telegram/send-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to send template');
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Template Telegram inviato con successo!" });
       setSelectedTemplate('');
@@ -179,11 +193,11 @@ export function TelegramInterface() {
   };
 
   const getLinkedEntityName = (chat: TelegramChat) => {
-    if (chat.linkedCustomerId && customers) {
+    if (chat.linkedCustomerId && customers && Array.isArray(customers)) {
       const customer = customers.find((c: any) => c.id === chat.linkedCustomerId);
       return customer ? `Cliente: ${customer.businessName || customer.firstName + ' ' + customer.lastName}` : null;
     }
-    if (chat.linkedResourceId && resources) {
+    if (chat.linkedResourceId && resources && Array.isArray(resources)) {
       const resource = resources.find((r: any) => r.id === chat.linkedResourceId);
       return resource ? `Risorsa: ${resource.firstName} ${resource.lastName}` : null;
     }
@@ -218,15 +232,15 @@ export function TelegramInterface() {
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                   <div className="flex items-center space-x-1">
                     <Bot className="h-3 w-3" />
-                    <span>Bot: {stats.isInitialized ? '✅' : '❌'}</span>
+                    <span>Bot: {stats?.isInitialized ? '✅' : '❌'}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <MessageSquare className="h-3 w-3" />
-                    <span>{stats.totalChats} chat</span>
+                    <span>{stats?.totalChats || 0} chat</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Users className="h-3 w-3" />
-                    <span>{stats.totalTemplates} template</span>
+                    <span>{stats?.totalTemplates || 0} template</span>
                   </div>
                 </div>
               )}
