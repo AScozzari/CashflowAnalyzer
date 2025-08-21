@@ -351,7 +351,7 @@ export default function OptimizedDashboard() {
                             }
                           </div>
                           <div>
-                            <p className="text-sm font-medium">{movement.description}</p>
+                            <p className="text-sm font-medium">{movement.reason || 'Movimento generico'}</p>
                             <p className="text-xs text-muted-foreground">
                               {format(new Date(movement.flowDate), 'dd/MM/yyyy')}
                             </p>

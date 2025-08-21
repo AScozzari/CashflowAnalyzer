@@ -32,7 +32,7 @@ export default function Movements() {
   // Stati per i filtri
   const [filters, setFilters] = useState<MovementFilters>({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
 
   // Create query key based on filters and pagination
   const queryKey = useMemo(() => {
