@@ -37,6 +37,16 @@ import {
   type SmsBlacklist, type InsertSmsBlacklist,
   type SmsStatistics, type InsertSmsStatistics
 } from "@shared/schema";
+import { 
+  BackupConfiguration, 
+  BackupJob, 
+  RestorePoint, 
+  BackupAuditLog,
+  BackupConfigurationInsert,
+  BackupJobInsert,
+  RestorePointInsert,
+  BackupAuditLogInsert
+} from "../shared/backup-schema";
 import crypto from 'crypto';
 import { db } from "./db";
 import { eq, desc, and, gte, lte, sql, count, or, isNull, isNotNull, inArray } from "drizzle-orm";
@@ -2810,7 +2820,7 @@ async getMovements(filters: {
         }
         
         await this.updateWhatsappSettings(settings.id, {
-          lastTestAt: new Date(),
+          // lastTestAt: new Date(), // Property doesn't exist in schema
           isApiConnected: true
         });
         
@@ -2821,7 +2831,7 @@ async getMovements(filters: {
         }
         
         await this.updateWhatsappSettings(settings.id, {
-          lastTestAt: new Date(),
+          // lastTestAt: new Date(), // Property doesn't exist in schema
           isApiConnected: true
         });
         
@@ -3138,7 +3148,7 @@ async getMovements(filters: {
       const lowerQuery = sqlQuery.toLowerCase();
       
       if (lowerQuery.includes('movements') || lowerQuery.includes('movimenti')) {
-        const movements = await this.getAllMovements(userId);
+        const movements = await this.getMovements();
         return movements.slice(0, 10); // Limit results
       }
       
