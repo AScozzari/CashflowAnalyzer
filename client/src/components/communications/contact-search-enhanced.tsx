@@ -202,10 +202,10 @@ export function ContactSearchEnhanced({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="w-full space-y-3 relative">
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
         <Input
           placeholder={placeholder}
           value={searchQuery}
@@ -217,10 +217,23 @@ export function ContactSearchEnhanced({
             }
           }}
           onFocus={() => setIsExpanded(true)}
-          className="pl-10"
+          className="pl-10 w-full"
           data-testid="contact-search-input"
           autoComplete="off"
         />
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+            onClick={() => {
+              setSearchQuery("");
+              setIsExpanded(false);
+            }}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        )}
       </div>
 
       {/* Selected Contacts (for multi-select) */}
@@ -245,9 +258,14 @@ export function ContactSearchEnhanced({
 
       {/* Filters */}
       {isExpanded && (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 p-2 bg-muted/20 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Filtri:</span>
+          </div>
+          
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-36 h-8">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent>
@@ -259,7 +277,7 @@ export function ContactSearchEnhanced({
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-28 h-8">
               <SelectValue placeholder="Stato" />
             </SelectTrigger>
             <SelectContent>
@@ -272,12 +290,14 @@ export function ContactSearchEnhanced({
           <Button
             variant="outline"
             size="sm"
+            className="h-8 px-3"
             onClick={() => {
               setSearchQuery("");
               setTypeFilter("all");
               setStatusFilter("all");
             }}
           >
+            <X className="h-3 w-3 mr-1" />
             Reset
           </Button>
         </div>
@@ -285,67 +305,69 @@ export function ContactSearchEnhanced({
 
       {/* Results */}
       {isExpanded && (
-        <Card className="max-h-80">
-          <ScrollArea className="h-full">
-            <CardContent className="p-2">
+        <Card className="max-h-80 relative z-10 mt-1 shadow-lg border">
+          <ScrollArea className="h-full max-h-72">
+            <CardContent className="p-3">
               {filteredContacts.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Search className="h-8 w-8 mx-auto mb-2" />
-                  <p>Nessun contatto trovato</p>
-                  <p className="text-sm">Prova a modificare i filtri di ricerca</p>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">Nessun contatto trovato</p>
+                  <p className="text-xs mt-1">Prova a modificare i filtri di ricerca</p>
                 </div>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {filteredContacts.map(contact => (
                     <div
                       key={contact.id}
                       onClick={() => handleContactClick(contact)}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-all duration-200 border border-transparent hover:border-border"
                       data-testid={`contact-option-${contact.id}`}
                     >
-                      <Avatar className="h-8 w-8">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
                         <AvatarImage src={contact.avatar} />
                         <AvatarFallback className={`text-white text-xs ${getContactColor(contact.type)}`}>
                           {getContactIcon(contact.type)}
                         </AvatarFallback>
                       </Avatar>
                       
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm truncate">{contact.name}</span>
-                          <Badge variant="outline" className="text-xs">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm truncate max-w-[150px]">{contact.name}</span>
+                          <Badge variant="outline" className="text-xs px-2 py-0.5 flex-shrink-0">
                             {contact.type === 'resource' ? 'Risorsa' : 
                              contact.type === 'customer' ? 'Cliente' : 'Fornitore'}
                           </Badge>
                           {contact.status === 'inactive' && (
-                            <Badge variant="secondary" className="text-xs">Inattivo</Badge>
+                            <Badge variant="secondary" className="text-xs px-2 py-0.5 flex-shrink-0">
+                              Inattivo
+                            </Badge>
                           )}
                         </div>
                         
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <div className="space-y-1">
                           {contact.phone && (
-                            <div className="flex items-center gap-1 text-green-600 font-medium">
-                              <Phone className="h-3 w-3" />
-                              {contact.phone}
+                            <div className="flex items-center gap-1.5 text-xs">
+                              <Phone className="h-3 w-3 text-green-600 flex-shrink-0" />
+                              <span className="text-green-600 font-medium">{contact.phone}</span>
                             </div>
                           )}
                           {contact.email && (
-                            <div className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {contact.email}
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Mail className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{contact.email}</span>
                             </div>
                           )}
                           {contact.company && (
-                            <div className="flex items-center gap-1 truncate">
-                              <Building2 className="h-3 w-3" />
-                              {contact.company}
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Building2 className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{contact.company}</span>
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-70 hover:opacity-100">
                           <MessageSquare className="h-4 w-4" />
                         </Button>
                       </div>
@@ -360,9 +382,16 @@ export function ContactSearchEnhanced({
 
       {/* Quick Actions */}
       {isExpanded && (
-        <div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
-          <span>{filteredContacts.length} contatti trovati</span>
-          <Button variant="ghost" size="sm" onClick={() => setIsExpanded(false)}>
+        <div className="flex justify-between items-center text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded-lg">
+          <span className="font-medium">
+            {filteredContacts.length} contatto{filteredContacts.length !== 1 ? 'i' : ''} trovat{filteredContacts.length !== 1 ? 'i' : 'o'}
+          </span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 px-2 text-xs"
+            onClick={() => setIsExpanded(false)}
+          >
             Chiudi
           </Button>
         </div>
