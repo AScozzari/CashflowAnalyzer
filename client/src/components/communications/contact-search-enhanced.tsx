@@ -133,24 +133,38 @@ export function ContactSearchEnhanced({
     return contacts;
   }, [resources, customers, suppliers, filterByType]);
 
-  // Filter contacts based on search and filters
+  // Filter contacts based on search and filters with improved logic
   const filteredContacts = useMemo(() => {
-    return allContacts.filter(contact => {
-      // Search filter
-      const searchLower = searchQuery.toLowerCase();
-      const matchesSearch = !searchQuery || 
-        contact.name.toLowerCase().includes(searchLower) ||
-        (contact.phone && contact.phone.includes(searchQuery)) ||
-        (contact.email && contact.email.toLowerCase().includes(searchLower)) ||
-        (contact.company && contact.company.toLowerCase().includes(searchLower));
+    let filtered = [...allContacts];
+    
+    // Search filter - more robust and immediate
+    if (searchQuery && searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(contact => {
+        const nameMatch = contact.name.toLowerCase().includes(query);
+        const phoneMatch = contact.phone?.replace(/\s+/g, '').includes(query.replace(/\s+/g, ''));
+        const emailMatch = contact.email?.toLowerCase().includes(query);
+        const companyMatch = contact.company?.toLowerCase().includes(query);
+        
+        return nameMatch || phoneMatch || emailMatch || companyMatch;
+      });
+    }
 
-      // Type filter
-      const matchesType = typeFilter === 'all' || contact.type === typeFilter;
+    // Type filter
+    if (typeFilter && typeFilter !== 'all') {
+      filtered = filtered.filter(contact => contact.type === typeFilter);
+    }
 
-      // Status filter
-      const matchesStatus = statusFilter === 'all' || contact.status === statusFilter;
+    // Status filter
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter(contact => contact.status === statusFilter);
+    }
 
-      return matchesSearch && matchesType && matchesStatus;
+    // Sort by relevance: active first, then alphabetically
+    return filtered.sort((a, b) => {
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (a.status !== 'active' && b.status === 'active') return 1;
+      return a.name.localeCompare(b.name, 'it');
     });
   }, [allContacts, searchQuery, typeFilter, statusFilter]);
 
@@ -192,10 +206,17 @@ export function ContactSearchEnhanced({
         <Input
           placeholder={placeholder}
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            setSearchQuery(newValue);
+            if (!isExpanded && newValue.trim() !== '') {
+              setIsExpanded(true);
+            }
+          }}
           onFocus={() => setIsExpanded(true)}
           className="pl-10"
           data-testid="contact-search-input"
+          autoComplete="off"
         />
       </div>
 

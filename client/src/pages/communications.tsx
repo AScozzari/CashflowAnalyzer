@@ -19,7 +19,7 @@ import {
 
 // Import delle interfacce specifiche per canale
 import { EmailInterface } from "@/components/communications/email-interface";
-import { WhatsAppInterface } from "@/components/communications/whatsapp-interface";
+import { WhatsAppInterfaceImproved as WhatsAppInterface } from "@/components/communications/whatsapp-interface-improved";
 import { SMSInterface } from "@/components/communications/sms-interface";
 import { TelegramInterface } from "@/components/communications/telegram-interface";
 
