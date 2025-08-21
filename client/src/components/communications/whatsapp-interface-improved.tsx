@@ -226,7 +226,7 @@ export function WhatsAppInterfaceImproved() {
             <ScrollArea className="h-[350px]">
               {whatsappChats
                 .filter(chat => 
-                  chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  (chat.name && chat.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
                   (chat.phone && chat.phone.includes(searchQuery))
                 )
                 .map((chat) => (
@@ -243,7 +243,7 @@ export function WhatsAppInterfaceImproved() {
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={chat.avatar} />
                           <AvatarFallback className="bg-green-100 text-green-700">
-                            {chat.name.split(' ').map(n => n[0]).join('')}
+                            {chat.name ? chat.name.split(' ').map(n => n[0]).join('') : '?'}
                           </AvatarFallback>
                         </Avatar>
                         {chat.online && (
@@ -252,7 +252,7 @@ export function WhatsAppInterfaceImproved() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-sm truncate">{chat.name}</h4>
+                          <h4 className="font-medium text-sm truncate">{chat.name || 'Contatto sconosciuto'}</h4>
                           <span className="text-xs text-muted-foreground">{chat.lastSeen}</span>
                         </div>
                         <div className="flex items-center justify-between">
