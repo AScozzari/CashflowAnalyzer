@@ -1102,6 +1102,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup communication routes
   setupWhatsAppRoutes(app);
   setupTelegramRoutes(app);
+  
+  // Auto-initialize Telegram service with existing settings
+  const initializeTelegramService = async () => {
+    try {
+      const { storage } = await import('./storage');
+      const telegramSettings = await storage.getTelegramSettings();
+      
+      if (telegramSettings.length > 0) {
+        const settings = telegramSettings[0];
+        const { telegramService } = await import('./services/telegram-service');
+        
+        await telegramService.initialize({
+          botToken: settings.botToken,
+          botUsername: settings.botUsername,
+          webhookUrl: settings.webhookUrl || undefined,
+          webhookSecret: settings.webhookSecret || undefined,
+          allowedUpdates: settings.allowedUpdates as string[],
+          enableBusinessHours: settings.enableBusinessHours || false,
+          businessHoursStart: settings.businessHoursStart,
+          businessHoursEnd: settings.businessHoursEnd,
+          businessDays: settings.businessDays as string[],
+          enableAutoReply: settings.enableAutoReply || false,
+          enableAiResponses: settings.enableAiResponses || false,
+          aiModel: settings.aiModel,
+          aiSystemPrompt: settings.aiSystemPrompt || undefined
+        });
+        
+        console.log('🚀 [TELEGRAM] Service auto-initialized from existing settings');
+      }
+    } catch (error) {
+      console.error('❌ [TELEGRAM] Auto-initialization failed:', error);
+    }
+  };
+  
+  // Initialize async after server setup
+  setTimeout(initializeTelegramService, 1000);
 
   // Create and return HTTP server
   const httpServer = createServer(app);
