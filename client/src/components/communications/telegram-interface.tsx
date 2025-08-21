@@ -61,11 +61,12 @@ export function TelegramInterface() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Queries
-  const { data: chats, isLoading: chatsLoading } = useQuery({
+  // Queries  
+  const { data: chats, isLoading: chatsLoading, refetch: refetchChats } = useQuery({
     queryKey: ['/api/telegram/chats'],
-    enabled: true
-  }) as { data: TelegramChat[], isLoading: boolean };
+    enabled: true,
+    refetchInterval: 10000 // Refresh ogni 10 secondi per nuove chat
+  }) as { data: TelegramChat[], isLoading: boolean, refetch: () => void };
 
   const { data: templates, isLoading: templatesLoading } = useQuery({
     queryKey: ['/api/telegram/templates'],

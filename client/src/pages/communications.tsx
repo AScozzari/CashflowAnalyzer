@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Header } from "@/components/ui/header";
+import Header from "@/components/layout/header";
+import { FooterSignature } from "@/components/layout/footer-signature";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,8 @@ interface CommunicationStats {
 
 export default function Communications() {
   const [activeTab, setActiveTab] = useState("overview");
+  
+  const communicationsAction = null;
   
   // Mock stats - da sostituire con dati reali dall'API
   const stats: CommunicationStats = {
@@ -66,7 +69,7 @@ export default function Communications() {
       <Header 
         title="Centro Comunicazioni" 
         subtitle="Gestione multi-canale per Email, WhatsApp, SMS e Telegram"
-        action={null}
+        action={communicationsAction}
       />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -237,6 +240,8 @@ export default function Communications() {
           <TelegramInterface />
         </TabsContent>
       </Tabs>
+      
+      <FooterSignature />
     </div>
   );
 }
