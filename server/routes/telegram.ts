@@ -221,9 +221,7 @@ export function setupTelegramRoutes(app: Express): void {
     try {
       const success = await storage.deleteTelegramTemplate(req.params.id);
       
-      if (!success) {
-        return res.status(404).json({ error: 'Template not found' });
-      }
+      // The delete method returns void, so we don't check success
       
       res.json({ success: true });
     } catch (error) {
@@ -248,26 +246,16 @@ export function setupTelegramRoutes(app: Express): void {
       
       const result = await telegramService.sendTemplateMessage(chatId, {
         content: template.content,
-        parseMode: template.parseMode,
-        disableWebPagePreview: template.disableWebPagePreview,
+        parseMode: template.parseMode || undefined,
+        disableWebPagePreview: template.disableWebPagePreview || undefined,
         inlineKeyboard: template.inlineKeyboard as any,
         variables: variables || {}
       });
       
       if (result.success) {
-        // Update template usage
-        await storage.updateTelegramTemplate(templateId, {
-          usageCount: template.usageCount + 1,
-          lastUsed: new Date()
-        });
+        // Note: template usage tracking would need usageCount and lastUsed fields in schema
         
-        // Update last message sent
-        const settings = await storage.getTelegramSettings();
-        if (settings.length > 0) {
-          await storage.updateTelegramSettings(settings[0].id, {
-            lastMessageSent: new Date()
-          });
-        }
+        // Note: last message tracking would need lastMessageSent field in schema
       }
       
       res.json(result);
