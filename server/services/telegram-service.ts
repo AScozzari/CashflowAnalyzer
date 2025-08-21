@@ -537,7 +537,7 @@ Nel frattempo puoi:
         // Create new chat
         await storage.createTelegramChat({
           telegramChatId: chatId,
-          chatId: parseInt(chatId), // Add missing chat_id field
+          chatId: parseInt(chatId), // Telegram chat ID as number
           chatType: message.chat.type,
           firstName: message.from.first_name,
           lastName: message.from.last_name,

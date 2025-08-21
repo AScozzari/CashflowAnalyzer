@@ -1021,6 +1021,7 @@ export const telegramTemplates = pgTable("telegram_templates", {
 // Telegram Chat History (per tracciare conversazioni)
 export const telegramChats = pgTable("telegram_chats", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  chatId: integer("chat_id").notNull(), // Changed to match bigint database type
   telegramChatId: text("telegram_chat_id").notNull().unique(),
   chatType: text("chat_type").notNull(), // 'private', 'group', 'supergroup', 'channel'
   title: text("title"), // Nome del gruppo/canale

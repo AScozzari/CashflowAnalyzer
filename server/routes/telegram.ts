@@ -6,6 +6,13 @@ import { insertTelegramSettingsSchema, insertTelegramTemplateSchema } from '@sha
 import { z } from 'zod';
 
 export function setupTelegramRoutes(app: Express): void {
+  console.log('🔧 [TELEGRAM ROUTES] Setting up Telegram routes...');
+  
+  // Test route
+  app.get('/api/telegram/test-route', (req, res) => {
+    console.log('🔧 [TELEGRAM TEST] Test route called');
+    res.json({ message: 'Telegram routes loaded successfully' });
+  });
   
   // Get Telegram settings
   app.get('/api/telegram/settings', async (req, res) => {
@@ -287,10 +294,12 @@ export function setupTelegramRoutes(app: Express): void {
   // Get Telegram chats
   app.get('/api/telegram/chats', async (req, res) => {
     try {
+      console.log('[TELEGRAM API] Getting chats...');
       const chats = await storage.getTelegramChats();
+      console.log('[TELEGRAM API] Found', chats.length, 'chats');
       res.json(chats);
     } catch (error) {
-      console.error('Error fetching Telegram chats:', error);
+      console.error('[TELEGRAM API] Error fetching Telegram chats:', error);
       res.status(500).json({ error: 'Failed to fetch chats' });
     }
   });
