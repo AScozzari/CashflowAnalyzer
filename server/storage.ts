@@ -3155,21 +3155,4 @@ async getMovements(filters: {
   }
 }
 
-// Lazy initialization to avoid circular dependency issues
-let _storage: DatabaseStorage | null = null;
-
-export function getStorage(): DatabaseStorage {
-  if (!_storage) {
-    try {
-      _storage = new DatabaseStorage();
-      console.log('[STORAGE] DatabaseStorage initialized successfully');
-    } catch (error) {
-      console.error('[STORAGE] Failed to initialize DatabaseStorage:', error);
-      throw error;
-    }
-  }
-  return _storage;
-}
-
-// Export for compatibility
-export const storage = getStorage();
+export const storage = new DatabaseStorage();
