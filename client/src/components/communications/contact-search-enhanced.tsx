@@ -83,19 +83,19 @@ export function ContactSearchEnhanced({
     resources: resources.length,
     customers: customers.length, 
     suppliers: suppliers.length,
-    onlyMobileContacts: {
-      resources: resources.filter(r => r.mobile).length,
-      customers: customers.filter(c => c.mobile).length,
-      suppliers: suppliers.filter(s => s.mobile).length
+    withPhoneContacts: {
+      resources: resources.filter(r => r.mobile || r.phone).length,
+      customers: customers.filter(c => c.mobile || c.phone).length,
+      suppliers: suppliers.filter(s => s.mobile || s.phone).length
     },
     authErrors: {
       resourcesError: resourcesError?.message?.includes('401') || resourcesError?.message?.includes('autenticato'),
       customersError: customersError?.message?.includes('401') || customersError?.message?.includes('autenticato'), 
       suppliersError: suppliersError?.message?.includes('401') || suppliersError?.message?.includes('autenticato')
     },
-    sampleMobileNames: [...resources.filter(r => r.mobile).slice(0,2).map(r => `${r.firstName} ${r.lastName}`), 
-                       ...customers.filter(c => c.mobile).slice(0,2).map(c => c.name || `${c.firstName} ${c.lastName}`),
-                       ...suppliers.filter(s => s.mobile).slice(0,2).map(s => s.name)]
+    sampleNames: [...resources.filter(r => r.mobile || r.phone).slice(0,2).map(r => `${r.firstName} ${r.lastName}`), 
+                 ...customers.filter(c => c.mobile || c.phone).slice(0,2).map(c => c.name || `${c.firstName} ${c.lastName}`),
+                 ...suppliers.filter(s => s.mobile || s.phone).slice(0,2).map(s => s.name)]
   });
 
   // Transform data into unified contact format
@@ -105,14 +105,14 @@ export function ContactSearchEnhanced({
     // Add resources (prioritize mobile for WhatsApp/SMS)
     if (!filterByType || filterByType.includes('resource')) {
       resources.forEach(resource => {
-        // For WhatsApp/SMS, prefer mobile numbers
-        const mobileNumber = resource.mobile;
-        if (mobileNumber) { // Only include if mobile number exists
+        // For WhatsApp/SMS, prefer mobile but accept phone too
+        const phoneNumber = resource.mobile || resource.phone;
+        if (phoneNumber) { // Include if has any phone number
           contacts.push({
             id: `resource-${resource.id}`,
             name: `${resource.firstName} ${resource.lastName}`,
             type: 'resource',
-            phone: mobileNumber, // Use mobile number for messaging
+            phone: phoneNumber, // Use available phone number
             email: resource.email || undefined,
             status: resource.isActive ? 'active' : 'inactive',
             lastContact: resource.createdAt ? new Date(resource.createdAt).toISOString() : undefined
@@ -128,13 +128,13 @@ export function ContactSearchEnhanced({
           ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
           : customer.name || '';
         
-        const mobileNumber = customer.mobile; // Prefer mobile for messaging apps
-        if (name && mobileNumber) { // Only include if name and mobile number exist
+        const phoneNumber = customer.mobile || customer.phone; // Prefer mobile but accept phone
+        if (name && phoneNumber) { // Include if name and any phone number exist
           contacts.push({
             id: `customer-${customer.id}`,
             name: name,
             type: 'customer',
-            phone: mobileNumber, // Use mobile number for messaging
+            phone: phoneNumber, // Use available phone number
             email: customer.email || undefined,
             status: customer.isActive ? 'active' : 'inactive',
             tags: customer.type ? [customer.type] : undefined,
@@ -147,13 +147,13 @@ export function ContactSearchEnhanced({
     // Add suppliers (prioritize mobile for messaging)
     if (!filterByType || filterByType.includes('supplier')) {
       suppliers.forEach(supplier => {
-        const mobileNumber = supplier.mobile; // Prefer mobile for messaging apps
-        if (mobileNumber) { // Only include if mobile number exists
+        const phoneNumber = supplier.mobile || supplier.phone; // Prefer mobile but accept phone  
+        if (phoneNumber) { // Include if any phone number exists
           contacts.push({
             id: `supplier-${supplier.id}`,
             name: supplier.name,
             type: 'supplier',
-            phone: mobileNumber, // Use mobile number for messaging
+            phone: phoneNumber, // Use available phone number
             email: supplier.email || undefined,
             status: supplier.isActive ? 'active' : 'inactive',
             lastContact: supplier.createdAt ? new Date(supplier.createdAt).toISOString() : undefined
@@ -343,7 +343,7 @@ export function ContactSearchEnhanced({
                 <div className="text-center py-8 text-muted-foreground">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
                   <p className="font-medium">Caricamento contatti...</p>
-                  <p className="text-xs mt-1">Solo contatti con numero mobile</p>
+                  <p className="text-xs mt-1">Solo contatti con numero di telefono</p>
                 </div>
               ) : filteredContacts.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
@@ -351,12 +351,12 @@ export function ContactSearchEnhanced({
                   <p className="font-medium">
                     {(resourcesError || customersError || suppliersError) 
                       ? "Errore autenticazione" 
-                      : searchQuery ? "Nessun contatto trovato" : "Cerca contatti con numero mobile"}
+                      : searchQuery ? "Nessun contatto trovato" : "Cerca contatti con numero di telefono"}
                   </p>
                   <p className="text-xs mt-1">
                     {(resourcesError || customersError || suppliersError) 
                       ? "Fai login come admin/admin123 per vedere i contatti"
-                      : "Solo contatti con numero mobile vengono mostrati"}
+                      : "Solo contatti con numero di telefono vengono mostrati"}
                   </p>
                 </div>
               ) : (
