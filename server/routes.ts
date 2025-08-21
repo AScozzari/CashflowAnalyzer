@@ -113,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Initialize and setup webhook system for all channels
   const { WebhookRouter, storage } = await import('./webhook-manager');
-  WebhookRouter.initializeAI(storage);
+  // WebhookRouter.initializeAI(storage);
   WebhookRouter.setupRoutes(app);
   
   console.log('✅ Multi-Channel Webhook System initialized:');
@@ -1070,6 +1070,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching recent movements:', error);
       res.status(500).json({ message: "Failed to fetch recent movements" });
+    }
+  }));
+
+  // NOTIFICATIONS API - Missing routes
+  app.get("/api/notifications", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      const isRead = req.query.isRead === 'true' ? true : req.query.isRead === 'false' ? false : undefined;
+      const notifications = await dbStorage.getNotifications(userId, isRead);
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  }));
+
+  app.get("/api/notifications/unread-count", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      const count = await dbStorage.getUnreadNotificationsCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
     }
   }));
 
