@@ -54,20 +54,23 @@ export function ContactSearchEnhanced({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Fetch data from different endpoints
+  // Fetch data from different endpoints - handle authentication errors gracefully
   const { data: resources = [], error: resourcesError } = useQuery<Resource[]>({ 
     queryKey: ["/api/resources"],
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: 1
   });
   
   const { data: customers = [], error: customersError } = useQuery<Customer[]>({ 
     queryKey: ["/api/customers"],
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: 1
   });
   
   const { data: suppliers = [], error: suppliersError } = useQuery<Supplier[]>({ 
     queryKey: ["/api/suppliers"],
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: 1
   });
 
   // Debug logging
@@ -75,9 +78,11 @@ export function ContactSearchEnhanced({
     resources: resources.length,
     customers: customers.length, 
     suppliers: suppliers.length,
-    resourcesError,
-    customersError,
-    suppliersError,
+    authErrors: {
+      resourcesError: resourcesError?.message?.includes('401') || resourcesError?.message?.includes('autenticato'),
+      customersError: customersError?.message?.includes('401') || customersError?.message?.includes('autenticato'), 
+      suppliersError: suppliersError?.message?.includes('401') || suppliersError?.message?.includes('autenticato')
+    },
     sampleNames: [...resources.slice(0,2).map(r => `${r.firstName} ${r.lastName}`), 
                   ...customers.slice(0,2).map(c => c.name || `${c.firstName} ${c.lastName}`),
                   ...suppliers.slice(0,2).map(s => s.name)]
@@ -326,8 +331,16 @@ export function ContactSearchEnhanced({
               {filteredContacts.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="font-medium">Nessun contatto trovato</p>
-                  <p className="text-xs mt-1">Prova a modificare i filtri di ricerca</p>
+                  <p className="font-medium">
+                    {(resourcesError || customersError || suppliersError) 
+                      ? "Errore autenticazione" 
+                      : "Nessun contatto trovato"}
+                  </p>
+                  <p className="text-xs mt-1">
+                    {(resourcesError || customersError || suppliersError) 
+                      ? "Fai login come admin/admin123 per vedere i contatti"
+                      : "Prova a modificare i filtri di ricerca"}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
