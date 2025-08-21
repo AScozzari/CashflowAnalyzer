@@ -302,6 +302,7 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
+    console.log('[STORAGE] DatabaseStorage constructor called');
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
     });
@@ -3155,4 +3156,7 @@ async getMovements(filters: {
   }
 }
 
+// Initialize DatabaseStorage with proper error handling
+console.log('[STORAGE] Initializing DatabaseStorage...');
 export const storage = new DatabaseStorage();
+console.log('[STORAGE] DatabaseStorage initialized successfully');

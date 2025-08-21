@@ -1,6 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+// Function to get storage (avoids circular dependency)
+async function getStorage() {
+  const storageModule = await import('./storage');
+  return storageModule.storage;
+}
 import { aiService } from "./ai-service";
 import { db } from "./db";
 import { eq, desc, sum, count, sql } from "drizzle-orm";
@@ -158,6 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Companies
   app.get("/api/companies", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
+      const storage = await getStorage();
       const companies = await storage.getCompanies();
       res.json(companies);
     } catch (error) {
@@ -649,6 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validFilters.resourceId = user.resourceId;
       }
 
+      const storage = await getStorage();
       const movements = await storage.getMovements(validFilters);
       
       // Apply pagination
@@ -900,6 +906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resourceIdFilter = user.resourceId;
       }
       
+      const storage = await getStorage();
       const stats = await storage.getMovementStats(period, resourceIdFilter);
       res.json(stats);
     } catch (error) {
