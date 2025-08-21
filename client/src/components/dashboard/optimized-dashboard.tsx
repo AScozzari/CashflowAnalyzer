@@ -329,17 +329,17 @@ export default function OptimizedDashboard() {
               <QuickActions />
             </ErrorBoundary>
             
-            {/* Recent Activity */}
+            {/* Recent Activity - All Current Month */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Attività Recente</CardTitle>
+                <CardTitle className="text-lg">Movimenti Mese Corrente ({movements?.length || 0})</CardTitle>
               </CardHeader>
               <CardContent>
                 {movementsLoading ? (
                   <LoadingSkeleton lines={4} />
                 ) : (
-                  <div className="space-y-3">
-                    {movements?.slice(0, 5).map((movement: MovementWithRelations, index: number) => (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {movements?.map((movement: MovementWithRelations, index: number) => (
                       <div key={movement.id || index} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-full ${
