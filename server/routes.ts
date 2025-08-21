@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { getStorage } from "./storage";
 import { aiService } from "./ai-service";
 import { db } from "./db";
 import { eq, desc, sum, count, sql } from "drizzle-orm";
@@ -898,6 +898,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let resourceIdFilter = undefined;
       if (user.role === 'user' && user.resourceId) {
         resourceIdFilter = user.resourceId;
+      }
+      
+      const storage = getStorage();
+      console.log('[DEBUG] Storage object:', typeof storage, storage ? 'OK' : 'UNDEFINED');
+      console.log('[DEBUG] getMovementStats method:', typeof storage?.getMovementStats);
+      
+      if (!storage || !storage.getMovementStats) {
+        console.log('[ERROR] Storage or getMovementStats not available');
+        throw new Error('Storage not properly initialized');
       }
       
       const stats = await storage.getMovementStats(period, resourceIdFilter);
