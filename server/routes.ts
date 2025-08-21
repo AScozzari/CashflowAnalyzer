@@ -3725,6 +3725,12 @@ Formato: JSON con sezioni optimization_suggestions, tax_alerts, potential_saving
   // Setup modern WhatsApp Business API routes (Twilio 2024 & LinkMobility)
   setupWhatsAppRoutes(app);
 
+  // AI Routes for Insights and Anomaly Detection  
+  const aiInsightsRoutes = await import("./routes/ai-insights");
+  const aiAnomaliesRoutes = await import("./routes/ai-anomalies");
+  app.use('/api/ai', aiInsightsRoutes.default);
+  app.use('/api/ai', aiAnomaliesRoutes.default);
+
   // Backup provider management routes
   app.get('/api/backup/providers/status', async (req, res) => {
     try {

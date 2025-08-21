@@ -8,6 +8,9 @@ import { FooterSignature } from "@/components/layout/footer-signature";
 import AdvancedFiltersNew, { type AnalyticsFilters } from "@/components/analytics/advanced-filters-new";
 import AnalyticsTable from "@/components/analytics/analytics-table";
 import AnalyticsChartsProfessional from "@/components/analytics/analytics-charts-professional";
+import { AIInsightsWidget } from "@/components/analytics/ai-insights-widget";
+import { AnomalyDetector } from "@/components/analytics/anomaly-detector";
+import { FinancialHealthScore } from "@/components/analytics/financial-health-score";
 import MovementFormNewFixed from "@/components/movements/movement-form-new-fixed";
 import { useToast } from "@/hooks/use-toast";
 import type { MovementWithRelations } from "@shared/schema";
@@ -193,6 +196,24 @@ export default function Analytics() {
         {/* Results Section */}
         {movementsData && (
           <>
+            {/* AI-Powered Analytics - Quick Wins Integration */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              <FinancialHealthScore 
+                movements={(movementsData as any)?.data || []}
+              />
+              <AIInsightsWidget 
+                movements={(movementsData as any)?.data || []}
+                dateRange={filters?.createdDateFrom && filters?.createdDateTo ? {
+                  from: filters.createdDateFrom,
+                  to: filters.createdDateTo
+                } : undefined}
+              />
+              <AnomalyDetector 
+                movements={(movementsData as any)?.data || []}
+                autoRefresh={true}
+              />
+            </div>
+
             {/* Analytics Charts - Professional & Responsive */}
             <div className="bg-card rounded-lg shadow-sm border p-4 lg:p-6">
               <AnalyticsChartsProfessional 
