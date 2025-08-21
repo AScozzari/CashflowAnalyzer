@@ -2406,6 +2406,8 @@ async getMovements(filters: {
       throw new Error("Failed to fetch backup stats");
     }
   }
+  */
+  // END TEMPORARY BACKUP DISABLE
 
   // AI Document Jobs Methods
   async getAiDocumentJobs(userId: string): Promise<AiDocumentJob[]> {

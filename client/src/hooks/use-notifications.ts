@@ -110,10 +110,14 @@ export function useDeleteNotification() {
         return old.filter((notification: any) => notification.id !== notificationId);
       });
 
-      // Aggiorna il conteggio
-      queryClient.setQueryData(["/api/notifications/unread-count"], (old: number) => {
-        return Math.max(0, (old || 0) - 1);
-      });
+      // Aggiorna il conteggio - controlla se la notifica era non letta prima di sottrarre
+      const notifications = queryClient.getQueryData(["/api/notifications"]) as any[];
+      const notification = notifications?.find((n: any) => n.id === notificationId);
+      if (notification && !notification.isRead) {
+        queryClient.setQueryData(["/api/notifications/unread-count"], (old: number) => {
+          return Math.max(0, (old || 0) - 1);
+        });
+      }
     },
     onSuccess: () => {
       // Ricarica per essere sicuri che i dati siano allineati
