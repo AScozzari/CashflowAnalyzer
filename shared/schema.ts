@@ -1067,8 +1067,8 @@ export const insertTelegramSettingsSchema = createInsertSchema(telegramSettings)
   webhookUrl: z.string().url("URL webhook non valido").optional().or(z.literal("")),
   maxMessageLength: z.number().min(1).max(4096).default(4096),
   rateLimitPerMinute: z.number().min(1).max(300).default(30),
-  businessHoursStart: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato ora non valido (HH:MM)"),
-  businessHoursEnd: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato ora non valido (HH:MM)"),
+  businessHoursStart: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato ora non valido (HH:MM)").default('09:00'),
+  businessHoursEnd: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato ora non valido (HH:MM)").default('18:00'),
   aiModel: z.enum(['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo']).default('gpt-4o')
 });
 

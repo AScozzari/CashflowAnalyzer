@@ -1,0 +1,113 @@
+https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/telegram/settings 400 (Bad Request)
+window.fetch @ App.tsx:52
+mutationFn @ telegram-settings.tsx:111
+fn @ @tanstack_react-query.js?v=6b7b59fc:1189
+run @ @tanstack_react-query.js?v=6b7b59fc:494
+start @ @tanstack_react-query.js?v=6b7b59fc:536
+execute @ @tanstack_react-query.js?v=6b7b59fc:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=6b7b59fc:2630
+(anonymous) @ @tanstack_react-query.js?v=6b7b59fc:3295
+handleSubmit @ telegram-settings.tsx:185
+callCallback2 @ chunk-RPCDYKBN.js?v=6b7b59fc:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=6b7b59fc:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=6b7b59fc:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=6b7b59fc:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=6b7b59fc:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=6b7b59fc:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=6b7b59fc:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=6b7b59fc:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=6b7b59fc:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=6b7b59fc:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=6b7b59fc:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=6b7b59fc:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=6b7b59fc:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=6b7b59fc:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=6b7b59fc:5449Understand this error
+App.tsx:52  POST https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/telegram/settings 400 (Bad Request)
+window.fetch @ App.tsx:52
+await in window.fetch
+mutationFn @ telegram-settings.tsx:111
+fn @ @tanstack_react-query.js?v=6b7b59fc:1189
+run @ @tanstack_react-query.js?v=6b7b59fc:494
+start @ @tanstack_react-query.js?v=6b7b59fc:536
+execute @ @tanstack_react-query.js?v=6b7b59fc:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=6b7b59fc:2630
+(anonymous) @ @tanstack_react-query.js?v=6b7b59fc:3295
+handleSubmit @ telegram-settings.tsx:185
+callCallback2 @ chunk-RPCDYKBN.js?v=6b7b59fc:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=6b7b59fc:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=6b7b59fc:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=6b7b59fc:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=6b7b59fc:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=6b7b59fc:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=6b7b59fc:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=6b7b59fc:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=6b7b59fc:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=6b7b59fc:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=6b7b59fc:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=6b7b59fc:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=6b7b59fc:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=6b7b59fc:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=6b7b59fc:5449Understand this error
+App.tsx:52  POST https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/telegram/settings 400 (Bad Request)
+window.fetch @ App.tsx:52
+await in window.fetch
+mutationFn @ telegram-settings.tsx:111
+fn @ @tanstack_react-query.js?v=6b7b59fc:1189
+run @ @tanstack_react-query.js?v=6b7b59fc:494
+start @ @tanstack_react-query.js?v=6b7b59fc:536
+execute @ @tanstack_react-query.js?v=6b7b59fc:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=6b7b59fc:2630
+(anonymous) @ @tanstack_react-query.js?v=6b7b59fc:3295
+handleSubmit @ telegram-settings.tsx:185
+callCallback2 @ chunk-RPCDYKBN.js?v=6b7b59fc:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=6b7b59fc:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=6b7b59fc:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=6b7b59fc:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=6b7b59fc:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=6b7b59fc:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=6b7b59fc:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=6b7b59fc:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=6b7b59fc:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=6b7b59fc:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=6b7b59fc:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=6b7b59fc:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=6b7b59fc:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=6b7b59fc:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=6b7b59fc:5449Understand this error
+App.tsx:57 [REPLIT FETCH] Max retries raggiunto per: /api/telegram/settings Error: HTTP 400
+    at window.fetch (App.tsx:54:41)
+    at async Object.mutationFn (telegram-settings.tsx:111:24)
+overrideMethod @ hook.js:608
+window.fetch @ App.tsx:57
+await in window.fetch
+mutationFn @ telegram-settings.tsx:111
+fn @ @tanstack_react-query.js?v=6b7b59fc:1189
+run @ @tanstack_react-query.js?v=6b7b59fc:494
+start @ @tanstack_react-query.js?v=6b7b59fc:536
+execute @ @tanstack_react-query.js?v=6b7b59fc:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=6b7b59fc:2630
+(anonymous) @ @tanstack_react-query.js?v=6b7b59fc:3295
+handleSubmit @ telegram-settings.tsx:185
+callCallback2 @ chunk-RPCDYKBN.js?v=6b7b59fc:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=6b7b59fc:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=6b7b59fc:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=6b7b59fc:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=6b7b59fc:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=6b7b59fc:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=6b7b59fc:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=6b7b59fc:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=6b7b59fc:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=6b7b59fc:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=6b7b59fc:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=6b7b59fc:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=6b7b59fc:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=6b7b59fc:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=6b7b59fc:5449Understand this error
+websocket-manager.ts:65 [WebSocket Manager] Sending heartbeat ping 
+websocket-manager.ts:65 [WebSocket Manager] Message received: pong
+websocket-manager.ts:65 [WebSocket Manager] Heartbeat pong received 

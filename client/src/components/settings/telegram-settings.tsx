@@ -171,13 +171,13 @@ export default function TelegramSettings() {
       maxMessageLength: parseInt(formData.get('maxMessageLength') as string) || 4096,
       rateLimitPerMinute: parseInt(formData.get('rateLimitPerMinute') as string) || 30,
       enableBusinessHours: formData.get('enableBusinessHours') === 'on',
-      businessHoursStart: formData.get('businessHoursStart') as string,
-      businessHoursEnd: formData.get('businessHoursEnd') as string,
-      businessDays: Array.from(formData.getAll('businessDays') as string[]),
+      businessHoursStart: formData.get('businessHoursStart') as string || '09:00',
+      businessHoursEnd: formData.get('businessHoursEnd') as string || '18:00',
+      businessDays: Array.from(formData.getAll('businessDays') as string[]) || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
       autoReplyOutsideHours: formData.get('autoReplyOutsideHours') === 'on',
       enableAutoReply: formData.get('enableAutoReply') === 'on',
       enableAiResponses: formData.get('enableAiResponses') === 'on',
-      aiModel: formData.get('aiModel') as string,
+      aiModel: (formData.get('aiModel') as string) || 'gpt-4o',
       aiSystemPrompt: formData.get('aiSystemPrompt') as string,
       isActive: formData.get('isActive') === 'on'
     };
