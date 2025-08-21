@@ -262,12 +262,329 @@ export class WhatsAppWebhookHandler {
   }
 }
 
+// SMS Webhook Handler
+export class SMSWebhookHandler {
+  private static aiHandler: AIWebhookHandler | null = null;
+
+  static initializeAI(storage: any): void {
+    this.aiHandler = new AIWebhookHandler(storage);
+  }
+
+  // Handle Skebby SMS webhook
+  static async handleSkebbyWebhook(req: Request, res: Response): Promise<void> {
+    try {
+      const { phone, message, timestamp, status, orderId } = req.body;
+      
+      if (status) {
+        // Status update webhook
+        await this.handleStatusUpdate({
+          messageId: orderId,
+          status: status,
+          provider: 'skebby',
+          timestamp: new Date(timestamp),
+        });
+      } else if (message && phone) {
+        // Incoming SMS webhook
+        await this.handleIncomingSMS({
+          from: phone,
+          body: message,
+          messageId: orderId || crypto.randomUUID(),
+          provider: 'skebby',
+          timestamp: new Date(timestamp || Date.now()),
+        });
+      }
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Skebby SMS webhook error:', error);
+      res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  }
+
+  private static async handleIncomingSMS(data: {
+    from: string;
+    body: string;
+    messageId: string;
+    provider: 'skebby';
+    timestamp: Date;
+  }): Promise<void> {
+    try {
+      console.log('Incoming SMS message:', {
+        from: data.from,
+        provider: data.provider,
+        body: data.body.substring(0, 50) + '...',
+        timestamp: data.timestamp
+      });
+
+      // AI-powered SMS response
+      if (this.aiHandler) {
+        const aiResult = await this.aiHandler.analyzeAndRespond({
+          from: data.from,
+          to: '', // SMS doesn't have "to" in the same way
+          body: data.body,
+          provider: 'twilio', // Use twilio as fallback for AI handler
+          timestamp: data.timestamp
+        });
+
+        if (aiResult.shouldRespond && aiResult.confidence > 0.7) {
+          console.log('SMS AI Response sent:', {
+            confidence: aiResult.confidence,
+            response: aiResult.response
+          });
+          
+          // Send SMS response using SMS service
+          const { smsResponseService } = await import('../services/sms-response-service');
+          if (aiResult.response) {
+            await smsResponseService.sendSMSResponse(data.from, aiResult.response);
+          }
+        } else {
+          // Send business hours or auto-reply
+          const { smsResponseService } = await import('../services/sms-response-service');
+          const { BusinessHoursHandler } = await import('../ai-webhook-handler');
+          
+          if (!BusinessHoursHandler.isBusinessHours()) {
+            await smsResponseService.sendBusinessHoursResponse(data.from);
+          } else {
+            await smsResponseService.sendAutoReply(data.from, data.body);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error handling incoming SMS:', error);
+    }
+  }
+
+  private static async handleStatusUpdate(data: {
+    messageId: string;
+    status: string;
+    provider: 'skebby';
+    timestamp: Date;
+  }): Promise<void> {
+    try {
+      console.log('SMS status update:', {
+        messageId: data.messageId,
+        status: data.status,
+        provider: data.provider,
+      });
+    } catch (error) {
+      console.error('Error handling SMS status update:', error);
+    }
+  }
+}
+
+// Email Webhook Handler
+export class EmailWebhookHandler {
+  private static aiHandler: AIWebhookHandler | null = null;
+
+  static initializeAI(storage: any): void {
+    this.aiHandler = new AIWebhookHandler(storage);
+  }
+
+  // Handle SendGrid Inbound Parse webhook
+  static async handleSendGridWebhook(req: Request, res: Response): Promise<void> {
+    try {
+      const { from, to, subject, text, html, timestamp, attachments } = req.body;
+      
+      await this.handleIncomingEmail({
+        from: from,
+        to: to,
+        subject: subject,
+        body: text || html,
+        messageId: crypto.randomUUID(),
+        provider: 'sendgrid',
+        timestamp: new Date(timestamp || Date.now()),
+        attachments: attachments
+      });
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('SendGrid email webhook error:', error);
+      res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  }
+
+  private static async handleIncomingEmail(data: {
+    from: string;
+    to: string;
+    subject: string;
+    body: string;
+    messageId: string;
+    provider: 'sendgrid';
+    timestamp: Date;
+    attachments?: any[];
+  }): Promise<void> {
+    try {
+      console.log('Incoming email:', {
+        from: data.from,
+        subject: data.subject,
+        provider: data.provider,
+        timestamp: data.timestamp
+      });
+
+      // AI-powered email response (could be implemented later)
+      if (this.aiHandler) {
+        const aiResult = await this.aiHandler.analyzeAndRespond({
+          from: data.from,
+          to: data.to,
+          body: `Subject: ${data.subject}\n\n${data.body}`,
+          provider: 'twilio', // Use twilio as fallback for AI handler
+          timestamp: data.timestamp
+        });
+
+        if (aiResult.shouldRespond && aiResult.confidence > 0.7) {
+          console.log('Email AI Response sent:', {
+            confidence: aiResult.confidence,
+            response: aiResult.response
+          });
+          
+          // Send email response using Email service
+          const { emailResponseService } = await import('../services/email-response-service');
+          if (aiResult.response) {
+            await emailResponseService.sendEmailResponse(
+              data.from,
+              `Re: ${data.subject}`,
+              aiResult.response,
+              data.messageId
+            );
+          }
+        } else {
+          // Send business hours or auto-reply
+          const { emailResponseService } = await import('../services/email-response-service');
+          const { BusinessHoursHandler } = await import('../ai-webhook-handler');
+          
+          if (!BusinessHoursHandler.isBusinessHours()) {
+            await emailResponseService.sendBusinessHoursResponse(
+              data.from,
+              data.subject,
+              data.messageId
+            );
+          } else {
+            await emailResponseService.sendAutoReply(
+              data.from,
+              data.subject,
+              data.messageId
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error handling incoming email:', error);
+    }
+  }
+}
+
+// Messenger Webhook Handler
+export class MessengerWebhookHandler {
+  private static aiHandler: AIWebhookHandler | null = null;
+
+  static initializeAI(storage: any): void {
+    this.aiHandler = new AIWebhookHandler(storage);
+  }
+
+  // Handle Facebook Messenger webhook
+  static async handleFacebookWebhook(req: Request, res: Response): Promise<void> {
+    try {
+      // Facebook webhook verification
+      if (req.query['hub.mode'] === 'subscribe' && req.query['hub.challenge']) {
+        if (req.query['hub.verify_token'] === process.env.FACEBOOK_VERIFY_TOKEN) {
+          res.status(200).send(req.query['hub.challenge']);
+          return;
+        } else {
+          res.status(403).send('Forbidden');
+          return;
+        }
+      }
+
+      // Handle incoming message
+      const { object, entry } = req.body;
+      
+      if (object === 'page') {
+        for (const pageEntry of entry) {
+          for (const messagingEvent of pageEntry.messaging || []) {
+            if (messagingEvent.message) {
+              await this.handleIncomingMessage({
+                senderId: messagingEvent.sender.id,
+                recipientId: messagingEvent.recipient.id,
+                messageId: messagingEvent.message.mid,
+                text: messagingEvent.message.text,
+                timestamp: new Date(messagingEvent.timestamp),
+                provider: 'facebook'
+              });
+            }
+          }
+        }
+      }
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Facebook Messenger webhook error:', error);
+      res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  }
+
+  private static async handleIncomingMessage(data: {
+    senderId: string;
+    recipientId: string;
+    messageId: string;
+    text: string;
+    timestamp: Date;
+    provider: 'facebook';
+  }): Promise<void> {
+    try {
+      console.log('Incoming Messenger message:', {
+        senderId: data.senderId,
+        text: data.text.substring(0, 50) + '...',
+        timestamp: data.timestamp
+      });
+
+      // AI-powered Messenger response
+      if (this.aiHandler) {
+        const aiResult = await this.aiHandler.analyzeAndRespond({
+          from: data.senderId,
+          to: data.recipientId,
+          body: data.text,
+          provider: 'twilio', // Use twilio as fallback for AI handler
+          timestamp: data.timestamp
+        });
+
+        if (aiResult.shouldRespond && aiResult.confidence > 0.7) {
+          console.log('Messenger AI Response sent:', {
+            confidence: aiResult.confidence,
+            response: aiResult.response
+          });
+          
+          // Send Messenger response using Messenger service
+          const { messengerResponseService } = await import('../services/messenger-response-service');
+          if (aiResult.response) {
+            await messengerResponseService.sendMessengerResponse(data.senderId, aiResult.response);
+          }
+        } else {
+          // Send business hours or auto-reply
+          const { messengerResponseService } = await import('../services/messenger-response-service');
+          const { BusinessHoursHandler } = await import('../ai-webhook-handler');
+          
+          if (!BusinessHoursHandler.isBusinessHours()) {
+            await messengerResponseService.sendBusinessHoursResponse(data.senderId);
+          } else {
+            await messengerResponseService.sendAutoReply(data.senderId, data.text);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error handling incoming Messenger message:', error);
+    }
+  }
+}
+
 // General Webhook Router
 export class WebhookRouter {
   
-  // Initialize AI handler
+  // Initialize AI handlers for all channels
   static initializeAI(storage: any): void {
     WhatsAppWebhookHandler.initializeAI(storage);
+    SMSWebhookHandler.initializeAI(storage);
+    EmailWebhookHandler.initializeAI(storage);
+    MessengerWebhookHandler.initializeAI(storage);
   }
   
   static setupRoutes(app: any): void {
@@ -296,41 +613,100 @@ export class WebhookRouter {
       }
     });
 
+    // SMS Webhooks
+    app.post('/api/webhooks/skebby/sms', (req: Request, res: Response) => {
+      SMSWebhookHandler.handleSkebbyWebhook(req, res);
+    });
+
+    // Email Webhooks
+    app.post('/api/webhooks/sendgrid/inbound', (req: Request, res: Response) => {
+      EmailWebhookHandler.handleSendGridWebhook(req, res);
+    });
+
+    // Messenger Webhooks
+    app.get('/api/webhooks/facebook/messenger', (req: Request, res: Response) => {
+      MessengerWebhookHandler.handleFacebookWebhook(req, res);
+    });
+
+    app.post('/api/webhooks/facebook/messenger', (req: Request, res: Response) => {
+      MessengerWebhookHandler.handleFacebookWebhook(req, res);
+    });
+
     // Test webhook endpoint
     app.get('/api/webhooks/test', (req: Request, res: Response) => {
       res.json({
         success: true,
-        message: 'Webhook system operational',
+        message: 'Multi-Channel Webhook System Operational',
         timestamp: new Date().toISOString(),
-        endpoints: [
-          '/api/webhooks/twilio/whatsapp',
-          '/api/webhooks/linkmobility/whatsapp',
-          '/api/webhooks/whatsapp/status',
-        ],
+        endpoints: {
+          whatsapp: [
+            '/api/webhooks/twilio/whatsapp',
+            '/api/webhooks/linkmobility/whatsapp',
+            '/api/webhooks/whatsapp/status'
+          ],
+          sms: [
+            '/api/webhooks/skebby/sms'
+          ],
+          email: [
+            '/api/webhooks/sendgrid/inbound'
+          ],
+          messenger: [
+            '/api/webhooks/facebook/messenger'
+          ]
+        },
       });
     });
 
-    // Webhook configuration info
+    // Multi-channel webhook configuration info
     app.get('/api/webhooks/info', (req: Request, res: Response) => {
       const baseUrl = `https://${req.headers.host}`;
       
       res.json({
         webhookUrls: {
-          twilio: {
-            incoming: `${baseUrl}/api/webhooks/twilio/whatsapp`,
-            status: `${baseUrl}/api/webhooks/whatsapp/status`,
-            headers: { 'x-provider': 'twilio' }
+          whatsapp: {
+            twilio: {
+              incoming: `${baseUrl}/api/webhooks/twilio/whatsapp`,
+              status: `${baseUrl}/api/webhooks/whatsapp/status`,
+              headers: { 'x-provider': 'twilio' }
+            },
+            linkmobility: {
+              incoming: `${baseUrl}/api/webhooks/linkmobility/whatsapp`,
+              status: `${baseUrl}/api/webhooks/whatsapp/status`,
+              headers: { 'x-provider': 'linkmobility' }
+            }
           },
-          linkmobility: {
-            incoming: `${baseUrl}/api/webhooks/linkmobility/whatsapp`,
-            status: `${baseUrl}/api/webhooks/whatsapp/status`,
-            headers: { 'x-provider': 'linkmobility' }
+          sms: {
+            skebby: {
+              incoming: `${baseUrl}/api/webhooks/skebby/sms`,
+              status: `${baseUrl}/api/webhooks/skebby/sms`,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          },
+          email: {
+            sendgrid: {
+              inbound: `${baseUrl}/api/webhooks/sendgrid/inbound`,
+              headers: { 'Content-Type': 'multipart/form-data' }
+            }
+          },
+          messenger: {
+            facebook: {
+              webhook: `${baseUrl}/api/webhooks/facebook/messenger`,
+              verification: `${baseUrl}/api/webhooks/facebook/messenger?hub.mode=subscribe&hub.challenge=CHALLENGE&hub.verify_token=${process.env.FACEBOOK_VERIFY_TOKEN}`,
+              headers: { 'Content-Type': 'application/json' }
+            }
           }
         },
         security: {
           production: process.env.NODE_ENV === 'production',
           signatureValidation: 'enabled',
-          supportedMethods: ['POST']
+          supportedMethods: ['GET', 'POST'],
+          aiIntegration: 'enabled'
+        },
+        channels: {
+          whatsapp: { status: 'active', providers: ['twilio', 'linkmobility'] },
+          sms: { status: 'active', providers: ['skebby'] },
+          email: { status: 'active', providers: ['sendgrid'] },
+          messenger: { status: 'active', providers: ['facebook'] }
         }
       });
     });

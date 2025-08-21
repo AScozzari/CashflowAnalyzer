@@ -107,6 +107,20 @@ async function createMovementNotifications(movementId: string, type: 'new_moveme
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // ==================== MULTI-CHANNEL WEBHOOK SYSTEM ====================
+  
+  // Initialize and setup webhook system for all channels
+  const { WebhookRouter, storage } = await import('./webhook-manager');
+  WebhookRouter.initializeAI(storage);
+  WebhookRouter.setupRoutes(app);
+  
+  console.log('✅ Multi-Channel Webhook System initialized:');
+  console.log('   • WhatsApp: Twilio + LinkMobility (AI-powered)');
+  console.log('   • SMS: Skebby (AI-powered)');
+  console.log('   • Email: SendGrid (AI-powered)');
+  console.log('   • Messenger: Facebook (AI-powered)');
+
   // Security middleware globali
   // Security headers applied selectively (X-Frame-Options handled in main index.ts)
   app.use((req, res, next) => {

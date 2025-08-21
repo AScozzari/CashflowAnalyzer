@@ -54,6 +54,7 @@ export const whatsappTemplates = pgTable('whatsapp_templates', {
   
   // Meta Template Info
   metaTemplateId: varchar('meta_template_id', { length: 100 }),
+  providerTemplateId: varchar('provider_template_id', { length: 100 }), // Provider-specific template ID
   rejectionReason: text('rejection_reason'),
   
   createdAt: timestamp('created_at').defaultNow(),
