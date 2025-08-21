@@ -148,22 +148,41 @@ export function setupTelegramRoutes(app: Express): void {
   app.post('/webhook/telegram', async (req, res) => {
     try {
       const update = req.body;
+      console.log('[TELEGRAM WEBHOOK] Messaggio ricevuto:', JSON.stringify(update, null, 2));
+      
+      // Get settings and initialize service if needed
+      const settings = await storage.getTelegramSettings();
+      if (settings.length === 0) {
+        console.log('[TELEGRAM WEBHOOK] Nessuna configurazione Telegram trovata');
+        return res.status(200).json({ ok: true, message: 'No Telegram settings configured' });
+      }
+      
+      const telegramConfig = settings[0];
+      
+      // Initialize service if not already done
+      if (!telegramService.isInitialized()) {
+        console.log('[TELEGRAM WEBHOOK] Inizializzazione TelegramService...');
+        await telegramService.initialize(telegramConfig);
+        console.log('[TELEGRAM WEBHOOK] ✅ TelegramService inizializzato');
+      }
       
       // Validate webhook secret if configured
-      const settings = await storage.getTelegramSettings();
-      if (settings.length > 0 && settings[0].webhookSecret) {
+      if (telegramConfig.webhookSecret) {
         const secretToken = req.headers['x-telegram-bot-api-secret-token'];
-        if (secretToken !== settings[0].webhookSecret) {
+        if (secretToken !== telegramConfig.webhookSecret) {
+          console.log('[TELEGRAM WEBHOOK] Token segreto non valido');
           return res.status(401).json({ error: 'Invalid secret token' });
         }
       }
       
       // Process the update
+      console.log('[TELEGRAM WEBHOOK] Elaborazione messaggio in corso...');
       await telegramService.processUpdate(update);
+      console.log('[TELEGRAM WEBHOOK] ✅ Messaggio elaborato con successo');
       
       res.status(200).json({ ok: true });
     } catch (error) {
-      console.error('Error processing Telegram webhook:', error);
+      console.error('[TELEGRAM WEBHOOK] Errore durante l\'elaborazione:', error);
       res.status(500).json({ error: 'Webhook processing failed' });
     }
   });

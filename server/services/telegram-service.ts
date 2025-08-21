@@ -225,18 +225,28 @@ export class TelegramService {
 
   async processUpdate(update: TelegramUpdate): Promise<void> {
     try {
+      console.log('[TELEGRAM SERVICE] processUpdate chiamato');
+      
       if (!this.initialized || !this.settings) {
-        console.error('Telegram service not initialized');
+        console.error('[TELEGRAM SERVICE] ❌ TelegramService non inizializzato');
         return;
       }
 
+      console.log('[TELEGRAM SERVICE] ✅ TelegramService inizializzato, processing update');
+
       if (update.message) {
+        console.log('[TELEGRAM SERVICE] 📝 Messaggio trovato, chiamando handleMessage...');
         await this.handleMessage(update.message);
       } else if (update.callback_query) {
+        console.log('[TELEGRAM SERVICE] 🔘 Callback query trovato, handling...');
         await this.handleCallbackQuery(update.callback_query);
+      } else {
+        console.log('[TELEGRAM SERVICE] ⚠️ Nessun messaggio o callback nell\'update');
       }
+
+      console.log('[TELEGRAM SERVICE] ✅ processUpdate completato');
     } catch (error) {
-      console.error('Error processing Telegram update:', error);
+      console.error('[TELEGRAM SERVICE] ❌ Errore in processUpdate:', error);
     }
   }
 
@@ -244,11 +254,17 @@ export class TelegramService {
     const chatId = message.chat.id;
     const text = message.text || '';
     
-    console.log(`Received message from ${chatId}: ${text}`);
+    console.log(`[TELEGRAM SERVICE] 📨 Messaggio ricevuto dalla chat ${chatId}: "${text}"`);
 
     // Create notification for incoming message (non-command messages only)
     if (!text.startsWith('/') && text.trim() !== '') {
+      console.log('[TELEGRAM SERVICE] 📝 Creando notifica per messaggio...');
       await this.createNotificationForMessage(message);
+      console.log('[TELEGRAM SERVICE] ✅ Notifica creata');
+    } else if (text.startsWith('/')) {
+      console.log('[TELEGRAM SERVICE] 🤖 Messaggio è un comando, nessuna notifica creata');
+    } else {
+      console.log('[TELEGRAM SERVICE] ⚠️ Messaggio vuoto, nessuna notifica creata');
     }
 
     // Check if it's a command
@@ -441,19 +457,32 @@ Nel frattempo puoi:
 
   private async createNotificationForMessage(message: TelegramMessage): Promise<void> {
     try {
+      console.log('[TELEGRAM NOTIFICATION] Inizio creazione notifica...');
+      
       const chatId = message.chat.id.toString();
       const text = message.text || '';
       const senderName = message.from.first_name + (message.from.last_name ? ` ${message.from.last_name}` : '');
       const senderUsername = message.from.username ? `@${message.from.username}` : senderName;
 
+      console.log(`[TELEGRAM NOTIFICATION] Dettagli messaggio - Chat: ${chatId}, Mittente: ${senderUsername}, Testo: "${text}"`);
+
       // Get all admin and finance users for notifications
+      console.log('[TELEGRAM NOTIFICATION] Recupero utenti admin e finance...');
       const users = await storage.getUsers();
       const notificationRecipients = users
         .filter(user => ['admin', 'finance'].includes(user.role))
         .map(user => user.id);
 
+      console.log(`[TELEGRAM NOTIFICATION] Trovati ${notificationRecipients.length} destinatari:`, notificationRecipients);
+
+      if (notificationRecipients.length === 0) {
+        console.warn('[TELEGRAM NOTIFICATION] ⚠️ Nessun destinatario trovato (admin/finance)');
+        return;
+      }
+
       // Create notification for each recipient
       for (const userId of notificationRecipients) {
+        console.log(`[TELEGRAM NOTIFICATION] Creando notifica per utente ${userId}...`);
         await notificationService.createCommunicationNotification({
           userId,
           type: 'new_telegram',
@@ -465,11 +494,12 @@ Nel frattempo puoi:
           messageId: `telegram_${message.message_id}_${chatId}`,
           priority: 'normal'
         });
+        console.log(`[TELEGRAM NOTIFICATION] ✅ Notifica creata per utente ${userId}`);
       }
 
-      console.log(`📬 Telegram notification created for message from ${senderUsername}`);
+      console.log(`[TELEGRAM NOTIFICATION] ✅ Tutte le notifiche create per messaggio da ${senderUsername}`);
     } catch (error) {
-      console.error('Error creating notification for Telegram message:', error);
+      console.error('[TELEGRAM NOTIFICATION] ❌ Errore durante creazione notifica:', error);
     }
   }
 
