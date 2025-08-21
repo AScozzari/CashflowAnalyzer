@@ -350,6 +350,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Customers
+  app.get("/api/customers", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const customers = await dbStorage.getCustomers();
+      res.json(customers);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  }));
+
+  // Suppliers
+  app.get("/api/suppliers", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const suppliers = await dbStorage.getSuppliers();
+      res.json(suppliers);
+    } catch (error) {
+      console.error('Error fetching suppliers:', error);
+      res.status(500).json({ message: "Failed to fetch suppliers" });
+    }
+  }));
+
   // IBANs
   app.get("/api/ibans", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {

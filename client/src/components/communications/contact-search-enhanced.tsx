@@ -55,19 +55,29 @@ export function ContactSearchEnhanced({
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Fetch data from different endpoints
-  const { data: resources = [] } = useQuery<Resource[]>({ 
+  const { data: resources = [], error: resourcesError } = useQuery<Resource[]>({ 
     queryKey: ["/api/resources"],
     refetchOnWindowFocus: false
   });
   
-  const { data: customers = [] } = useQuery<Customer[]>({ 
+  const { data: customers = [], error: customersError } = useQuery<Customer[]>({ 
     queryKey: ["/api/customers"],
     refetchOnWindowFocus: false
   });
   
-  const { data: suppliers = [] } = useQuery<Supplier[]>({ 
+  const { data: suppliers = [], error: suppliersError } = useQuery<Supplier[]>({ 
     queryKey: ["/api/suppliers"],
     refetchOnWindowFocus: false
+  });
+
+  // Debug logging
+  console.log('📊 Contact Search Debug:', {
+    resources: resources.length,
+    customers: customers.length, 
+    suppliers: suppliers.length,
+    resourcesError,
+    customersError,
+    suppliersError
   });
 
   // Transform data into unified contact format
