@@ -77,7 +77,10 @@ export function ContactSearchEnhanced({
     suppliers: suppliers.length,
     resourcesError,
     customersError,
-    suppliersError
+    suppliersError,
+    sampleNames: [...resources.slice(0,2).map(r => `${r.firstName} ${r.lastName}`), 
+                  ...customers.slice(0,2).map(c => c.name || `${c.firstName} ${c.lastName}`),
+                  ...suppliers.slice(0,2).map(s => s.name)]
   });
 
   // Transform data into unified contact format
@@ -225,7 +228,8 @@ export function ContactSearchEnhanced({
             if (!isExpanded && newValue.trim() !== '') {
               setIsExpanded(true);
             }
-            console.log('🔍 Ricerca contatti:', newValue, 'Contatti trovati:', filteredContacts.length);
+            console.log('🔍 Ricerca contatti:', newValue, 'Contatti trovati:', filteredContacts.length, 
+                       filteredContacts.length > 0 ? filteredContacts.map(c => c.name) : 'Nessun risultato');
           }}
           onFocus={() => setIsExpanded(true)}
           className="pl-10 w-full"
