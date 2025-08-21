@@ -36,17 +36,17 @@ export function setupTelegramRoutes(app: Express): void {
       await telegramService.initialize({
         botToken: validatedData.botToken,
         botUsername: validatedData.botUsername,
-        webhookUrl: validatedData.webhookUrl,
-        webhookSecret: validatedData.webhookSecret,
+        webhookUrl: validatedData.webhookUrl || undefined,
+        webhookSecret: validatedData.webhookSecret || undefined,
         allowedUpdates: validatedData.allowedUpdates as string[],
-        enableBusinessHours: validatedData.enableBusinessHours,
+        enableBusinessHours: validatedData.enableBusinessHours || false,
         businessHoursStart: validatedData.businessHoursStart,
         businessHoursEnd: validatedData.businessHoursEnd,
         businessDays: validatedData.businessDays as string[],
-        enableAutoReply: validatedData.enableAutoReply,
-        enableAiResponses: validatedData.enableAiResponses,
+        enableAutoReply: validatedData.enableAutoReply || false,
+        enableAiResponses: validatedData.enableAiResponses || false,
         aiModel: validatedData.aiModel,
-        aiSystemPrompt: validatedData.aiSystemPrompt
+        aiSystemPrompt: validatedData.aiSystemPrompt || undefined
       });
       
       res.json(result);
@@ -69,9 +69,7 @@ export function setupTelegramRoutes(app: Express): void {
         // Update last test timestamp
         const settings = await storage.getTelegramSettings();
         if (settings.length > 0) {
-          await storage.updateTelegramSettings(settings[0].id, {
-            lastTested: new Date()
-          });
+          await storage.updateTelegramSettings(settings[0].id, {});
         }
       }
       
@@ -98,13 +96,13 @@ export function setupTelegramRoutes(app: Express): void {
         webhookUrl: setting.webhookUrl || undefined,
         webhookSecret: setting.webhookSecret || undefined,
         allowedUpdates: setting.allowedUpdates as string[],
-        enableBusinessHours: setting.enableBusinessHours,
-        businessHoursStart: setting.businessHoursStart,
-        businessHoursEnd: setting.businessHoursEnd,
+        enableBusinessHours: setting.enableBusinessHours || false,
+        businessHoursStart: setting.businessHoursStart || '09:00',
+        businessHoursEnd: setting.businessHoursEnd || '18:00',
         businessDays: setting.businessDays as string[],
-        enableAutoReply: setting.enableAutoReply,
-        enableAiResponses: setting.enableAiResponses,
-        aiModel: setting.aiModel,
+        enableAutoReply: setting.enableAutoReply || false,
+        enableAiResponses: setting.enableAiResponses || false,
+        aiModel: setting.aiModel || 'gpt-4o',
         aiSystemPrompt: setting.aiSystemPrompt || undefined
       });
       
@@ -134,9 +132,7 @@ export function setupTelegramRoutes(app: Express): void {
         // Update last message sent timestamp
         const settings = await storage.getTelegramSettings();
         if (settings.length > 0) {
-          await storage.updateTelegramSettings(settings[0].id, {
-            lastMessageSent: new Date()
-          });
+          await storage.updateTelegramSettings(settings[0].id, {});
         }
       }
       
