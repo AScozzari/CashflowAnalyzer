@@ -220,6 +220,34 @@ export class WhatsAppWebhookHandler {
         needsResponse: !BusinessHoursHandler.isBusinessHours()
       });
 
+      // 5. Create notification for incoming WhatsApp
+      try {
+        const { notificationService } = await import('../services/notification-service');
+        const recipients = await notificationService.determineNotificationRecipients({
+          userId: '', 
+          type: 'new_whatsapp',
+          category: 'whatsapp',
+          from: data.from,
+          originalContent: data.body,
+          channelProvider: data.provider === 'twilio' ? 'twilio' : 'linkmobility',
+          messageId: data.messageId
+        });
+        
+        for (const userId of recipients) {
+          await notificationService.createCommunicationNotification({
+            userId,
+            type: 'new_whatsapp',
+            category: 'whatsapp',
+            from: data.from,
+            originalContent: data.body,
+            channelProvider: data.provider === 'twilio' ? 'twilio' : 'linkmobility',
+            messageId: data.messageId
+          });
+        }
+      } catch (notificationError) {
+        console.error('Error creating WhatsApp notification:', notificationError);
+      }
+
     } catch (error) {
       console.error('Error handling incoming message:', error);
       
@@ -336,6 +364,30 @@ export class SMSWebhookHandler {
           const { smsResponseService } = await import('../services/sms-response-service');
           if (aiResult.response) {
             await smsResponseService.sendSMSResponse(data.from, aiResult.response);
+            
+            // Create notification for incoming SMS
+            const { notificationService } = await import('../services/notification-service');
+            const recipients = await notificationService.determineNotificationRecipients({
+              userId: '', 
+              type: 'new_sms',
+              category: 'sms',
+              from: data.from,
+              originalContent: data.body,
+              channelProvider: 'skebby',
+              messageId: data.messageId
+            });
+            
+            for (const userId of recipients) {
+              await notificationService.createCommunicationNotification({
+                userId,
+                type: 'new_sms',
+                category: 'sms',
+                from: data.from,
+                originalContent: data.body,
+                channelProvider: 'skebby',
+                messageId: data.messageId
+              });
+            }
           }
         } else {
           // Send business hours or auto-reply
@@ -446,6 +498,31 @@ export class EmailWebhookHandler {
               aiResult.response,
               data.messageId
             );
+            
+            // Create notification for incoming Email
+            const { notificationService } = await import('../services/notification-service');
+            const recipients = await notificationService.determineNotificationRecipients({
+              userId: '', 
+              type: 'new_email',
+              category: 'email',
+              from: data.from,
+              originalContent: `${data.subject}\n\n${data.body}`,
+              channelProvider: 'sendgrid',
+              messageId: data.messageId
+            });
+            
+            for (const userId of recipients) {
+              await notificationService.createCommunicationNotification({
+                userId,
+                type: 'new_email',
+                category: 'email',
+                from: data.from,
+                to: data.to,
+                originalContent: `${data.subject}\n\n${data.body}`,
+                channelProvider: 'sendgrid',
+                messageId: data.messageId
+              });
+            }
           }
         } else {
           // Send business hours or auto-reply
@@ -557,6 +634,31 @@ export class MessengerWebhookHandler {
           const { messengerResponseService } = await import('../services/messenger-response-service');
           if (aiResult.response) {
             await messengerResponseService.sendMessengerResponse(data.senderId, aiResult.response);
+            
+            // Create notification for incoming Messenger
+            const { notificationService } = await import('../services/notification-service');
+            const recipients = await notificationService.determineNotificationRecipients({
+              userId: '', 
+              type: 'new_messenger',
+              category: 'messenger',
+              from: data.senderId,
+              originalContent: data.text,
+              channelProvider: 'facebook',
+              messageId: data.messageId
+            });
+            
+            for (const userId of recipients) {
+              await notificationService.createCommunicationNotification({
+                userId,
+                type: 'new_messenger',
+                category: 'messenger',
+                from: data.senderId,
+                to: data.recipientId,
+                originalContent: data.text,
+                channelProvider: 'facebook',
+                messageId: data.messageId
+              });
+            }
           }
         } else {
           // Send business hours or auto-reply

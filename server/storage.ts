@@ -1910,7 +1910,10 @@ async getMovements(filters: {
     try {
       await db
         .update(notifications)
-        .set({ isRead: true })
+        .set({ 
+          isRead: true,
+          readAt: new Date()
+        })
         .where(eq(notifications.id, id));
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -1922,7 +1925,10 @@ async getMovements(filters: {
     try {
       await db
         .update(notifications)
-        .set({ isRead: true })
+        .set({ 
+          isRead: true,
+          readAt: new Date()
+        })
         .where(eq(notifications.userId, userId));
     } catch (error) {
       console.error('Error marking all notifications as read:', error);

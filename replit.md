@@ -44,6 +44,7 @@ Preferred communication style: Simple, everyday language.
 - **Professional UI/UX**: Modern responsive design with dark mode and intuitive workflows.
 - **Banking API Integration**: Comprehensive system for Italian banks with PSD2 compliance, dynamic configuration, and transaction verification.
 - **Multi-Channel Webhook System**: Complete webhook system for all communication channels (WhatsApp, SMS, Email, Messenger) with unified AI handling and business hours logic.
+- **Professional Notification System**: Enhanced categorized notification bell system with multi-channel support (Movements, WhatsApp, SMS, Email, Messenger) with actionable URLs and priority levels.
 
 ## Design Patterns
 - **Component Composition**: Reusable UI components.

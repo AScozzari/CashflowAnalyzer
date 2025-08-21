@@ -211,11 +211,33 @@ export const movementReasons = pgTable("movement_reasons", {
 export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(), // A chi è destinata la notifica
-  movementId: varchar("movement_id").notNull(), // Movimento a cui si riferisce
-  type: text("type").notNull(), // 'new_movement', 'movement_updated', 'movement_assigned'
+  
+  // Reference fields (only one should be filled)
+  movementId: varchar("movement_id"), // Movimento a cui si riferisce
+  messageId: varchar("message_id"), // ID messaggio comunicazione
+  
+  // Notification categorization
+  type: text("type").notNull(), // 'new_movement', 'movement_updated', 'movement_assigned', 'new_whatsapp', 'new_sms', 'new_email', 'new_messenger'
+  category: text("category").notNull().default('movement'), // 'movement', 'whatsapp', 'sms', 'email', 'messenger'
+  
+  // Content
   title: text("title").notNull(),
   message: text("message").notNull(),
+  
+  // Communication metadata (for messages)
+  from: text("from"), // Mittente del messaggio
+  to: text("to"), // Destinatario del messaggio  
+  channelProvider: text("channel_provider"), // 'twilio', 'linkmobility', 'skebby', 'sendgrid', 'facebook'
+  originalContent: text("original_content"), // Contenuto originale del messaggio
+  
+  // Navigation metadata
+  actionUrl: text("action_url"), // URL per andare al dettaglio
+  priority: text("priority").default('normal'), // 'low', 'normal', 'high', 'critical'
+  
+  // Status
   isRead: boolean("is_read").default(false),
+  readAt: timestamp("read_at"),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -595,6 +617,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   createdAt: true,
+  readAt: true,
 });
 
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({
