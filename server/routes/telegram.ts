@@ -169,7 +169,21 @@ export function setupTelegramRoutes(app: Express): void {
       // Initialize service if not already done
       if (!telegramService.isInitialized()) {
         console.log('[TELEGRAM WEBHOOK] Inizializzazione TelegramService...');
-        await telegramService.initialize(telegramConfig);
+        await telegramService.initialize({
+          botToken: telegramConfig.botToken,
+          botUsername: telegramConfig.botUsername,
+          webhookUrl: telegramConfig.webhookUrl || undefined,
+          webhookSecret: telegramConfig.webhookSecret || undefined,
+          allowedUpdates: telegramConfig.allowedUpdates as string[],
+          enableBusinessHours: telegramConfig.enableBusinessHours || false,
+          businessHoursStart: telegramConfig.businessHoursStart,
+          businessHoursEnd: telegramConfig.businessHoursEnd,
+          businessDays: telegramConfig.businessDays as string[],
+          enableAutoReply: telegramConfig.enableAutoReply || false,
+          enableAiResponses: telegramConfig.enableAiResponses || false,
+          aiModel: telegramConfig.aiModel,
+          aiSystemPrompt: telegramConfig.aiSystemPrompt || undefined
+        });
         console.log('[TELEGRAM WEBHOOK] ✅ TelegramService inizializzato');
       }
       
