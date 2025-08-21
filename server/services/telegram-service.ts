@@ -48,6 +48,10 @@ interface SendMessageOptions {
   reply_markup?: any;
 }
 
+// Import services
+import { notificationService } from './notification-service';
+import { storage } from '../storage';
+
 export class TelegramService {
   private static instance: TelegramService;
   private settings: TelegramSettings | null = null;
@@ -242,6 +246,11 @@ export class TelegramService {
     
     console.log(`Received message from ${chatId}: ${text}`);
 
+    // Create notification for incoming message (non-command messages only)
+    if (!text.startsWith('/') && text.trim() !== '') {
+      await this.createNotificationForMessage(message);
+    }
+
     // Check if it's a command
     if (text.startsWith('/')) {
       await this.handleCommand(message);
@@ -427,6 +436,40 @@ Nel frattempo puoi:
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
+    }
+  }
+
+  private async createNotificationForMessage(message: TelegramMessage): Promise<void> {
+    try {
+      const chatId = message.chat.id.toString();
+      const text = message.text || '';
+      const senderName = message.from.first_name + (message.from.last_name ? ` ${message.from.last_name}` : '');
+      const senderUsername = message.from.username ? `@${message.from.username}` : senderName;
+
+      // Get all admin and finance users for notifications
+      const users = await storage.getUsers();
+      const notificationRecipients = users
+        .filter(user => ['admin', 'finance'].includes(user.role))
+        .map(user => user.id);
+
+      // Create notification for each recipient
+      for (const userId of notificationRecipients) {
+        await notificationService.createCommunicationNotification({
+          userId,
+          type: 'new_telegram',
+          category: 'telegram',
+          from: senderUsername,
+          to: 'EasyCashFlows Bot',
+          originalContent: text,
+          channelProvider: 'telegram',
+          messageId: `telegram_${message.message_id}_${chatId}`,
+          priority: 'normal'
+        });
+      }
+
+      console.log(`📬 Telegram notification created for message from ${senderUsername}`);
+    } catch (error) {
+      console.error('Error creating notification for Telegram message:', error);
     }
   }
 

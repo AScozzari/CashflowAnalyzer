@@ -82,8 +82,37 @@ export function NotificationsBell() {
       markAsReadMutation.mutate(notification.id);
     }
     
-    // Naviga alla pagina dei movimenti e chiudi il dropdown
-    setLocation('/movements');
+    // Naviga alla pagina appropriata in base al tipo di notifica
+    let targetUrl = '/movements'; // Default
+    
+    if (notification.actionUrl) {
+      targetUrl = notification.actionUrl;
+    } else if (notification.category) {
+      switch (notification.category) {
+        case 'movement':
+          targetUrl = '/movements';
+          break;
+        case 'whatsapp':
+          targetUrl = '/communications/whatsapp';
+          break;
+        case 'sms':
+          targetUrl = '/communications/sms';
+          break;
+        case 'email':
+          targetUrl = '/communications/email';
+          break;
+        case 'messenger':
+          targetUrl = '/communications/messenger';
+          break;
+        case 'telegram':
+          targetUrl = '/communications/telegram';
+          break;
+        default:
+          targetUrl = '/movements';
+      }
+    }
+    
+    setLocation(targetUrl);
     setIsOpen(false);
   };
 

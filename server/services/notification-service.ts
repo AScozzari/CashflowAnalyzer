@@ -3,12 +3,12 @@ import type { InsertNotification, Notification } from '@shared/schema';
 
 export interface CommunicationNotification {
   userId: string;
-  type: 'new_whatsapp' | 'new_sms' | 'new_email' | 'new_messenger';
-  category: 'whatsapp' | 'sms' | 'email' | 'messenger';
+  type: 'new_whatsapp' | 'new_sms' | 'new_email' | 'new_messenger' | 'new_telegram';
+  category: 'whatsapp' | 'sms' | 'email' | 'messenger' | 'telegram';
   from: string;
   to?: string;
   originalContent: string;
-  channelProvider: 'twilio' | 'linkmobility' | 'skebby' | 'sendgrid' | 'facebook';
+  channelProvider: 'twilio' | 'linkmobility' | 'skebby' | 'sendgrid' | 'facebook' | 'telegram';
   messageId?: string;
   priority?: 'low' | 'normal' | 'high' | 'critical';
 }
@@ -95,6 +95,13 @@ export class NotificationService {
           actionUrl: `/communications/messenger?messageId=${data.messageId}`
         };
       
+      case 'telegram':
+        return {
+          title: `🤖 Nuovo messaggio Telegram`,
+          message: `Da ${shortFrom}: "${shortContent}"`,
+          actionUrl: `/communications/telegram?messageId=${data.messageId}`
+        };
+      
       default:
         return {
           title: `📨 Nuovo messaggio`,
@@ -140,6 +147,7 @@ export class NotificationService {
       sms: Notification[];
       email: Notification[];
       messenger: Notification[];
+      telegram: Notification[];
     };
     recent: Notification[];
   }> {
@@ -152,7 +160,8 @@ export class NotificationService {
         whatsapp: notifications.filter((n: Notification) => n.category === 'whatsapp'),
         sms: notifications.filter((n: Notification) => n.category === 'sms'),
         email: notifications.filter((n: Notification) => n.category === 'email'),
-        messenger: notifications.filter((n: Notification) => n.category === 'messenger')
+        messenger: notifications.filter((n: Notification) => n.category === 'messenger'),
+        telegram: notifications.filter((n: Notification) => n.category === 'telegram')
       };
 
       // Get recent unread notifications (last 10)
@@ -177,7 +186,8 @@ export class NotificationService {
           whatsapp: [],
           sms: [],
           email: [],
-          messenger: []
+          messenger: [],
+          telegram: []
         },
         recent: []
       };
