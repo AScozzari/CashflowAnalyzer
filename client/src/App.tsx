@@ -15,7 +15,7 @@ import Movements from "@/pages/movements";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
 import AiChatPage from "@/pages/ai-chat";
-import AiToolsPage from "@/pages/ai-tools";
+import AiToolsNewPage from "@/pages/ai-tools-new";
 import Communications from "@/pages/communications";
 import EntityExplorer from "@/pages/entity-explorer";
 import AuthPage from "@/pages/auth-page";
@@ -161,7 +161,7 @@ function Router() {
       
       <ProtectedRoute path="/ai-tools" component={() => (
         <AppLayout>
-          <AiToolsPage />
+          <AiToolsNewPage />
         </AppLayout>
       )} />
       

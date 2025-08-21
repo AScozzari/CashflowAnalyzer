@@ -190,7 +190,11 @@ Considera: importi molto diversi dalla norma, pattern temporali strani, possibil
 
     let anomalyAnalysis;
     try {
-      anomalyAnalysis = JSON.parse(response.choices[0].message.content || '{}');
+      const content = response.choices[0].message.content;
+      if (!content || content.trim() === '') {
+        throw new Error('Empty AI response');
+      }
+      anomalyAnalysis = JSON.parse(content);
       
       // Add timestamp if missing
       if (!anomalyAnalysis.last_scan) {

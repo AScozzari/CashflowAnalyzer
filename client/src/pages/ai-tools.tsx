@@ -36,7 +36,7 @@ import { FooterSignature } from "@/components/layout/footer-signature";
 
 export default function AiToolsPage() {
   const { user } = useAuth();
-  const [selectedTool, setSelectedTool] = useState("smart-forecast");
+  const [selectedTool, setSelectedTool] = useState("assistant-chat");
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Get financial data for AI context
@@ -52,27 +52,32 @@ export default function AiToolsPage() {
 
   const aiTools = [
     {
-      id: "smart-forecast",
-      title: "Previsione Intelligente",
-      description: "AI predittiva per flussi di cassa futuri basata su pattern storici e fattori stagionali",
-      icon: TrendingUp,
-      category: "Predizioni",
+      id: "analytics-ai",
+      title: "AI Analytics (Attivo)",
+      description: "I tuoi Quick Wins AI sono già integrati nella pagina Analytics con insights real-time",
+      icon: BarChart3,
+      category: "Analytics",
+      status: "integrated",
+      benefits: ["✅ Financial Health Score attivo", "✅ AI Insights integrato", "✅ Anomaly Detection funzionante"],
+      redirectTo: "/analytics"
+    },
+    {
+      id: "assistant-chat",
+      title: "Assistente Finanziario AI",
+      description: "Chat intelligente per domande sui tuoi dati finanziari e consigli personalizzati",
+      icon: MessageSquare,
+      category: "Assistente",
       status: "active",
-      benefits: ["Prevedi entrate/uscite fino a 12 mesi", "Identifica pattern stagionali", "Avvisi automatici per problemi liquidità"]
+      benefits: ["Risposte su movimenti specifici", "Consigli personalizzati", "Query in linguaggio naturale"]
     },
     {
       id: "document-intelligence",
       title: "Analisi Documenti Intelligente",
-      description: "Estrazione e categorizzazione automatica da fatture, ricevute e documenti fiscali",
+      description: "Estrazione automatica da fatture FatturaPA e documenti fiscali italiani",
       icon: Receipt,
       category: "Documenti",
       status: "active",
-      benefits: ["Riconoscimento automatico FatturaPA", "Estrazione dati da scontrini fotografati", "Matching automatico fornitori/clienti"]
-    },
-    {
-      id: "anomaly-detector",
-      title: "Rilevatore Anomalie",
-      description: "Identificazione automatica di transazioni sospette, duplicati e errori contabili",
+      benefits: ["Upload e parsing FatturaPA", "Estrazione dati automatica", "Creazione movimenti suggeriti"]
       icon: AlertCircle,
       category: "Controllo",
       status: "active",
