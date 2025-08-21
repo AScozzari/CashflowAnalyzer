@@ -1,4 +1,6 @@
 // Telegram Bot Service - Professional Implementation
+import { storage } from '../storage';
+
 export interface TelegramSettings {
   botToken: string;
   botUsername: string;
@@ -256,6 +258,9 @@ export class TelegramService {
     
     console.log(`[TELEGRAM SERVICE] 📨 Messaggio ricevuto dalla chat ${chatId}: "${text}"`);
 
+    // Save or update chat information FIRST
+    await this.saveOrUpdateChat(message);
+
     // Create notification for incoming message (non-command messages only)
     if (!text.startsWith('/') && text.trim() !== '') {
       console.log('[TELEGRAM SERVICE] 📝 Creando notifica per messaggio...');
@@ -500,6 +505,56 @@ Nel frattempo puoi:
       console.log(`[TELEGRAM NOTIFICATION] ✅ Tutte le notifiche create per messaggio da ${senderUsername}`);
     } catch (error) {
       console.error('[TELEGRAM NOTIFICATION] ❌ Errore durante creazione notifica:', error);
+    }
+  }
+
+  private async saveOrUpdateChat(message: TelegramMessage): Promise<void> {
+    try {
+      console.log('[TELEGRAM SERVICE] 💾 Salvando/aggiornando chat...');
+      
+      const chatId = message.chat.id.toString();
+      
+      // Check if chat exists
+      const existingChats = await storage.getTelegramChats();
+      const existingChat = existingChats.find((chat: any) => chat.telegramChatId === chatId);
+      
+      if (existingChat) {
+        console.log(`[TELEGRAM SERVICE] 🔄 Aggiornando chat esistente: ${chatId}`);
+        // Update existing chat
+        await storage.updateTelegramChat(existingChat.id, {
+          lastMessageAt: new Date(),
+          lastMessageId: message.message_id,
+          messageCount: (existingChat.messageCount || 0) + 1,
+          firstName: message.from.first_name,
+          lastName: message.from.last_name,
+          username: message.from.username,
+          languageCode: message.from.language_code,
+          isActive: true
+        });
+        console.log(`[TELEGRAM SERVICE] ✅ Chat aggiornata: ${chatId}`);
+      } else {
+        console.log(`[TELEGRAM SERVICE] 🆕 Creando nuova chat: ${chatId}`);
+        // Create new chat
+        await storage.createTelegramChat({
+          telegramChatId: chatId,
+          chatId: parseInt(chatId), // Add missing chat_id field
+          chatType: message.chat.type,
+          firstName: message.from.first_name,
+          lastName: message.from.last_name,
+          username: message.from.username,
+          title: message.chat.title,
+          languageCode: message.from.language_code,
+          lastMessageAt: new Date(),
+          lastMessageId: message.message_id,
+          messageCount: 1,
+          isActive: true,
+          isBot: message.from.is_bot || false,
+          isPremium: message.from.is_premium || false
+        });
+        console.log(`[TELEGRAM SERVICE] ✅ Nuova chat creata: ${chatId}`);
+      }
+    } catch (error) {
+      console.error('[TELEGRAM SERVICE] ❌ Errore nel salvare chat:', error);
     }
   }
 
