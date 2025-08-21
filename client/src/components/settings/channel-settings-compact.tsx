@@ -6,7 +6,7 @@ import { MessageSquare, Mail, Phone, Send, CheckCircle, X } from 'lucide-react';
 import { WhatsAppSettingsWithTabs } from './whatsapp-settings-with-tabs';
 import { SendGridConfigComplete } from './sendgrid-config-complete';
 import { SmsSettingsSkebby } from './sms-settings-skebby';
-import { TelegramSettings } from './telegram-settings';
+import TelegramSettings from './telegram-settings';
 
 interface ChannelConfig {
   id: string;

@@ -979,9 +979,6 @@ export class DatabaseStorage implements IStorage {
           conditions.push(isNull(movements.documentPath));
         }
       }
-          conditions.push(isNull(movements.documentPath));
-        }
-      }
       
       // Tag filters (multiple tags support)
       if (filters.tagIds && filters.tagIds.length > 0) {
