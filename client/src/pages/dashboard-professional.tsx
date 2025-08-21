@@ -352,6 +352,14 @@ function EnhancedStatsGrid({ data, isLoading, movements }: { data: any; isLoadin
 // Professional Recent Movements with complete information
 function ProfessionalRecentMovements({ movements, isLoading }: { movements: MovementWithRelations[]; isLoading: boolean }) {
   const [, setLocation] = useLocation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(movements.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentMovements = movements.slice(startIndex, endIndex);
   
   const formatCurrency = (amount: string | number, type: string) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -429,14 +437,11 @@ function ProfessionalRecentMovements({ movements, isLoading }: { movements: Move
               <p className="text-sm text-muted-foreground mt-1">Ultime transazioni finanziarie</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="h-9"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Esporta
-          </Button>
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <span>{movements.length} movimenti</span>
+            <div className="w-1 h-1 rounded-full bg-muted-foreground/50"></div>
+            <span>Agosto 2025</span>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -454,7 +459,7 @@ function ProfessionalRecentMovements({ movements, isLoading }: { movements: Move
           </div>
         ) : (
           <div className="space-y-3">
-            {movements.map((movement) => {
+            {currentMovements.map((movement) => {
               const amountInfo = formatCurrency(movement.amount, movement.type);
               const statusInfo = getStatusBadge(movement.status?.name || 'Da Saldare');
               
@@ -568,6 +573,46 @@ function ProfessionalRecentMovements({ movements, isLoading }: { movements: Move
               );
             })}
             
+            {/* Pagination Controls */}
+            {movements.length > itemsPerPage && (
+              <div className="flex items-center justify-between pt-4 border-t border-border/50 mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Mostra {startIndex + 1}-{Math.min(endIndex, movements.length)} di {movements.length} movimenti
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    ‹
+                  </Button>
+                  <span className="text-sm text-muted-foreground px-2">
+                    {currentPage} di {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                  >
+                    ›
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLocation('/movements')}
+                    className="ml-4 text-xs"
+                  >
+                    Vedi tutti su Movimenti
+                    <ArrowUpRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
 
           </div>
         )}
