@@ -339,16 +339,16 @@ export class DatabaseStorage implements IStorage {
 
   async getCompanyWithRelations(id: string): Promise<CompanyWithRelations | undefined> {
     try {
-      const company = await db.query.companies.findFirst({
-        where: eq(companies.id, id),
-        with: {
-          cores: true,
-          resources: true,
-          ibans: true,
-          offices: true,
-        },
-      });
-      return company || undefined;
+      const company = await db.select().from(companies).where(eq(companies.id, id)).limit(1);
+      if (!company[0]) return undefined;
+      
+      const cores = await db.select().from(schema.cores).where(eq(schema.cores.companyId, id));
+      const resources = await db.select().from(schema.resources).where(eq(schema.resources.companyId, id));
+      const ibans = await db.select().from(schema.ibans).where(eq(schema.ibans.companyId, id));
+      const offices = await db.select().from(schema.offices).where(eq(schema.offices.companyId, id));
+      
+      const result = { ...company[0], cores, resources, ibans, offices } as CompanyWithRelations;
+      return result;
     } catch (error) {
       console.error('Error fetching company with relations:', error);
       throw new Error('Failed to fetch company with relations');
@@ -2067,7 +2067,11 @@ async getMovements(filters: {
 
   async createAiSettings(settings: InsertAiSettings): Promise<AiSettings> {
     try {
-      const result = await db.insert(aiSettings).values([settings]).returning();
+      const settingsData = {
+        ...settings,
+        temperature: typeof settings.temperature === 'number' ? settings.temperature.toString() : settings.temperature
+      };
+      const result = await db.insert(aiSettings).values([settingsData]).returning();
       return result[0];
     } catch (error) {
       console.error('Error creating AI settings:', error);
@@ -2077,8 +2081,13 @@ async getMovements(filters: {
 
   async updateAiSettings(userId: string, settings: Partial<InsertAiSettings>): Promise<AiSettings> {
     try {
+      const updateData = {
+        ...settings,
+        temperature: typeof settings.temperature === 'number' ? settings.temperature.toString() : settings.temperature,
+        updatedAt: new Date()
+      };
       const result = await db.update(aiSettings)
-        .set({ ...settings, updatedAt: new Date() })
+        .set(updateData)
         .where(eq(aiSettings.userId, userId))
         .returning();
       return result[0];
@@ -2494,7 +2503,7 @@ async getMovements(filters: {
 
   async deleteSendgridTemplate(id: string): Promise<boolean> {
     const result = await db.delete(sendgridTemplates).where(eq(sendgridTemplates.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // WhatsApp Settings methods
