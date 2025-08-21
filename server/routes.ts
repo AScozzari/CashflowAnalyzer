@@ -64,8 +64,9 @@ const handleAsyncErrors = (fn: Function) => (req: any, res: any, next: any) => {
 // Helper function to create notifications based on user roles
 async function createMovementNotifications(movementId: string, type: 'new_movement' | 'movement_updated', createdByUserId?: string) {
   try {
-    const users = await dbStorage.getUsers();
-    const movement = await dbStorage.getMovement(movementId);
+    const { storage } = await import('./storage');
+    const users = await storage.getUsers();
+    const movement = await storage.getMovement(movementId);
     
     if (!movement) return;
     
@@ -90,7 +91,7 @@ async function createMovementNotifications(movementId: string, type: 'new_moveme
       }
       
       if (shouldNotify) {
-        await dbStorage.createNotification({
+        await storage.createNotification({
           userId: user.id,
           movementId: movementId,
           type: type,
@@ -896,7 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Set appropriate headers for download
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-      res.setHeader('Content-Type', getContentType(fileExtension));
+      res.setHeader('Content-Type', 'application/octet-stream'); // getContentType(fileExtension);
       
       // Stream the file
       const fileStream = fs.createReadStream(movement.documentPath);

@@ -1062,7 +1062,7 @@ export const insertTelegramSettingsSchema = createInsertSchema(telegramSettings)
   lastTested: true,
   lastMessageSent: true
 }).extend({
-  botToken: z.string().regex(/^\d+:[A-Za-z0-9_-]{35}$/, "Token bot Telegram non valido"),
+  botToken: z.string().regex(/^\d+:[A-Za-z0-9_-]+$/, "Token bot Telegram non valido"),
   botUsername: z.string().regex(/^@[A-Za-z0-9_]{5,32}$/, "Username bot deve iniziare con @ e essere 5-32 caratteri"),
   webhookUrl: z.string().url("URL webhook non valido").optional().or(z.literal("")),
   maxMessageLength: z.number().min(1).max(4096).default(4096),
