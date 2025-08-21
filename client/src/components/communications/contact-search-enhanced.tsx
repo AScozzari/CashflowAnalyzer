@@ -55,53 +55,64 @@ export function ContactSearchEnhanced({
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Fetch data from different endpoints - handle authentication errors gracefully
-  const { data: resources = [], error: resourcesError } = useQuery<Resource[]>({ 
+  const { data: resources = [], error: resourcesError, isLoading: resourcesLoading } = useQuery<Resource[]>({ 
     queryKey: ["/api/resources"],
     refetchOnWindowFocus: false,
-    retry: 1
+    retry: 1,
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
   
-  const { data: customers = [], error: customersError } = useQuery<Customer[]>({ 
+  const { data: customers = [], error: customersError, isLoading: customersLoading } = useQuery<Customer[]>({ 
     queryKey: ["/api/customers"],
     refetchOnWindowFocus: false,
-    retry: 1
+    retry: 1,
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
   
-  const { data: suppliers = [], error: suppliersError } = useQuery<Supplier[]>({ 
+  const { data: suppliers = [], error: suppliersError, isLoading: suppliersLoading } = useQuery<Supplier[]>({ 
     queryKey: ["/api/suppliers"],
     refetchOnWindowFocus: false,
-    retry: 1
+    retry: 1,
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
+
+  const isLoading = resourcesLoading || customersLoading || suppliersLoading;
 
   // Debug logging
   console.log('📊 Contact Search Debug:', {
     resources: resources.length,
     customers: customers.length, 
     suppliers: suppliers.length,
+    onlyMobileContacts: {
+      resources: resources.filter(r => r.mobile).length,
+      customers: customers.filter(c => c.mobile).length,
+      suppliers: suppliers.filter(s => s.mobile).length
+    },
     authErrors: {
       resourcesError: resourcesError?.message?.includes('401') || resourcesError?.message?.includes('autenticato'),
       customersError: customersError?.message?.includes('401') || customersError?.message?.includes('autenticato'), 
       suppliersError: suppliersError?.message?.includes('401') || suppliersError?.message?.includes('autenticato')
     },
-    sampleNames: [...resources.slice(0,2).map(r => `${r.firstName} ${r.lastName}`), 
-                  ...customers.slice(0,2).map(c => c.name || `${c.firstName} ${c.lastName}`),
-                  ...suppliers.slice(0,2).map(s => s.name)]
+    sampleMobileNames: [...resources.filter(r => r.mobile).slice(0,2).map(r => `${r.firstName} ${r.lastName}`), 
+                       ...customers.filter(c => c.mobile).slice(0,2).map(c => c.name || `${c.firstName} ${c.lastName}`),
+                       ...suppliers.filter(s => s.mobile).slice(0,2).map(s => s.name)]
   });
 
   // Transform data into unified contact format
   const allContacts: Contact[] = useMemo(() => {
     const contacts: Contact[] = [];
 
-    // Add resources (use mobile or phone number)
+    // Add resources (prioritize mobile for WhatsApp/SMS)
     if (!filterByType || filterByType.includes('resource')) {
       resources.forEach(resource => {
-        const phoneNumber = resource.mobile || resource.phone; // Try mobile first, then phone
-        if (phoneNumber) { // Only include if any phone number exists
+        // For WhatsApp/SMS, prefer mobile numbers
+        const mobileNumber = resource.mobile;
+        if (mobileNumber) { // Only include if mobile number exists
           contacts.push({
             id: `resource-${resource.id}`,
             name: `${resource.firstName} ${resource.lastName}`,
             type: 'resource',
-            phone: phoneNumber, // Use available phone number
+            phone: mobileNumber, // Use mobile number for messaging
             email: resource.email || undefined,
             status: resource.isActive ? 'active' : 'inactive',
             lastContact: resource.createdAt ? new Date(resource.createdAt).toISOString() : undefined
@@ -117,13 +128,13 @@ export function ContactSearchEnhanced({
           ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
           : customer.name || '';
         
-        const phoneNumber = customer.mobile || customer.phone; // Try mobile first, then phone
-        if (name && phoneNumber) { // Only include if name and any phone number exists
+        const mobileNumber = customer.mobile; // Prefer mobile for messaging apps
+        if (name && mobileNumber) { // Only include if name and mobile number exist
           contacts.push({
             id: `customer-${customer.id}`,
             name: name,
             type: 'customer',
-            phone: phoneNumber, // Use available phone number
+            phone: mobileNumber, // Use mobile number for messaging
             email: customer.email || undefined,
             status: customer.isActive ? 'active' : 'inactive',
             tags: customer.type ? [customer.type] : undefined,
@@ -133,16 +144,16 @@ export function ContactSearchEnhanced({
       });
     }
 
-    // Add suppliers (use mobile or phone number)
+    // Add suppliers (prioritize mobile for messaging)
     if (!filterByType || filterByType.includes('supplier')) {
       suppliers.forEach(supplier => {
-        const phoneNumber = supplier.mobile || supplier.phone; // Try mobile first, then phone
-        if (phoneNumber) { // Only include if any phone number exists
+        const mobileNumber = supplier.mobile; // Prefer mobile for messaging apps
+        if (mobileNumber) { // Only include if mobile number exists
           contacts.push({
             id: `supplier-${supplier.id}`,
             name: supplier.name,
             type: 'supplier',
-            phone: phoneNumber, // Use available phone number
+            phone: mobileNumber, // Use mobile number for messaging
             email: supplier.email || undefined,
             status: supplier.isActive ? 'active' : 'inactive',
             lastContact: supplier.createdAt ? new Date(supplier.createdAt).toISOString() : undefined
@@ -328,18 +339,24 @@ export function ContactSearchEnhanced({
         <Card className="max-h-80 relative z-10 mt-1 shadow-lg border">
           <ScrollArea className="h-full max-h-72">
             <CardContent className="p-3">
-              {filteredContacts.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+                  <p className="font-medium">Caricamento contatti...</p>
+                  <p className="text-xs mt-1">Solo contatti con numero mobile</p>
+                </div>
+              ) : filteredContacts.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
                   <p className="font-medium">
                     {(resourcesError || customersError || suppliersError) 
                       ? "Errore autenticazione" 
-                      : "Nessun contatto trovato"}
+                      : searchQuery ? "Nessun contatto trovato" : "Cerca contatti con numero mobile"}
                   </p>
                   <p className="text-xs mt-1">
                     {(resourcesError || customersError || suppliersError) 
                       ? "Fai login come admin/admin123 per vedere i contatti"
-                      : "Prova a modificare i filtri di ricerca"}
+                      : "Solo contatti con numero mobile vengono mostrati"}
                   </p>
                 </div>
               ) : (
