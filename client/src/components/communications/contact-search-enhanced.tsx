@@ -241,26 +241,46 @@ export function ContactSearchEnhanced({
           onChange={(e) => {
             const newValue = e.target.value;
             setSearchQuery(newValue);
-            if (!isExpanded && newValue.trim() !== '') {
+            
+            // Auto-expand on typing, auto-close when empty
+            if (newValue.trim() !== '') {
               setIsExpanded(true);
+            } else {
+              setIsExpanded(false);
             }
+            
             console.log('🔍 Ricerca contatti:', newValue, 'Contatti trovati:', filteredContacts.length, 
                        filteredContacts.length > 0 ? filteredContacts.map(c => c.name) : 'Nessun risultato');
           }}
-          onFocus={() => setIsExpanded(true)}
+          onFocus={() => {
+            if (searchQuery.trim() !== '') {
+              setIsExpanded(true);
+            }
+          }}
+          onBlur={() => {
+            // Delay closing to allow for click events on results
+            setTimeout(() => {
+              if (searchQuery.trim() === '') {
+                setIsExpanded(false);
+              }
+            }, 150);
+          }}
           className="pl-10 w-full"
           data-testid="contact-search-input"
           autoComplete="off"
         />
-        {searchQuery && (
+        {(searchQuery || isExpanded) && (
           <Button
             variant="ghost"
             size="sm"
             className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
             onClick={() => {
               setSearchQuery("");
+              setTypeFilter("all");
+              setStatusFilter("all");
               setIsExpanded(false);
             }}
+            title="Pulisci ricerca"
           >
             <X className="h-3 w-3" />
           </Button>
@@ -326,6 +346,7 @@ export function ContactSearchEnhanced({
               setSearchQuery("");
               setTypeFilter("all");
               setStatusFilter("all");
+              setIsExpanded(false);
             }}
           >
             <X className="h-3 w-3 mr-1" />
