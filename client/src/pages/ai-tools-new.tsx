@@ -46,8 +46,9 @@ export default function AiToolsNewPage() {
       title: "Assistente AI Conversazionale",
       description: "Chat intelligente sui tuoi dati finanziari",
       icon: MessageSquare,
-      status: "coming-soon",
+      status: "active",
       location: "AI Tools",
+      route: "/ai-chat",
       features: [
         "🤖 Risposte su movimenti specifici",
         "💡 Consigli personalizzati", 
@@ -55,7 +56,7 @@ export default function AiToolsNewPage() {
       ],
       bgColor: "bg-blue-50 dark:bg-blue-900/20",
       iconColor: "text-blue-600",
-      buttonText: "Prossimamente"
+      buttonText: "Apri Chat AI"
     },
     {
       id: "document-ai",
@@ -153,7 +154,7 @@ export default function AiToolsNewPage() {
           <div className="flex items-center justify-center gap-2 mt-4">
             <Sparkles className="h-5 w-5 text-yellow-500" />
             <span className="text-sm font-medium text-green-700 dark:text-green-300">
-              3 strumenti AI attivi • 1 in sviluppo
+              4 strumenti AI attivi • Chat AI disponibile via shortcut
             </span>
           </div>
         </div>
@@ -170,8 +171,8 @@ export default function AiToolsNewPage() {
               <span><strong>Analytics AI</strong>: VERI e FUNZIONANTI (GPT-4o)</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-blue-500" />
-              <span><strong>Chat Assistant</strong>: Prossimamente (non implementato)</span>
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span><strong>Chat Assistant</strong>: ATTIVO (shortcut in header)</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
@@ -260,22 +261,26 @@ export default function AiToolsNewPage() {
 
         {/* Call to Action */}
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-3">Inizia con l'AI Analytics</h3>
+          <h3 className="text-lg font-semibold mb-3">Quick Access AI</h3>
           <p className="text-gray-600 dark:text-gray-300 mb-4">
-            I tuoi Quick Wins AI sono già operativi. Vai alla pagina Analytics per vedere:
+            Accesso rapido agli strumenti AI più utilizzati:
           </p>
-          <div className="flex items-center justify-center gap-6 text-sm mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
             <span className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              Health Score automatico
+              Analytics AI (Health Score, Insights, Anomalie)
             </span>
             <span className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              Insights intelligenti
+              <CheckCircle className="h-4 w-4 text-blue-500" />
+              Chat AI (icona Bot in header)
             </span>
             <span className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              Rilevamento anomalie
+              <CheckCircle className="h-4 w-4 text-purple-500" />
+              Document AI (parsing FatturaPA)
+            </span>
+            <span className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-orange-500" />
+              Tax AI (in sviluppo)
             </span>
           </div>
           <Link href="/analytics">

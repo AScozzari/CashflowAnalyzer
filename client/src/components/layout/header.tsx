@@ -72,6 +72,22 @@ export default function Header({ title, subtitle, action }: HeaderProps) {
         <div className="flex items-center justify-end space-x-2 lg:space-x-4 shrink-0">
           <MobileNavigation />
           {action && <div className="hidden sm:block">{action}</div>}
+          
+          {/* AI Chat Shortcut */}
+          <Link href="/ai-chat">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 relative group" 
+              data-testid="ai-chat-shortcut"
+              title="Chat AI"
+            >
+              <Bot className="h-5 w-5 text-blue-600 group-hover:text-blue-700" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+              <span className="sr-only">Chat AI</span>
+            </Button>
+          </Link>
+          
           <ThemeToggle />
           
           {/* AI Assistant Button */}
