@@ -78,27 +78,38 @@ export function AiChat() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, sessionId }: { message: string; sessionId: string }) => {
-      const response = await apiRequest('POST', '/api/ai/chat', {
-        message,
-        sessionId,
-        model: selectedModel, // Include selected model
-        context: {
-          timestamp: new Date().toISOString(),
-          source: 'chat_interface'
-        }
-      });
+      console.log('[CHAT DEBUG] Invio messaggio:', { message, sessionId, selectedModel });
       
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Errore invio messaggio');
+      try {
+        const response = await apiRequest('POST', '/api/ai/chat', {
+          message,
+          sessionId,
+          model: selectedModel, // Include selected model
+          context: {
+            timestamp: new Date().toISOString(),
+            source: 'chat_interface'
+          }
+        });
+        
+        console.log('[CHAT DEBUG] Response ricevuta:', response.status, response.statusText);
+        
+        const data = await response.json();
+        console.log('[CHAT DEBUG] Data parsed:', data);
+        
+        return data;
+      } catch (error) {
+        console.error('[CHAT DEBUG] Errore nella mutationFn:', error);
+        throw error;
       }
-      
-      return response.json();
     },
     onSuccess: (data) => {
+      console.log('[CHAT DEBUG] onSuccess chiamato con data:', data);
+      
       // Invalidate chat queries to refresh messages
       queryClient.invalidateQueries({ queryKey: ['/api/ai/chat/messages', currentSessionId] });
       queryClient.invalidateQueries({ queryKey: ['/api/ai/chat/sessions'] });
+      
+      console.log('[CHAT DEBUG] Query invalidate chiamate per sessionId:', currentSessionId);
       
       setIsTyping(false);
       setCurrentMessage("");
