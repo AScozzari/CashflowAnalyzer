@@ -54,8 +54,12 @@ export default function AiSettings() {
     retry: false,
   });
 
-  // Type guard for API key status
-  const typedApiKeyStatus = apiKeyStatus as { hasKey?: boolean; keyPreview?: string; lastUpdated?: string } | undefined;
+  // Type guard for API key status - Updated to match backend response
+  const typedApiKeyStatus = apiKeyStatus as { 
+    configured?: boolean; 
+    maskedKey?: string; 
+    message?: string 
+  } | undefined;
 
   // Form setup
   const form = useForm<AiSettingsFormData>({
@@ -247,7 +251,7 @@ export default function AiSettings() {
             <div className="flex items-center space-x-2">
               <Button 
                 onClick={() => testApiKeyMutation.mutate()}
-                disabled={testApiKeyMutation.isPending || !typedApiKeyStatus?.hasKey}
+                disabled={testApiKeyMutation.isPending || !typedApiKeyStatus?.configured}
                 variant="outline"
                 size="sm"
               >
@@ -262,13 +266,13 @@ export default function AiSettings() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">
                 <span className="font-medium">API Key Corrente</span>
-                {typedApiKeyStatus?.hasKey ? (
+                {typedApiKeyStatus?.configured ? (
                   <Badge variant="default" className="bg-green-100 text-green-800">Configurata</Badge>
                 ) : (
                   <Badge variant="outline">Non Configurata</Badge>
                 )}
               </div>
-              {typedApiKeyStatus?.hasKey && (
+              {typedApiKeyStatus?.configured && (
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="outline"
@@ -290,16 +294,16 @@ export default function AiSettings() {
               )}
             </div>
             
-            {typedApiKeyStatus?.hasKey ? (
+            {typedApiKeyStatus?.configured ? (
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 font-mono text-sm">
                   <span className="text-muted-foreground">Chiave:</span>
                   <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    {showApiKey ? 'sk-...' : typedApiKeyStatus.keyPreview}
+                    {showApiKey ? 'sk-...' : typedApiKeyStatus.maskedKey}
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Ultimo aggiornamento: {new Date(typedApiKeyStatus.lastUpdated || '').toLocaleString('it-IT')}
+                  {typedApiKeyStatus.message}
                 </div>
               </div>
             ) : (
@@ -321,18 +325,18 @@ export default function AiSettings() {
           </div>
 
           {/* Add/Update API Key */}
-          <div className={`p-4 border rounded-lg ${!typedApiKeyStatus?.hasKey ? 'border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800' : ''}`}>
+          <div className={`p-4 border rounded-lg ${!typedApiKeyStatus?.configured ? 'border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800' : ''}`}>
             <div className="flex items-center space-x-2 mb-3">
-              {!typedApiKeyStatus?.hasKey && <Key className="h-5 w-5 text-blue-600" />}
+              {!typedApiKeyStatus?.configured && <Key className="h-5 w-5 text-blue-600" />}
               <h4 className="font-medium">
-                {typedApiKeyStatus?.hasKey ? 'Sostituisci API Key' : 'Aggiungi Nuova API Key'}
+                {typedApiKeyStatus?.configured ? 'Sostituisci API Key' : 'Aggiungi Nuova API Key'}
               </h4>
             </div>
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Input
                   type={showApiKey ? "text" : "password"}
-                  placeholder={!typedApiKeyStatus?.hasKey ? "sk-proj-... (incolla qui la tua API key OpenAI)" : "sk-..."}
+                  placeholder={!typedApiKeyStatus?.configured ? "sk-proj-... (incolla qui la tua API key OpenAI)" : "sk-..."}
                   value={newApiKey}
                   onChange={(e) => setNewApiKey(e.target.value)}
                   className="font-mono"
@@ -350,9 +354,9 @@ export default function AiSettings() {
                   onClick={() => updateApiKeyMutation.mutate(newApiKey)}
                   disabled={!newApiKey || updateApiKeyMutation.isPending}
                   size="sm"
-                  className={!typedApiKeyStatus?.hasKey ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                  className={!typedApiKeyStatus?.configured ? 'bg-blue-600 hover:bg-blue-700' : ''}
                 >
-                  {updateApiKeyMutation.isPending ? 'Salvando...' : (typedApiKeyStatus?.hasKey ? 'Sostituisci' : 'Aggiungi e Testa')}
+                  {updateApiKeyMutation.isPending ? 'Salvando...' : (typedApiKeyStatus?.configured ? 'Sostituisci' : 'Aggiungi e Testa')}
                 </Button>
                 <Button
                   variant="outline"
@@ -368,7 +372,7 @@ export default function AiSettings() {
                   <div>
                     La chiave verrà automaticamente testata prima del salvataggio<br/>
                     • Deve iniziare con "sk-" ed avere permessi per l'API OpenAI<br/>
-                    • {!typedApiKeyStatus?.hasKey ? 'Ottieni la tua chiave da ' : 'Gestisci le tue chiavi su '}
+                    • {!typedApiKeyStatus?.configured ? 'Ottieni la tua chiave da ' : 'Gestisci le tue chiavi su '}
                     <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" 
                        className="text-blue-600 hover:text-blue-800 underline">
                       platform.openai.com
