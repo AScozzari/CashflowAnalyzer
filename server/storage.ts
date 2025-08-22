@@ -3224,4 +3224,5 @@ async getMovements(filters: {
 // Initialize DatabaseStorage with proper error handling
 console.log('[STORAGE] Initializing DatabaseStorage...');
 export const storage = new DatabaseStorage();
+export const dbstorage = storage; // Alias for backward compatibility
 console.log('[STORAGE] DatabaseStorage initialized successfully');
