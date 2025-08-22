@@ -60,7 +60,11 @@ export function AnomalyDetector({ movements, autoRefresh = true }: AnomalyDetect
           include_duplicates: true
         })
       });
-      if (!response.ok) throw new Error('Failed to detect anomalies');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Anomaly Detection error:', response.status, errorText);
+        throw new Error(`Failed to detect anomalies: ${response.status}`);
+      }
       return response.json();
     },
     enabled: movements && movements.length > 0,
@@ -125,6 +129,9 @@ export function AnomalyDetector({ movements, autoRefresh = true }: AnomalyDetect
     );
   }
 
+  if (error) {
+    console.error('❌ Anomaly Detection widget error:', error);
+  }
   if (error || !anomalies) {
     return (
       <Card data-testid="anomaly-detector-error">

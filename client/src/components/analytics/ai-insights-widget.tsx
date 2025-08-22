@@ -53,7 +53,11 @@ export function AIInsightsWidget({ movements, dateRange }: AIInsightsWidgetProps
           date_range: dateRange
         })
       });
-      if (!response.ok) throw new Error('Failed to generate insights');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ AI Insights error:', response.status, errorText);
+        throw new Error(`Failed to generate insights: ${response.status}`);
+      }
       return response.json();
     },
     enabled: movements && movements.length > 0,
@@ -115,6 +119,9 @@ export function AIInsightsWidget({ movements, dateRange }: AIInsightsWidgetProps
     );
   }
 
+  if (error) {
+    console.error('❌ AI Insights widget error:', error);
+  }
   if (error || !insights) {
     return (
       <Card data-testid="ai-insights-widget-error">
