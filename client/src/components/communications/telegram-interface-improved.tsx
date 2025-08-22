@@ -81,19 +81,14 @@ export function TelegramInterfaceImproved() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // ✅ DATI REALI DAL DATABASE: Debug completo
+  // ✅ DATI REALI DAL DATABASE
   const getLastMessagePreview = (chat: any) => {
-    console.log('🔍 [PREVIEW] Chat:', chat.firstName, 'lastRealMessage:', chat.lastRealMessage);
-    
-    // Usa sempre i dati diretti dal database
     if (chat.lastRealMessage && chat.lastRealMessage.trim()) {
       return chat.lastRealMessage.length > 50 
         ? chat.lastRealMessage.substring(0, 50) + '...' 
         : chat.lastRealMessage;
     }
     
-    // Debug: mostra perché è vuoto
-    console.log('⚠️ [PREVIEW] Nessun messaggio per:', chat.firstName, 'lastRealMessage:', chat.lastRealMessage);
     return 'Nessun messaggio';
   };
 
@@ -198,7 +193,7 @@ export function TelegramInterfaceImproved() {
   const sendMessageMutation = useMutation({
     mutationFn: ({ content, chatId }: { content: string; chatId: string }) => {
       console.log('🚀 [SEND MESSAGE] Invio messaggio:', { chatId, content });
-      return apiRequest('/api/telegram/send', 'POST', { 
+      return apiRequest('POST', '/api/telegram/send', { 
         chatId: chatId,
         message: content,
         parseMode: 'HTML'

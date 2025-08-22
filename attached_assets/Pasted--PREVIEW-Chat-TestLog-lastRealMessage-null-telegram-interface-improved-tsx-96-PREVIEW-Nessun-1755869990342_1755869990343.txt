@@ -1,0 +1,69 @@
+[PREVIEW] Chat: TestLog lastRealMessage: null
+telegram-interface-improved.tsx:96 ⚠️ [PREVIEW] Nessun messaggio per: TestLog lastRealMessage: null
+telegram-interface-improved.tsx:180 ✅ Chat trasformate: 3 (3) [{…}, {…}, {…}]
+App.tsx:59 [REPLIT FETCH] Retry 2/3 per: POST
+App.tsx:56 [REPLIT FETCH] Max retries raggiunto per: POST TypeError: Failed to execute 'fetch' on 'Window': '/api/telegram/send' is not a valid HTTP method.
+    at window.fetch (App.tsx:51:32)
+    at async apiRequest (queryClient.ts:15:15)
+overrideMethod @ hook.js:608
+window.fetch @ App.tsx:56
+await in window.fetch
+apiRequest @ queryClient.ts:15
+mutationFn @ telegram-interface-improved.tsx:201
+fn @ @tanstack_react-query.js?v=68c59512:1189
+run @ @tanstack_react-query.js?v=68c59512:494
+start @ @tanstack_react-query.js?v=68c59512:536
+execute @ @tanstack_react-query.js?v=68c59512:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=68c59512:2630
+(anonymous) @ @tanstack_react-query.js?v=68c59512:3295
+handleSendMessage @ telegram-interface-improved.tsx:240
+callCallback2 @ chunk-RPCDYKBN.js?v=68c59512:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=68c59512:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=68c59512:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=68c59512:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=68c59512:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=68c59512:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=68c59512:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=68c59512:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=68c59512:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=68c59512:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=68c59512:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=68c59512:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=68c59512:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=68c59512:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=68c59512:5449Understand this error
+telegram-interface-improved.tsx:229 ❌ [SEND MESSAGE] Errore: TypeError: Failed to execute 'fetch' on 'Window': '/api/telegram/send' is not a valid HTTP method.
+    at window.fetch (App.tsx:51:32)
+    at async apiRequest (queryClient.ts:15:15)
+overrideMethod @ hook.js:608
+onError @ telegram-interface-improved.tsx:229
+execute @ @tanstack_react-query.js?v=68c59512:1254
+await in execute
+mutate @ @tanstack_react-query.js?v=68c59512:2630
+(anonymous) @ @tanstack_react-query.js?v=68c59512:3295
+handleSendMessage @ telegram-interface-improved.tsx:240
+callCallback2 @ chunk-RPCDYKBN.js?v=68c59512:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=68c59512:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=68c59512:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=68c59512:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=68c59512:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=68c59512:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=68c59512:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=68c59512:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=68c59512:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=68c59512:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=68c59512:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=68c59512:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=68c59512:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=68c59512:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=68c59512:5449Understand this error
+use-auth.tsx:120 🔍 DEBUG AUTH: {user: 'admin (admin)', isLoading: false, error: 'none'}
+protected-route.tsx:19 🛡️ PROTECTED ROUTE /communications: {user: 'admin', isLoading: false, allowedRoles: undefined}
+telegram-interface-improved.tsx:154 🔍 Telegram chats ricevute: 3 (dati completi): (3) [{…}, {…}, {…}]
+telegram-interface-improved.tsx:86 🔍 [PREVIEW] Chat: Antonio lastRealMessage: 🎯 AGGIORNAMENTO MANUALE DATABASE - ORA FUNZIONA!
+telegram-interface-improved.tsx:86 🔍 [PREVIEW] Chat: TestFinale lastRealMessage: null
+telegram-interface-improved.tsx:96 ⚠️ [PREVIEW] Nessun messaggio per: TestFinale lastRealMessage: null
+telegram-interface-improved.tsx:86 🔍 [PREVIEW] Chat: TestLog lastRealMessage: null
+telegram-interface-improved.tsx:96 ⚠️ [PREVIEW] Nessun messaggio per: TestLog lastRealMessage: null
+telegram-interface-improved.tsx:180 ✅ Chat trasformate: 3 (3) [{…}, {…}, {…}]
