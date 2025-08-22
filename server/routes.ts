@@ -1602,6 +1602,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // AI Chat endpoint - MISSING ENDPOINT ADDED
+  app.post("/api/ai/chat", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { message, sessionId } = req.body;
+      
+      if (!message || !sessionId) {
+        return res.status(400).json({ error: 'Message and sessionId are required' });
+      }
+      
+      const result = await aiService.chatCompletion(
+        req.user.id,
+        message,
+        sessionId
+      );
+      
+      console.log(`[AI CHAT] ✅ Chat response generated for user: ${req.user.id}, tokens: ${result.tokensUsed}`);
+      
+      res.json({
+        response: result.response,
+        tokensUsed: result.tokensUsed,
+        sessionId
+      });
+    } catch (error) {
+      console.error('[AI CHAT] Error during chat completion:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Chat completion failed' 
+      });
+    }
+  }));
+
   // Test AI API key connection
   app.post("/api/ai/api-key/test", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
