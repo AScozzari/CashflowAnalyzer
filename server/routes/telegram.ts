@@ -495,10 +495,18 @@ export function setupTelegramRoutes(app: Express): void {
       const realMessages = [];
       
       try {
-        // Prima trova l'UUID interno della chat tramite telegramChatId
-        console.log('[TELEGRAM API] Finding internal UUID for chatId:', chatId);
+        // 🔥 FIXED: Cerca la chat sia per UUID interno che per telegramChatId
+        console.log('[TELEGRAM API] 🔍 Looking for chat with ID:', chatId);
         const allChats = await storage.getTelegramChats();
-        const targetChat = allChats.find(chat => chat.telegramChatId === chatId);
+        
+        // Prova prima per UUID interno (nuovo sistema), poi per telegramChatId (fallback)
+        const targetChat = allChats.find(chat => chat.id === chatId) || 
+                          allChats.find(chat => chat.telegramChatId === chatId);
+        
+        console.log('[TELEGRAM API] 📋 Found target chat:', targetChat ? 'YES' : 'NO');
+        if (targetChat) {
+          console.log('[TELEGRAM API] 📋 Chat details - ID:', targetChat.id, 'TelegramChatId:', targetChat.telegramChatId);
+        }
         
         if (targetChat) {
           console.log('[TELEGRAM API] Found internal UUID:', targetChat.id);
@@ -511,24 +519,30 @@ export function setupTelegramRoutes(app: Express): void {
           const messages = await db.select().from(telegramMessages)
             .where(eq(telegramMessages.chatId, targetChat.id))
             .orderBy(asc(telegramMessages.createdAt));
-          console.log('[TELEGRAM API] Messages found:', messages);
-        
+          console.log('[TELEGRAM API] 🔍 Database query result:', messages.length, 'messages found');
+          
+          // ✅ FIXED: Proper field mapping and better logging
           if (Array.isArray(messages) && messages.length > 0) {
+            console.log('[TELEGRAM API] 📝 Processing', messages.length, 'messages...');
             for (const msg of messages) {
+              console.log('[TELEGRAM API] 📋 Message:', msg.content?.substring(0, 50));
               realMessages.push({
                 id: msg.id?.toString() || Math.random().toString(),
                 chatId: chatId,
                 from: msg.direction === 'outbound' ? 'bot' : 'user',
                 to: msg.direction === 'outbound' ? 'user' : 'bot',
-                content: msg.content || 'Test message',
-                timestamp: msg.created_at || new Date().toISOString(),
+                content: msg.content || 'Message content missing',
+                timestamp: msg.createdAt || new Date().toISOString(), // ✅ FIXED: Use createdAt not created_at
                 messageType: 'text',
                 isOutgoing: msg.direction === 'outbound',
                 delivered: true,
                 read: true,
-                aiGenerated: msg.is_ai_generated || false
+                aiGenerated: msg.isAiGenerated || false // ✅ FIXED: Use isAiGenerated not is_ai_generated
               });
             }
+            console.log('[TELEGRAM API] ✅ Successfully processed', realMessages.length, 'messages');
+          } else {
+            console.log('[TELEGRAM API] ⚠️ No messages found in database query result');
           }
         }
       } catch (dbError) {
