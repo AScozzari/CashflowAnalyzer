@@ -359,7 +359,7 @@ export function ContactSearchEnhanced({
       )}
 
       {/* Results */}
-      {isExpanded && (
+      {isExpanded && searchQuery.trim() !== '' && (
         <Card className="max-h-80 relative z-10 mt-1 shadow-lg border">
           <ScrollArea className="h-full max-h-72">
             <CardContent className="p-3">
