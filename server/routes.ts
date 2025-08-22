@@ -1501,6 +1501,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // ================================================================
+  // AI SETTINGS & API KEY MANAGEMENT
+  // ================================================================
+  
+  // Get current AI settings
+  app.get("/api/ai/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getAiSettings(req.user.id);
+      if (!settings) {
+        // Create default settings if none exist
+        const defaultSettings = {
+          userId: req.user.id,
+          defaultModel: 'gpt-4o',
+          chatEnabled: true,
+          documentProcessingEnabled: true,
+          analyticsEnabled: true,
+          predictionsEnabled: true,
+          maxTokens: 2000,
+          temperature: 0.7,
+          privacyMode: 'standard',
+          dataRetention: 'none'
+        };
+        const newSettings = await storage.createAiSettings(defaultSettings);
+        return res.json(newSettings);
+      }
+      res.json(settings);
+    } catch (error) {
+      console.error('[AI SETTINGS] Error fetching AI settings:', error);
+      res.status(500).json({ error: 'Failed to fetch AI settings' });
+    }
+  }));
+
+  // Update AI API key
+  app.post("/api/ai/api-key/update", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { apiKey } = req.body;
+      
+      if (!apiKey || !apiKey.startsWith('sk-')) {
+        return res.status(400).json({ error: 'Invalid API key format. Must start with sk-' });
+      }
+
+      // Get or create AI settings
+      let settings = await storage.getAiSettings(req.user.id);
+      if (!settings) {
+        // Create new settings with API key
+        const newSettings = {
+          userId: req.user.id,
+          openaiApiKey: apiKey,
+          defaultModel: 'gpt-4o',
+          chatEnabled: true,
+          documentProcessingEnabled: true,
+          analyticsEnabled: true,
+          predictionsEnabled: true,
+          maxTokens: 2000,
+          temperature: 0.7,
+          privacyMode: 'standard',
+          dataRetention: 'none'
+        };
+        settings = await storage.createAiSettings(newSettings);
+      } else {
+        // Update existing settings with new API key
+        settings = await storage.updateAiSettings(req.user.id, { openaiApiKey: apiKey });
+      }
+
+      console.log('[AI API KEY] ✅ API key updated successfully for user:', req.user.id);
+      res.json({ success: true, message: 'API key updated successfully' });
+    } catch (error) {
+      console.error('[AI API KEY] ❌ Error updating API key:', error);
+      res.status(500).json({ error: 'Failed to update API key' });
+    }
+  }));
+
+  // Test AI API key connection
+  app.post("/api/ai/api-key/test", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Get user's AI settings to use their API key
+      const settings = await storage.getAiSettings(req.user.id);
+      if (!settings?.openaiApiKey) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'No API key configured. Please add an API key first.' 
+        });
+      }
+
+      // Test connection with user's API key
+      const testResult = await aiService.testConnection();
+      
+      if (testResult.success) {
+        console.log('[AI TEST] ✅ API key test successful:', testResult.model);
+        res.json({
+          success: true,
+          model: testResult.model,
+          message: 'Connection test successful'
+        });
+      } else {
+        console.log('[AI TEST] ❌ API key test failed:', testResult.error);
+        res.json({
+          success: false,
+          error: testResult.error
+        });
+      }
+    } catch (error) {
+      console.error('[AI TEST] ❌ Connection test error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Connection test failed: ' + (error instanceof Error ? error.message : 'Unknown error')
+      });
+    }
+  }));
+
+  // Update AI settings
+  app.put("/api/ai/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.updateAiSettings(req.user.id, req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error('[AI SETTINGS] Error updating AI settings:', error);
+      res.status(500).json({ error: 'Failed to update AI settings' });
+    }
+  }));
+
   // Create and return HTTP server
   const httpServer = createServer(app);
   return httpServer;
