@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   MessageSquare, 
   Settings, 
@@ -57,11 +58,7 @@ export function SmsSettingsSkebby() {
   // Test connection mutation
   const testConnection = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/sms/test-connection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Test connessione fallito');
+      const response = await apiRequest('POST', '/api/sms/test-connection');
       return response.json();
     },
     onSuccess: (data) => {
@@ -80,12 +77,7 @@ export function SmsSettingsSkebby() {
   // Save settings mutation
   const saveSettings = useMutation({
     mutationFn: async (data: Partial<InsertSmsSettings>) => {
-      const response = await fetch('/api/sms/settings', {
-        method: settings ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error('Errore nel salvataggio');
+      const response = await apiRequest('POST', '/api/sms/settings', data);
       return response.json();
     },
     onSuccess: () => {
