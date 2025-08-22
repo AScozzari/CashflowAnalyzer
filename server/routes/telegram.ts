@@ -4,6 +4,7 @@ import { telegramService } from '../services/telegram-service';
 import { storage } from '../storage';
 import { insertTelegramSettingsSchema, insertTelegramTemplateSchema } from '@shared/schema';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 
 export function setupTelegramRoutes(app: Express): void {
   console.log('🔧 [TELEGRAM ROUTES] Setting up Telegram routes...');
@@ -137,10 +138,67 @@ export function setupTelegramRoutes(app: Express): void {
       });
       
       if (result.success) {
-        // Update last message sent timestamp
-        const settings = await storage.getTelegramSettings();
-        if (settings.length > 0) {
-          await storage.updateTelegramSettings(settings[0].id, {});
+        console.log('[TELEGRAM SEND] ✅ Messaggio inviato con successo, messageId:', result.messageId);
+        
+        // 1. Save outgoing message to database
+        const messageData = {
+          id: randomUUID(),
+          telegramChatId: chatId.toString(),
+          messageId: result.messageId || Math.floor(Math.random() * 1000000),
+          text: message,
+          from_id: null, // Outgoing message from bot
+          from_first_name: 'EasyCashFlows Bot',
+          from_username: null,
+          from_is_bot: true,
+          message_date: new Date().toISOString(),
+          chat_id: parseInt(chatId.toString()),
+          chat_type: 'private',
+          is_outgoing: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        try {
+          // Save message to database
+          await storage.createTelegramMessage(messageData);
+          console.log('[TELEGRAM SEND] ✅ Messaggio salvato nel database');
+          
+          // 2. Update chat's last message info
+          const chats = await storage.getTelegramChats();
+          const targetChat = chats.find(chat => chat.telegramChatId === chatId.toString());
+          if (targetChat) {
+            await storage.updateTelegramChat(targetChat.id, {
+              lastMessageAt: messageData.message_date,
+              lastMessageId: messageData.messageId,
+              messageCount: (targetChat.messageCount || 0) + 1,
+              updatedAt: new Date().toISOString()
+            });
+            console.log('[TELEGRAM SEND] ✅ Chat aggiornata con ultimo messaggio');
+          }
+          
+          // 3. Create notification for outgoing message  
+          const notificationService = storage.getNotificationService();
+          if (notificationService && targetChat) {
+            const targetName = targetChat.firstName && targetChat.lastName 
+              ? `${targetChat.firstName} ${targetChat.lastName}`
+              : targetChat.firstName || targetChat.username || `Chat ${chatId}`;
+              
+            await notificationService.createCommunicationNotification({
+              userId: 'admin', // or get from authenticated user
+              type: 'sent_telegram',
+              category: 'telegram',
+              from: 'EasyCashFlows Bot',
+              to: targetName,
+              originalContent: message,
+              channelProvider: 'telegram',
+              messageId: `telegram_sent_${result.messageId}_${chatId}`,
+              priority: 'normal'
+            });
+            console.log('[TELEGRAM SEND] ✅ Notifica creata per messaggio inviato');
+          }
+          
+        } catch (dbError) {
+          console.error('[TELEGRAM SEND] ❌ Errore salvataggio database:', dbError);
         }
       }
       
