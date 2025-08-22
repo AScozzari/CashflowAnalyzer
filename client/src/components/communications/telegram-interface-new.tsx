@@ -121,14 +121,16 @@ export function TelegramInterfaceNew() {
         description: `Messaggio inviato. ID: ${data.messageId}` 
       });
       setMessageInput("");
+      
+      // ✅ INVALIDATE BOTH CHATS AND MESSAGES TO REFRESH UI
+      queryClient.invalidateQueries({ queryKey: ['/api/telegram/chats'] });
+      if (selectedChat?.id) {
+        queryClient.invalidateQueries({ queryKey: ['/api/telegram/messages', selectedChat.id] });
+      }
+      
       if (composing) {
         setRecipientUsername("");
         setComposing(false);
-      }
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/telegram/chats'] });
-      if (selectedChat) {
-        queryClient.invalidateQueries({ queryKey: ['/api/telegram/messages', selectedChat.id] });
       }
     },
     onError: (error: any) => {
