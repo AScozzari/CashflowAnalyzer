@@ -30,7 +30,6 @@ export default function Sidebar({ isCollapsed: externalCollapsed, onCollapsedCha
       { name: "Movimenti", href: "/movements", icon: RefreshCw },
       { name: "Analytics", href: "/analytics", icon: TrendingUp },
       { name: "Esplora Entità", href: "/entity-explorer", icon: Search },
-      { name: "Report", href: "/reports", icon: BarChart3 },
       { name: "AI Tools", href: "/ai-tools", icon: Brain },
       { name: "Comunicazioni", href: "/communications", icon: MessageSquare },
     ];
