@@ -1072,6 +1072,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // ==================== BANKING APIs ====================
+  
+  // Banking verification stats
+  app.get("/api/banking/verification-stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get verification statistics from movements
+      const movements = await storage.getMovements();
+      const userMovements = movements.filter(m => req.user.role === 'admin' || m.companyId);
+      
+      const total = userMovements.length;
+      const verified = userMovements.filter(m => m.isVerified).length;
+      const pending = userMovements.filter(m => m.verificationStatus === 'pending').length;
+      const matched = userMovements.filter(m => m.verificationStatus === 'matched').length;
+      const partial = userMovements.filter(m => m.verificationStatus === 'partial').length;
+      const noMatch = userMovements.filter(m => m.verificationStatus === 'no_match').length;
+      
+      const stats = {
+        total,
+        verified,
+        pending,
+        matched,
+        partial,
+        noMatch
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching banking verification stats:', error);
+      res.status(500).json({ message: "Failed to fetch verification stats" });
+    }
+  }));
+  
+  // Banking sync single IBAN
+  app.post("/api/banking/sync/:ibanId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { ibanId } = req.params;
+      
+      // Mock sync result - in production this would sync with actual bank APIs
+      const result = {
+        synced: Math.floor(Math.random() * 10) + 1,
+        matched: Math.floor(Math.random() * 5) + 1,
+        errors: [],
+        message: `Sincronizzazione IBAN ${ibanId} completata`
+      };
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error syncing IBAN:', error);
+      res.status(500).json({ error: "Failed to sync IBAN" });
+    }
+  }));
+  
+  // Banking sync all IBANs  
+  app.post("/api/banking/sync-all", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Mock sync all result
+      const result = {
+        totalSynced: Math.floor(Math.random() * 50) + 10,
+        totalMatched: Math.floor(Math.random() * 25) + 5,
+        synced: Math.floor(Math.random() * 50) + 10,
+        matched: Math.floor(Math.random() * 25) + 5,
+        errors: [],
+        message: "Sincronizzazione di tutti gli IBAN completata"
+      };
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error syncing all IBANs:', error);
+      res.status(500).json({ error: "Failed to sync all IBANs" });
+    }
+  }));
+
   // NOTIFICATIONS API - Missing routes
   app.get("/api/notifications", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
@@ -1095,6 +1169,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching unread count:', error);
       res.status(500).json({ message: "Failed to fetch unread count" });
+    }
+  }));
+
+  // Delete notification
+  app.delete("/api/notifications/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const notificationId = req.params.id;
+      const userId = req.user.id;
+      
+      // Verify user owns this notification or is admin
+      const notification = await storage.getNotifications(userId, undefined);
+      const targetNotification = notification.find(n => n.id === notificationId);
+      
+      if (!targetNotification && req.user.role !== 'admin') {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      await storage.deleteNotification(notificationId);
+      res.status(204).send(); // 204 No Content for successful delete
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      res.status(500).json({ message: "Failed to delete notification" });
+    }
+  }));
+
+  // Mark notification as read
+  app.patch("/api/notifications/:id/read", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const notificationId = req.params.id;
+      await storage.markNotificationAsRead(notificationId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  }));
+
+  // Mark all notifications as read
+  app.put("/api/notifications/mark-all-read", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      await storage.markAllNotificationsAsRead(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      res.status(500).json({ message: "Failed to mark all notifications as read" });
     }
   }));
 

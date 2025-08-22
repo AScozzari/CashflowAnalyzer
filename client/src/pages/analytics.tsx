@@ -55,7 +55,7 @@ export default function Analytics() {
     refetch 
   } = useQuery({
     queryKey,
-    enabled: false, // Non caricare automaticamente - solo con "Applica Filtri"
+    enabled: true, // Caricamento automatico abilitato per i tools AI
   });
 
   const handleFiltersChange = useCallback((newFilters: AnalyticsFilters) => {
