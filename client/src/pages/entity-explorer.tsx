@@ -90,28 +90,28 @@ export default function EntityExplorer() {
       {
         id: '1',
         name: 'Acme Corporation',
-        type: 'supplier',
+        type: 'supplier' as const,
         subtitle: 'Fornitore • acme@example.com',
         status: 'Attivo'
       },
       {
         id: '2',
         name: 'Mario Rossi',
-        type: 'customer',
+        type: 'customer' as const,
         subtitle: 'Cliente • mario.rossi@email.com',
         status: 'Attivo'
       },
       {
         id: '3',
         name: 'Giulia Bianchi',
-        type: 'resource',
+        type: 'resource' as const,
         subtitle: 'Risorsa • Contabilità',
         status: 'Attivo'
       },
       {
         id: '4',
         name: 'Tech Solutions SRL',
-        type: 'supplier',
+        type: 'supplier' as const,
         subtitle: 'Fornitore • tech@solutions.it',
         status: 'Attivo'
       }
@@ -125,10 +125,10 @@ export default function EntityExplorer() {
   };
 
   // Fetch entity details when selected
-  const { data: entityDetails, isLoading: entityLoading } = useQuery<EntityDetails>({
+  const { data: entityDetails, isLoading: entityLoading } = useQuery({
     queryKey: ['/api/entities', selectedEntity?.id, selectedEntity?.type],
     enabled: !!selectedEntity,
-    queryFn: async () => {
+    queryFn: async (): Promise<EntityDetails> => {
       // Mock entity details - in real app would be API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -164,7 +164,7 @@ export default function EntityExplorer() {
             status: { name: 'Da Saldare' },
             reason: { name: 'Acquisto beni' }
           }
-        ] as MovementWithRelations[],
+        ] as any,
         communications: {
           whatsapp: [
             { id: '1', message: 'Buongiorno, invio fattura', date: new Date().toISOString(), direction: 'outbound' },
@@ -287,7 +287,7 @@ export default function EntityExplorer() {
         {/* Entity Details */}
         {selectedEntity && (
           <div className="space-y-6">
-            {entityLoading ? (
+            {entityLoading || !entityDetails ? (
               <Card>
                 <CardContent className="p-8 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
