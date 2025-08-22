@@ -215,10 +215,11 @@ export function SmsSettingsSkebby() {
                     <Input
                       id="password"
                       type="password"
-                    defaultValue={settings?.password || ''}
-                    placeholder="••••••••"
-                    data-testid="input-password"
-                  />
+                      defaultValue={settings?.password || ''}
+                      placeholder="••••••••"
+                      data-testid="input-password"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -334,35 +335,37 @@ export function SmsSettingsSkebby() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="isActive">Servizio Attivo</Label>
-                  <p className="text-sm text-gray-500">
-                    Abilita l'invio SMS tramite Skebby
-                  </p>
+              {/* Service Controls */}
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="isActive">Servizio Attivo</Label>
+                    <p className="text-sm text-gray-500">
+                      Abilita l'invio SMS tramite Skebby
+                    </p>
+                  </div>
+                  <Switch
+                    id="isActive"
+                    defaultChecked={settings?.isActive ?? true}
+                    data-testid="switch-active"
+                  />
                 </div>
-                <Switch
-                  id="isActive"
-                  defaultChecked={settings?.isActive ?? true}
-                  data-testid="switch-active"
-                />
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="testMode">Modalità Test</Label>
-                  <p className="text-sm text-gray-500">
-                    Gli SMS non vengono inviati realmente
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="testMode">Modalità Test</Label>
+                    <p className="text-sm text-gray-500">
+                      Gli SMS non vengono inviati realmente
+                    </p>
+                  </div>
+                  <Switch
+                    id="testMode"
+                    defaultChecked={settings?.testMode ?? false}
+                    data-testid="switch-test-mode"
+                  />
                 </div>
-                <Switch
-                  id="testMode"
-                  defaultChecked={settings?.testMode ?? false}
-                  data-testid="switch-test-mode"
-                />
-              </div>
 
-              <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2">
                 <Button variant="outline" asChild>
                   <a 
                     href="https://www.skebby.it/"
@@ -393,6 +396,7 @@ export function SmsSettingsSkebby() {
                 >
                   {saveSettings.isPending ? 'Salvando...' : 'Salva Configurazione'}
                 </Button>
+              </div>
               </div>
             </CardContent>
           </Card>
