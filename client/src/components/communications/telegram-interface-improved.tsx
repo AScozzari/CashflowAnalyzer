@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,6 +79,7 @@ export function TelegramInterfaceImproved() {
   const [aiAssistanceEnabled, setAiAssistanceEnabled] = useState(true);
   const [showMessageAnalysis, setShowMessageAnalysis] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // 🔥 DATI REALI: Usa ultimo messaggio dal backend
   const getLastMessagePreview = (chat: any) => {
@@ -197,22 +198,39 @@ export function TelegramInterfaceImproved() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: ({ content, chatId }: { content: string; chatId: string }) =>
-      apiRequest('/api/telegram/send', 'POST', { 
+    mutationFn: ({ content, chatId }: { content: string; chatId: string }) => {
+      console.log('🚀 [SEND MESSAGE] Invio messaggio:', { chatId, content });
+      return apiRequest('/api/telegram/send', 'POST', { 
         chatId: chatId,
-        message: content
-      }),
-    onSuccess: () => {
+        message: content,
+        parseMode: 'HTML'
+      });
+    },
+    onSuccess: (data) => {
+      console.log('✅ [SEND MESSAGE] Successo:', data);
       setMessageInput("");
+      
+      // Invalida entrambe le cache
+      queryClient.invalidateQueries({ queryKey: ['/api/telegram/chats'] });
+      if (selectedChat) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/telegram/messages', selectedChat.id] 
+        });
+      }
+      
+      // Forza il refetch delle chat per aggiornare i contatori
+      refetch();
       refetchMessages();
+      
       toast({
         title: "Messaggio inviato",
         description: "Il messaggio Telegram è stato inviato con successo"
       });
     },
     onError: (error: any) => {
+      console.error('❌ [SEND MESSAGE] Errore:', error);
       toast({
-        title: "Errore",
+        title: "Errore invio messaggio",
         description: error?.message || "Errore nell'invio del messaggio",
         variant: "destructive"
       });
