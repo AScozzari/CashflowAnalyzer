@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Shield, Eye, TrendingDown } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,17 +48,14 @@ export function AnomalyDetector({ movements, autoRefresh = true }: AnomalyDetect
   const { data: anomalies, isLoading, error, refetch } = useQuery<AnomalyDetectionResponse>({
     queryKey: ['anomaly-detection', movements?.length],
     queryFn: async () => {
-      const response = await fetch('/api/ai/detect-anomalies', {
+      return await apiRequest('/api/ai/detect-anomalies', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           movements: movements.slice(0, 200), // Limit for performance
           detection_sensitivity: 'medium',
           include_duplicates: true
         })
       });
-      if (!response.ok) throw new Error('Failed to detect anomalies');
-      return response.json();
     },
     enabled: movements && movements.length > 0,
     staleTime: 10 * 60 * 1000, // Cache for 10 minutes

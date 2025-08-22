@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Brain, AlertTriangle, TrendingUp, Target, Lightbulb, ChevronRight } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,17 +41,14 @@ export function AIInsightsWidget({ movements, dateRange }: AIInsightsWidgetProps
   const { data: insights, isLoading, error } = useQuery<AIInsightsResponse>({
     queryKey: ['ai-insights', movements?.length, dateRange],
     queryFn: async () => {
-      const response = await fetch('/api/ai/financial-insights', {
+      return await apiRequest('/api/ai/financial-insights', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           movements: movements.slice(0, 100), // Limit per performance
           analysis_type: 'weekly_insights',
           date_range: dateRange
         })
       });
-      if (!response.ok) throw new Error('Failed to generate insights');
-      return response.json();
     },
     enabled: movements && movements.length > 0,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
