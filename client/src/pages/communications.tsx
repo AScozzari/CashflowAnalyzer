@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/layout/header";
 import { FooterSignature } from "@/components/layout/footer-signature";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,8 +35,27 @@ interface CommunicationStats {
 
 export default function Communications() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedTelegramChatId, setSelectedTelegramChatId] = useState<string | null>(null);
   
   const communicationsAction = null;
+
+  // Gestione parametri URL per aprire chat specifiche
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const messageId = urlParams.get('messageId');
+    
+    if (messageId) {
+      // Se c'è un messageId, estrai il chat ID e apri telegram
+      const chatIdMatch = messageId.match(/telegram_\d+_(.+)/);
+      if (chatIdMatch) {
+        const telegramChatId = chatIdMatch[1];
+        setSelectedTelegramChatId(telegramChatId);
+        setActiveTab("telegram");
+        // Pulisce il parametro URL
+        window.history.replaceState({}, '', '/communications');
+      }
+    }
+  }, []);
 
   // 🔥 DATI REALI - Fetch delle statistiche WhatsApp
   const { data: whatsappStats } = useQuery<{total: number; unread: number; today: number}>({
@@ -252,7 +271,10 @@ export default function Communications() {
 
         {/* Telegram Interface */}
         <TabsContent value="telegram">
-          <TelegramInterface />
+          <TelegramInterface 
+            selectedChatIdFromUrl={selectedTelegramChatId}
+            onChatSelect={setSelectedTelegramChatId}
+          />
         </TabsContent>
       </Tabs>
       

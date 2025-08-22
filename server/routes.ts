@@ -98,8 +98,10 @@ async function createMovementNotifications(movementId: string, type: 'new_moveme
           userId: user.id,
           movementId: movementId,
           type: type,
+          category: 'movement',
           title: title,
           message: message,
+          actionUrl: `/movements?view=${movementId}`,
           isRead: false
         });
       }

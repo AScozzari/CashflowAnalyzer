@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,7 +76,12 @@ interface TelegramTemplate {
   parseMode?: string;
 }
 
-export function TelegramInterfaceNew() {
+interface TelegramInterfaceProps {
+  selectedChatIdFromUrl?: string | null;
+  onChatSelect?: (chatId: string | null) => void;
+}
+
+export function TelegramInterfaceNew({ selectedChatIdFromUrl, onChatSelect }: TelegramInterfaceProps = {}) {
   const [selectedChat, setSelectedChat] = useState<TelegramChat | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,6 +102,24 @@ export function TelegramInterfaceNew() {
     queryKey: ['/api/telegram/chats'],
     refetchInterval: 15000 // Refresh every 15 seconds
   });
+
+  // Gestione selezione automatica chat da URL
+  useEffect(() => {
+    if (selectedChatIdFromUrl && chats) {
+      const targetChat = chats.find(chat => chat.telegramChatId === selectedChatIdFromUrl);
+      if (targetChat && targetChat.id !== selectedChat?.id) {
+        setSelectedChat(targetChat);
+      }
+    }
+  }, [selectedChatIdFromUrl, chats, selectedChat]);
+
+  // Wrapper per setSelectedChat che notifica il componente padre
+  const handleChatSelect = (chat: TelegramChat | null) => {
+    setSelectedChat(chat);
+    if (onChatSelect) {
+      onChatSelect(chat?.telegramChatId || null);
+    }
+  };
 
   // Fetch Telegram templates
   const { data: templates, isLoading: templatesLoading } = useQuery<TelegramTemplate[]>({
@@ -210,7 +233,7 @@ export function TelegramInterfaceNew() {
         description: 'La chat è stata eliminata permanentemente' 
       });
       queryClient.invalidateQueries({ queryKey: ['/api/telegram/chats'] });
-      setSelectedChat(null);
+      handleChatSelect(null);
     },
     onError: () => {
       toast({ 
@@ -390,7 +413,7 @@ export function TelegramInterfaceNew() {
                     messageCount: 0,
                     isBlocked: false
                   };
-                  setSelectedChat(telegramChat);
+                  handleChatSelect(telegramChat);
                   setComposing(false);
                 }}
                 placeholder="Cerca contatti..."
@@ -424,7 +447,7 @@ export function TelegramInterfaceNew() {
                         selectedChat?.id === chat.id ? 'bg-muted' : ''
                       }`}
                       onClick={() => {
-                        setSelectedChat(chat);
+                        handleChatSelect(chat);
                         setComposing(false);
                       }}
                       data-testid={`chat-item-${chat.telegramChatId}`}
