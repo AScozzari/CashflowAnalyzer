@@ -1388,18 +1388,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Recent activities endpoint - includes movements and Telegram messages
   app.get("/api/recent-activities", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      // Get recent movements (last 10)
-      const recentMovements = await storage.getMovements(1, 10);
+      // Get recent movements (last 10) - fix the function call
+      const recentMovements = await storage.getMovements();
       
       // Get recent Telegram chats with messages
       const telegramChats = await storage.getTelegramChats();
       
-      // Combine and format activities
-      const activities = [];
+      // Combine and format activities with proper typing
+      const activities: any[] = [];
       
       // Add movements as activities
-      if (recentMovements?.data) {
-        recentMovements.data.forEach((movement: any) => {
+      if (recentMovements && Array.isArray(recentMovements)) {
+        recentMovements.slice(0, 10).forEach((movement: any) => {
           activities.push({
             id: movement.id,
             type: 'movement',
@@ -1414,7 +1414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Add Telegram messages as activities  
-      if (telegramChats) {
+      if (telegramChats && Array.isArray(telegramChats)) {
         telegramChats.forEach((chat: any) => {
           if (chat.lastMessageAt) {
             activities.push({
@@ -1436,6 +1436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
         .slice(0, 15);
       
+      console.log('[RECENT-ACTIVITIES] Generated activities:', sortedActivities.length, 'items');
       res.json(sortedActivities);
     } catch (error) {
       console.error('Error fetching recent activities:', error);
