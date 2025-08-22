@@ -277,25 +277,9 @@ app.get('/', (req, res, next) => {
     
     await setupVite(app, httpServer);
   } else {
-    // Serve solo le API, frontend su Replit
-    app.get('*', (req, res) => {
-      if (!req.path.startsWith('/api')) {
-        res.send(`
-          <html>
-            <head><title>EasyCashFlows API Server</title></head>
-            <body>
-              <h1>🏦 EasyCashFlows API Server Attivo</h1>
-              <p>✅ Server API funzionante sulla porta ${process.env.PORT || '5000'}</p>
-              <p>✅ Database Neon connesso</p>
-              <p>✅ Login endpoint: POST /api/auth/login</p>
-              <p>🔗 Frontend disponibile su Replit</p>
-              <hr>
-              <p><strong>Credenziali test:</strong> admin / admin123</p>
-            </body>
-          </html>
-        `);
-      }
-    });
+    // Production: serve il frontend React build
+    console.log('[PRODUCTION] Setting up React frontend serving...');
+    await setupVite(app, httpServer);
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
