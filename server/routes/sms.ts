@@ -165,6 +165,125 @@ export function setupSmsRoutes(app: Express) {
     return app._router.handle({ ...req, url: '/api/sms/test', method: 'POST' }, res);
   });
 
+  // Send SMS endpoint
+  app.post('/api/sms/send', async (req, res) => {
+    try {
+      console.log('[SMS API] Sending SMS...');
+      const { to, message } = req.body;
+      
+      if (!to || !message) {
+        return res.status(400).json({
+          error: 'Missing required fields: to and message'
+        });
+      }
+
+      const { storage } = await import('../storage');
+      const settings = await storage.getSmsSettings();
+      
+      if (!settings) {
+        return res.status(400).json({ 
+          error: 'No SMS settings configured. Please configure SMS settings first.' 
+        });
+      }
+
+      if (!settings.username || !settings.password) {
+        return res.status(400).json({ 
+          error: 'SMS credentials not configured. Please add username and password.' 
+        });
+      }
+
+      console.log('[SMS API] Sending SMS to:', to, 'Message:', message);
+
+      // STEP 1: Login per ottenere user_key e session_key
+      const loginUrl = `${settings.apiUrl}login?username=${encodeURIComponent(settings.username)}&password=${encodeURIComponent(settings.password)}`;
+      console.log('[SMS API] Skebby login for SMS send...');
+      
+      const loginResponse = await fetch(loginUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!loginResponse.ok) {
+        const loginError = await loginResponse.text();
+        console.log('[SMS API] ❌ Skebby login failed:', loginResponse.status, loginError);
+        
+        return res.status(400).json({
+          success: false,
+          error: 'Skebby login failed',
+          message: `Login failed: HTTP ${loginResponse.status}`
+        });
+      }
+
+      // STEP 2: Parse user_key;session_key dalla risposta
+      const loginData = await loginResponse.text();
+      console.log('[SMS API] Skebby login successful for SMS send');
+      
+      const [userKey, sessionKey] = loginData.split(';');
+      if (!userKey || !sessionKey) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid Skebby login response',
+          message: 'Login response format incorrect'
+        });
+      }
+
+      // STEP 3: Invia SMS usando l'API Skebby
+      const smsPayload = {
+        message: message,
+        recipient: [`+39${to.replace(/^\+39/, '')}`], // Assicura formato +39
+        message_type: settings.messageType || 'GP',
+        sender: settings.defaultSender || 'EasyDigital'
+      };
+
+      console.log('[SMS API] Sending SMS with payload:', JSON.stringify(smsPayload));
+
+      const smsResponse = await fetch(`${settings.apiUrl}sms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'user_key': userKey,
+          'Session_key': sessionKey
+        },
+        body: JSON.stringify(smsPayload)
+      });
+
+      console.log('[SMS API] Skebby SMS response status:', smsResponse.status);
+
+      if (smsResponse.ok) {
+        const smsResult = await smsResponse.json();
+        console.log('[SMS API] ✅ SMS sent successfully:', smsResult);
+        
+        res.json({
+          success: true,
+          message: 'SMS sent successfully!',
+          to: to,
+          messageId: smsResult.id || 'unknown',
+          provider: 'skebby',
+          result: smsResult
+        });
+      } else {
+        const smsError = await smsResponse.text();
+        console.log('[SMS API] ❌ SMS send failed:', smsResponse.status, smsError);
+        
+        res.status(400).json({
+          success: false,
+          error: 'SMS send failed',
+          message: `SMS API HTTP ${smsResponse.status}: ${smsError}`,
+          to: to
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error sending SMS:', error);
+      res.status(500).json({ 
+        error: 'Failed to send SMS',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Get SMS statistics
   app.get('/api/sms/stats', async (req, res) => {
     try {
