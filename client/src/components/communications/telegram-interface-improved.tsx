@@ -99,6 +99,27 @@ export function TelegramInterfaceImproved() {
     return times[Math.floor(Math.random() * times.length)];
   };
 
+  // Genera nome contatto - DEFINITA PRIMA DELL'USO
+  const getContactName = (chat: any) => {
+    if (chat.chatType === 'group' || chat.chatType === 'supergroup' || chat.chatType === 'channel') {
+      return chat.title || `Gruppo ${chat.telegramChatId}`;
+    }
+    
+    const parts = [];
+    if (chat.firstName) parts.push(chat.firstName);
+    if (chat.lastName) parts.push(chat.lastName);
+    
+    if (parts.length > 0) return parts.join(' ');
+    if (chat.username) return `@${chat.username}`;
+    return `Chat ${chat.telegramChatId}`;
+  };
+
+  // Genera iniziali contatto - DEFINITA PRIMA DELL'USO
+  const getContactInitials = (chat: any) => {
+    const name = getContactName(chat);
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   // Fetch chat messages for selected chat
   const { data: telegramMessages = [], refetch: refetchMessages } = useQuery<TelegramMessage[]>({
     queryKey: ['/api/telegram/messages', selectedChat?.id],
@@ -190,24 +211,7 @@ export function TelegramInterfaceImproved() {
     }
   };
 
-  const getContactName = (chat: TelegramChat) => {
-    if (chat.chatType === 'group' || chat.chatType === 'supergroup' || chat.chatType === 'channel') {
-      return chat.title || `Gruppo ${chat.telegramChatId}`;
-    }
-    
-    const parts = [];
-    if (chat.firstName) parts.push(chat.firstName);
-    if (chat.lastName) parts.push(chat.lastName);
-    
-    if (parts.length > 0) return parts.join(' ');
-    if (chat.username) return `@${chat.username}`;
-    return `Chat ${chat.telegramChatId}`;
-  };
-
-  const getContactInitials = (chat: TelegramChat) => {
-    const name = getContactName(chat);
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
+  // Funzioni spostate sopra per evitare errori di hoisting
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
