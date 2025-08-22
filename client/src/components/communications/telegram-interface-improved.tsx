@@ -193,8 +193,20 @@ export function TelegramInterfaceImproved() {
   const sendMessageMutation = useMutation({
     mutationFn: ({ content, chatId }: { content: string; chatId: string }) => {
       console.log('🚀 [SEND MESSAGE] Invio messaggio:', { chatId, content });
+      
+      // Trova la chat selezionata per ottenere il telegramChatId
+      const selectedChatData = telegramChats.find(chat => chat.id === chatId);
+      const realTelegramChatId = selectedChatData?.telegramChatId;
+      
+      console.log('🔍 [SEND MESSAGE] Chat trovata:', selectedChatData);
+      console.log('🔍 [SEND MESSAGE] TelegramChatId reale:', realTelegramChatId);
+      
+      if (!realTelegramChatId) {
+        throw new Error('Chat Telegram non trovata');
+      }
+      
       return apiRequest('POST', '/api/telegram/send', { 
-        chatId: chatId,
+        chatId: realTelegramChatId,
         message: content,
         parseMode: 'HTML'
       });

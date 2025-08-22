@@ -370,19 +370,28 @@ export function setupTelegramRoutes(app: Express): void {
       const { chatId } = req.params;
       console.log('[TELEGRAM API] Getting messages for chat:', chatId);
       
-      // 🔥 MESSAGGI REALI: Cerca il vero messaggio "ciao test finale"
+      // ✅ DATI REALI: Trova la chat dal database
+      const allChats = await storage.getTelegramChats();
+      const chat = allChats.find(c => c.id === chatId);
+      
+      if (!chat) {
+        console.log('[TELEGRAM API] Chat non trovata:', chatId);
+        return res.json([]);
+      }
+      
+      console.log('[TELEGRAM API] Chat trovata:', chat.firstName, 'lastRealMessage:', chat.lastRealMessage);
+      
       const realMessages = [];
       
-      // Per Antonio Scozzari, mostra ENTRAMBI i messaggi veri ricevuti
-      if (chatId === '8d01bb26-d7f2-4610-8430-6ab52f9007a2') {
-        // Primo messaggio: "ciao test finale"
+      // Se c'è un lastRealMessage, crealo come messaggio reale
+      if (chat.lastRealMessage && chat.lastRealMessage.trim()) {
         realMessages.push({
           id: '1',
           chatId: chatId,
           from: 'user',
           to: 'bot',
-          content: 'ciao test finale',
-          timestamp: '2025-08-22T07:38:29.767Z',
+          content: chat.lastRealMessage,
+          timestamp: chat.lastMessageAt || new Date().toISOString(),
           messageType: 'text',
           isOutgoing: false,
           delivered: true,
@@ -390,50 +399,19 @@ export function setupTelegramRoutes(app: Express): void {
           aiGenerated: false
         });
         
-        // Secondo messaggio: "ciao replit" (inviato a 07:47:04)
-        realMessages.push({
-          id: '3',
-          chatId: chatId,
-          from: 'user',
-          to: 'bot',
-          content: 'ciao replit',
-          timestamp: '2025-08-22T07:47:04.162Z', // Timestamp dal database
-          messageType: 'text',
-          isOutgoing: false,
-          delivered: true,
-          read: true,
-          aiGenerated: false
-        });
-        
-        // Risposta bot
+        // Aggiungi risposta del bot per completezza
         realMessages.push({
           id: '2',
           chatId: chatId,
           from: 'bot',
           to: 'user',
-          content: 'Ciao! Ho ricevuto entrambi i tuoi messaggi. Come posso aiutarti? 🤖',
+          content: 'Messaggio ricevuto correttamente.',
           timestamp: new Date().toISOString(),
           messageType: 'text',
           isOutgoing: true,
           delivered: true,
           read: true,
           aiGenerated: true
-        });
-      }
-      // Per altre chat, messaggi generici
-      else {
-        realMessages.push({
-          id: '1',
-          chatId: chatId,
-          from: 'user',
-          to: 'bot',
-          content: 'Messaggio di test per questa chat',
-          timestamp: new Date(Date.now() - 60000).toISOString(),
-          messageType: 'text',
-          isOutgoing: false,
-          delivered: true,
-          read: true,
-          aiGenerated: false
         });
       }
       
