@@ -14,6 +14,13 @@ export function ProtectedRoute({
   allowedRoles,
 }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
+  
+  // DEBUG: Log della route protetta
+  console.log(`🛡️ PROTECTED ROUTE ${path}:`, { 
+    user: user ? `${user.username}` : 'null', 
+    isLoading, 
+    allowedRoles 
+  });
 
   if (isLoading) {
     return (
