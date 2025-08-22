@@ -1625,6 +1625,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Delete AI chat session
+  app.delete("/api/ai/chat/sessions/:sessionId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { sessionId } = req.params;
+      await storage.deleteAiChatSession(req.user.id, sessionId);
+      res.json({ success: true, message: 'Sessione eliminata' });
+    } catch (error) {
+      console.error('[AI DELETE] Error deleting chat session:', error);
+      res.status(500).json({ error: 'Failed to delete chat session' });
+    }
+  }));
+
   // AI Chat endpoint
   app.post("/api/ai/chat", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
