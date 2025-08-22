@@ -33,8 +33,9 @@ export function useUnreadNotificationsCount() {
       const data = await response.json();
       return data.count as number;
     },
-    refetchInterval: 5000, // Ricarica ogni 5 secondi per aggiornamenti più frequenti
-    staleTime: 1000, // Cache valida solo per 1 secondo
+    refetchInterval: 3000, // Refresh more frequently
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache data
     retry: (failureCount, error: any) => {
       // Non ritentare se 401 Unauthorized
       if (error?.message?.includes('401') || error?.status === 401) {

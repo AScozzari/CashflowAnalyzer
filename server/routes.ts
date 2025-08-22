@@ -1188,28 +1188,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filters.resourceId = req.user.resourceId;
       }
 
-      console.log("[ANALYTICS] Using storage.getFilteredMovements with filters:", filters);
+      console.log("[ANALYTICS] Using dbStorage.getFilteredMovements with filters:", filters);
       
-      // Use the existing getFilteredMovements method
-      const movements = await storage.getFilteredMovements({
-        user: req.user,
-        filters,
-        page,
-        pageSize
-      });
+      // Use the existing getFilteredMovements method with correct syntax
+      const movements = await dbStorage.getFilteredMovements(filters, page, pageSize);
 
       console.log("[ANALYTICS] Movements response:", {
-        totalMovements: movements?.movements?.length || 0,
+        totalMovements: movements?.data?.length || 0,
         pagination: movements?.pagination
       });
 
       res.json({
-        data: movements?.movements || [],
-        pagination: movements?.pagination || {
+        data: movements.data || [],
+        pagination: movements.pagination || {
           page,
           pageSize,
-          total: 0,
-          totalPages: 0,
+          total: movements.pagination?.total || 0,
+          totalPages: movements.pagination?.totalPages || 0,
           limit: pageSize,
           offset: (page - 1) * pageSize
         }

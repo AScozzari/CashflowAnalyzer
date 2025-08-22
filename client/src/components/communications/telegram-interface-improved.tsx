@@ -96,14 +96,30 @@ export function TelegramInterfaceImproved() {
     queryKey: ['/api/telegram/chats'],
     select: (data: any[]) => {
       console.log('🔍 Telegram chats ricevute:', data?.length || 0, data);
+      if (!data || !Array.isArray(data)) {
+        console.warn('❌ Dati Telegram chats non validi:', data);
+        return [];
+      }
       // Trasforma i dati per renderli compatibili con l'interfaccia WhatsApp-style
-      return (data || []).map((chat: any) => ({
-        ...chat,
+      return data.map((chat: any) => ({
+        id: chat.id,
+        telegramChatId: chat.telegramChatId,
+        chatType: chat.chatType || 'private',
+        title: chat.title,
+        username: chat.username,
+        firstName: chat.firstName,
+        lastName: chat.lastName,
+        phoneNumber: chat.phoneNumber,
         lastMessage: generateLastMessage(chat),
+        lastMessageAt: chat.lastMessageAt,
         lastSeen: generateLastSeen(chat),
+        messageCount: chat.messageCount || 0,
         unreadCount: Math.floor(Math.random() * 3), // Mock unread count
         online: Math.random() > 0.7, // Mock online status
-        avatar: null
+        isBlocked: chat.isBlocked || false,
+        linkedCustomerId: chat.linkedCustomerId,
+        linkedResourceId: chat.linkedResourceId,
+        avatar: undefined
       }));
     }
   });
@@ -127,8 +143,8 @@ export function TelegramInterfaceImproved() {
     return times[Math.floor(Math.random() * times.length)];
   };
 
-  // Filter chats based on search
-  const filteredChats = telegramChats.filter(chat => {
+  // Filter chats based on search (with type safety)
+  const filteredChats = (telegramChats || []).filter((chat: TelegramChat) => {
     const name = getContactName(chat).toLowerCase();
     const username = chat.username?.toLowerCase() || '';
     const phone = chat.phoneNumber || '';
