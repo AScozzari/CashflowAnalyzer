@@ -23,16 +23,16 @@ export function NotificationsBell() {
   const { data: unreadCount = 0 } = useUnreadNotificationsCount();
   const { data: notifications = [], isLoading } = useNotifications();
   
-  // Function to get category color
+  // Function to get category color - Updated per user requirements
   const getCategoryColor = (category: string): string => {
     switch (category) {
-      case 'telegram': return 'bg-purple-500';
-      case 'whatsapp': return 'bg-green-500';
-      case 'movement': return 'bg-yellow-500';
-      case 'email': return 'bg-blue-500';
-      case 'sms': return 'bg-red-500';
-      case 'messenger': return 'bg-indigo-500';
-      default: return 'bg-gray-500';
+      case 'telegram': return 'bg-purple-500 hover:bg-purple-600'; // Viola per Telegram
+      case 'sms': return 'bg-red-500 hover:bg-red-600'; // Rosso per SMS
+      case 'movements': return 'bg-yellow-500 hover:bg-yellow-600'; // Giallo per movimenti
+      case 'whatsapp': return 'bg-green-500 hover:bg-green-600'; 
+      case 'email': return 'bg-blue-500 hover:bg-blue-600';
+      case 'messenger': return 'bg-indigo-500 hover:bg-indigo-600';
+      default: return 'bg-gray-500 hover:bg-gray-600';
     }
   };
 
@@ -45,9 +45,9 @@ export function NotificationsBell() {
       return acc;
     }, {});
   
-  // Get primary category (most notifications)
+  // Get primary category (most notifications) - Fixed default to match schema
   const primaryCategory = Object.keys(unreadByCategory).reduce((a, b) => 
-    unreadByCategory[a] > unreadByCategory[b] ? a : b, 'movement'
+    unreadByCategory[a] > unreadByCategory[b] ? a : b, 'movements'
   );
   const markAsReadMutation = useMarkNotificationAsRead();
   const markAllAsReadMutation = useMarkAllNotificationsAsRead();
