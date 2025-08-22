@@ -63,92 +63,28 @@ export function SMSInterface() {
   const [composing, setComposing] = useState(false);
   const [recipientPhone, setRecipientPhone] = useState("");
 
-  // Mock SMS data
-  const contacts: SMSContact[] = [
-    {
-      id: "1",
-      name: "Marco Pellegrini",
-      phone: "+39 333 111 2222",
-      lastMessage: "Ricevuto, grazie!",
-      lastSeen: "5 minuti fa",
-      messageCount: 12
-    },
-    {
-      id: "2",
-      name: "Laura Fontana",
-      phone: "+39 347 333 4444",
-      lastMessage: "Perfetto per domani",
-      lastSeen: "2 ore fa",
-      messageCount: 8
-    },
-    {
-      id: "3",
-      name: "Cliente Anonimo",
-      phone: "+39 320 555 6666",
-      lastMessage: "OK ricevuto",
-      lastSeen: "1 giorno fa",
-      messageCount: 3
-    }
-  ];
+  // Real SMS conversations from database
+  const { data: conversations, isLoading: conversationsLoading, refetch: refetchConversations } = useQuery({
+    queryKey: ['/api/sms/conversations'],
+    refetchInterval: 30000 // Refresh every 30 seconds
+  });
 
-  const messages: SMSMessage[] = [
-    {
-      id: "1",
-      from: "me",
-      to: "+39 333 111 2222",
-      content: "Buongiorno Marco, la fattura è pronta. Può passare a ritirarla quando vuole.",
-      timestamp: "2025-08-15 09:30",
-      isOutgoing: true,
-      status: 'delivered',
-      cost: 0.12
-    },
-    {
-      id: "2",
-      from: "+39 333 111 2222",
-      to: "me",
-      content: "Ricevuto, grazie! Passo nel pomeriggio.",
-      timestamp: "2025-08-15 09:32",
-      isOutgoing: false,
-      status: 'delivered'
-    },
-    {
-      id: "3",
-      from: "me",
-      to: "+39 333 111 2222",
-      content: "Perfetto, la aspettiamo!",
-      timestamp: "2025-08-15 09:35",
-      isOutgoing: true,
-      status: 'delivered',
-      cost: 0.08
-    }
-  ];
+  const contacts: SMSContact[] = conversations || [];
 
-  const templates: SMSTemplate[] = [
-    {
-      id: "1",
-      name: "Reminder Fattura",
-      content: "Gentile {nome}, le ricordiamo che la fattura n. {numero} di €{importo} è in scadenza il {data}.",
-      category: "payments",
-      variables: ["nome", "numero", "importo", "data"],
-      characterCount: 95
-    },
-    {
-      id: "2",
-      name: "Conferma Appuntamento",
-      content: "Ciao {nome}! Confermiamo l'appuntamento del {data} alle ore {ora}. A presto!",
-      category: "appointments",
-      variables: ["nome", "data", "ora"],
-      characterCount: 75
-    },
-    {
-      id: "3",
-      name: "Fattura Pronta",
-      content: "Gentile {nome}, la sua fattura è pronta per il ritiro. Orari: Lun-Ven 9-18.",
-      category: "documents",
-      variables: ["nome"],
-      characterCount: 68
-    }
-  ];
+  // Real SMS messages from database
+  const { data: messages, isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
+    queryKey: ['/api/sms/messages', selectedContact?.phone],
+    enabled: !!selectedContact?.phone
+  });
+
+  const chatMessages: SMSMessage[] = messages || [];
+
+  // Real SMS templates from database
+  const { data: templates, isLoading: templatesLoading } = useQuery({
+    queryKey: ['/api/sms/templates']
+  });
+
+  const smsTemplates: SMSTemplate[] = templates || [];
 
   const getStatusIcon = (status: SMSMessage['status']) => {
     switch (status) {
@@ -440,14 +376,14 @@ export function SMSInterface() {
                 <div className="space-y-2">
                   <Label>Template SMS</Label>
                   <Select onValueChange={(value) => {
-                    const template = templates.find(t => t.id === value);
+                    const template = smsTemplates.find(t => t.id === value);
                     if (template) useTemplate(template);
                   }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleziona template..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {templates.map((template) => (
+                      {smsTemplates.map((template) => (
                         <SelectItem key={template.id} value={template.id}>
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4" />
@@ -562,14 +498,14 @@ export function SMSInterface() {
                 <div className="space-y-2">
                   <Label className="text-sm">Template SMS</Label>
                   <Select onValueChange={(value) => {
-                    const template = templates.find(t => t.id === value);
+                    const template = smsTemplates.find(t => t.id === value);
                     if (template) useTemplate(template);
                   }}>
                     <SelectTrigger className="h-8">
                       <SelectValue placeholder="Seleziona template..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {templates.map((template) => (
+                      {smsTemplates.map((template) => (
                         <SelectItem key={template.id} value={template.id}>
                           <div className="flex items-center gap-2">
                             <FileText className="h-3 w-3" />

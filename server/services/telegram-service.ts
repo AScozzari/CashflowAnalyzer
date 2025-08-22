@@ -115,6 +115,66 @@ export class TelegramService {
     return await response.json();
   }
 
+  // Polling method as backup for webhooks
+  private lastUpdateId: number = 0;
+  private pollingInterval: NodeJS.Timeout | null = null;
+
+  async startPolling(intervalMs: number = 15000): Promise<void> {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+    }
+
+    console.log('[TELEGRAM SERVICE] 🔄 Avvio polling ogni', intervalMs, 'ms');
+    
+    this.pollingInterval = setInterval(async () => {
+      try {
+        await this.pollUpdates();
+      } catch (error) {
+        console.error('[TELEGRAM SERVICE] ❌ Errore durante polling:', error);
+      }
+    }, intervalMs);
+
+    // Initial poll
+    await this.pollUpdates();
+  }
+
+  async pollUpdates(): Promise<void> {
+    if (!this.initialized || !this.settings?.botToken) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${this.settings.botToken}/getUpdates?offset=${this.lastUpdateId + 1}&limit=100`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      
+      if (data.ok && data.result.length > 0) {
+        console.log(`[TELEGRAM SERVICE] 📥 Ricevuti ${data.result.length} aggiornamenti dal polling`);
+        
+        for (const update of data.result) {
+          console.log('[TELEGRAM SERVICE] 🔄 Processing update:', update.update_id);
+          await this.processUpdate(update);
+          this.lastUpdateId = Math.max(this.lastUpdateId, update.update_id);
+        }
+      }
+    } catch (error) {
+      console.error('[TELEGRAM SERVICE] ❌ Errore durante polling updates:', error);
+    }
+  }
+
+  stopPolling(): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+      console.log('[TELEGRAM SERVICE] ⏹️ Polling fermato');
+    }
+  }
+
   async setWebhook(url: string, secret?: string): Promise<any> {
     if (!this.settings?.botToken) {
       throw new Error('Bot token not configured');
@@ -546,6 +606,28 @@ Nel frattempo puoi:
         });
         console.log(`[TELEGRAM SERVICE] ✅ Nuova chat creata: ${chatId}`);
       }
+
+      // SAVE THE MESSAGE IN DATABASE
+      console.log(`[TELEGRAM SERVICE] 💾 Salvando messaggio nel database...`);
+      try {
+        await storage.createTelegramMessage({
+          telegramChatId: chatId,
+          messageId: message.message_id,
+          fromId: message.from.id,
+          fromUsername: message.from.username || null,
+          fromFirstName: message.from.first_name,
+          fromLastName: message.from.last_name || null,
+          messageText: message.text || null,
+          messageType: message.text ? 'text' : 'other',
+          timestamp: new Date(message.date * 1000), // Convert Unix timestamp
+          isBot: message.from.is_bot || false,
+          isRead: false
+        });
+        console.log(`[TELEGRAM SERVICE] ✅ Messaggio salvato: ${message.text?.substring(0, 50)}...`);
+      } catch (msgError) {
+        console.error('[TELEGRAM SERVICE] ❌ Errore salvataggio messaggio:', msgError);
+      }
+
     } catch (error) {
       console.error('[TELEGRAM SERVICE] ❌ Errore nel salvare chat:', error);
     }

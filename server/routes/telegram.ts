@@ -8,6 +8,42 @@ import { randomUUID } from 'crypto';
 
 export function setupTelegramRoutes(app: Express): void {
   console.log('🔧 [TELEGRAM ROUTES] Setting up Telegram routes...');
+
+  // Auto-initialize Telegram service on startup
+  setTimeout(async () => {
+    try {
+      console.log('[TELEGRAM STARTUP] Auto-initializing Telegram service...');
+      const settings = await storage.getTelegramSettings();
+      
+      if (settings.length > 0 && settings[0].isActive) {
+        const config = settings[0];
+        
+        await telegramService.initialize({
+          botToken: config.botToken,
+          botUsername: config.botUsername,
+          webhookUrl: config.webhookUrl || undefined,
+          webhookSecret: config.webhookSecret || undefined,
+          allowedUpdates: config.allowedUpdates as string[],
+          enableBusinessHours: config.enableBusinessHours || false,
+          businessHoursStart: config.businessHoursStart || '09:00',
+          businessHoursEnd: config.businessHoursEnd || '18:00',
+          businessDays: config.businessDays as string[],
+          enableAutoReply: config.enableAutoReply || false,
+          enableAiResponses: config.enableAiResponses || false,
+          aiModel: config.aiModel || 'gpt-4o',
+          aiSystemPrompt: config.aiSystemPrompt || undefined
+        });
+
+        // Start polling to receive messages
+        await telegramService.startPolling(15000);
+        console.log('[TELEGRAM STARTUP] ✅ Telegram service auto-initialized with polling');
+      } else {
+        console.log('[TELEGRAM STARTUP] No active Telegram settings found, skipping auto-initialization');
+      }
+    } catch (error) {
+      console.error('[TELEGRAM STARTUP] ❌ Error auto-initializing Telegram:', error);
+    }
+  }, 5000); // Wait 5 seconds for server to be ready
   
   // Test route
   app.get('/api/telegram/test-route', (req, res) => {

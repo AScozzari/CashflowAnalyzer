@@ -255,11 +255,72 @@ export function setupSmsRoutes(app: Express) {
         const smsResult = await smsResponse.json();
         console.log('[SMS API] ✅ SMS sent successfully:', smsResult);
         
+        // Create anonymous customer if phone not registered
+        const cleanPhoneNumber = `+39${to.replace(/^\+39/, '')}`;
+        try {
+          const customers = await storage.getCustomers();
+          const resources = await storage.getResources();
+          
+          const existingCustomer = customers.find(c => 
+            c.phone === cleanPhoneNumber || 
+            c.phone === to || 
+            c.phone === to.replace('+39', '') ||
+            c.phone === `+39${to.replace('+39', '')}`
+          );
+          
+          const existingResource = resources.find(r => 
+            r.phone === cleanPhoneNumber ||
+            r.phone === to ||
+            r.phone === to.replace('+39', '') ||
+            r.phone === `+39${to.replace('+39', '')}`
+          );
+          
+          if (!existingCustomer && !existingResource) {
+            console.log('[SMS API] Creating anonymous customer for:', cleanPhoneNumber);
+            await storage.createCustomer({
+              name: `Cliente Anonimo ${cleanPhoneNumber.slice(-4)}`,
+              type: 'individual',
+              email: `anonimo${cleanPhoneNumber.slice(-4).replace('+', '')}@sms-contact.local`,
+              phone: cleanPhoneNumber,
+              address: 'Non specificato',
+              city: 'Non specificato', 
+              province: 'Non specificato',
+              postalCode: '00000',
+              country: 'Italia',
+              taxCode: '',
+              vatNumber: '',
+              isActive: true,
+              notes: `Cliente creato automaticamente da SMS al numero ${cleanPhoneNumber}`
+            });
+            console.log('[SMS API] ✅ Anonymous customer created');
+          }
+        } catch (customerError) {
+          console.error('[SMS API] ❌ Error managing contacts:', customerError);
+        }
+
+        // Save message to database
+        try {
+          await storage.createSmsMessage({
+            recipient: cleanPhoneNumber,
+            sender: 'EasyCashFlows',
+            messageBody: message,
+            messageType: 'GP',
+            status: 'sent',
+            providerId: smsResult.order_id,
+            providerStatus: 'OK',
+            characterCount: message.length,
+            sentAt: new Date()
+          });
+          console.log('[SMS API] ✅ Message saved to database');
+        } catch (dbError) {
+          console.error('[SMS API] ❌ Database save error:', dbError);
+        }
+        
         res.json({
           success: true,
           message: 'SMS sent successfully!',
-          to: to,
-          messageId: smsResult.id || 'unknown',
+          to: cleanPhoneNumber,
+          messageId: smsResult.order_id || 'unknown',
           provider: 'skebby',
           result: smsResult
         });
@@ -307,5 +368,115 @@ export function setupSmsRoutes(app: Express) {
     }
   });
   
+  // Get SMS conversations/contacts
+  app.get('/api/sms/conversations', async (req, res) => {
+    try {
+      console.log('[SMS API] Getting SMS conversations...');
+      const { storage } = await import('../storage');
+      
+      // Get all SMS messages grouped by recipient
+      const messages = await storage.getSmsMessages(1000); // Get recent messages
+      
+      // Group by recipient and get contact info
+      const conversationMap = new Map<string, any>();
+      
+      for (const message of messages) {
+        const phone = message.recipient;
+        
+        if (!conversationMap.has(phone)) {
+          // Try to find existing customer/resource with this phone
+          const customers = await storage.getCustomers();
+          const resources = await storage.getResources();
+          
+          const customer = customers.find(c => c.phone === phone || c.phone === `+39${phone}` || c.phone === phone.replace('+39', ''));
+          const resource = resources.find(r => r.phone === phone || r.phone === `+39${phone}` || r.phone === phone.replace('+39', ''));
+          
+          const name = customer?.name || resource?.name || `Cliente Anonimo ${phone.slice(-4)}`;
+          
+          conversationMap.set(phone, {
+            id: phone,
+            name,
+            phone,
+            lastMessage: message.messageBody,
+            lastSeen: message.createdAt,
+            messageCount: 1,
+            contactType: customer ? 'customer' : resource ? 'resource' : 'anonymous'
+          });
+        } else {
+          // Update existing conversation
+          const conv = conversationMap.get(phone);
+          conv.messageCount++;
+          if (new Date(message.createdAt!) > new Date(conv.lastSeen)) {
+            conv.lastMessage = message.messageBody;
+            conv.lastSeen = message.createdAt;
+          }
+        }
+      }
+      
+      const conversations = Array.from(conversationMap.values())
+        .sort((a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime());
+      
+      console.log('[SMS API] Found', conversations.length, 'SMS conversations');
+      res.json(conversations);
+    } catch (error) {
+      console.error('Error fetching SMS conversations:', error);
+      res.status(500).json({ error: 'Failed to fetch SMS conversations' });
+    }
+  });
+
+  // Get SMS messages for a specific recipient
+  app.get('/api/sms/messages/:phone', async (req, res) => {
+    try {
+      const { phone } = req.params;
+      console.log('[SMS API] Getting SMS messages for:', phone);
+      const { storage } = await import('../storage');
+      
+      const messages = await storage.getSmsMessages(500);
+      const phoneMessages = messages
+        .filter(m => m.recipient === phone || m.recipient === `+39${phone}` || m.recipient === phone.replace('+39', ''))
+        .map(m => ({
+          id: m.id.toString(),
+          from: 'EasyCashFlows',
+          to: m.recipient,
+          content: m.messageBody,
+          timestamp: m.createdAt,
+          isOutgoing: true,
+          status: m.status as 'pending' | 'sent' | 'delivered' | 'failed',
+          cost: 0.10
+        }))
+        .sort((a, b) => new Date(a.timestamp!).getTime() - new Date(b.timestamp!).getTime());
+      
+      console.log('[SMS API] Found', phoneMessages.length, 'messages for phone:', phone);
+      res.json(phoneMessages);
+    } catch (error) {
+      console.error('Error fetching SMS messages:', error);
+      res.status(500).json({ error: 'Failed to fetch SMS messages' });
+    }
+  });
+
+  // Get SMS templates  
+  app.get('/api/sms/templates', async (req, res) => {
+    try {
+      console.log('[SMS API] Getting SMS templates...');
+      const { storage } = await import('../storage');
+      const templates = await storage.getSmsTemplates();
+      
+      const formattedTemplates = templates.map(t => ({
+        id: t.id.toString(),
+        name: t.name,
+        content: t.messageBody,
+        category: t.category,
+        variables: t.variables ? JSON.parse(t.variables) : [],
+        characterCount: t.characterCount || t.messageBody.length
+      }));
+      
+      console.log('[SMS API] Found', formattedTemplates.length, 'SMS templates');
+      res.json(formattedTemplates);
+    } catch (error) {
+      console.error('Error fetching SMS templates:', error);
+      res.status(500).json({ error: 'Failed to fetch SMS templates' });
+    }
+  });
+
   console.log('✅ [SMS ROUTES] SMS routes setup completed');
 }
