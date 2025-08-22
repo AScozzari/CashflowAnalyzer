@@ -140,59 +140,44 @@ export function setupTelegramRoutes(app: Express): void {
       if (result.success) {
         console.log('[TELEGRAM SEND] ✅ Messaggio inviato con successo, messageId:', result.messageId);
         
-        // 1. Save outgoing message to database
-        const messageData = {
-          id: randomUUID(),
-          telegramChatId: chatId.toString(),
-          messageId: result.messageId || Math.floor(Math.random() * 1000000),
-          text: message,
-          from_id: null, // Outgoing message from bot
-          from_first_name: 'EasyCashFlows Bot',
-          from_username: null,
-          from_is_bot: true,
-          message_date: new Date().toISOString(),
-          chat_id: parseInt(chatId.toString()),
-          chat_type: 'private',
-          is_outgoing: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        
         try {
-          // Save message to database
-          await storage.createTelegramMessage(messageData);
-          console.log('[TELEGRAM SEND] ✅ Messaggio salvato nel database');
           
-          // 2. Update chat's last message info
+          // 1. Update chat's last message info
           const chats = await storage.getTelegramChats();
           const targetChat = chats.find(chat => chat.telegramChatId === chatId.toString());
           if (targetChat) {
             await storage.updateTelegramChat(targetChat.id, {
-              lastMessageAt: messageData.message_date,
-              lastMessageId: messageData.messageId,
+              lastMessageAt: new Date(),
+              lastMessageId: result.messageId || Math.floor(Math.random() * 1000000),
               messageCount: (targetChat.messageCount || 0) + 1,
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date()
             });
             console.log('[TELEGRAM SEND] ✅ Chat aggiornata con ultimo messaggio');
           }
           
-          // 3. Create notification for outgoing message  
-          const notificationService = storage.getNotificationService();
-          if (notificationService && targetChat) {
+          // 2. Create notification for outgoing message  
+          if (targetChat) {
             const targetName = targetChat.firstName && targetChat.lastName 
               ? `${targetChat.firstName} ${targetChat.lastName}`
               : targetChat.firstName || targetChat.username || `Chat ${chatId}`;
               
-            await notificationService.createCommunicationNotification({
-              userId: 'admin', // or get from authenticated user
-              type: 'sent_telegram',
+            await storage.createNotification({
+              id: randomUUID(),
+              userId: 'b3bbda10-f9cf-4efe-a0f0-13154db55e94', // admin user ID
+              type: 'telegram',
+              title: 'Messaggio Telegram Inviato',
+              message: `Messaggio inviato a ${targetName}: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`,
+              priority: 'normal',
               category: 'telegram',
-              from: 'EasyCashFlows Bot',
-              to: targetName,
-              originalContent: message,
-              channelProvider: 'telegram',
-              messageId: `telegram_sent_${result.messageId}_${chatId}`,
-              priority: 'normal'
+              actionUrl: '/communications?tab=telegram',
+              metadata: {
+                chatId: chatId.toString(),
+                messageId: result.messageId,
+                recipientName: targetName
+              },
+              isRead: false,
+              createdAt: new Date(),
+              updatedAt: new Date()
             });
             console.log('[TELEGRAM SEND] ✅ Notifica creata per messaggio inviato');
           }
