@@ -1056,6 +1056,23 @@ export const telegramChats = pgTable("telegram_chats", {
   lastRealMessage: text("last_real_message"),
 });
 
+// Telegram Messages (per tracciare i messaggi)
+export const telegramMessages = pgTable("telegram_messages", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  chatId: varchar("chat_id").notNull(), // UUID riferimento interno
+  telegramMessageId: integer("telegram_message_id"),
+  content: text("content").notNull(),
+  direction: text("direction").notNull().default('incoming'), // 'incoming' or 'outgoing'
+  fromUser: text("from_user"),
+  toUser: text("to_user"),
+  messageType: text("message_type").notNull().default('text'),
+  isAiGenerated: boolean("is_ai_generated").notNull().default(false),
+  delivered: boolean("delivered").notNull().default(false),
+  readStatus: text("read_status").notNull().default('unread'), // 'read', 'unread', 'delivered'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Telegram Schema Validazioni
 export const insertTelegramSettingsSchema = createInsertSchema(telegramSettings).omit({
   id: true,
@@ -1112,6 +1129,9 @@ export type InsertTelegramTemplate = z.infer<typeof insertTelegramTemplateSchema
 
 export type TelegramChat = typeof telegramChats.$inferSelect;
 export type InsertTelegramChat = z.infer<typeof insertTelegramChatSchema>;
+
+export type TelegramMessage = typeof telegramMessages.$inferSelect;
+export type InsertTelegramMessage = typeof telegramMessages.$inferInsert;
 
 export const passwordResetSchema = z.object({
   email: z.string().email("Email non valida"),

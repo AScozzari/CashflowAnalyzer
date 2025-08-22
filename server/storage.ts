@@ -1,6 +1,6 @@
 import {
   companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens, sendgridTemplates, whatsappSettings, whatsappTemplates,
-  telegramSettings, telegramTemplates, telegramChats,
+  telegramSettings, telegramTemplates, telegramChats, telegramMessages,
   smsSettings, smsTemplates, smsMessages, smsBlacklist, smsStatistics,
   aiSettings, aiChatHistory, aiDocumentJobs,
   securitySettings, loginAuditLog, activeSessions, passwordHistory, twoFactorAuth,
@@ -26,6 +26,7 @@ import {
   type TelegramSettings, type InsertTelegramSettings,
   type TelegramTemplate, type InsertTelegramTemplate,
   type TelegramChat, type InsertTelegramChat,
+  type TelegramMessage, type InsertTelegramMessage,
   type AiSettings, type InsertAiSettings,
   type AiChatHistory, type InsertAiChatHistory,
   type AiDocumentJob, type InsertAiDocumentJob,
@@ -2866,6 +2867,16 @@ async getMovements(filters: {
     } catch (error) {
       console.error('Error deleting Telegram chat:', error);
       throw new Error('Failed to delete Telegram chat');
+    }
+  }
+
+  async getTelegramMessages(): Promise<TelegramMessage[]> {
+    try {
+      const result = await db.select().from(telegramMessages);
+      return result;
+    } catch (error) {
+      console.error('Error getting Telegram messages:', error);
+      throw new Error('Failed to fetch Telegram messages');
     }
   }
 

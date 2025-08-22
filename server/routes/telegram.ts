@@ -51,6 +51,49 @@ export function setupTelegramRoutes(app: Express): void {
     res.json({ message: 'Telegram routes loaded successfully' });
   });
   
+  // Get Telegram conversations
+  app.get('/api/telegram/conversations', async (req, res) => {
+    try {
+      console.log('[TELEGRAM API] Getting conversations...');
+      
+      // Get all chats and messages
+      const chats = await storage.getTelegramChats();
+      const messages = await storage.getTelegramMessages();
+
+      // Group messages by chat
+      const conversations = chats.map(chat => {
+        const chatMessages = messages.filter(msg => msg.chatId === chat.telegramChatId);
+        const lastMessage = chatMessages.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0];
+
+        const displayName = chat.firstName 
+          ? `${chat.firstName} ${chat.lastName || ''}`.trim()
+          : chat.username || `Chat ${chat.telegramChatId}`;
+
+        return {
+          id: chat.id,
+          chatId: chat.telegramChatId,
+          name: displayName,
+          username: chat.username,
+          lastMessage: lastMessage ? {
+            text: lastMessage.content || '',
+            timestamp: lastMessage.createdAt,
+            isRead: lastMessage.readStatus === 'read'
+          } : null,
+          messageCount: chatMessages.length,
+          unreadCount: chatMessages.filter(msg => msg.readStatus !== 'read').length
+        };
+      });
+
+      console.log(`[TELEGRAM API] Found ${conversations.length} conversations`);
+      res.json(conversations);
+    } catch (error) {
+      console.error('[TELEGRAM API] Error getting conversations:', error);
+      res.status(500).json({ error: 'Failed to fetch conversations' });
+    }
+  });
+
   // Get Telegram stats
   app.get('/api/telegram/stats', async (req, res) => {
     try {
