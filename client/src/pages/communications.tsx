@@ -23,6 +23,7 @@ import { EmailInterface } from "@/components/communications/email-interface";
 import { WhatsAppInterfaceImproved as WhatsAppInterface } from "@/components/communications/whatsapp-interface-improved";
 import { SMSInterface } from "@/components/communications/sms-interface";
 import { TelegramInterfaceImproved as TelegramInterface } from "@/components/communications/telegram-interface-improved";
+import RecentActivitiesModal from "@/components/communications/recent-activities-modal";
 import { useQuery } from "@tanstack/react-query";
 
 interface CommunicationStats {
@@ -230,50 +231,8 @@ export default function Communications() {
             </CardContent>
           </Card>
 
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Attività Recente
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {/* Mock recent activities */}
-                <div className="flex items-center gap-3 p-3 rounded-lg border">
-                  <div className="text-green-600">
-                    <MessageSquare className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Nuovo messaggio WhatsApp</p>
-                    <p className="text-xs text-muted-foreground">da +39 xxx xxx xxxx - 5 minuti fa</p>
-                  </div>
-                  <Badge variant="outline">WhatsApp</Badge>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg border">
-                  <div className="text-blue-600">
-                    <Mail className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Email ricevuta</p>
-                    <p className="text-xs text-muted-foreground">da cliente@example.com - 15 minuti fa</p>
-                  </div>
-                  <Badge variant="outline">Email</Badge>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg border">
-                  <div className="text-purple-600">
-                    <Smartphone className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">SMS inviato</p>
-                    <p className="text-xs text-muted-foreground">a +39 xxx xxx xxxx - 1 ora fa</p>
-                  </div>
-                  <Badge variant="outline">SMS</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Recent Activities - DATI REALI */}
+          <RecentActivitiesModal />
         </TabsContent>
 
         {/* Email Interface */}
