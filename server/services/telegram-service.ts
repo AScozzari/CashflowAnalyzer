@@ -52,7 +52,6 @@ interface SendMessageOptions {
 
 // Import services
 import { notificationService } from './notification-service';
-import { storage } from '../storage';
 
 export class TelegramService {
   private static instance: TelegramService;
