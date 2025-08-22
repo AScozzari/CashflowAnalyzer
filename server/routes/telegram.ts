@@ -146,40 +146,45 @@ export function setupTelegramRoutes(app: Express): void {
           const existingChat = allChats.find(chat => chat.telegramChatId === chatId);
           
           if (existingChat) {
-            console.log('[TELEGRAM SEND] ✅ Chat trovata, aggiorno dati');
+            console.log('[TELEGRAM SEND] ✅ Chat trovata, salvo messaggio nel database');
             
-            // Aggiorna chat con ultimo messaggio reale
+            // ✅ SALVA MESSAGGIO REALE nella tabella telegram_messages
+            await storage.executeRawQuery(
+              'INSERT INTO telegram_messages (chat_id, telegram_message_id, content, direction, from_user, to_user, message_type, is_ai_generated) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+              [existingChat.id, result.messageId || Math.floor(Math.random() * 1000000), message, 'outbound', 'EasyCashFlows Bot', existingChat.firstName || existingChat.username || 'User', 'text', false]
+            );
+            console.log('[TELEGRAM SEND] ✅ Messaggio salvato nel database');
+            
+            // Aggiorna chat con ultimo messaggio
             await storage.updateTelegramChat(existingChat.id, {
               lastMessageId: result.messageId || Math.floor(Math.random() * 1000000)
             });
             
-            // Aggiorna separatamente il lastRealMessage con SQL diretto
-            try {
-              await storage.executeRawQuery(
-                'UPDATE telegram_chats SET last_real_message = $1 WHERE id = $2',
-                [message.length > 100 ? message.substring(0, 100) + '...' : message, existingChat.id]
-              );
-              console.log('[TELEGRAM SEND] ✅ lastRealMessage aggiornato');
-            } catch (sqlError) {
-              console.error('[TELEGRAM SEND] ❌ Errore aggiornamento lastRealMessage:', sqlError);
-            }
+            // Aggiorna lastRealMessage con SQL diretto per compatibilità
+            await storage.executeRawQuery(
+              'UPDATE telegram_chats SET last_real_message = $1, message_count = message_count + 1, last_message_at = NOW() WHERE id = $2',
+              [message.length > 100 ? message.substring(0, 100) + '...' : message, existingChat.id]
+            );
             console.log('[TELEGRAM SEND] ✅ Chat aggiornata con nuovo messaggio');
             
-            // Create notification for sent message
+            // ✅ CREA NOTIFICA PER MESSAGGIO INVIATO (per tutti gli admin/finance)
+            const users = await storage.getUsers();
             const targetName = existingChat.firstName && existingChat.lastName 
               ? `${existingChat.firstName} ${existingChat.lastName}`
               : existingChat.firstName || existingChat.username || `Chat ${chatId}`;
             
-            await storage.createNotification({
-              userId: 'b3bbda10-f9cf-4efe-a0f0-13154db55e94', // admin user ID
-              type: 'telegram',
-              title: 'Messaggio Telegram Inviato',
-              message: `Messaggio inviato a ${targetName}: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`,
-              priority: 'normal',
-              category: 'telegram',
-              actionUrl: '/communications?tab=telegram',
-              isRead: false
-            });
+            for (const user of users.filter(u => ['admin', 'finance'].includes(u.role))) {
+              await storage.createNotification({
+                userId: user.id,
+                type: 'telegram_sent',
+                title: 'Messaggio Telegram Inviato',
+                message: `Messaggio inviato a ${targetName}: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`,
+                priority: 'normal',
+                category: 'telegram',
+                actionUrl: '/communications?tab=telegram',
+                isRead: false
+              });
+            }
             console.log('[TELEGRAM SEND] ✅ Notifica creata per messaggio inviato');
           }
         } catch (updateError) {
@@ -370,52 +375,62 @@ export function setupTelegramRoutes(app: Express): void {
       const { chatId } = req.params;
       console.log('[TELEGRAM API] Getting messages for chat:', chatId);
       
-      // ✅ DATI REALI: Trova la chat dal database
-      const allChats = await storage.getTelegramChats();
-      const chat = allChats.find(c => c.id === chatId);
-      
-      if (!chat) {
-        console.log('[TELEGRAM API] Chat non trovata:', chatId);
-        return res.json([]);
-      }
-      
-      console.log('[TELEGRAM API] Chat trovata:', chat.firstName, 'lastRealMessage:', chat.lastRealMessage);
-      
+      // ✅ IMPLEMENTAZIONE TEMPORANEA: Restituisci messaggi fake + reali dal database 
       const realMessages = [];
       
-      // Se c'è un lastRealMessage, crealo come messaggio reale
-      if (chat.lastRealMessage && chat.lastRealMessage.trim()) {
-        realMessages.push({
-          id: '1',
-          chatId: chatId,
-          from: 'user',
-          to: 'bot',
-          content: chat.lastRealMessage,
-          timestamp: chat.lastMessageAt || new Date().toISOString(),
-          messageType: 'text',
-          isOutgoing: false,
-          delivered: true,
-          read: true,
-          aiGenerated: false
-        });
+      try {
+        // Prova a prendere messaggi reali dal database usando SQL diretto (SEMPLIFICATO)
+        const messagesQuery = `SELECT * FROM telegram_messages WHERE chat_id = '${chatId}' ORDER BY created_at ASC`;
+        console.log('[TELEGRAM API] Trying direct database query...');
         
-        // Aggiungi risposta del bot per completezza
-        realMessages.push({
-          id: '2',
-          chatId: chatId,
-          from: 'bot',
-          to: 'user',
-          content: 'Messaggio ricevuto correttamente.',
-          timestamp: new Date().toISOString(),
-          messageType: 'text',
-          isOutgoing: true,
-          delivered: true,
-          read: true,
-          aiGenerated: true
-        });
+        // Metodo alternativo: usa executeRawQuery con parametri corretti
+        const messages = await storage.executeRawQuery(messagesQuery, 'admin');
+        console.log('[TELEGRAM API] Messages found:', messages);
+        
+        if (Array.isArray(messages) && messages.length > 0) {
+          for (const msg of messages) {
+            realMessages.push({
+              id: msg.id?.toString() || Math.random().toString(),
+              chatId: chatId,
+              from: msg.direction === 'outbound' ? 'bot' : 'user',
+              to: msg.direction === 'outbound' ? 'user' : 'bot',
+              content: msg.content || 'Test message',
+              timestamp: msg.created_at || new Date().toISOString(),
+              messageType: 'text',
+              isOutgoing: msg.direction === 'outbound',
+              delivered: true,
+              read: true,
+              aiGenerated: msg.is_ai_generated || false
+            });
+          }
+        }
+      } catch (dbError) {
+        console.log('[TELEGRAM API] Database query failed, using fallback:', dbError);
       }
       
-      console.log('[TELEGRAM API] Returning', realMessages.length, 'real messages for chat:', chatId);
+      // Fallback: Se non ci sono messaggi dal database, usa il vecchio sistema
+      if (realMessages.length === 0) {
+        const allChats = await storage.getTelegramChats();
+        const chat = allChats.find(c => c.id === chatId);
+        
+        if (chat && chat.lastRealMessage) {
+          realMessages.push({
+            id: '1',
+            chatId: chatId,
+            from: 'user',
+            to: 'bot',
+            content: chat.lastRealMessage,
+            timestamp: chat.lastMessageAt || new Date().toISOString(),
+            messageType: 'text',
+            isOutgoing: false,
+            delivered: true,
+            read: true,
+            aiGenerated: false
+          });
+        }
+      }
+      
+      console.log('[TELEGRAM API] Returning', realMessages.length, 'messages for chat:', chatId);
       res.json(realMessages);
     } catch (error) {
       console.error('[TELEGRAM API] Error fetching messages:', error);
