@@ -283,25 +283,7 @@ export function setupTelegramRoutes(app: Express): void {
             );
             console.log('[TELEGRAM SEND] ✅ Chat aggiornata con nuovo messaggio');
             
-            // ✅ CREA NOTIFICA PER MESSAGGIO INVIATO (per tutti gli admin/finance)
-            const users = await storage.getUsers();
-            const targetName = existingChat.firstName && existingChat.lastName 
-              ? `${existingChat.firstName} ${existingChat.lastName}`
-              : existingChat.firstName || existingChat.username || `Chat ${chatId}`;
-            
-            for (const user of users.filter(u => ['admin', 'finance'].includes(u.role))) {
-              await storage.createNotification({
-                userId: user.id,
-                type: 'telegram_sent',
-                title: 'Messaggio Telegram Inviato',
-                message: `Messaggio inviato a ${targetName}: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`,
-                priority: 'normal',
-                category: 'telegram',
-                actionUrl: '/communications?tab=telegram',
-                isRead: false
-              });
-            }
-            console.log('[TELEGRAM SEND] ✅ Notifica creata per messaggio inviato');
+            // ❌ REMOVED: Outgoing notifications not needed per user requirements
           }
         } catch (updateError) {
           console.error('[TELEGRAM SEND] ❌ Errore aggiornamento chat:', updateError);

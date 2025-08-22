@@ -219,9 +219,21 @@ export class NotificationService {
   // Auto-assign users to notifications based on business rules
   async determineNotificationRecipients(data: CommunicationNotification): Promise<string[]> {
     try {
-      // Get all admin and finance users for communication notifications
       const users = await storage.getUsers();
       
+      // For INCOMING communications: Admin, Finance, and relevant users
+      if (data.type.includes('new_')) {
+        
+        // TODO: Add movement-specific logic when movement notifications are implemented
+        // For now, communications only go to admin/finance users
+        
+        // For communications: Only Admin and Finance
+        return users
+          .filter(user => ['admin', 'finance'].includes(user.role))
+          .map(user => user.id);
+      }
+      
+      // For other notification types, fallback to admin/finance
       return users
         .filter(user => ['admin', 'finance'].includes(user.role))
         .map(user => user.id);
