@@ -9,14 +9,29 @@ export const smsSettings = pgTable('sms_settings', {
   apiUrl: text('api_url').notNull().default('https://api.skebby.it/API/v1.0/REST/'),
   username: text('username').notNull(),
   password: text('password').notNull(),
-  defaultSender: text('default_sender'),
+  
+  // Skebby Authentication
+  userKey: text('user_key'), // Ottenuto dal login
+  sessionKey: text('session_key'), // Session key (scade dopo 5 min)
+  accessToken: text('access_token'), // Token permanente (raccomandato)
+  tokenExpiresAt: timestamp('token_expires_at'),
+  
+  // SMS Configuration
+  defaultSender: text('default_sender'), // TPOA alias
   messageType: text('message_type').notNull().default('GP'), // GP = High Quality, TI = Medium, SI = Low
+  
+  // Webhook Configuration
+  webhookUrl: text('webhook_url'),
+  webhookMethod: text('webhook_method').default('POST'), // GET o POST
+  webhookSecret: text('webhook_secret'),
+  deliveryReceiptsEnabled: boolean('delivery_receipts_enabled').default(false),
+  
+  // App Settings
   isActive: boolean('is_active').notNull().default(true),
   testMode: boolean('test_mode').notNull().default(false),
   maxRetries: integer('max_retries').notNull().default(3),
   retryDelay: integer('retry_delay').notNull().default(5000), // milliseconds
-  webhookUrl: text('webhook_url'),
-  webhookSecret: text('webhook_secret'),
+  
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

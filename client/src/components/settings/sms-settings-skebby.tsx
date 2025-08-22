@@ -195,23 +195,26 @@ export function SmsSettingsSkebby() {
                 Configurazione Skebby API
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username Skebby</Label>
-                  <Input
-                    id="username"
-                    type="email"
-                    defaultValue={settings?.username || ''}
-                    placeholder="your-email@example.com"
-                    data-testid="input-username"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
+            <CardContent className="space-y-6">
+              {/* Configurazione Base */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Credenziali API Skebby</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username Skebby</Label>
+                    <Input
+                      id="username"
+                      type="email"
+                      defaultValue={settings?.username || 'a.scozzari@easydigitalgroup.it'}
+                      placeholder="your-email@example.com"
+                      data-testid="input-username"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password API</Label>
+                    <Input
+                      id="password"
+                      type="password"
                     defaultValue={settings?.password || ''}
                     placeholder="••••••••"
                     data-testid="input-password"
@@ -219,32 +222,115 @@ export function SmsSettingsSkebby() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="defaultSender">Mittente Predefinito</Label>
-                  <Input
-                    id="defaultSender"
-                    defaultValue={settings?.defaultSender || ''}
-                    placeholder="YourCompany"
-                    maxLength={11}
-                    data-testid="input-default-sender"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Max 11 caratteri alfanumerici (opzionale)
-                  </p>
+              {/* Token Configuration */}
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-lg font-semibold">Token di Autenticazione</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="accessToken">Token Permanente</Label>
+                    <Input
+                      id="accessToken"
+                      type="text"
+                      defaultValue={settings?.accessToken || 'rLxV6yjcmlcFo2EQCXxhhhHu'}
+                      placeholder="Token da dashboard Skebby"
+                      data-testid="input-access-token"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Token dalla sezione "Tokens" nel pannello Skebby
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="userKey">User Key</Label>
+                    <Input
+                      id="userKey"
+                      type="text"
+                      defaultValue={settings?.userKey || ''}
+                      placeholder="User key ottenuta dal login"
+                      data-testid="input-user-key"
+                      readOnly
+                    />
+                    <p className="text-xs text-gray-500">
+                      Generata automaticamente al primo login
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="messageType">Qualità Messaggi</Label>
-                  <Select defaultValue={settings?.messageType || 'GP'}>
-                    <SelectTrigger data-testid="select-message-type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="GP">Alta Qualità (GP)</SelectItem>
-                      <SelectItem value="TI">Media Qualità (TI)</SelectItem>
-                      <SelectItem value="SI">Bassa Qualità (SI)</SelectItem>
-                    </SelectContent>
-                  </Select>
+              </div>
+
+              {/* Webhook Configuration */}
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-lg font-semibold">Delivery Receipts (Notifiche Stato)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="webhookUrl">URL Notifica Stato SMS</Label>
+                    <Input
+                      id="webhookUrl"
+                      type="url"
+                      defaultValue={settings?.webhookUrl || ''}
+                      placeholder="https://yourserver.com/webhook/sms"
+                      data-testid="input-webhook-url"
+                    />
+                    <p className="text-xs text-gray-500">
+                      URL dove ricevere notifiche di delivery
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="webhookMethod">Metodo Webhook</Label>
+                    <Select defaultValue={settings?.webhookMethod || 'POST'}>
+                      <SelectTrigger data-testid="select-webhook-method">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="POST">POST</SelectItem>
+                        <SelectItem value="GET">GET</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="deliveryReceipts">Abilita Delivery Receipts</Label>
+                    <p className="text-sm text-gray-500">
+                      Ricevi notifiche quando gli SMS vengono consegnati
+                    </p>
+                  </div>
+                  <Switch
+                    id="deliveryReceipts"
+                    defaultChecked={settings?.deliveryReceiptsEnabled ?? false}
+                    data-testid="switch-delivery-receipts"
+                  />
+                </div>
+              </div>
+
+              {/* SMS Configuration */}
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-lg font-semibold">Configurazione SMS</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="defaultSender">Mittente Predefinito</Label>
+                    <Input
+                      id="defaultSender"
+                      defaultValue={settings?.defaultSender || ''}
+                      placeholder="YourCompany"
+                      maxLength={11}
+                      data-testid="input-default-sender"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Max 11 caratteri alfanumerici (opzionale)
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="messageType">Qualità Messaggi</Label>
+                    <Select defaultValue={settings?.messageType || 'GP'}>
+                      <SelectTrigger data-testid="select-message-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GP">Alta Qualità (GP)</SelectItem>
+                        <SelectItem value="TI">Media Qualità (TI)</SelectItem>
+                        <SelectItem value="SI">Bassa Qualità (SI)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -289,11 +375,23 @@ export function SmsSettingsSkebby() {
                   </a>
                 </Button>
                 <Button 
-                  onClick={() => saveSettings.mutate({})}
+                  onClick={() => {
+                    const formData = {
+                      username: (document.getElementById('username') as HTMLInputElement)?.value || '',
+                      password: (document.getElementById('password') as HTMLInputElement)?.value || '',
+                      accessToken: (document.getElementById('accessToken') as HTMLInputElement)?.value || '',
+                      webhookUrl: (document.getElementById('webhookUrl') as HTMLInputElement)?.value || '',
+                      defaultSender: (document.getElementById('defaultSender') as HTMLInputElement)?.value || '',
+                      deliveryReceiptsEnabled: (document.getElementById('deliveryReceipts') as HTMLInputElement)?.checked || false,
+                      isActive: (document.getElementById('isActive') as HTMLInputElement)?.checked || false,
+                      testMode: (document.getElementById('testMode') as HTMLInputElement)?.checked || false
+                    };
+                    saveSettings.mutate(formData);
+                  }}
                   disabled={saveSettings.isPending}
                   data-testid="button-save-settings"
                 >
-                  Salva Configurazione
+                  {saveSettings.isPending ? 'Salvando...' : 'Salva Configurazione'}
                 </Button>
               </div>
             </CardContent>
