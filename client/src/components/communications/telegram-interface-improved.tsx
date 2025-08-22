@@ -150,7 +150,7 @@ export function TelegramInterfaceImproved() {
   });
 
   // Fetch telegram chats/contacts
-  const { data: telegramChats = [], isLoading: chatsLoading, error: chatsError } = useQuery<TelegramChat[]>({
+  const { data: telegramChats = [], isLoading: chatsLoading, error: chatsError, refetch } = useQuery<TelegramChat[]>({
     queryKey: ['/api/telegram/chats'],
     select: (data: any[]) => {
       console.log('🔍 Telegram chats ricevute:', data?.length || 0, '(dati completi):', data);

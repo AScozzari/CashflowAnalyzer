@@ -141,23 +141,24 @@ export function setupTelegramRoutes(app: Express): void {
         console.log('[TELEGRAM SEND] ✅ Messaggio inviato con successo, messageId:', result.messageId);
         
         try {
+          // Trova la chat tramite telegramChatId
+          const allChats = await storage.getTelegramChats();
+          const existingChat = allChats.find(chat => chat.telegramChatId === chatId);
           
-          // 1. Update chat's last message info
-          const chats = await storage.getTelegramChats();
-          const targetChat = chats.find(chat => chat.telegramChatId === chatId.toString());
-          if (targetChat) {
-            await storage.updateTelegramChat(targetChat.id, {
+          if (existingChat) {
+            console.log('[TELEGRAM SEND] ✅ Chat trovata, aggiorno dati');
+            
+            // Aggiorna solo i dati di base della chat
+            await storage.updateTelegramChat(existingChat.id, {
               lastMessageId: result.messageId || Math.floor(Math.random() * 1000000)
             });
-            console.log('[TELEGRAM SEND] ✅ Chat aggiornata con ultimo messaggio');
-          }
-          
-          // 2. Create notification for outgoing message  
-          if (targetChat) {
-            const targetName = targetChat.firstName && targetChat.lastName 
-              ? `${targetChat.firstName} ${targetChat.lastName}`
-              : targetChat.firstName || targetChat.username || `Chat ${chatId}`;
-              
+            console.log('[TELEGRAM SEND] ✅ Chat aggiornata con nuovo messaggio');
+            
+            // Create notification for sent message
+            const targetName = existingChat.firstName && existingChat.lastName 
+              ? `${existingChat.firstName} ${existingChat.lastName}`
+              : existingChat.firstName || existingChat.username || `Chat ${chatId}`;
+            
             await storage.createNotification({
               userId: 'b3bbda10-f9cf-4efe-a0f0-13154db55e94', // admin user ID
               type: 'telegram',
@@ -170,9 +171,8 @@ export function setupTelegramRoutes(app: Express): void {
             });
             console.log('[TELEGRAM SEND] ✅ Notifica creata per messaggio inviato');
           }
-          
-        } catch (dbError) {
-          console.error('[TELEGRAM SEND] ❌ Errore salvataggio database:', dbError);
+        } catch (updateError) {
+          console.error('[TELEGRAM SEND] ❌ Errore aggiornamento chat:', updateError);
         }
       }
       
