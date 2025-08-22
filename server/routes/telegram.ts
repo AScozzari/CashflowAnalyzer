@@ -481,29 +481,36 @@ export function setupTelegramRoutes(app: Express): void {
       const realMessages = [];
       
       try {
-        // Prova a prendere messaggi reali dal database usando SQL diretto (SEMPLIFICATO)
-        const messagesQuery = `SELECT * FROM telegram_messages WHERE chat_id = '${chatId}' ORDER BY created_at ASC`;
-        console.log('[TELEGRAM API] Trying direct database query...');
+        // Prima trova l'UUID interno della chat tramite telegramChatId
+        console.log('[TELEGRAM API] Finding internal UUID for chatId:', chatId);
+        const allChats = await storage.getTelegramChats();
+        const targetChat = allChats.find(chat => chat.telegramChatId === chatId);
         
-        // Metodo alternativo: usa executeRawQuery con parametri corretti
-        const messages = await storage.executeRawQuery(messagesQuery, 'admin');
-        console.log('[TELEGRAM API] Messages found:', messages);
+        if (targetChat) {
+          console.log('[TELEGRAM API] Found internal UUID:', targetChat.id);
+          // Ora cerca i messaggi usando l'UUID interno
+          const messagesQuery = `SELECT * FROM telegram_messages WHERE chat_id = $1 ORDER BY created_at ASC`;
+          console.log('[TELEGRAM API] Trying database query with UUID...');
+          
+          const messages = await storage.executeRawQuery(messagesQuery, [targetChat.id]);
+          console.log('[TELEGRAM API] Messages found:', messages);
         
-        if (Array.isArray(messages) && messages.length > 0) {
-          for (const msg of messages) {
-            realMessages.push({
-              id: msg.id?.toString() || Math.random().toString(),
-              chatId: chatId,
-              from: msg.direction === 'outbound' ? 'bot' : 'user',
-              to: msg.direction === 'outbound' ? 'user' : 'bot',
-              content: msg.content || 'Test message',
-              timestamp: msg.created_at || new Date().toISOString(),
-              messageType: 'text',
-              isOutgoing: msg.direction === 'outbound',
-              delivered: true,
-              read: true,
-              aiGenerated: msg.is_ai_generated || false
-            });
+          if (Array.isArray(messages) && messages.length > 0) {
+            for (const msg of messages) {
+              realMessages.push({
+                id: msg.id?.toString() || Math.random().toString(),
+                chatId: chatId,
+                from: msg.direction === 'outbound' ? 'bot' : 'user',
+                to: msg.direction === 'outbound' ? 'user' : 'bot',
+                content: msg.content || 'Test message',
+                timestamp: msg.created_at || new Date().toISOString(),
+                messageType: 'text',
+                isOutgoing: msg.direction === 'outbound',
+                delivered: true,
+                read: true,
+                aiGenerated: msg.is_ai_generated || false
+              });
+            }
           }
         }
       } catch (dbError) {
