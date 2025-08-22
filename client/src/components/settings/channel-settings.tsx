@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { MessageSquare, Mail, Phone, Send, Settings, Webhook } from 'lucide-react';
 import { EmailSettings } from './email-settings';
 import { WhatsAppSettingsWithTabs } from './whatsapp-settings-with-tabs';
+import { SmsSettingsSkebby } from './sms-settings-skebby';
 
 export function ChannelSettings() {
   const [activeTab, setActiveTab] = useState('whatsapp');
@@ -67,10 +68,10 @@ export function ChannelSettings() {
                 <Phone className="w-5 h-5 text-purple-600" />
                 <span className="font-medium">SMS</span>
               </div>
-              <Badge variant="outline">Prossimamente</Badge>
+              <Badge variant="default" className="bg-green-600">Implementato</Badge>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-              Twilio SMS API
+              Skebby SMS API Integrato
             </p>
           </CardContent>
         </Card>
@@ -124,16 +125,7 @@ export function ChannelSettings() {
 
         {/* SMS Channel */}
         <TabsContent value="sms">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Phone className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">SMS Notifications</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Configura notifiche SMS tramite Twilio per alert urgenti
-              </p>
-              <Badge variant="secondary">Coming Soon</Badge>
-            </CardContent>
-          </Card>
+          <SmsSettingsSkebby />
         </TabsContent>
 
         {/* Telegram Channel */}
