@@ -22,7 +22,7 @@ import {
 import { EmailInterface } from "@/components/communications/email-interface";
 import { WhatsAppInterfaceImproved as WhatsAppInterface } from "@/components/communications/whatsapp-interface-improved";
 import { SMSInterface } from "@/components/communications/sms-interface";
-import { TelegramInterfaceImproved as TelegramInterface } from "@/components/communications/telegram-interface-improved";
+import { TelegramInterfaceNew as TelegramInterface } from "@/components/communications/telegram-interface-new";
 import RecentActivitiesModal from "@/components/communications/recent-activities-modal";
 import { useQuery } from "@tanstack/react-query";
 

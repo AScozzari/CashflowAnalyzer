@@ -15,6 +15,29 @@ export function setupTelegramRoutes(app: Express): void {
     res.json({ message: 'Telegram routes loaded successfully' });
   });
   
+  // Get Telegram stats
+  app.get('/api/telegram/stats', async (req, res) => {
+    try {
+      const settings = await storage.getTelegramSettings();
+      const chats = await storage.getTelegramChats();
+      
+      const botInfo = telegramService.isInitialized() ? await telegramService.getBotInfo() : null;
+      
+      res.json({
+        configured: settings.length > 0,
+        isActive: settings.length > 0 && settings[0].isActive,
+        username: botInfo?.username || settings[0]?.botUsername,
+        webhook: botInfo && telegramService.isInitialized(),
+        totalChats: chats.length,
+        unreadMessages: 0, // Placeholder
+        todayMessages: 0 // Placeholder
+      });
+    } catch (error) {
+      console.error('Error fetching Telegram stats:', error);
+      res.status(500).json({ error: 'Failed to fetch stats' });
+    }
+  });
+
   // Get Telegram settings
   app.get('/api/telegram/settings', async (req, res) => {
     try {
@@ -148,10 +171,10 @@ export function setupTelegramRoutes(app: Express): void {
           if (existingChat) {
             console.log('[TELEGRAM SEND] ✅ Chat trovata, salvo messaggio nel database');
             
-            // ✅ SALVA MESSAGGIO REALE nella tabella telegram_messages
+            // ✅ SALVA MESSAGGIO REALE nella tabella telegram_messages e aggiorna chat
             await storage.executeRawQuery(
               'INSERT INTO telegram_messages (chat_id, telegram_message_id, content, direction, from_user, to_user, message_type, is_ai_generated) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-              [existingChat.id, result.messageId || Math.floor(Math.random() * 1000000), message, 'outbound', 'EasyCashFlows Bot', existingChat.firstName || existingChat.username || 'User', 'text', false]
+              [existingChat.id, String(result.messageId || Math.floor(Math.random() * 1000000)), message, 'outbound', 'EasyCashFlows Bot', existingChat.firstName || existingChat.username || 'User', 'text', false]
             );
             console.log('[TELEGRAM SEND] ✅ Messaggio salvato nel database');
             
