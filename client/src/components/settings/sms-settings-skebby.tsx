@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useForm } from 'react-hook-form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -40,10 +43,55 @@ export function SmsSettingsSkebby() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Initialize form with react-hook-form
+  const form = useForm<{
+    username?: string;
+    password?: string;
+    accessToken?: string;
+    webhookUrl?: string;
+    webhookMethod?: string;
+    defaultSender?: string;
+    messageType?: string;
+    deliveryReceiptsEnabled?: boolean;
+    isActive?: boolean;
+    testMode?: boolean;
+  }>({
+    defaultValues: {
+      username: '',
+      password: '',
+      accessToken: '',
+      webhookUrl: '',
+      webhookMethod: 'POST',
+      defaultSender: '',
+      messageType: 'GP',
+      deliveryReceiptsEnabled: false,
+      isActive: true,
+      testMode: false,
+    },
+  });
+
   // Fetch SMS settings
   const { data: settings, isLoading: settingsLoading } = useQuery<SmsSettings>({
     queryKey: ['/api/sms/settings'],
   });
+
+  // Update form when settings are loaded
+  React.useEffect(() => {
+    if (settings) {
+      form.reset({
+        username: settings.username || '',
+        password: settings.password || '',
+        accessToken: settings.accessToken || '',
+        webhookUrl: settings.webhookUrl || '',
+        webhookMethod: settings.webhookMethod || 'POST',
+        defaultSender: settings.defaultSender || '',
+        messageType: settings.messageType || 'GP',
+        deliveryReceiptsEnabled: settings.deliveryReceiptsEnabled ?? false,
+        isActive: settings.isActive ?? true,
+        testMode: settings.testMode ?? false,
+      });
+    }
+  }, [settings, form]);
 
   // Fetch SMS templates
   const { data: templates, isLoading: templatesLoading } = useQuery<SmsTemplate[]>({
@@ -78,16 +126,30 @@ export function SmsSettingsSkebby() {
   const saveSettings = useMutation({
     mutationFn: async (data: Partial<InsertSmsSettings>) => {
       const response = await apiRequest('POST', '/api/sms/settings', data);
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Server error: ${response.status} - ${errorData}`);
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/sms/settings'] });
       toast({ title: 'Impostazioni salvate con successo' });
     },
-    onError: () => {
-      toast({ title: 'Errore nel salvataggio', variant: 'destructive' });
+    onError: (error: any) => {
+      console.error('Save settings error:', error);
+      toast({ 
+        title: 'Errore nel salvataggio', 
+        description: error?.message || 'Errore sconosciuto',
+        variant: 'destructive' 
+      });
     }
   });
+
+  // Handle form submission
+  const onSubmit = (data: any) => {
+    saveSettings.mutate(data);
+  };
 
   // Handle test connection
   const handleTestConnection = async () => {
@@ -124,8 +186,8 @@ export function SmsSettingsSkebby() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={settings?.isActive ? 'default' : 'secondary'}>
-            {settings?.isActive ? 'Attivo' : 'Disattivato'}
+          <Badge variant={(settings as any)?.isActive ? 'default' : 'secondary'}>
+            {(settings as any)?.isActive ? 'Attivo' : 'Disattivato'}
           </Badge>
           <Button
             size="sm"
@@ -195,209 +257,292 @@ export function SmsSettingsSkebby() {
                 Configurazione Skebby API
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Configurazione Base */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Credenziali API Skebby</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username Skebby</Label>
-                    <Input
-                      id="username"
-                      type="email"
-                      defaultValue={settings?.username || 'a.scozzari@easydigitalgroup.it'}
-                      placeholder="your-email@example.com"
-                      data-testid="input-username"
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Configurazione Base */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Credenziali API Skebby</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username Skebby</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="email"
+                                placeholder="your-email@example.com"
+                                data-testid="input-username"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password API</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="password"
+                                placeholder="••••••••"
+                                data-testid="input-password"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Token Configuration */}
+                  <div className="space-y-4 border-t pt-4">
+                    <h3 className="text-lg font-semibold">Token di Autenticazione</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="accessToken"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Token Permanente</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Token da dashboard Skebby"
+                                data-testid="input-access-token"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Token dalla sezione "Tokens" nel pannello Skebby
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="userKey"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>User Key</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="User key ottenuta dal login"
+                                data-testid="input-user-key"
+                                readOnly
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Generata automaticamente al primo login
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Webhook Configuration */}
+                  <div className="space-y-4 border-t pt-4">
+                    <h3 className="text-lg font-semibold">Delivery Receipts (Notifiche Stato)</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="webhookUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>URL Notifica Stato SMS</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="url"
+                                placeholder="https://yourserver.com/webhook/sms"
+                                data-testid="input-webhook-url"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              URL dove ricevere notifiche di delivery
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="webhookMethod"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Metodo Webhook</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-webhook-method">
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="POST">POST</SelectItem>
+                                <SelectItem value="GET">GET</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="deliveryReceiptsEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <FormLabel>Abilita Delivery Receipts</FormLabel>
+                            <FormDescription>
+                              Ricevi notifiche quando gli SMS vengono consegnati
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-delivery-receipts"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password API</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      defaultValue={settings?.password || ''}
-                      placeholder="••••••••"
-                      data-testid="input-password"
+
+                  {/* SMS Configuration */}
+                  <div className="space-y-4 border-t pt-4">
+                    <h3 className="text-lg font-semibold">Configurazione SMS</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="defaultSender"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Mittente Predefinito</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="YourCompany"
+                                maxLength={11}
+                                data-testid="input-default-sender"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Max 11 caratteri alfanumerici (opzionale)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="messageType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Qualità Messaggi</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-message-type">
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="GP">Alta Qualità (GP)</SelectItem>
+                                <SelectItem value="TI">Media Qualità (TI)</SelectItem>
+                                <SelectItem value="SI">Bassa Qualità (SI)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Service Controls */}
+                  <div className="space-y-4 border-t pt-4">
+                    <FormField
+                      control={form.control}
+                      name="isActive"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <FormLabel>Servizio Attivo</FormLabel>
+                            <FormDescription>
+                              Abilita l'invio SMS tramite Skebby
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-active"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                </div>
-              </div>
 
-              {/* Token Configuration */}
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="text-lg font-semibold">Token di Autenticazione</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="accessToken">Token Permanente</Label>
-                    <Input
-                      id="accessToken"
-                      type="text"
-                      defaultValue={settings?.accessToken || 'rLxV6yjcmlcFo2EQCXxhhhHu'}
-                      placeholder="Token da dashboard Skebby"
-                      data-testid="input-access-token"
+                    <FormField
+                      control={form.control}
+                      name="testMode"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <FormLabel>Modalità Test</FormLabel>
+                            <FormDescription>
+                              Gli SMS non vengono inviati realmente
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-test-mode"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    <p className="text-xs text-gray-500">
-                      Token dalla sezione "Tokens" nel pannello Skebby
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="userKey">User Key</Label>
-                    <Input
-                      id="userKey"
-                      type="text"
-                      defaultValue={settings?.userKey || ''}
-                      placeholder="User key ottenuta dal login"
-                      data-testid="input-user-key"
-                      readOnly
-                    />
-                    <p className="text-xs text-gray-500">
-                      Generata automaticamente al primo login
-                    </p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Webhook Configuration */}
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="text-lg font-semibold">Delivery Receipts (Notifiche Stato)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="webhookUrl">URL Notifica Stato SMS</Label>
-                    <Input
-                      id="webhookUrl"
-                      type="url"
-                      defaultValue={settings?.webhookUrl || ''}
-                      placeholder="https://yourserver.com/webhook/sms"
-                      data-testid="input-webhook-url"
-                    />
-                    <p className="text-xs text-gray-500">
-                      URL dove ricevere notifiche di delivery
-                    </p>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" asChild>
+                        <a 
+                          href="https://www.skebby.it/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          Vai a Skebby.it
+                        </a>
+                      </Button>
+                      <Button 
+                        type="submit"
+                        disabled={saveSettings.isPending}
+                        data-testid="button-save-settings"
+                      >
+                        {saveSettings.isPending ? 'Salvando...' : 'Salva Configurazione'}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="webhookMethod">Metodo Webhook</Label>
-                    <Select defaultValue={settings?.webhookMethod || 'POST'}>
-                      <SelectTrigger data-testid="select-webhook-method">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="POST">POST</SelectItem>
-                        <SelectItem value="GET">GET</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="deliveryReceipts">Abilita Delivery Receipts</Label>
-                    <p className="text-sm text-gray-500">
-                      Ricevi notifiche quando gli SMS vengono consegnati
-                    </p>
-                  </div>
-                  <Switch
-                    id="deliveryReceipts"
-                    defaultChecked={settings?.deliveryReceiptsEnabled ?? false}
-                    data-testid="switch-delivery-receipts"
-                  />
-                </div>
-              </div>
-
-              {/* SMS Configuration */}
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="text-lg font-semibold">Configurazione SMS</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="defaultSender">Mittente Predefinito</Label>
-                    <Input
-                      id="defaultSender"
-                      defaultValue={settings?.defaultSender || ''}
-                      placeholder="YourCompany"
-                      maxLength={11}
-                      data-testid="input-default-sender"
-                    />
-                    <p className="text-xs text-gray-500">
-                      Max 11 caratteri alfanumerici (opzionale)
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="messageType">Qualità Messaggi</Label>
-                    <Select defaultValue={settings?.messageType || 'GP'}>
-                      <SelectTrigger data-testid="select-message-type">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="GP">Alta Qualità (GP)</SelectItem>
-                        <SelectItem value="TI">Media Qualità (TI)</SelectItem>
-                        <SelectItem value="SI">Bassa Qualità (SI)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Service Controls */}
-              <div className="space-y-4 border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="isActive">Servizio Attivo</Label>
-                    <p className="text-sm text-gray-500">
-                      Abilita l'invio SMS tramite Skebby
-                    </p>
-                  </div>
-                  <Switch
-                    id="isActive"
-                    defaultChecked={settings?.isActive ?? true}
-                    data-testid="switch-active"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="testMode">Modalità Test</Label>
-                    <p className="text-sm text-gray-500">
-                      Gli SMS non vengono inviati realmente
-                    </p>
-                  </div>
-                  <Switch
-                    id="testMode"
-                    defaultChecked={settings?.testMode ?? false}
-                    data-testid="switch-test-mode"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                <Button variant="outline" asChild>
-                  <a 
-                    href="https://www.skebby.it/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Vai a Skebby.it
-                  </a>
-                </Button>
-                <Button 
-                  onClick={() => {
-                    const formData = {
-                      username: (document.getElementById('username') as HTMLInputElement)?.value || '',
-                      password: (document.getElementById('password') as HTMLInputElement)?.value || '',
-                      accessToken: (document.getElementById('accessToken') as HTMLInputElement)?.value || '',
-                      webhookUrl: (document.getElementById('webhookUrl') as HTMLInputElement)?.value || '',
-                      defaultSender: (document.getElementById('defaultSender') as HTMLInputElement)?.value || '',
-                      deliveryReceiptsEnabled: (document.getElementById('deliveryReceipts') as HTMLInputElement)?.checked || false,
-                      isActive: (document.getElementById('isActive') as HTMLInputElement)?.checked || false,
-                      testMode: (document.getElementById('testMode') as HTMLInputElement)?.checked || false
-                    };
-                    saveSettings.mutate(formData);
-                  }}
-                  disabled={saveSettings.isPending}
-                  data-testid="button-save-settings"
-                >
-                  {saveSettings.isPending ? 'Salvando...' : 'Salva Configurazione'}
-                </Button>
-              </div>
-              </div>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>
