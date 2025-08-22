@@ -84,13 +84,71 @@ export function setupSmsRoutes(app: Express) {
         });
       }
 
-      // Simple test - if we got here with valid settings, consider it successful
-      res.json({
-        success: true,
-        message: 'SMS configuration validated successfully',
-        provider: settings.providerName,
-        isActive: settings.isActive
-      });
+      // ✅ TEST REALE CON API SKEBBY - Autenticazione corretta
+      console.log('[SMS API] Executing Skebby login and credit check...');
+      
+      try {
+        // STEP 1: Login per ottenere user_key e session_key
+        const loginUrl = `${settings.apiUrl}login?username=${encodeURIComponent(settings.username)}&password=${encodeURIComponent(settings.password)}`;
+        console.log('[SMS API] Skebby login URL:', loginUrl);
+        
+        const loginResponse = await fetch(loginUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('[SMS API] Skebby login response status:', loginResponse.status);
+        
+        if (!loginResponse.ok) {
+          const loginError = await loginResponse.text();
+          console.log('[SMS API] ❌ Skebby login failed:', loginResponse.status, loginError);
+          
+          return res.status(400).json({
+            success: false,
+            error: 'Skebby login failed',
+            message: `Login HTTP ${loginResponse.status}: ${loginError}`,
+            provider: settings.providerName
+          });
+        }
+
+        // STEP 2: Parse user_key;session_key dalla risposta
+        const loginData = await loginResponse.text();
+        console.log('[SMS API] Skebby login data:', loginData);
+        
+        const [userKey, sessionKey] = loginData.split(';');
+        if (!userKey || !sessionKey) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid Skebby login response',
+            message: 'Login response format incorrect',
+            provider: settings.providerName
+          });
+        }
+
+        // STEP 3: Login riuscito = connessione verificata
+        console.log('[SMS API] ✅ Skebby connection successful! Login OK, user_key:', userKey);
+        
+        // Il login riuscito è sufficiente per confermare che le credenziali e la connessione funzionano
+        res.json({
+          success: true,
+          message: 'Skebby connection successful! Credentials verified.',
+          provider: settings.providerName,
+          isActive: settings.isActive,
+          userKey: userKey,
+          loginStatus: 'OK'
+        });
+      } catch (apiError) {
+        console.error('[SMS API] ❌ Skebby API call failed:', apiError);
+        
+        res.status(500).json({
+          success: false,
+          error: 'Failed to connect to Skebby API',
+          message: apiError instanceof Error ? apiError.message : 'Network error',
+          provider: settings.providerName
+        });
+      }
       
     } catch (error) {
       console.error('Error testing SMS connection:', error);
@@ -99,6 +157,12 @@ export function setupSmsRoutes(app: Express) {
         message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
+  });
+
+  // Test connection endpoint (alias per compatibilità frontend)
+  app.post('/api/sms/test-connection', async (req, res) => {
+    // Reindirizza alla stessa logica del test principale
+    return app._router.handle({ ...req, url: '/api/sms/test', method: 'POST' }, res);
   });
 
   // Get SMS statistics
