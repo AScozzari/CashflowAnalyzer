@@ -1602,7 +1602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  // AI Chat endpoint - MISSING ENDPOINT ADDED
+  // AI Chat endpoint
   app.post("/api/ai/chat", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { message, sessionId } = req.body;
