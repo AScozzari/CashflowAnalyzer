@@ -1139,6 +1139,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize async after server setup
   setTimeout(initializeTelegramService, 1000);
 
+  // Analytics filtered movements endpoint
+  app.get("/api/analytics/filtered-movements", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = parseInt(req.query.pageSize as string) || 25;
+      
+      console.log("[ANALYTICS] Filtered movements request:", req.query);
+      
+      // Use existing movements filtered logic
+      const filters: any = {};
+      
+      // Date filters
+      if (req.query.createdDateFrom) filters.insertDateFrom = req.query.createdDateFrom;
+      if (req.query.createdDateTo) filters.insertDateTo = req.query.createdDateTo;
+      if (req.query.flowDateFrom) filters.flowDateFrom = req.query.flowDateFrom;
+      if (req.query.flowDateTo) filters.flowDateTo = req.query.flowDateTo;
+      
+      // Organization filters
+      if (req.query.companyId && req.query.companyId !== 'all') filters.companyId = req.query.companyId;
+      if (req.query.coreId && req.query.coreId !== 'all') filters.coreId = req.query.coreId;
+      if (req.query.officeId && req.query.officeId !== 'all') filters.officeId = req.query.officeId;
+      
+      // Financial filters
+      if (req.query.type && req.query.type !== 'all') filters.type = req.query.type;
+      if (req.query.amountFrom) filters.amountFrom = parseFloat(req.query.amountFrom as string);
+      if (req.query.amountTo) filters.amountTo = parseFloat(req.query.amountTo as string);
+      if (req.query.ibanId && req.query.ibanId !== 'all') filters.ibanId = req.query.ibanId;
+      
+      // External filters  
+      if (req.query.supplierId && req.query.supplierId !== 'all') filters.supplierId = req.query.supplierId;
+      if (req.query.resourceId && req.query.resourceId !== 'all') filters.resourceId = req.query.resourceId;
+      if (req.query.customerId && req.query.customerId !== 'all') filters.customerId = req.query.customerId;
+      
+      // Advanced filters
+      if (req.query.statusId && req.query.statusId !== 'all') filters.statusId = req.query.statusId;
+      if (req.query.reasonId && req.query.reasonId !== 'all') filters.reasonId = req.query.reasonId;
+      if (req.query.vatType && req.query.vatType !== 'all') filters.vatType = req.query.vatType;
+      if (req.query.hasVat !== undefined) filters.hasVat = req.query.hasVat === 'true';
+      if (req.query.hasDocument !== undefined) filters.hasDocument = req.query.hasDocument === 'true';
+      if (req.query.tagIds) {
+        const tagIds = Array.isArray(req.query.tagIds) ? req.query.tagIds : [req.query.tagIds];
+        filters.tagIds = tagIds.filter((id: any) => id !== 'all');
+      }
+
+      // Role-based filtering
+      if (req.user.role === 'user' && req.user.resourceId) {
+        filters.resourceId = req.user.resourceId;
+      }
+
+      console.log("[ANALYTICS] Using storage.getFilteredMovements with filters:", filters);
+      
+      // Use the existing getFilteredMovements method
+      const movements = await storage.getFilteredMovements({
+        user: req.user,
+        filters,
+        page,
+        pageSize
+      });
+
+      console.log("[ANALYTICS] Movements response:", {
+        totalMovements: movements?.movements?.length || 0,
+        pagination: movements?.pagination
+      });
+
+      res.json({
+        data: movements?.movements || [],
+        pagination: movements?.pagination || {
+          page,
+          pageSize,
+          total: 0,
+          totalPages: 0,
+          limit: pageSize,
+          offset: (page - 1) * pageSize
+        }
+      });
+
+    } catch (error) {
+      console.error('[ANALYTICS] Error fetching filtered movements:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch movements',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }));
+
   // Create and return HTTP server
   const httpServer = createServer(app);
   return httpServer;
