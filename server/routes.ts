@@ -112,8 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== MULTI-CHANNEL WEBHOOK SYSTEM ====================
   
   // Initialize and setup webhook system for all channels
-  const { WebhookRouter, storage } = await import('./webhook-manager');
-  // WebhookRouter.initializeAI(storage);
+  const { WebhookRouter } = await import('./webhook-manager');
   WebhookRouter.setupRoutes(app);
   
   console.log('✅ Multi-Channel Webhook System initialized:');
@@ -155,10 +154,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import storage dynamically to avoid circular dependency
   console.log('[DEBUG] Loading storage module dynamically...');
   const storageModule = await import('./storage');
-  const dbStorage = storageModule.storage;
-  console.log('[DEBUG] Storage loaded successfully:', !!dbStorage, typeof dbStorage);
+  const storage = storageModule.storage;
+  console.log('[DEBUG] Storage loaded successfully:', !!storage, typeof storage);
   
-  if (!dbStorage) {
+  if (!storage) {
     throw new Error('[ROUTES] Storage is undefined after dynamic import');
   }
 
@@ -170,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Companies
   app.get("/api/companies", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const companies = await dbStorage.getCompanies();
+      const companies = await storage.getCompanies();
       res.json(companies);
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -180,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/companies/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const company = await dbStorage.getCompanyWithRelations(req.params.id);
+      const company = await storage.getCompanyWithRelations(req.params.id);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
@@ -194,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/companies", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCompanySchema.parse(req.body);
-      const company = await dbStorage.createCompany(validatedData);
+      const company = await storage.createCompany(validatedData);
       res.status(201).json(company);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -211,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/companies/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCompanySchema.partial().parse(req.body);
-      const company = await dbStorage.updateCompany(req.params.id, validatedData);
+      const company = await storage.updateCompany(req.params.id, validatedData);
       res.json(company);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -227,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/companies/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await dbStorage.deleteCompany(req.params.id);
+      await storage.deleteCompany(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting company:', error);
@@ -240,8 +239,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { companyId } = req.query;
       const cores = companyId 
-        ? await dbStorage.getCoresByCompany(companyId as string)
-        : await dbStorage.getCores();
+        ? await storage.getCoresByCompany(companyId as string)
+        : await storage.getCores();
       res.json(cores);
     } catch (error) {
       console.error('Error fetching cores:', error);
@@ -252,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cores", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCoreSchema.parse(req.body);
-      const core = await dbStorage.createCore(validatedData);
+      const core = await storage.createCore(validatedData);
       res.status(201).json(core);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -269,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/cores/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCoreSchema.partial().parse(req.body);
-      const core = await dbStorage.updateCore(req.params.id, validatedData);
+      const core = await storage.updateCore(req.params.id, validatedData);
       res.json(core);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -285,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/cores/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await dbStorage.deleteCore(req.params.id);
+      await storage.deleteCore(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting core:', error);
@@ -298,8 +297,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { companyId } = req.query;
       const resources = companyId 
-        ? await dbStorage.getResourcesByCompany(companyId as string)
-        : await dbStorage.getResources();
+        ? await storage.getResourcesByCompany(companyId as string)
+        : await storage.getResources();
       res.json(resources);
     } catch (error) {
       console.error('Error fetching resources:', error);
@@ -310,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/resources", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertResourceSchema.parse(req.body);
-      const resource = await dbStorage.createResource(validatedData);
+      const resource = await storage.createResource(validatedData);
       res.status(201).json(resource);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -327,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/resources/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertResourceSchema.partial().parse(req.body);
-      const resource = await dbStorage.updateResource(req.params.id, validatedData);
+      const resource = await storage.updateResource(req.params.id, validatedData);
       res.json(resource);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -343,7 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/resources/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await dbStorage.deleteResource(req.params.id);
+      await storage.deleteResource(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting resource:', error);
@@ -354,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customers
   app.get("/api/customers", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const customers = await dbStorage.getCustomers();
+      const customers = await storage.getCustomers();
       res.json(customers);
     } catch (error) {
       console.error('Error fetching customers:', error);
@@ -365,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Suppliers
   app.get("/api/suppliers", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const suppliers = await dbStorage.getSuppliers();
+      const suppliers = await storage.getSuppliers();
       res.json(suppliers);
     } catch (error) {
       console.error('Error fetching suppliers:', error);
@@ -378,8 +377,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { companyId } = req.query;
       const ibans = companyId 
-        ? await dbStorage.getIbansByCompany(companyId as string)
-        : await dbStorage.getIbans();
+        ? await storage.getIbansByCompany(companyId as string)
+        : await storage.getIbans();
       res.json(ibans);
     } catch (error) {
       console.error('Error fetching IBANs:', error);
@@ -393,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[IBAN SERVER] User:', req.user?.username, req.user?.role);
       const validatedData = insertIbanSchema.parse(req.body);
       console.log('[IBAN SERVER] Dati validati:', validatedData);
-      const iban = await dbStorage.createIban(validatedData);
+      const iban = await storage.createIban(validatedData);
       console.log('[IBAN SERVER] IBAN creato con successo:', iban.id);
       res.status(201).json(iban);
     } catch (error) {
@@ -412,7 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/ibans/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertIbanSchema.partial().parse(req.body);
-      const iban = await dbStorage.updateIban(req.params.id, validatedData);
+      const iban = await storage.updateIban(req.params.id, validatedData);
       res.json(iban);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -428,7 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/ibans/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await dbStorage.deleteIban(req.params.id);
+      await storage.deleteIban(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting IBAN:', error);
@@ -441,8 +440,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { companyId } = req.query;
       const offices = companyId 
-        ? await dbStorage.getOfficesByCompany(companyId as string)
-        : await dbStorage.getOffices();
+        ? await storage.getOfficesByCompany(companyId as string)
+        : await storage.getOffices();
       res.json(offices);
     } catch (error) {
       console.error('Error fetching offices:', error);
@@ -453,7 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/offices", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertOfficeSchema.parse(req.body);
-      const office = await dbStorage.createOffice(validatedData);
+      const office = await storage.createOffice(validatedData);
       res.status(201).json(office);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -470,7 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/offices/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertOfficeSchema.partial().parse(req.body);
-      const office = await dbStorage.updateOffice(req.params.id, validatedData);
+      const office = await storage.updateOffice(req.params.id, validatedData);
       res.json(office);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -486,7 +485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/offices/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await dbStorage.deleteOffice(req.params.id);
+      await storage.deleteOffice(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting office:', error);
@@ -497,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tags
   app.get("/api/tags", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const tags = await dbStorage.getTags();
+      const tags = await storage.getTags();
       res.json(tags);
     } catch (error) {
       console.error('Error fetching tags:', error);
@@ -508,7 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tags", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertTagSchema.parse(req.body);
-      const tag = await dbStorage.createTag(validatedData);
+      const tag = await storage.createTag(validatedData);
       res.status(201).json(tag);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -525,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/tags/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertTagSchema.partial().parse(req.body);
-      const tag = await dbStorage.updateTag(req.params.id, validatedData);
+      const tag = await storage.updateTag(req.params.id, validatedData);
       res.json(tag);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -541,7 +540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/tags/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await dbStorage.deleteTag(req.params.id);
+      await storage.deleteTag(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting tag:', error);
@@ -552,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Movement Statuses
   app.get("/api/movement-statuses", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const statuses = await dbStorage.getMovementStatuses();
+      const statuses = await storage.getMovementStatuses();
       res.json(statuses);
     } catch (error) {
       console.error('Error fetching movement statuses:', error);
@@ -563,7 +562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Movement Reasons API
   app.get("/api/movement-reasons", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const reasons = await dbStorage.getMovementReasons();
+      const reasons = await storage.getMovementReasons();
       res.json(reasons);
     } catch (error) {
       console.error('Error fetching movement reasons:', error);
@@ -574,7 +573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/movement-reasons", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementReasonSchema.parse(req.body);
-      const reason = await dbStorage.createMovementReason(validatedData);
+      const reason = await storage.createMovementReason(validatedData);
       res.status(201).json(reason);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -591,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/movement-reasons/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementReasonSchema.partial().parse(req.body);
-      const reason = await dbStorage.updateMovementReason(req.params.id, validatedData);
+      const reason = await storage.updateMovementReason(req.params.id, validatedData);
       res.json(reason);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -607,7 +606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/movement-reasons/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await dbStorage.deleteMovementReason(req.params.id);
+      await storage.deleteMovementReason(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting movement reason:', error);
@@ -618,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/movement-statuses", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementStatusSchema.parse(req.body);
-      const status = await dbStorage.createMovementStatus(validatedData);
+      const status = await storage.createMovementStatus(validatedData);
       res.status(201).json(status);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -635,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/movement-statuses/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementStatusSchema.partial().parse(req.body);
-      const status = await dbStorage.updateMovementStatus(req.params.id, validatedData);
+      const status = await storage.updateMovementStatus(req.params.id, validatedData);
       res.json(status);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -651,7 +650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/movement-statuses/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await dbStorage.deleteMovementStatus(req.params.id);
+      await storage.deleteMovementStatus(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting movement status:', error);
@@ -683,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validFilters.resourceId = user.resourceId;
       }
 
-      const movements = await dbStorage.getMovements(validFilters);
+      const movements = await storage.getMovements(validFilters);
       
       // Apply pagination
       const pageNum = parseInt(page as string, 10);
@@ -766,7 +765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("[MOVEMENTS] Applying filters:", filters);
       
-      const movements = await dbStorage.getFilteredMovements(filters, page, pageSize);
+      const movements = await storage.getFilteredMovements(filters, page, pageSize);
       
       console.log("[MOVEMENTS] Filtered results:", movements?.data?.length || 0, "movements found");
       
@@ -795,7 +794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/movements/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const user = req.user;
-      const movement = await dbStorage.getMovement(req.params.id);
+      const movement = await storage.getMovement(req.params.id);
       if (!movement) {
         return res.status(404).json({ message: "Movement not found" });
       }
@@ -820,7 +819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const validatedData = insertMovementSchema.parse(movementData);
-      const movement = await dbStorage.createMovement(validatedData);
+      const movement = await storage.createMovement(validatedData);
       
       // Create notifications for new movement
       await createMovementNotifications(movement.id, 'new_movement', req.user.id);
@@ -845,7 +844,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...(req.file && { documentPath: req.file.path }),
       };
       const validatedData = insertMovementSchema.partial().parse(updateData);
-      const movement = await dbStorage.updateMovement(req.params.id, validatedData);
+      const movement = await storage.updateMovement(req.params.id, validatedData);
       
       // Create notifications for updated movement
       await createMovementNotifications(movement.id, 'movement_updated', req.user.id);
@@ -865,7 +864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/movements/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      await dbStorage.deleteMovement(req.params.id);
+      await storage.deleteMovement(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting movement:', error);
@@ -876,7 +875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Download movement document
   app.get("/api/movements/:id/document", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const movement = await dbStorage.getMovement(req.params.id);
+      const movement = await storage.getMovement(req.params.id);
       if (!movement) {
         return res.status(404).json({ message: "Movement not found" });
       }
@@ -937,7 +936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resourceIdFilter = user.resourceId;
       }
       
-      const stats = await dbStorage.getMovementStats(period, resourceIdFilter);
+      const stats = await storage.getMovementStats(period, resourceIdFilter);
       res.json(stats);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -965,7 +964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resourceIdFilter = user.resourceId;
       }
       
-      const data = await dbStorage.getCashFlowData(days, resourceIdFilter);
+      const data = await storage.getCashFlowData(days, resourceIdFilter);
       res.json(data);
     } catch (error) {
       console.error('Error fetching cash flow data:', error);
@@ -998,7 +997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filters.resourceId = resourceIdFilter;
       }
       
-      const movements = await dbStorage.getMovements(filters);
+      const movements = await storage.getMovements(filters);
       
       // Raggruppa per giorno e calcola totali
       const dailyData: { [key: string]: { income: number; expenses: number; net: number } } = {};
@@ -1058,7 +1057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filters.resourceId = user.resourceId;
       }
       
-      const movements = await dbStorage.getMovements(filters);
+      const movements = await storage.getMovements(filters);
       
       // Ordina per data più recente - TUTTI i movimenti del mese corrente
       const currentMonthMovements = movements
@@ -1078,7 +1077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const isRead = req.query.isRead === 'true' ? true : req.query.isRead === 'false' ? false : undefined;
-      const notifications = await dbStorage.getNotifications(userId, isRead);
+      const notifications = await storage.getNotifications(userId, isRead);
       res.json(notifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -1090,7 +1089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       // Get count manually since getUnreadNotificationsCount doesn't exist  
-      const notifications = await dbStorage.getNotifications(userId, false);
+      const notifications = await storage.getNotifications(userId, false);
       const count = notifications.length;
       res.json({ count });
     } catch (error) {
@@ -1188,10 +1187,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filters.resourceId = req.user.resourceId;
       }
 
-      console.log("[ANALYTICS] Using dbStorage.getFilteredMovements with filters:", filters);
+      console.log("[ANALYTICS] Using storage.getFilteredMovements with filters:", filters);
       
       // Use the existing getFilteredMovements method with correct syntax
-      const movements = await dbStorage.getFilteredMovements(filters, page, pageSize);
+      const movements = await storage.getFilteredMovements(filters, page, pageSize);
 
       console.log("[ANALYTICS] Movements response:", {
         totalMovements: movements?.data?.length || 0,
@@ -1202,11 +1201,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: movements.data || [],
         pagination: movements.pagination || {
           page,
-          pageSize,
-          total: movements.pagination?.total || 0,
-          totalPages: movements.pagination?.totalPages || 0,
           limit: pageSize,
-          offset: (page - 1) * pageSize
+          total: 0,
+          totalPages: 0
         }
       });
 
