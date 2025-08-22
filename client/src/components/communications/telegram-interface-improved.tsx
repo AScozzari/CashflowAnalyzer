@@ -80,23 +80,39 @@ export function TelegramInterfaceImproved() {
   const [showMessageAnalysis, setShowMessageAnalysis] = useState(false);
   const { toast } = useToast();
 
-  // Genera ultimo messaggio per preview chat - DEFINITA PRIMA DELL'USO
-  const generateLastMessage = (chat: any) => {
-    const messages = [
-      "Ciao! Come posso aiutarti? 🤖",
-      "Perfetto, ho inviato le informazioni richieste ✅",
-      "Grazie per avermi contattato! 📱", 
-      "Hai ricevuto il documento? 📄",
-      "Tutto ok per il servizio? 💬",
-      "Bot attivo e funzionante! 🚀"
-    ];
-    return messages[Math.floor(Math.random() * messages.length)];
+  // 🔥 DATI REALI: Calcola ultimo messaggio e last seen da dati veri
+  const getLastMessagePreview = (chat: any) => {
+    // Se non ci sono messaggi, mostra placeholder
+    if (!chat.lastMessageAt) return 'Nessun messaggio';
+    
+    // Cerca il messaggio più recente nei messaggi della chat (se disponibili)
+    if (telegramMessages && telegramMessages.length > 0 && selectedChat?.id === chat.id) {
+      const lastMsg = telegramMessages[telegramMessages.length - 1];
+      if (lastMsg && lastMsg.content) {
+        return lastMsg.content.length > 50 ? lastMsg.content.substring(0, 50) + '...' : lastMsg.content;
+      }
+    }
+    
+    // Fallback: usa un messaggio generico basato sull'attività
+    return 'Messaggio ricevuto';
   };
 
-  // Genera last seen per chat - DEFINITA PRIMA DELL'USO
-  const generateLastSeen = (chat: any) => {
-    const times = ['Online', '5 min fa', '1 ora fa', '2 ore fa', 'Ieri', '2 giorni fa'];
-    return times[Math.floor(Math.random() * times.length)];
+  const getLastSeenFromTimestamp = (timestamp: string | null) => {
+    if (!timestamp) return 'Mai visto';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 1) return 'Online';
+    if (diffMins < 60) return `${diffMins} min fa`;
+    if (diffHours < 24) return `${diffHours} ore fa`;
+    if (diffDays === 1) return 'Ieri';
+    if (diffDays < 7) return `${diffDays} giorni fa`;
+    return 'Oltre una settimana fa';
   };
 
   // Genera nome contatto - DEFINITA PRIMA DELL'USO
@@ -150,9 +166,9 @@ export function TelegramInterfaceImproved() {
         firstName: chat.firstName,
         lastName: chat.lastName,
         phoneNumber: chat.phoneNumber,
-        lastMessage: generateLastMessage(chat),
+        lastMessage: getLastMessagePreview(chat),
         lastMessageAt: chat.lastMessageAt,
-        lastSeen: generateLastSeen(chat),
+        lastSeen: getLastSeenFromTimestamp(chat.lastMessageAt),
         messageCount: chat.messageCount || 0,
         unreadCount: Math.floor(Math.random() * 3), // Mock unread count
         online: Math.random() > 0.7, // Mock online status
