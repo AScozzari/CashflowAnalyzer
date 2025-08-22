@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import type { MovementWithRelations } from "@shared/schema";
+import RecentActivities from "./recent-activities";
 
 // Interfacce ottimizzate
 interface DashboardStats {
@@ -329,45 +330,9 @@ export default function OptimizedDashboard() {
               <QuickActions />
             </ErrorBoundary>
             
-            {/* Recent Activity - All Current Month */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Movimenti Mese Corrente ({movements?.length || 0})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {movementsLoading ? (
-                  <LoadingSkeleton lines={4} />
-                ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {movements?.map((movement: MovementWithRelations, index: number) => (
-                      <div key={movement.id || index} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-full ${
-                            movement.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                          }`}>
-                            {movement.type === 'income' ? 
-                              <ArrowUpRight className="h-3 w-3" /> : 
-                              <ArrowDownLeft className="h-3 w-3" />
-                            }
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{movement.reason || 'Movimento generico'}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {format(new Date(movement.flowDate), 'dd/MM/yyyy')}
-                            </p>
-                          </div>
-                        </div>
-                        <div className={`text-sm font-medium ${
-                          movement.type === 'income' ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {movement.type === 'income' ? '+' : '-'}€{movement.amount}
-                        </div>
-                      </div>
-                    )) || []}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <ErrorBoundary>
+              <RecentActivities />
+            </ErrorBoundary>
           </div>
         </div>
       </div>

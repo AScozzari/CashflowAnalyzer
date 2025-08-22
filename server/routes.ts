@@ -1385,6 +1385,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Recent activities endpoint - includes movements and Telegram messages
+  app.get("/api/recent-activities", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Get recent movements (last 10)
+      const recentMovements = await storage.getMovements(1, 10);
+      
+      // Get recent Telegram chats with messages
+      const telegramChats = await storage.getTelegramChats();
+      
+      // Combine and format activities
+      const activities = [];
+      
+      // Add movements as activities
+      if (recentMovements?.data) {
+        recentMovements.data.forEach((movement: any) => {
+          activities.push({
+            id: movement.id,
+            type: 'movement',
+            title: movement.description || movement.reason || 'Movimento finanziario',
+            subtitle: `€${movement.amount} • ${movement.type === 'income' ? 'Entrata' : 'Uscita'}`,
+            timestamp: movement.flowDate || movement.createdAt,
+            icon: movement.type === 'income' ? 'arrow-up-right' : 'arrow-down-left',
+            color: movement.type === 'income' ? 'green' : 'red',
+            route: '/movements'
+          });
+        });
+      }
+      
+      // Add Telegram messages as activities  
+      if (telegramChats) {
+        telegramChats.forEach((chat: any) => {
+          if (chat.lastMessageAt) {
+            activities.push({
+              id: `telegram-${chat.id}`,
+              type: 'telegram',
+              title: `${chat.firstName || chat.username || 'Chat'} ${chat.lastName || ''}`.trim(),
+              subtitle: `Ultimo messaggio • Telegram`,
+              timestamp: chat.lastMessageAt,
+              icon: 'message-circle',
+              color: 'blue',
+              route: '/communications'
+            });
+          }
+        });
+      }
+      
+      // Sort by timestamp (most recent first) and limit to 15
+      const sortedActivities = activities
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 15);
+      
+      res.json(sortedActivities);
+    } catch (error) {
+      console.error('Error fetching recent activities:', error);
+      res.status(500).json({ message: "Failed to fetch recent activities" });
+    }
+  }));
+
   // Create and return HTTP server
   const httpServer = createServer(app);
   return httpServer;
