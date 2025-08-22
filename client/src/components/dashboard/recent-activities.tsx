@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  ArrowUpRight, 
-  ArrowDownLeft, 
   MessageCircle,
+  Smartphone,
+  Mail,
+  Send,
+  MessageSquare,
   Clock,
   Activity
 } from "lucide-react";
@@ -16,7 +18,7 @@ import { it } from "date-fns/locale";
 
 interface RecentActivity {
   id: string;
-  type: 'movement' | 'telegram';
+  type: 'whatsapp' | 'sms' | 'email' | 'telegram' | 'messenger';
   title: string;
   subtitle: string;
   timestamp: string;
@@ -43,18 +45,23 @@ export default function RecentActivities({ className }: RecentActivitiesProps) {
       color === 'green' ? 'text-green-600' : 
       color === 'red' ? 'text-red-600' : 
       color === 'blue' ? 'text-blue-600' : 
+      color === 'purple' ? 'text-purple-600' :
       'text-gray-600'
     }`;
 
     switch (iconName) {
-      case 'arrow-up-right':
-        return <ArrowUpRight className={iconClass} />;
-      case 'arrow-down-left':
-        return <ArrowDownLeft className={iconClass} />;
       case 'message-circle':
         return <MessageCircle className={iconClass} />;
+      case 'smartphone':
+        return <Smartphone className={iconClass} />;
+      case 'mail':
+        return <Mail className={iconClass} />;
+      case 'send':
+        return <Send className={iconClass} />;
+      case 'message-square':
+        return <MessageSquare className={iconClass} />;
       default:
-        return <Activity className={iconClass} />;
+        return <MessageCircle className={iconClass} />;
     }
   };
 
@@ -62,6 +69,7 @@ export default function RecentActivities({ className }: RecentActivitiesProps) {
     return color === 'green' ? 'bg-green-50 dark:bg-green-950/30' : 
            color === 'red' ? 'bg-red-50 dark:bg-red-950/30' : 
            color === 'blue' ? 'bg-blue-50 dark:bg-blue-950/30' : 
+           color === 'purple' ? 'bg-purple-50 dark:bg-purple-950/30' :
            'bg-gray-50 dark:bg-gray-950/30';
   };
 

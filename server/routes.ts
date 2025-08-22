@@ -1225,6 +1225,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Recent communications activities for communications center
+  app.get("/api/recent-activities", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get all communication notifications (not movements) ordered by date
+      const notifications = await storage.getNotifications(userId);
+      const communicationNotifications = notifications.filter(notif => 
+        ['whatsapp', 'sms', 'email', 'telegram', 'messenger'].includes(notif.category)
+      );
+      
+      // Limit to 25 most recent and format for frontend
+      const recentActivities = communicationNotifications
+        .slice(0, 25)
+        .map(notif => ({
+          id: notif.id,
+          type: notif.category, // 'whatsapp', 'sms', 'email', 'telegram', 'messenger'
+          title: notif.title,
+          subtitle: notif.message,
+          timestamp: notif.createdAt.toISOString(),
+          icon: getChannelIcon(notif.category),
+          color: getChannelColor(notif.category),
+          route: notif.actionUrl || '/communications'
+        }));
+      
+      res.json(recentActivities);
+    } catch (error) {
+      console.error('Error fetching recent activities:', error);
+      res.status(500).json({ error: 'Failed to fetch recent activities' });
+    }
+  }));
+  
+  // Helper functions for channels
+  function getChannelIcon(category: string): string {
+    switch(category) {
+      case 'whatsapp': return 'message-circle';
+      case 'sms': return 'smartphone';
+      case 'email': return 'mail';
+      case 'telegram': return 'send';
+      case 'messenger': return 'message-square';
+      default: return 'message-circle';
+    }
+  }
+  
+  function getChannelColor(category: string): string {
+    switch(category) {
+      case 'whatsapp': return 'green';
+      case 'sms': return 'purple';
+      case 'email': return 'blue';
+      case 'telegram': return 'blue';
+      case 'messenger': return 'blue';
+      default: return 'gray';
+    }
+  }
+
   // Setup communication routes
   setupWhatsAppRoutes(app);
   setupTelegramRoutes(app);
