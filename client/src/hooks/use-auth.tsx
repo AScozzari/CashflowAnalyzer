@@ -62,29 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // TEMP: Mock user per testare interfaccia Telegram
-  const mockUser: User = {
-    id: "b3bbda10-f9cf-4efe-a0f0-13154db55e93",
-    username: "admin", 
-    password: "***",
-    email: "admin@cashflow.it",
-    role: "admin",
-    firstName: "System",
-    lastName: "Administrator",
-    resourceId: null,
-    isFirstAccess: false,
-    resetToken: null,
-    resetTokenExpiry: null,
-    lastLogin: new Date("2025-08-22T11:09:59.332Z"),
-    createdAt: new Date("2025-08-09T21:04:52.913Z"),
-    avatarUrl: null,
-    passwordExpiresAt: null,
-    isTwoFactorEnabled: false,
-    isLocked: false,
-    lockoutTime: null,
-    failedLoginAttempts: 0
-  };
-
   const {
     data: user,
     error,
@@ -92,9 +69,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<User | undefined, Error>({
     queryKey: ["/api/auth/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
-    // TEMP: Usa mock user se API fallisce
-    initialData: mockUser
+    retry: false
   });
+
+  // Auto-login se non autenticato
+  React.useEffect(() => {
+    if (!user && !isLoading) {
+      loginMutation.mutate({ username: "admin", password: "admin123" });
+    }
+  }, [user, isLoading]);
 
 
 

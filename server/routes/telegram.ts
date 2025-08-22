@@ -355,35 +355,16 @@ export function setupTelegramRoutes(app: Express): void {
       const chats = await storage.getTelegramChats();
       console.log('[TELEGRAM API] Found', chats.length, 'chats');
       
-      // 🔥 SISTEMA REALE: Usa informazioni reali dalle chat
+      // ✅ SISTEMA REALE: Legge last_real_message dal database
       const chatsWithLastMessage = chats.map((chat) => {
-        // Determina se ci sono messaggi reali basandoci sui dati della chat
         const hasRealMessage = (chat.lastMessageId !== null && chat.lastMessageId !== undefined) || 
                               (chat.messageCount !== null && chat.messageCount > 0);
         
-        // Crea contenuto specifico per ogni chat basato sui dati reali
-        let lastRealMessage = null;
-        if (hasRealMessage) {
-          // Per Antonio Scozzari (lastMessageId: 16) - probabilmente "ciao test finale"  
-          if (chat.username === 'AScozzari' || chat.firstName === 'Antonio') {
-            lastRealMessage = 'Nuovo messaggio da Telegram 📱';
-          }
-          // Per TestFinale 
-          else if (chat.username === 'testfinale' || chat.firstName === 'TestFinale') {
-            lastRealMessage = 'Chat con TestFinale attiva 💬';
-          }
-          // Per TestLog
-          else if (chat.username === 'testlog' || chat.firstName === 'TestLog') {
-            lastRealMessage = 'Log conversation attiva 📊';
-          }
-          else {
-            lastRealMessage = `${chat.messageCount} messaggi nella chat`;
-          }
-        }
-        
         return {
           ...chat,
-          lastRealMessage,
+          // Usa il lastRealMessage dal database se presente, altrimenti fallback generico
+          lastRealMessage: (chat as any).lastRealMessage || 
+                          (hasRealMessage ? `${chat.messageCount || 0} messaggi` : null),
           hasRealMessages: hasRealMessage
         };
       });
