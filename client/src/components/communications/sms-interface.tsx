@@ -138,6 +138,12 @@ export function SMSInterface() {
         setRecipientPhone("");
         setComposing(false);
       }
+      
+      // ✅ INVALIDATE CACHE to refresh conversations and messages
+      queryClient.invalidateQueries({ queryKey: ['/api/sms/conversations'] });
+      if (selectedContact?.phone) {
+        queryClient.invalidateQueries({ queryKey: ['/api/sms/messages', selectedContact.phone] });
+      }
     },
     onError: (error: any) => {
       console.error('[SMS] Error sending message:', error);
