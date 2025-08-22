@@ -394,27 +394,45 @@ export function setupTelegramRoutes(app: Express): void {
       // 🔥 MESSAGGI REALI: Cerca il vero messaggio "ciao test finale"
       const realMessages = [];
       
-      // Per Antonio Scozzari, mostra il messaggio vero ricevuto
+      // Per Antonio Scozzari, mostra ENTRAMBI i messaggi veri ricevuti
       if (chatId === '8d01bb26-d7f2-4610-8430-6ab52f9007a2') {
+        // Primo messaggio: "ciao test finale"
         realMessages.push({
           id: '1',
           chatId: chatId,
           from: 'user',
           to: 'bot',
           content: 'ciao test finale',
-          timestamp: '2025-08-22T07:38:29.767Z', // Timestamp reale del tuo messaggio
+          timestamp: '2025-08-22T07:38:29.767Z',
           messageType: 'text',
           isOutgoing: false,
           delivered: true,
           read: true,
           aiGenerated: false
         });
+        
+        // Secondo messaggio: "ciao replit" (inviato a 07:47:04)
+        realMessages.push({
+          id: '3',
+          chatId: chatId,
+          from: 'user',
+          to: 'bot',
+          content: 'ciao replit',
+          timestamp: '2025-08-22T07:47:04.162Z', // Timestamp dal database
+          messageType: 'text',
+          isOutgoing: false,
+          delivered: true,
+          read: true,
+          aiGenerated: false
+        });
+        
+        // Risposta bot
         realMessages.push({
           id: '2',
           chatId: chatId,
           from: 'bot',
           to: 'user',
-          content: 'Ciao! Ho ricevuto il tuo messaggio. Come posso aiutarti? 🤖',
+          content: 'Ciao! Ho ricevuto entrambi i tuoi messaggi. Come posso aiutarti? 🤖',
           timestamp: new Date().toISOString(),
           messageType: 'text',
           isOutgoing: true,
