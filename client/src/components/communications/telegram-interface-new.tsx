@@ -22,7 +22,9 @@ import {
   TestTube,
   Bot,
   User,
-  Zap
+  Zap,
+  Archive,
+  Trash2
 } from "lucide-react";
 import { ContactSearchEnhanced } from "./contact-search-enhanced";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -172,6 +174,53 @@ export function TelegramInterfaceNew() {
     }
   });
 
+  // Archive chat mutation
+  const archiveChatMutation = useMutation({
+    mutationFn: async (chatId: string) => {
+      const response = await apiRequest('PUT', `/api/telegram/chats/${chatId}`, {
+        isArchived: true
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ 
+        title: '✅ Chat Archiviata', 
+        description: 'La chat è stata archiviata con successo' 
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/telegram/chats'] });
+    },
+    onError: () => {
+      toast({ 
+        title: '❌ Errore Archiviazione', 
+        description: 'Impossibile archiviare la chat',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Delete chat mutation
+  const deleteChatMutation = useMutation({
+    mutationFn: async (chatId: string) => {
+      const response = await apiRequest('DELETE', `/api/telegram/chats/${chatId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ 
+        title: '✅ Chat Eliminata', 
+        description: 'La chat è stata eliminata permanentemente' 
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/telegram/chats'] });
+      setSelectedChat(null);
+    },
+    onError: () => {
+      toast({ 
+        title: '❌ Errore Eliminazione', 
+        description: 'Impossibile eliminare la chat',
+        variant: 'destructive'
+      });
+    }
+  });
+
   const sendMessage = () => {
     if (!messageInput.trim()) {
       toast({ 
@@ -193,7 +242,17 @@ export function TelegramInterfaceNew() {
     }
     
     console.log('[TELEGRAM] Sending message:', messageInput, 'to chat:', recipient);
-    sendMessageMutation.mutate({ chatId: recipient, message: messageInput });
+    console.log('[TELEGRAM] selectedChat debug:', selectedChat);
+    console.log('[TELEGRAM] telegramChatId:', selectedChat?.telegramChatId);
+    
+    // ✅ FORCE USE NUMERIC CHAT ID TO FIX SENDING ISSUE
+    const finalChatId = composing ? recipientUsername : selectedChat?.telegramChatId;
+    if (!finalChatId) {
+      console.error('[TELEGRAM] ❌ No valid chat ID found!');
+      return;
+    }
+    
+    sendMessageMutation.mutate({ chatId: finalChatId, message: messageInput });
   };
 
   const useTemplate = (template: TelegramTemplate) => {
@@ -403,6 +462,38 @@ export function TelegramInterfaceNew() {
                                   {chat.unreadCount}
                                 </Badge>
                               )}
+                              
+                              {/* Chat Actions */}
+                              <div className="flex ml-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    archiveChatMutation.mutate(chat.id);
+                                  }}
+                                  disabled={archiveChatMutation.isPending}
+                                  data-testid={`button-archive-chat-${chat.telegramChatId}`}
+                                >
+                                  <Archive className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm('Eliminare questa chat?')) {
+                                      deleteChatMutation.mutate(chat.id);
+                                    }
+                                  }}
+                                  disabled={deleteChatMutation.isPending}
+                                  data-testid={`button-delete-chat-${chat.telegramChatId}`}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>

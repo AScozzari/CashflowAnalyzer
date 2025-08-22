@@ -582,4 +582,46 @@ export function setupTelegramRoutes(app: Express): void {
       res.status(500).json({ error: 'Failed to fetch stats' });
     }
   });
+
+  // Update Telegram chat (for archiving)
+  app.put('/api/telegram/chats/:id', async (req, res) => {
+    try {
+      const { isArchived, notes } = req.body;
+      
+      const updatedChat = await storage.updateTelegramChat(req.params.id, {
+        notes: notes || null,
+        updatedAt: new Date()
+      });
+      
+      if (!updatedChat) {
+        return res.status(404).json({ error: 'Chat not found' });
+      }
+      
+      console.log(`[TELEGRAM API] Chat ${isArchived ? 'archived' : 'updated'}: ${req.params.id}`);
+      res.json(updatedChat);
+    } catch (error) {
+      console.error('Error updating Telegram chat:', error);
+      res.status(500).json({ error: 'Failed to update chat' });
+    }
+  });
+
+  // Delete Telegram chat
+  app.delete('/api/telegram/chats/:id', async (req, res) => {
+    try {
+      // First delete all messages in this chat
+      await storage.deleteTelegramMessagesByChatId(req.params.id);
+      
+      // Then delete the chat
+      const deletedRows = await storage.deleteTelegramChat(req.params.id);
+      if (deletedRows === 0) {
+        return res.status(404).json({ error: 'Chat not found' });
+      }
+      
+      console.log(`[TELEGRAM API] Chat deleted: ${req.params.id}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting Telegram chat:', error);
+      res.status(500).json({ error: 'Failed to delete chat' });
+    }
+  });
 }
