@@ -41,79 +41,129 @@ interface SystemMetrics {
 }
 
 export function ConfigPreviewMini() {
-  const [channels, setChannels] = useState<ChannelUsage[]>([]);
-  const [metrics, setMetrics] = useState<SystemMetrics>({
-    totalChannels: 4,
-    activeChannels: 0,
-    configurationHealth: 0,
-    lastUpdate: new Date().toLocaleString('it-IT')
+  // 🔥 DATI REALI - Fetch delle statistiche WhatsApp
+  const { data: whatsappStats } = useQuery<{total: number; unread: number; today: number}>({
+    queryKey: ['/api/whatsapp/stats'],
+    select: (data: any) => ({
+      total: data?.totalChats || 0,
+      unread: data?.unreadMessages || 0,
+      today: data?.todayMessages || 0
+    }),
+    retry: false,
   });
 
-  useEffect(() => {
-    // Simulate loading channel usage data
-    const mockChannels: ChannelUsage[] = [
-      {
-        id: 'whatsapp',
-        name: 'WhatsApp',
-        icon: <MessageSquare className="w-4 h-4" />,
-        status: 'configured',
-        currentUsage: 4440,
-        monthlyLimit: 10000,
-        usagePercentage: 44,
-        lastUsed: '2 ore fa',
-        messagesThisMonth: 4440,
-        cost: '€22.50'
-      },
-      {
-        id: 'email',
-        name: 'Email',
-        icon: <Mail className="w-4 h-4" />,
-        status: 'configured',
-        currentUsage: 2340,
-        monthlyLimit: 50000,
-        usagePercentage: 5,
-        lastUsed: '1 giorno fa',
-        messagesThisMonth: 2340,
-        cost: '€8.90'
-      },
-      {
-        id: 'sms',
-        name: 'SMS',
-        icon: <Phone className="w-4 h-4" />,
-        status: 'configured',
-        currentUsage: 340,
-        monthlyLimit: 1000,
-        usagePercentage: 34,
-        lastUsed: '5 ore fa',
-        messagesThisMonth: 340,
-        cost: '€15.60'
-      },
-      {
-        id: 'telegram',
-        name: 'Telegram',
-        icon: <Send className="w-4 h-4" />,
-        status: 'not_configured',
-        currentUsage: 0,
-        monthlyLimit: 10000,
-        usagePercentage: 0,
-        lastUsed: 'Mai',
-        messagesThisMonth: 0,
-        cost: '€0.00'
-      }
-    ];
+  const { data: whatsappChats = [] } = useQuery<any[]>({
+    queryKey: ['/api/whatsapp/chats'],
+    retry: false,
+  });
 
-    setChannels(mockChannels);
+  // 🔥 DATI REALI - Fetch delle statistiche Telegram
+  const { data: telegramStats } = useQuery<{total: number; unread: number; today: number}>({
+    queryKey: ['/api/telegram/stats'],
+    select: (data: any) => ({
+      total: data?.totalChats || 0,
+      unread: data?.unreadMessages || 0, 
+      today: data?.todayMessages || 0
+    }),
+    retry: false,
+  });
 
-    // Calculate metrics
-    const activeChannelsCount = mockChannels.filter(ch => ch.status === 'configured').length;
-    const avgUsage = mockChannels.reduce((acc, ch) => acc + ch.usagePercentage, 0) / mockChannels.length;
+  const { data: telegramChats = [] } = useQuery<any[]>({
+    queryKey: ['/api/telegram/chats'],
+    retry: false,
+  });
 
-    setMetrics(prev => ({
-      ...prev,
-      activeChannels: activeChannelsCount,
-      configurationHealth: Math.round(avgUsage)
-    }));
-  }, []);
+  // Helper function to calculate last used
+  const getLastUsed = (chats: any[], type: string) => {
+    if (!chats || chats.length === 0) return 'Mai utilizzato';
+    
+    const latestChat = chats
+      .filter(chat => chat.lastMessageAt)
+      .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime())[0];
+    
+    if (!latestChat) return 'Nessuna attività';
+    
+    const lastMessage = new Date(latestChat.lastMessageAt);
+    const now = new Date();
+    const diffMs = now.getTime() - lastMessage.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 1) return 'Ora';
+    if (diffMins < 60) return `${diffMins} min fa`;
+    if (diffHours < 24) return `${diffHours} ore fa`;
+    if (diffDays === 1) return 'Ieri';
+    if (diffDays < 7) return `${diffDays} giorni fa`;
+    return 'Oltre una settimana fa';
+  };
+
+  // Calcolo costi approssimativi (simulati)
+  const calculateCost = (messageCount: number, costPerMessage: number) => {
+    return `€${(messageCount * costPerMessage).toFixed(2)}`;
+  };
+
+  // 🔥 CANALI CON DATI REALI
+  const channels: ChannelUsage[] = [
+    {
+      id: 'whatsapp',
+      name: 'WhatsApp',
+      icon: <MessageSquare className="w-4 h-4" />,
+      status: whatsappChats.length > 0 ? 'configured' : 'not_configured',
+      currentUsage: whatsappStats?.total || 0,
+      monthlyLimit: 10000,
+      usagePercentage: Math.round(((whatsappStats?.total || 0) / 10000) * 100),
+      lastUsed: getLastUsed(whatsappChats, 'whatsapp'),
+      messagesThisMonth: whatsappStats?.total || 0,
+      cost: calculateCost(whatsappStats?.total || 0, 0.005) // 0.5 centesimi per messaggio
+    },
+    {
+      id: 'email',
+      name: 'Email',
+      icon: <Mail className="w-4 h-4" />,
+      status: 'configured', // Assumiamo sia sempre configurato
+      currentUsage: 1200, // Mock per ora, da implementare endpoint dedicato
+      monthlyLimit: 50000,
+      usagePercentage: 2,
+      lastUsed: '3 ore fa',
+      messagesThisMonth: 1200,
+      cost: '€4.80'
+    },
+    {
+      id: 'sms',
+      name: 'SMS',
+      icon: <Phone className="w-4 h-4" />,
+      status: 'configured', // Mock per ora, da implementare endpoint dedicato
+      currentUsage: 180,
+      monthlyLimit: 1000,
+      usagePercentage: 18,
+      lastUsed: '1 giorno fa',
+      messagesThisMonth: 180,
+      cost: '€8.10'
+    },
+    {
+      id: 'telegram',
+      name: 'Telegram',
+      icon: <Send className="w-4 h-4" />,
+      status: telegramChats.length > 0 ? 'configured' : 'not_configured',
+      currentUsage: telegramStats?.total || 0,
+      monthlyLimit: 10000,
+      usagePercentage: Math.round(((telegramStats?.total || 0) / 10000) * 100),
+      lastUsed: getLastUsed(telegramChats, 'telegram'),
+      messagesThisMonth: telegramStats?.total || 0,
+      cost: calculateCost(telegramStats?.total || 0, 0.002) // 0.2 centesimi per messaggio
+    }
+  ];
+
+  // 🔥 METRICHE REALI
+  const metrics: SystemMetrics = {
+    totalChannels: channels.length,
+    activeChannels: channels.filter(ch => ch.status === 'configured').length,
+    configurationHealth: Math.round(
+      channels.reduce((acc, ch) => acc + ch.usagePercentage, 0) / channels.length
+    ),
+    lastUpdate: new Date().toLocaleString('it-IT')
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
