@@ -277,10 +277,14 @@ export function setupSmsRoutes(app: Express) {
           
           if (!existingCustomer && !existingResource) {
             console.log('[SMS API] Creating anonymous customer for:', cleanPhoneNumber);
+            // Genera nome unico usando più cifre e timestamp per evitare duplicati
+            const phoneDigits = cleanPhoneNumber.replace(/\D/g, '').slice(-6); // Ultimi 6 numeri invece di 4
+            const timestamp = Date.now().toString().slice(-3); // Ultimi 3 cifre timestamp
+            
             await storage.createCustomer({
-              name: `Cliente Anonimo ${cleanPhoneNumber.slice(-4)}`,
-              type: 'individual',
-              email: `anonimo${cleanPhoneNumber.slice(-4).replace('+', '')}@sms-contact.local`,
+              name: `Cliente Anonimo ${phoneDigits}-${timestamp}`,
+              type: 'private', // Usa 'private' invece di 'individual' per rispettare il constraint
+              email: `anonimo${phoneDigits}${timestamp}@sms-contact.local`,
               phone: cleanPhoneNumber,
               address: 'Non specificato',
               city: 'Non specificato', 

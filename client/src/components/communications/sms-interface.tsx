@@ -194,7 +194,8 @@ export function SMSInterface() {
       return;
     }
     
-    const recipient = selectedContact?.phone || recipientPhone;
+    // Se l'utente ha digitato un numero diverso, usa quello invece del contatto selezionato
+    const recipient = recipientPhone.trim() ? recipientPhone : selectedContact?.phone;
     if (!recipient) {
       toast({ 
         title: 'Destinatario mancante', 
@@ -207,8 +208,18 @@ export function SMSInterface() {
     // Clean phone number (remove spaces, dashes, +39 prefix if present)
     const cleanPhone = recipient.replace(/[\s\-+]/g, '').replace(/^39/, '');
     
-    console.log('[SMS] Sending message:', messageInput, 'to:', cleanPhone);
-    sendSmsMutation.mutate({ to: cleanPhone, message: messageInput });
+    // Remove emoji and special characters for Skebby compatibility
+    const cleanMessage = messageInput.replace(/[^\x00-\x7F]/g, '').trim();
+    if (cleanMessage !== messageInput) {
+      toast({ 
+        title: '⚠️ Messaggio modificato', 
+        description: 'Rimossi emoji e caratteri speciali per compatibilità SMS',
+        variant: 'default'
+      });
+    }
+    
+    console.log('[SMS] Sending message:', cleanMessage, 'to:', cleanPhone);
+    sendSmsMutation.mutate({ to: cleanPhone, message: cleanMessage });
   };
 
   const useTemplate = (template: SMSTemplate) => {
