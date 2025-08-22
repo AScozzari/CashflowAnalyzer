@@ -79,3 +79,27 @@ Preferred communication style: Simple, everyday language.
 - **Banking APIs**: UniCredit, Intesa Sanpaolo, CBI Globe, NEXI.
 - **Communication Platforms**: Twilio, LinkMobility (WhatsApp), Skebby (SMS), Facebook Messenger.
 - **AI**: OpenAI.
+
+## Skebby SMS API Integration Details
+- **Base URL**: `https://api.skebby.it/API/v1.0/REST/`
+- **Authentication**: Two-step process using username/password → user_key + session_key
+- **Message Quality Types**:
+  - `GP` (High Quality): Premium SMS with guaranteed delivery
+  - `TI` (Medium Quality): Standard SMS 
+  - `SI` (Low Quality): Basic SMS with lower cost
+- **Core Features**:
+  - Single SMS sending (`POST /sms`)
+  - Bulk SMS to groups
+  - Scheduled delivery with datetime
+  - Webhook support for delivery receipts
+  - Contact management with custom fields
+  - SMS templates system
+  - Blacklist/Stop SMS management
+  - Two-factor authentication SMS
+  - TPOA aliases (custom sender names)
+  - Subaccount management
+  - Real-time delivery status tracking
+- **Authentication Headers**: `user_key` and `Session_key` required for all API calls
+- **Request Format**: JSON payload for POST requests
+- **Response Format**: JSON with `result: "OK"` for success
+- **Integration Pattern**: Login → Get credentials → Send SMS with auth headers
