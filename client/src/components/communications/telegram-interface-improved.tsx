@@ -92,11 +92,12 @@ export function TelegramInterfaceImproved() {
   });
 
   // Fetch telegram chats/contacts
-  const { data: telegramChats = [] } = useQuery<TelegramChat[]>({
+  const { data: telegramChats = [], isLoading: chatsLoading, error: chatsError } = useQuery<TelegramChat[]>({
     queryKey: ['/api/telegram/chats'],
     select: (data: any[]) => {
+      console.log('🔍 Telegram chats ricevute:', data?.length || 0, data);
       // Trasforma i dati per renderli compatibili con l'interfaccia WhatsApp-style
-      return data.map((chat: any) => ({
+      return (data || []).map((chat: any) => ({
         ...chat,
         lastMessage: generateLastMessage(chat),
         lastSeen: generateLastSeen(chat),
@@ -228,11 +229,19 @@ export function TelegramInterfaceImproved() {
         {/* Chat List */}
         <ScrollArea className="flex-1">
           <div className="p-2">
-            {filteredChats.length === 0 ? (
+            {chatsLoading ? (
+              <div className="text-center text-muted-foreground py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p>Caricamento chat...</p>
+              </div>
+            ) : filteredChats.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
                 <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>Nessuna chat trovata</p>
                 <p className="text-xs">Le chat appariranno automaticamente</p>
+                {chatsError && (
+                  <p className="text-xs text-red-500 mt-2">Errore nel caricamento: {String(chatsError)}</p>
+                )}
               </div>
             ) : (
               filteredChats.map((chat) => (

@@ -23,12 +23,25 @@ export function useUnreadNotificationsCount() {
       const response = await fetch('/api/notifications/unread-count', {
         credentials: 'include'
       });
-      if (!response.ok) throw new Error('Failed to fetch unread count');
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Non autenticato - restituisci 0 invece di errore
+          return 0;
+        }
+        throw new Error('Failed to fetch unread count');
+      }
       const data = await response.json();
       return data.count as number;
     },
     refetchInterval: 5000, // Ricarica ogni 5 secondi per aggiornamenti più frequenti
     staleTime: 1000, // Cache valida solo per 1 secondo
+    retry: (failureCount, error: any) => {
+      // Non ritentare se 401 Unauthorized
+      if (error?.message?.includes('401') || error?.status === 401) {
+        return false;
+      }
+      return failureCount < 3;
+    }
   });
 }
 

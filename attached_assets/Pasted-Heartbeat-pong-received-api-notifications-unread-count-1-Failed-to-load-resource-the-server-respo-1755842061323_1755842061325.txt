@@ -1,0 +1,43 @@
+Heartbeat pong received 
+api/notifications/unread-count:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+ [WebSocket Manager] Sending heartbeat ping 
+ [WebSocket Manager] Message received: pong
+ [WebSocket Manager] Heartbeat pong received 
+api/notifications/unread-count:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+api/notifications/unread-count:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+api/notifications/unread-count:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+  GET https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/notifications/unread-count 401 (Unauthorized)
+window.fetch @ src/App.tsx:63
+queryFn @ src/hooks/use-notifications.ts:20
+fetchFn @ @tanstack_react-query.js:840
+run @ @tanstack_react-query.js:494
+start @ @tanstack_react-query.js:536
+fetch @ @tanstack_react-query.js:926
+executeFetch_fn @ @tanstack_react-query.js:2211
+(anonymous) @ @tanstack_react-query.js:2245Understand this error
+  GET https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/notifications/unread-count 401 (Unauthorized)
+window.fetch @ src/App.tsx:63
+queryFn @ src/hooks/use-notifications.ts:20
+fetchFn @ @tanstack_react-query.js:840
+run @ @tanstack_react-query.js:494
+start @ @tanstack_react-query.js:536
+fetch @ @tanstack_react-query.js:926
+executeFetch_fn @ @tanstack_react-query.js:2211
+(anonymous) @ @tanstack_react-query.js:2245
+setInterval
+updateRefetchInterval_fn @ @tanstack_react-query.js:2243
+updateTimers_fn @ @tanstack_react-query.js:2250
+onQueryUpdate @ @tanstack_react-query.js:2206
+(anonymous) @ @tanstack_react-query.js:998
+(anonymous) @ @tanstack_react-query.js:997
+batch @ @tanstack_react-query.js:583
+dispatch_fn @ @tanstack_react-query.js:996
+onError @ @tanstack_react-query.js:861
+reject @ @tanstack_react-query.js:465
+(anonymous) @ @tanstack_react-query.js:508
+Promise.catch
+run @ @tanstack_react-query.js:498
+start @ @tanstack_react-query.js:536
+fetch @ @tanstack_react-query.js:926
+executeFetch_fn @ @tanstack_react-query.js:2211
+(anonymous) @ @tanstack_react-query.js:2245Understand this error
