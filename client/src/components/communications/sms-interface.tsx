@@ -456,7 +456,7 @@ export function SMSInterface() {
               <CardContent className="flex-1 p-4 overflow-hidden">
                 <ScrollArea className="h-[500px] pr-4">
                   <div className="space-y-4">
-                    {messages.map((message) => (
+                    {chatMessages.map((message) => (
                       <div
                         key={message.id}
                         className={`flex ${message.isOutgoing ? 'justify-end' : 'justify-start'}`}
