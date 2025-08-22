@@ -383,7 +383,7 @@ export function SMSInterface() {
                       <SelectValue placeholder="Seleziona template..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {smsTemplates.map((template) => (
+                      {(smsTemplates || []).map((template) => (
                         <SelectItem key={template.id} value={template.id}>
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4" />
@@ -505,7 +505,7 @@ export function SMSInterface() {
                       <SelectValue placeholder="Seleziona template..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {smsTemplates.map((template) => (
+                      {(smsTemplates || []).map((template) => (
                         <SelectItem key={template.id} value={template.id}>
                           <div className="flex items-center gap-2">
                             <FileText className="h-3 w-3" />
