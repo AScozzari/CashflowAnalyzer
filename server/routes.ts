@@ -1602,6 +1602,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Get AI chat sessions
+  app.get("/api/ai/chat/sessions", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const sessions = await storage.getAiChatSessions(req.user.id);
+      res.json(sessions || []);
+    } catch (error) {
+      console.error('[AI SESSIONS] Error getting chat sessions:', error);
+      res.status(500).json({ error: 'Failed to get chat sessions' });
+    }
+  }));
+
+  // Get AI chat messages for a session
+  app.get("/api/ai/chat/messages/:sessionId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { sessionId } = req.params;
+      const messages = await storage.getAiChatHistory(req.user.id, sessionId);
+      res.json(messages || []);
+    } catch (error) {
+      console.error('[AI MESSAGES] Error getting chat messages:', error);
+      res.status(500).json({ error: 'Failed to get chat messages' });
+    }
+  }));
+
   // AI Chat endpoint
   app.post("/api/ai/chat", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
