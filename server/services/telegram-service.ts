@@ -521,14 +521,11 @@ Nel frattempo puoi:
         console.log(`[TELEGRAM SERVICE] 🔄 Aggiornando chat esistente: ${chatId}`);
         // Update existing chat
         await storage.updateTelegramChat(existingChat.id, {
-          lastMessageAt: new Date(),
           lastMessageId: message.message_id,
-          messageCount: (existingChat.messageCount || 0) + 1,
           firstName: message.from.first_name,
           lastName: message.from.last_name,
           username: message.from.username,
-          languageCode: message.from.language_code,
-          isActive: true
+          languageCode: message.from.language_code
         });
         console.log(`[TELEGRAM SERVICE] ✅ Chat aggiornata: ${chatId}`);
       } else {
@@ -541,14 +538,11 @@ Nel frattempo puoi:
           firstName: message.from.first_name,
           lastName: message.from.last_name,
           username: message.from.username,
-          title: message.chat.title,
+          // title: message.chat.title || `Chat ${chatId}`,
           languageCode: message.from.language_code,
-          lastMessageAt: new Date(),
           lastMessageId: message.message_id,
-          messageCount: 1,
-          isActive: true,
           isBot: message.from.is_bot || false,
-          isPremium: message.from.is_premium || false
+          isPremium: false // message.from.is_premium not available
         });
         console.log(`[TELEGRAM SERVICE] ✅ Nuova chat creata: ${chatId}`);
       }
