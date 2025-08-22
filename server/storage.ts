@@ -342,10 +342,10 @@ export class DatabaseStorage implements IStorage {
       const company = await db.select().from(companies).where(eq(companies.id, id)).limit(1);
       if (!company[0]) return undefined;
       
-      const cores = await db.select().from(schema.cores).where(eq(schema.cores.companyId, id));
-      const resources = await db.select().from(schema.resources).where(eq(schema.resources.companyId, id));
-      const ibans = await db.select().from(schema.ibans).where(eq(schema.ibans.companyId, id));
-      const offices = await db.select().from(schema.offices).where(eq(schema.offices.companyId, id));
+      const cores = await db.select().from(cores).where(eq(cores.companyId, id));
+      const resources = await db.select().from(resources).where(eq(resources.companyId, id));
+      const ibans = await db.select().from(ibans).where(eq(ibans.companyId, id));
+      const offices = await db.select().from(offices).where(eq(offices.companyId, id));
       
       const result = { ...company[0], cores, resources, ibans, offices } as CompanyWithRelations;
       return result;
@@ -1010,24 +1010,23 @@ export class DatabaseStorage implements IStorage {
       // Then get the paginated results
       const offset = (page - 1) * pageSize;
       
-      const results = await db.query.movements.findMany({
-        where: conditions.length > 0 ? and(...conditions) : undefined,
-        with: {
-          company: true,
-          core: true,
-          reason: true,
-          resource: true,
-          office: true,
-          iban: true,
-          tag: true,
-          status: true,
-          supplier: true,
-          customer: true,
-        },
-        orderBy: [desc(movements.insertDate), desc(movements.createdAt)],
-        limit: pageSize,
-        offset: offset,
-      });
+      const results = await db
+        .select()
+        .from(movements)
+        .leftJoin(companies, eq(movements.companyId, companies.id))
+        .leftJoin(cores, eq(movements.coreId, cores.id))
+        .leftJoin(movementReasons, eq(movements.reasonId, movementReasons.id))
+        .leftJoin(resources, eq(movements.resourceId, resources.id))
+        .leftJoin(offices, eq(movements.officeId, offices.id))
+        .leftJoin(ibans, eq(movements.ibanId, ibans.id))
+        .leftJoin(tags, eq(movements.tagId, tags.id))
+        .leftJoin(movementStatuses, eq(movements.statusId, movementStatuses.id))
+        .leftJoin(suppliers, eq(movements.supplierId, suppliers.id))
+        .leftJoin(customers, eq(movements.customerId, customers.id))
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(movements.insertDate), desc(movements.createdAt))
+        .limit(pageSize)
+        .offset(offset);
 
       console.log("[STORAGE] Query returned:", results.length, "movements");
 
@@ -1113,21 +1112,20 @@ async getMovements(filters: {
         }
       }
 
-      const results = await db.query.movements.findMany({
-        where: conditions.length > 0 ? and(...conditions) : undefined,
-        with: {
-          company: true,
-          core: true,
-          reason: true,
-          resource: true,
-          office: true,
-          iban: true,
-          tag: true,
-          status: true,
-          supplier: true,
-        },
-        orderBy: [desc(movements.flowDate), desc(movements.createdAt)],
-      });
+      const results = await db
+        .select()
+        .from(movements)
+        .leftJoin(companies, eq(movements.companyId, companies.id))
+        .leftJoin(cores, eq(movements.coreId, cores.id))
+        .leftJoin(movementReasons, eq(movements.reasonId, movementReasons.id))
+        .leftJoin(resources, eq(movements.resourceId, resources.id))
+        .leftJoin(offices, eq(movements.officeId, offices.id))
+        .leftJoin(ibans, eq(movements.ibanId, ibans.id))
+        .leftJoin(tags, eq(movements.tagId, tags.id))
+        .leftJoin(movementStatuses, eq(movements.statusId, movementStatuses.id))
+        .leftJoin(suppliers, eq(movements.supplierId, suppliers.id))
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(movements.flowDate), desc(movements.createdAt));
       return results as MovementWithRelations[];
     } catch (error) {
       console.error('Error fetching movements:', error);
@@ -1137,20 +1135,20 @@ async getMovements(filters: {
 
   async getMovement(id: string): Promise<MovementWithRelations | undefined> {
     try {
-      const movement = await db.query.movements.findFirst({
-        where: eq(movements.id, id),
-        with: {
-          company: true,
-          core: true,
-          reason: true,
-          resource: true,
-          office: true,
-          iban: true,
-          tag: true,
-          status: true,
-          supplier: true,
-        },
-      });
+      const [movement] = await db
+        .select()
+        .from(movements)
+        .leftJoin(companies, eq(movements.companyId, companies.id))
+        .leftJoin(cores, eq(movements.coreId, cores.id))
+        .leftJoin(movementReasons, eq(movements.reasonId, movementReasons.id))
+        .leftJoin(resources, eq(movements.resourceId, resources.id))
+        .leftJoin(offices, eq(movements.officeId, offices.id))
+        .leftJoin(ibans, eq(movements.ibanId, ibans.id))
+        .leftJoin(tags, eq(movements.tagId, tags.id))
+        .leftJoin(movementStatuses, eq(movements.statusId, movementStatuses.id))
+        .leftJoin(suppliers, eq(movements.supplierId, suppliers.id))
+        .where(eq(movements.id, id))
+        .limit(1);
       return movement ? (movement as MovementWithRelations) : undefined;
     } catch (error) {
       console.error('Error fetching movement:', error);

@@ -1258,6 +1258,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize async after server setup
   setTimeout(initializeTelegramService, 1000);
 
+  // Analytics movement stats endpoint
+  app.get("/api/analytics/movement-stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const user = req.user;
+      const periodType = req.query.period || 'month'; // month, week, year
+      let resourceIdFilter: string | undefined;
+      
+      // Apply resource filtering for user role
+      if (user.role === 'user' && user.resourceId) {
+        resourceIdFilter = user.resourceId;
+      }
+      
+      // Convert period type to date range
+      const now = new Date();
+      let startDate: Date;
+      let endDate: Date = now;
+      
+      switch (periodType) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        case 'month':
+        default:
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+      }
+      
+      const periodRange = {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
+      };
+      
+      const stats = await storage.getMovementStats(periodRange, resourceIdFilter);
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching movement stats:', error);
+      res.status(500).json({ message: "Failed to fetch movement stats" });
+    }
+  }));
+
   // Analytics filtered movements endpoint
   app.get("/api/analytics/filtered-movements", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
