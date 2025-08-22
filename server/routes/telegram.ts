@@ -348,13 +348,36 @@ export function setupTelegramRoutes(app: Express): void {
     }
   });
 
-  // Get Telegram chats
+  // Get Telegram chats with real last messages
   app.get('/api/telegram/chats', async (req, res) => {
     try {
       console.log('[TELEGRAM API] Getting chats...');
       const chats = await storage.getTelegramChats();
       console.log('[TELEGRAM API] Found', chats.length, 'chats');
-      res.json(chats);
+      
+      // 🔥 AGGIUNGE ULTIMO MESSAGGIO REALE per ogni chat
+      const chatsWithLastMessage = await Promise.all(chats.map(async (chat) => {
+        try {
+          const messages = await storage.getTelegramMessages(chat.id);
+          const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+          
+          return {
+            ...chat,
+            lastRealMessage: lastMessage?.content || null,
+            hasRealMessages: messages.length > 0
+          };
+        } catch (error) {
+          console.error(`[TELEGRAM API] Error getting messages for chat ${chat.id}:`, error);
+          return {
+            ...chat,
+            lastRealMessage: null,
+            hasRealMessages: false
+          };
+        }
+      }));
+      
+      console.log('[TELEGRAM API] ✅ Chat con messaggi reali processate');
+      res.json(chatsWithLastMessage);
     } catch (error) {
       console.error('[TELEGRAM API] Error fetching Telegram chats:', error);
       res.status(500).json({ error: 'Failed to fetch chats' });

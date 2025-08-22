@@ -80,21 +80,22 @@ export function TelegramInterfaceImproved() {
   const [showMessageAnalysis, setShowMessageAnalysis] = useState(false);
   const { toast } = useToast();
 
-  // 🔥 DATI REALI: Calcola ultimo messaggio e last seen da dati veri
+  // 🔥 DATI REALI: Usa ultimo messaggio dal backend
   const getLastMessagePreview = (chat: any) => {
-    // Se non ci sono messaggi, mostra placeholder
-    if (!chat.lastMessageAt) return 'Nessun messaggio';
-    
-    // Cerca il messaggio più recente nei messaggi della chat (se disponibili)
-    if (telegramMessages && telegramMessages.length > 0 && selectedChat?.id === chat.id) {
-      const lastMsg = telegramMessages[telegramMessages.length - 1];
-      if (lastMsg && lastMsg.content) {
-        return lastMsg.content.length > 50 ? lastMsg.content.substring(0, 50) + '...' : lastMsg.content;
-      }
+    // Se c'è lastRealMessage dal backend, usalo
+    if (chat.lastRealMessage) {
+      return chat.lastRealMessage.length > 50 
+        ? chat.lastRealMessage.substring(0, 50) + '...' 
+        : chat.lastRealMessage;
     }
     
-    // Fallback: usa un messaggio generico basato sull'attività
-    return 'Messaggio ricevuto';
+    // Se non ci sono messaggi reali
+    if (!chat.hasRealMessages) {
+      return 'Nessun messaggio';
+    }
+    
+    // Fallback generico
+    return 'Clicca per vedere i messaggi';
   };
 
   const getLastSeenFromTimestamp = (timestamp: string | null) => {
