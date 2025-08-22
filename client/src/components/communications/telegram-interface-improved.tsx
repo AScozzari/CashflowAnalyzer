@@ -78,8 +78,19 @@ export function TelegramInterfaceImproved() {
   const [selectedTemplate, setSelectedTemplate] = useState<TelegramTemplate | null>(null);
   const [aiAssistanceEnabled, setAiAssistanceEnabled] = useState(true);
   const [showMessageAnalysis, setShowMessageAnalysis] = useState(false);
+  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Forza refresh quando utente clicca su una chat
+  const handleChatSelect = (chat: TelegramChat) => {
+    console.log('📱 [CHAT SELECT] Chat selezionata:', chat.id, chat.firstName);
+    setSelectedChat(chat);
+    // Forza il refresh dei messaggi quando si seleziona una chat
+    queryClient.invalidateQueries({ 
+      queryKey: ['/api/telegram/messages', chat.id] 
+    });
+  };
 
   // ✅ DATI REALI DAL DATABASE
   const getLastMessagePreview = (chat: any) => {
@@ -131,10 +142,12 @@ export function TelegramInterfaceImproved() {
     return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  // Fetch chat messages for selected chat
+  // Fetch chat messages for selected chat con auto-refresh
   const { data: telegramMessages = [], refetch: refetchMessages } = useQuery<TelegramMessage[]>({
     queryKey: ['/api/telegram/messages', selectedChat?.id],
     enabled: !!selectedChat,
+    refetchInterval: 15000, // Aggiorna messaggi ogni 15 secondi per chat real-time
+    refetchIntervalInBackground: true,
   });
 
   // Fetch telegram templates
@@ -142,9 +155,11 @@ export function TelegramInterfaceImproved() {
     queryKey: ['/api/telegram/templates'],
   });
 
-  // Fetch telegram chats/contacts
+  // Fetch telegram chats/contacts con auto-refresh
   const { data: telegramChats = [], isLoading: chatsLoading, error: chatsError, refetch } = useQuery<TelegramChat[]>({
     queryKey: ['/api/telegram/chats'],
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi per sincronizzazione
+    refetchIntervalInBackground: true, // Continua ad aggiornare anche in background
     select: (data: any[]) => {
       console.log('🔍 Telegram chats ricevute:', data?.length || 0, '(dati completi):', data);
       if (!data || !Array.isArray(data)) {
@@ -191,22 +206,15 @@ export function TelegramInterfaceImproved() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: ({ content, chatId }: { content: string; chatId: string }) => {
-      console.log('🚀 [SEND MESSAGE] Invio messaggio:', { chatId, content });
+    mutationFn: ({ content, telegramChatId }: { content: string; telegramChatId: string }) => {
+      console.log('🚀 [SEND MESSAGE] Invio messaggio:', { telegramChatId, content });
       
-      // Trova la chat selezionata per ottenere il telegramChatId
-      const selectedChatData = telegramChats.find(chat => chat.id === chatId);
-      const realTelegramChatId = selectedChatData?.telegramChatId;
-      
-      console.log('🔍 [SEND MESSAGE] Chat trovata:', selectedChatData);
-      console.log('🔍 [SEND MESSAGE] TelegramChatId reale:', realTelegramChatId);
-      
-      if (!realTelegramChatId) {
-        throw new Error('Chat Telegram non trovata');
+      if (!telegramChatId) {
+        throw new Error('TelegramChatId richiesto per invio messaggio');
       }
       
       return apiRequest('POST', '/api/telegram/send', { 
-        chatId: realTelegramChatId,
+        chatId: telegramChatId,
         message: content,
         parseMode: 'HTML'
       });
@@ -215,7 +223,7 @@ export function TelegramInterfaceImproved() {
       console.log('✅ [SEND MESSAGE] Successo:', data);
       setMessageInput("");
       
-      // Invalida entrambe le cache
+      // Invalida entrambe le cache per aggiornamento immediato
       queryClient.invalidateQueries({ queryKey: ['/api/telegram/chats'] });
       if (selectedChat) {
         queryClient.invalidateQueries({ 
@@ -224,8 +232,10 @@ export function TelegramInterfaceImproved() {
       }
       
       // Forza il refetch delle chat per aggiornare i contatori
-      refetch();
-      refetchMessages();
+      setTimeout(() => {
+        refetch();
+        refetchMessages();
+      }, 500); // Leggero delay per dare tempo al backend di aggiornare
       
       toast({
         title: "Messaggio inviato",
@@ -244,9 +254,15 @@ export function TelegramInterfaceImproved() {
 
   const handleSendMessage = () => {
     if (messageInput.trim() && selectedChat) {
+      console.log('📨 [HANDLE SEND] Invio messaggio:', {
+        content: messageInput,
+        telegramChatId: selectedChat.telegramChatId,
+        selectedChat: selectedChat
+      });
+      
       sendMessageMutation.mutate({
         content: messageInput,
-        chatId: selectedChat.telegramChatId
+        telegramChatId: selectedChat.telegramChatId
       });
     }
   };
@@ -311,7 +327,7 @@ export function TelegramInterfaceImproved() {
               filteredChats.map((chat) => (
                 <div
                   key={chat.id}
-                  onClick={() => setSelectedChat(chat)}
+                  onClick={() => handleChatSelect(chat)}
                   className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
                     selectedChat?.id === chat.id ? 'bg-blue-50 dark:bg-blue-950' : ''
                   }`}
