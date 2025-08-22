@@ -181,13 +181,15 @@ export default function Analytics() {
       
       <div className="p-4 lg:p-6 space-y-6">
         {/* Advanced Filters - Responsive */}
-        <AdvancedFiltersNew
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onApplyFilters={handleApplyFilters}
-          onResetFilters={handleResetFilters}
-          isLoading={isLoading}
-        />
+        <>
+          <AdvancedFiltersNew
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onApplyFilters={handleApplyFilters}
+            onResetFilters={handleResetFilters}
+            isLoading={isLoading}
+          />
+        </>
 
         {/* Results Section */}
         {movementsData && (

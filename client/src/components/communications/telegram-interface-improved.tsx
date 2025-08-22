@@ -95,13 +95,13 @@ export function TelegramInterfaceImproved() {
   const { data: telegramChats = [], isLoading: chatsLoading, error: chatsError } = useQuery<TelegramChat[]>({
     queryKey: ['/api/telegram/chats'],
     select: (data: any[]) => {
-      console.log('🔍 Telegram chats ricevute:', data?.length || 0, data);
+      console.log('🔍 Telegram chats ricevute:', data?.length || 0, '(dati completi):', data);
       if (!data || !Array.isArray(data)) {
         console.warn('❌ Dati Telegram chats non validi:', data);
         return [];
       }
       // Trasforma i dati per renderli compatibili con l'interfaccia WhatsApp-style
-      return data.map((chat: any) => ({
+      const transformedChats = data.map((chat: any) => ({
         id: chat.id,
         telegramChatId: chat.telegramChatId,
         chatType: chat.chatType || 'private',
@@ -121,6 +121,8 @@ export function TelegramInterfaceImproved() {
         linkedResourceId: chat.linkedResourceId,
         avatar: undefined
       }));
+      console.log('✅ Chat trasformate:', transformedChats.length, transformedChats);
+      return transformedChats;
     }
   });
 
