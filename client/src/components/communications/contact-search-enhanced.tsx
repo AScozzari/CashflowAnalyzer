@@ -247,6 +247,9 @@ export function ContactSearchEnhanced({
               setIsExpanded(true);
             } else {
               setIsExpanded(false);
+              // 🔧 RISOLUZIONE BUG: Quando il campo si svuota, reset completo dei filtri
+              setTypeFilter("all");
+              setStatusFilter("all");
             }
             
             console.log('🔍 Ricerca contatti:', newValue, 'Contatti trovati:', filteredContacts.length, 
