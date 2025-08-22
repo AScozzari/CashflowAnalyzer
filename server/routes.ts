@@ -21,6 +21,8 @@ import { loginLimiter, apiLimiter, securityLogger, securityHeaders, sanitizeInpu
 import { WebhookRouter } from './webhook-manager';
 import { setupWhatsAppRoutes } from './routes/whatsapp';
 import { setupTelegramRoutes } from './routes/telegram';
+import aiInsightsRouter from './routes/ai-insights';
+import aiAnomaliesRouter from './routes/ai-anomalies';
 import multer from 'multer';
 import type { Request } from 'express';
 import path from 'path';
@@ -166,6 +168,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`API Request: ${req.method} ${req.path}`);
     next();
   });
+
+  // AI Routes
+  app.use('/api/ai', aiInsightsRouter);
+  app.use('/api/ai', aiAnomaliesRouter);
   // Companies
   app.get("/api/companies", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
