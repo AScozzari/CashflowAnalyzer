@@ -342,12 +342,12 @@ export class DatabaseStorage implements IStorage {
       const company = await db.select().from(companies).where(eq(companies.id, id)).limit(1);
       if (!company[0]) return undefined;
       
-      const cores = await db.select().from(cores).where(eq(cores.companyId, id));
-      const resources = await db.select().from(resources).where(eq(resources.companyId, id));
-      const ibans = await db.select().from(ibans).where(eq(ibans.companyId, id));
-      const offices = await db.select().from(offices).where(eq(offices.companyId, id));
+      const companyCores = await db.select().from(cores).where(eq(cores.companyId, id));
+      const companyResources = await db.select().from(resources).where(eq(resources.companyId, id));
+      const companyIbans = await db.select().from(ibans).where(eq(ibans.companyId, id));
+      const companyOffices = await db.select().from(offices).where(eq(offices.companyId, id));
       
-      const result = { ...company[0], cores, resources, ibans, offices } as CompanyWithRelations;
+      const result = { ...company[0], cores: companyCores, resources: companyResources, ibans: companyIbans, offices: companyOffices } as CompanyWithRelations;
       return result;
     } catch (error) {
       console.error('Error fetching company with relations:', error);
@@ -1030,8 +1030,23 @@ export class DatabaseStorage implements IStorage {
 
       console.log("[STORAGE] Query returned:", results.length, "movements");
 
+      // Transform joined results to MovementWithRelations format
+      const transformedResults = results.map((row: any) => ({
+        ...row.movements,
+        company: row.companies,
+        core: row.cores,
+        reason: row.movement_reasons,
+        resource: row.resources,
+        office: row.offices,
+        iban: row.ibans,
+        tag: row.tags,
+        status: row.movement_statuses,
+        supplier: row.suppliers,
+        customer: row.customers
+      }));
+
       const response = {
-        data: results as MovementWithRelations[],
+        data: transformedResults as MovementWithRelations[],
         pagination: {
           page,
           limit: pageSize,
@@ -1126,7 +1141,21 @@ async getMovements(filters: {
         .leftJoin(suppliers, eq(movements.supplierId, suppliers.id))
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc(movements.flowDate), desc(movements.createdAt));
-      return results as MovementWithRelations[];
+      // Transform joined results to MovementWithRelations format
+      const transformedResults = results.map((row: any) => ({
+        ...row.movements,
+        company: row.companies,
+        core: row.cores,
+        reason: row.movement_reasons,
+        resource: row.resources,
+        office: row.offices,
+        iban: row.ibans,
+        tag: row.tags,
+        status: row.movement_statuses,
+        supplier: row.suppliers
+      }));
+
+      return transformedResults as MovementWithRelations[];
     } catch (error) {
       console.error('Error fetching movements:', error);
       throw new Error('Failed to fetch movements');
@@ -1149,7 +1178,23 @@ async getMovements(filters: {
         .leftJoin(suppliers, eq(movements.supplierId, suppliers.id))
         .where(eq(movements.id, id))
         .limit(1);
-      return movement ? (movement as MovementWithRelations) : undefined;
+      if (!movement) return undefined;
+      
+      // Transform joined result to MovementWithRelations format
+      const transformedMovement = {
+        ...movement.movements,
+        company: movement.companies,
+        core: movement.cores,
+        reason: movement.movement_reasons,
+        resource: movement.resources,
+        office: movement.offices,
+        iban: movement.ibans,
+        tag: movement.tags,
+        status: movement.movement_statuses,
+        supplier: movement.suppliers
+      };
+
+      return transformedMovement as MovementWithRelations;
     } catch (error) {
       console.error('Error fetching movement:', error);
       throw new Error('Failed to fetch movement');
