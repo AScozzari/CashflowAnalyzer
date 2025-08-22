@@ -47,7 +47,7 @@ export default function Analytics() {
     return [`/api/analytics/filtered-movements?${params.toString()}`];
   }, [filters, currentPage, pageSize]);
 
-  // Fetch filtered movements
+  // Fetch filtered movements - DISABLED by default, enabled only on Apply Filters click
   const { 
     data: movementsData, 
     isLoading, 
@@ -55,7 +55,7 @@ export default function Analytics() {
     refetch 
   } = useQuery({
     queryKey,
-    enabled: true, // Caricamento automatico abilitato per i tools AI
+    enabled: false, // Query disabilitata all'apertura pagina - si attiva solo con "Applica Filtri"
   });
 
   const handleFiltersChange = useCallback((newFilters: AnalyticsFilters) => {
@@ -182,15 +182,13 @@ export default function Analytics() {
       <div className="p-4 lg:p-6 space-y-6">
         {/* Advanced Filters - Responsive */}
         <div>
-          {(
-            <AdvancedFiltersNew
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onApplyFilters={handleApplyFilters}
-              onResetFilters={handleResetFilters}
-              isLoading={isLoading}
-            />
-          ) as React.ReactNode}
+          <AdvancedFiltersNew
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onApplyFilters={handleApplyFilters}
+            onResetFilters={handleResetFilters}
+            isLoading={isLoading}
+          />
         </div>
 
         {/* Results Section */}
