@@ -17,10 +17,15 @@ import {
   CheckCircle,
   XCircle,
   Users,
-  FileText
+  FileText,
+  Settings,
+  TestTube
 } from "lucide-react";
 import { ContactSearchEnhanced } from "./contact-search-enhanced";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 interface SMSMessage {
   id: string;
@@ -171,18 +176,97 @@ export function SMSInterface() {
   const smsCount = Math.ceil(characterCount / 160);
   const estimatedCost = smsCount * 0.10; // €0.10 per SMS
 
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch SMS settings to check if configured
+  const { data: smsStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/sms/stats'],
+    refetchInterval: 30000 // Refresh every 30 seconds
+  });
+
+  // Send SMS mutation
+  const sendSmsMutation = useMutation({
+    mutationFn: async (data: { to: string; message: string }) => {
+      const response = await apiRequest('POST', '/api/sms/send', data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      console.log('[SMS] Message sent successfully:', data);
+      toast({ 
+        title: '✅ SMS Inviato!', 
+        description: `Messaggio inviato a ${data.to}. ID: ${data.messageId}` 
+      });
+      setMessageInput("");
+      if (composing) {
+        setRecipientPhone("");
+        setComposing(false);
+      }
+    },
+    onError: (error: any) => {
+      console.error('[SMS] Error sending message:', error);
+      toast({ 
+        title: '❌ Errore Invio', 
+        description: error.message || 'Impossibile inviare l\'SMS',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Test SMS connection mutation  
+  const testConnectionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/sms/test-connection');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({ 
+          title: '✅ Connessione SMS OK', 
+          description: `Provider: ${data.provider}, User Key: ${data.userKey}` 
+        });
+      } else {
+        toast({ 
+          title: '❌ Test Fallito', 
+          description: data.message || 'Errore nella connessione SMS',
+          variant: 'destructive'
+        });
+      }
+    },
+    onError: () => {
+      toast({ 
+        title: '❌ Errore Test', 
+        description: 'Impossibile testare la connessione SMS',
+        variant: 'destructive'
+      });
+    }
+  });
+
   const sendSMS = () => {
-    if (!messageInput.trim()) return;
+    if (!messageInput.trim()) {
+      toast({ 
+        title: 'Messaggio vuoto', 
+        description: 'Inserisci un messaggio da inviare',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     const recipient = selectedContact?.phone || recipientPhone;
-    if (!recipient) return;
-    
-    console.log("Sending SMS:", messageInput, "to:", recipient);
-    setMessageInput("");
-    if (composing) {
-      setRecipientPhone("");
-      setComposing(false);
+    if (!recipient) {
+      toast({ 
+        title: 'Destinatario mancante', 
+        description: 'Seleziona un contatto o inserisci un numero',
+        variant: 'destructive'
+      });
+      return;
     }
+
+    // Clean phone number (remove spaces, dashes, +39 prefix if present)
+    const cleanPhone = recipient.replace(/[\s\-+]/g, '').replace(/^39/, '');
+    
+    console.log('[SMS] Sending message:', messageInput, 'to:', cleanPhone);
+    sendSmsMutation.mutate({ to: cleanPhone, message: messageInput });
   };
 
   const useTemplate = (template: SMSTemplate) => {
@@ -190,9 +274,55 @@ export function SMSInterface() {
   };
 
   return (
-    <div className="grid grid-cols-12 gap-6 h-[800px]">
-      {/* Contacts Sidebar */}
-      <div className="col-span-4 space-y-4">
+    <div className="space-y-4">
+      {/* SMS Status Header */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5 text-purple-600" />
+                <h2 className="font-semibold">SMS Skebby</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                {smsStats?.isActive ? (
+                  <Badge className="bg-green-100 text-green-800">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Attivo
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-yellow-600">
+                    <Settings className="h-3 w-3 mr-1" />
+                    Da configurare
+                  </Badge>
+                )}
+                {smsStats?.provider && (
+                  <Badge variant="outline">
+                    Provider: {smsStats.provider}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => testConnectionMutation.mutate()}
+                disabled={testConnectionMutation.isPending}
+                className="flex items-center gap-2"
+                data-testid="button-test-sms-connection"
+              >
+                <TestTube className="h-4 w-4" />
+                {testConnectionMutation.isPending ? 'Testando...' : 'Test Connessione'}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-12 gap-6 h-[800px]">
+        {/* Contacts Sidebar */}
+        <div className="col-span-4 space-y-4">
         <div className="flex items-center gap-2">
           <Button 
             onClick={() => setComposing(true)}
@@ -352,11 +482,12 @@ export function SMSInterface() {
                 <div className="flex justify-end pt-4">
                   <Button 
                     onClick={sendSMS}
-                    disabled={!messageInput.trim() || !recipientPhone.trim()}
+                    disabled={!messageInput.trim() || !recipientPhone.trim() || sendSmsMutation.isPending}
                     className="flex items-center gap-2"
+                    data-testid="button-send-sms"
                   >
                     <Send className="h-4 w-4" />
-                    Invia SMS
+                    {sendSmsMutation.isPending ? 'Invio...' : 'Invia SMS'}
                   </Button>
                 </div>
               </CardContent>
@@ -471,8 +602,9 @@ export function SMSInterface() {
                     />
                     <Button 
                       onClick={sendSMS}
-                      disabled={!messageInput.trim()}
+                      disabled={!messageInput.trim() || sendSmsMutation.isPending}
                       className="self-end"
+                      data-testid="button-send-sms-conversation"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
@@ -493,6 +625,7 @@ export function SMSInterface() {
             </div>
           )}
         </Card>
+        </div>
       </div>
     </div>
   );
