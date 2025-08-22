@@ -21,6 +21,7 @@ import { loginLimiter, apiLimiter, securityLogger, securityHeaders, sanitizeInpu
 import { WebhookRouter } from './webhook-manager';
 import { setupWhatsAppRoutes } from './routes/whatsapp';
 import { setupTelegramRoutes } from './routes/telegram';
+import { setupSmsRoutes } from './routes/sms';
 import aiInsightsRouter from './routes/ai-insights';
 import aiAnomaliesRouter from './routes/ai-anomalies';
 import multer from 'multer';
@@ -1227,6 +1228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup communication routes
   setupWhatsAppRoutes(app);
   setupTelegramRoutes(app);
+  setupSmsRoutes(app);
   
   // Auto-initialize Telegram service with existing settings
   const initializeTelegramService = async () => {
