@@ -80,6 +80,25 @@ export function TelegramInterfaceImproved() {
   const [showMessageAnalysis, setShowMessageAnalysis] = useState(false);
   const { toast } = useToast();
 
+  // Genera ultimo messaggio per preview chat - DEFINITA PRIMA DELL'USO
+  const generateLastMessage = (chat: any) => {
+    const messages = [
+      "Ciao! Come posso aiutarti? 🤖",
+      "Perfetto, ho inviato le informazioni richieste ✅",
+      "Grazie per avermi contattato! 📱", 
+      "Hai ricevuto il documento? 📄",
+      "Tutto ok per il servizio? 💬",
+      "Bot attivo e funzionante! 🚀"
+    ];
+    return messages[Math.floor(Math.random() * messages.length)];
+  };
+
+  // Genera last seen per chat - DEFINITA PRIMA DELL'USO
+  const generateLastSeen = (chat: any) => {
+    const times = ['Online', '5 min fa', '1 ora fa', '2 ore fa', 'Ieri', '2 giorni fa'];
+    return times[Math.floor(Math.random() * times.length)];
+  };
+
   // Fetch chat messages for selected chat
   const { data: telegramMessages = [], refetch: refetchMessages } = useQuery<TelegramMessage[]>({
     queryKey: ['/api/telegram/messages', selectedChat?.id],
@@ -126,24 +145,7 @@ export function TelegramInterfaceImproved() {
     }
   });
 
-  // Genera ultimo messaggio per preview chat
-  const generateLastMessage = (chat: any) => {
-    const messages = [
-      "Ciao! Come posso aiutarti? 🤖",
-      "Perfetto, ho inviato le informazioni richieste ✅",
-      "Grazie per avermi contattato! 📱", 
-      "Hai ricevuto il documento? 📄",
-      "Tutto ok per il servizio? 💬",
-      "Bot attivo e funzionante! 🚀"
-    ];
-    return messages[Math.floor(Math.random() * messages.length)];
-  };
-
-  // Genera last seen per chat
-  const generateLastSeen = (chat: any) => {
-    const times = ['Online', '5 min fa', '1 ora fa', '2 ore fa', 'Ieri', '2 giorni fa'];
-    return times[Math.floor(Math.random() * times.length)];
-  };
+  // Funzioni spostate sopra per evitare errori di hoisting
 
   // Filter chats based on search (with type safety)
   const filteredChats = (telegramChats || []).filter((chat: TelegramChat) => {
