@@ -117,7 +117,7 @@ export function TelegramInterfaceImproved() {
   // Genera iniziali contatto - DEFINITA PRIMA DELL'USO
   const getContactInitials = (chat: any) => {
     const name = getContactName(chat);
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   // Fetch chat messages for selected chat
@@ -182,8 +182,8 @@ export function TelegramInterfaceImproved() {
   const sendMessageMutation = useMutation({
     mutationFn: ({ content, chatId }: { content: string; chatId: string }) =>
       apiRequest('/api/telegram/send', 'POST', { 
-        message: content, 
-        chatId: chatId
+        chatId: chatId,
+        message: content
       }),
     onSuccess: () => {
       setMessageInput("");
