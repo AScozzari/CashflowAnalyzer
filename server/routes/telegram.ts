@@ -318,6 +318,63 @@ export function setupTelegramRoutes(app: Express): void {
     }
   });
 
+  // Get messages for a specific Telegram chat
+  app.get('/api/telegram/messages/:chatId', async (req, res) => {
+    try {
+      const { chatId } = req.params;
+      console.log('[TELEGRAM API] Getting messages for chat:', chatId);
+      
+      // Mock messages per ora - da implementare storage reale se necessario
+      const mockMessages = [
+        {
+          id: '1',
+          chatId: chatId,
+          from: 'user',
+          to: 'bot', 
+          content: 'Ciao! Come stai? 👋',
+          timestamp: new Date(Date.now() - 120000).toISOString(), // 2 minutes ago
+          messageType: 'text',
+          isOutgoing: false,
+          delivered: true,
+          read: true,
+          aiGenerated: false
+        },
+        {
+          id: '2',
+          chatId: chatId,
+          from: 'bot',
+          to: 'user',
+          content: 'Ciao! Tutto bene, grazie per aver scritto! Come posso aiutarti oggi? 🤖',
+          timestamp: new Date(Date.now() - 60000).toISOString(), // 1 minute ago
+          messageType: 'text', 
+          isOutgoing: true,
+          delivered: true,
+          read: true,
+          aiGenerated: true
+        },
+        {
+          id: '3',
+          chatId: chatId,
+          from: 'user',
+          to: 'bot',
+          content: 'Volevo informazioni sui servizi disponibili',
+          timestamp: new Date(Date.now() - 30000).toISOString(), // 30 seconds ago
+          messageType: 'text',
+          isOutgoing: false,
+          delivered: true,
+          read: true,
+          aiGenerated: false
+        }
+      ];
+      
+      console.log('[TELEGRAM API] Returning', mockMessages.length, 'messages');
+      res.json(mockMessages);
+    } catch (error) {
+      console.error('[TELEGRAM API] Error fetching messages:', error);
+      res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+  });
+
   // Get bot stats
   app.get('/api/telegram/stats', async (req, res) => {
     try {
