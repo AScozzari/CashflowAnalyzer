@@ -148,10 +148,21 @@ export function setupTelegramRoutes(app: Express): void {
           if (existingChat) {
             console.log('[TELEGRAM SEND] ✅ Chat trovata, aggiorno dati');
             
-            // Aggiorna solo i dati di base della chat
+            // Aggiorna chat con ultimo messaggio reale
             await storage.updateTelegramChat(existingChat.id, {
               lastMessageId: result.messageId || Math.floor(Math.random() * 1000000)
             });
+            
+            // Aggiorna separatamente il lastRealMessage con SQL diretto
+            try {
+              await storage.executeRawQuery(
+                'UPDATE telegram_chats SET last_real_message = $1 WHERE id = $2',
+                [message.length > 100 ? message.substring(0, 100) + '...' : message, existingChat.id]
+              );
+              console.log('[TELEGRAM SEND] ✅ lastRealMessage aggiornato');
+            } catch (sqlError) {
+              console.error('[TELEGRAM SEND] ❌ Errore aggiornamento lastRealMessage:', sqlError);
+            }
             console.log('[TELEGRAM SEND] ✅ Chat aggiornata con nuovo messaggio');
             
             // Create notification for sent message

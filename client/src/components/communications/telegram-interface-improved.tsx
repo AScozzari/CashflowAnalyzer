@@ -172,8 +172,8 @@ export function TelegramInterfaceImproved() {
         lastMessageAt: chat.lastMessageAt,
         lastSeen: getLastSeenFromTimestamp(chat.lastMessageAt),
         messageCount: chat.messageCount || 0,
-        unreadCount: Math.floor(Math.random() * 3), // Mock unread count
-        online: Math.random() > 0.7, // Mock online status
+        unreadCount: 0, // TODO: implementare conteggio reale
+        online: false, // TODO: implementare status online reale
         isBlocked: chat.isBlocked || false,
         linkedCustomerId: chat.linkedCustomerId,
         linkedResourceId: chat.linkedResourceId,
