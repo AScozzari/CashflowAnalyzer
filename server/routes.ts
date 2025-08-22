@@ -1533,6 +1533,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Get AI API key status
+  app.get("/api/ai/api-key/status", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getAiSettings(req.user.id);
+      
+      if (settings?.openaiApiKey) {
+        // Hide the full key, show only prefix for security
+        const maskedKey = `${settings.openaiApiKey.substring(0, 7)}...${settings.openaiApiKey.slice(-4)}`;
+        res.json({
+          configured: true,
+          maskedKey,
+          message: 'API Key configurata'
+        });
+      } else {
+        res.json({
+          configured: false,
+          maskedKey: null,
+          message: 'Nessuna API Key configurata'
+        });
+      }
+    } catch (error) {
+      console.error('[AI API STATUS] Error checking API key status:', error);
+      res.status(500).json({ 
+        configured: false, 
+        error: 'Failed to check API key status' 
+      });
+    }
+  }));
+
   // Update AI API key
   app.post("/api/ai/api-key/update", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
