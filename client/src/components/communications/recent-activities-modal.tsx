@@ -116,9 +116,9 @@ export default function RecentActivitiesModal() {
                   {getIcon(activity.icon, activity.color)}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{activity.title}</p>
+                  <p className="text-sm font-medium">{String(activity.title || 'Attività')}</p>
                   <p className="text-xs text-muted-foreground">
-                    {activity.subtitle} • {formatTimestamp(activity.timestamp)}
+                    {String(activity.subtitle || 'Nessuna descrizione')} • {formatTimestamp(activity.timestamp)}
                   </p>
                 </div>
                 <Badge variant="outline">{getBadgeText(activity.type)}</Badge>

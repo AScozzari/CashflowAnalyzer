@@ -1403,7 +1403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           activities.push({
             id: movement.id,
             type: 'movement',
-            title: movement.description || movement.reason || 'Movimento finanziario',
+            title: movement.description || (typeof movement.reason === 'string' ? movement.reason : movement.reason?.name) || 'Movimento finanziario',
             subtitle: `€${movement.amount} • ${movement.type === 'income' ? 'Entrata' : 'Uscita'}`,
             timestamp: movement.flowDate || movement.createdAt,
             icon: movement.type === 'income' ? 'arrow-up-right' : 'arrow-down-left',
