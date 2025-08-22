@@ -355,22 +355,9 @@ export function setupTelegramRoutes(app: Express): void {
       const chats = await storage.getTelegramChats();
       console.log('[TELEGRAM API] Found', chats.length, 'chats');
       
-      // ✅ SISTEMA REALE: Legge last_real_message dal database
-      const chatsWithLastMessage = chats.map((chat) => {
-        const hasRealMessage = (chat.lastMessageId !== null && chat.lastMessageId !== undefined) || 
-                              (chat.messageCount !== null && chat.messageCount > 0);
-        
-        return {
-          ...chat,
-          // Usa il lastRealMessage dal database se presente, altrimenti fallback generico
-          lastRealMessage: (chat as any).lastRealMessage || 
-                          (hasRealMessage ? `${chat.messageCount || 0} messaggi` : null),
-          hasRealMessages: hasRealMessage
-        };
-      });
-      
-      console.log('[TELEGRAM API] ✅ Chat con messaggi reali processate');
-      res.json(chatsWithLastMessage);
+      // ✅ NESSUNA TRASFORMAZIONE: Restituisci dati diretti dal database
+      console.log('[TELEGRAM API] ✅ Restituisco dati diretti dal database senza trasformazioni');
+      res.json(chats);
     } catch (error) {
       console.error('[TELEGRAM API] Error fetching Telegram chats:', error);
       res.status(500).json({ error: 'Failed to fetch chats' });

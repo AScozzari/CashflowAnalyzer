@@ -2788,7 +2788,33 @@ async getMovements(filters: {
   // Telegram Chats methods
   async getTelegramChats(): Promise<TelegramChat[]> {
     try {
-      return await db.select().from(telegramChats).orderBy(desc(telegramChats.createdAt));
+      const result = await db.select({
+        id: telegramChats.id,
+        chatId: telegramChats.chatId,
+        telegramChatId: telegramChats.telegramChatId,
+        chatType: telegramChats.chatType,
+        title: telegramChats.title,
+        username: telegramChats.username,
+        firstName: telegramChats.firstName,
+        lastName: telegramChats.lastName,
+        phoneNumber: telegramChats.phoneNumber,
+        languageCode: telegramChats.languageCode,
+        isBlocked: telegramChats.isBlocked,
+        isPremium: telegramChats.isPremium,
+        isBot: telegramChats.isBot,
+        lastMessageId: telegramChats.lastMessageId,
+        lastMessageAt: telegramChats.lastMessageAt,
+        messageCount: telegramChats.messageCount,
+        linkedCustomerId: telegramChats.linkedCustomerId,
+        linkedResourceId: telegramChats.linkedResourceId,
+        notes: telegramChats.notes,
+        tags: telegramChats.tags,
+        createdAt: telegramChats.createdAt,
+        updatedAt: telegramChats.updatedAt,
+        lastRealMessage: telegramChats.lastRealMessage
+      }).from(telegramChats).orderBy(desc(telegramChats.createdAt));
+      
+      return result as TelegramChat[];
     } catch (error) {
       console.error('Error fetching Telegram chats:', error);
       throw new Error('Failed to fetch Telegram chats');

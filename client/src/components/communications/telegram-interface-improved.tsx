@@ -81,22 +81,16 @@ export function TelegramInterfaceImproved() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // 🔥 DATI REALI: Usa ultimo messaggio dal backend
+  // ✅ DATI REALI DAL DATABASE: Nessuna trasformazione mock
   const getLastMessagePreview = (chat: any) => {
-    // Se c'è lastRealMessage dal backend, usalo
+    // Usa sempre i dati diretti dal database
     if (chat.lastRealMessage) {
       return chat.lastRealMessage.length > 50 
         ? chat.lastRealMessage.substring(0, 50) + '...' 
         : chat.lastRealMessage;
     }
     
-    // Se non ci sono messaggi reali
-    if (!chat.hasRealMessages) {
-      return 'Nessun messaggio';
-    }
-    
-    // Fallback generico
-    return 'Clicca per vedere i messaggi';
+    return 'Nessun messaggio';
   };
 
   const getLastSeenFromTimestamp = (timestamp: string | null) => {
@@ -158,7 +152,7 @@ export function TelegramInterfaceImproved() {
         console.warn('❌ Dati Telegram chats non validi:', data);
         return [];
       }
-      // Trasforma i dati per renderli compatibili con l'interfaccia WhatsApp-style
+      // ✅ DATI DIRETTI DAL DATABASE: Minimali trasformazioni solo per interfaccia
       const transformedChats = data.map((chat: any) => ({
         id: chat.id,
         telegramChatId: chat.telegramChatId,
@@ -172,8 +166,8 @@ export function TelegramInterfaceImproved() {
         lastMessageAt: chat.lastMessageAt,
         lastSeen: getLastSeenFromTimestamp(chat.lastMessageAt),
         messageCount: chat.messageCount || 0,
-        unreadCount: 0, // TODO: implementare conteggio reale
-        online: false, // TODO: implementare status online reale
+        unreadCount: 0,
+        online: false,
         isBlocked: chat.isBlocked || false,
         linkedCustomerId: chat.linkedCustomerId,
         linkedResourceId: chat.linkedResourceId,

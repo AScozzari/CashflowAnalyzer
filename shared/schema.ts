@@ -1052,7 +1052,8 @@ export const telegramChats = pgTable("telegram_chats", {
   tags: jsonb("tags").default([]),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  lastRealMessage: text("last_real_message"),
 });
 
 // Telegram Schema Validazioni
