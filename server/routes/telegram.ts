@@ -250,12 +250,26 @@ export function setupTelegramRoutes(app: Express): void {
           if (existingChat) {
             console.log('[TELEGRAM SEND] ✅ Chat trovata, salvo messaggio nel database');
             
-            // ✅ SALVA MESSAGGIO REALE nella tabella telegram_messages e aggiorna chat
-            await storage.executeRawQuery(
-              'INSERT INTO telegram_messages (chat_id, telegram_message_id, content, direction, from_user, to_user, message_type, is_ai_generated) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-              [existingChat.id, String(result.messageId || Math.floor(Math.random() * 1000000)), message, 'outbound', 'EasyCashFlows Bot', existingChat.firstName || existingChat.username || 'User', 'text', false]
-            );
-            console.log('[TELEGRAM SEND] ✅ Messaggio salvato nel database');
+            // ✅ SALVA MESSAGGIO REALE nella tabella telegram_messages usando Drizzle ORM
+            try {
+              const { telegramMessages } = await import('../../shared/schema');
+              const { db } = await import('../db');
+              
+              await db.insert(telegramMessages).values({
+                chatId: existingChat.id,
+                telegramMessageId: result.messageId || Math.floor(Math.random() * 1000000),
+                content: message,
+                direction: 'outbound',
+                fromUser: 'EasyCashFlows Bot',
+                toUser: existingChat.firstName || existingChat.username || 'User',
+                messageType: 'text',
+                isAiGenerated: false
+              });
+              console.log('[TELEGRAM SEND] ✅ Messaggio salvato nel database con Drizzle ORM');
+            } catch (dbError) {
+              console.error('[TELEGRAM SEND] ❌ ERRORE salvataggio database:', dbError);
+              throw dbError;
+            }
             
             // Aggiorna chat con ultimo messaggio
             await storage.updateTelegramChat(existingChat.id, {
@@ -489,10 +503,14 @@ export function setupTelegramRoutes(app: Express): void {
         if (targetChat) {
           console.log('[TELEGRAM API] Found internal UUID:', targetChat.id);
           // Ora cerca i messaggi usando l'UUID interno
-          const messagesQuery = `SELECT * FROM telegram_messages WHERE chat_id = $1 ORDER BY created_at ASC`;
-          console.log('[TELEGRAM API] Trying database query with UUID...');
+          console.log('[TELEGRAM API] Trying database query with UUID using Drizzle ORM...');
+          const { telegramMessages } = await import('../../shared/schema');
+          const { db } = await import('../db');
+          const { eq, asc } = await import('drizzle-orm');
           
-          const messages = await storage.executeRawQuery(messagesQuery, [targetChat.id]);
+          const messages = await db.select().from(telegramMessages)
+            .where(eq(telegramMessages.chatId, targetChat.id))
+            .orderBy(asc(telegramMessages.createdAt));
           console.log('[TELEGRAM API] Messages found:', messages);
         
           if (Array.isArray(messages) && messages.length > 0) {
