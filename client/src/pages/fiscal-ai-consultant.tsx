@@ -584,8 +584,8 @@ export function FiscalAIConsultant() {
             </CardContent>
           </Card>
 
-          {/* Risposta AI */}
-          {advice && (
+          {/* Risposta AI - Rimossa perché ora usiamo il sistema chat */}
+          {false && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
