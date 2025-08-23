@@ -557,19 +557,19 @@ export function FiscalAIConsultant() {
                 <Textarea
                   data-testid="input-fiscal-question"
                   placeholder="Es: Come posso ottimizzare le tasse sulla mia PMI? Posso usufruire dell'IRES premiale?"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
                   rows={3}
                 />
               </div>
               
               <Button
                 data-testid="button-ask-question"
-                onClick={handleAskQuestion}
-                disabled={!question.trim() || askQuestionMutation.isPending}
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim() || sendMessageMutation.isPending}
                 className="w-full"
               >
-                {askQuestionMutation.isPending ? (
+                {sendMessageMutation.isPending ? (
                   <>
                     <Clock className="h-4 w-4 mr-2 animate-spin" />
                     Analizzando...
