@@ -17,6 +17,7 @@ import Settings from "@/pages/settings";
 import Calendar from "@/pages/calendar";
 import AiChatPage from "@/pages/ai-chat";
 import AiToolsNewPage from "@/pages/ai-tools-new";
+import { FiscalAIConsultant } from "@/pages/fiscal-ai-consultant";
 import Communications from "@/pages/communications";
 import EntityExplorer from "@/pages/entity-explorer";
 import AuthPage from "@/pages/auth-page";
@@ -169,6 +170,12 @@ function Router() {
       <ProtectedRoute path="/ai-tools" component={() => (
         <AppLayout>
           <AiToolsNewPage />
+        </AppLayout>
+      )} />
+      
+      <ProtectedRoute path="/fiscal-ai" component={() => (
+        <AppLayout>
+          <FiscalAIConsultant />
         </AppLayout>
       )} />
       

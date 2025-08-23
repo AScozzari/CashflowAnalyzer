@@ -76,20 +76,21 @@ export default function AiToolsNewPage() {
       buttonText: "Prova Upload AI"
     },
     {
-      id: "tax-ai",
+      id: "fiscal-ai",
       title: "Consulente Fiscale AI",
       description: "Ottimizzazione fiscale per PMI italiane",
       icon: Calculator,
-      status: "development",
-      location: "Future",
+      status: "active",
+      location: "AI Tools",
+      route: "/fiscal-ai",
       features: [
-        "🇮🇹 Specifico per normative italiane",
-        "📊 Detrazioni e agevolazioni",
-        "💰 Timing pagamenti ottimale"
+        "🇮🇹 Normative fiscali italiane 2025",
+        "💰 Ottimizzazioni IRPEF e IRES premiale",
+        "📊 Analisi personalizzata dei movimenti"
       ],
-      bgColor: "bg-orange-50 dark:bg-orange-900/20",
-      iconColor: "text-orange-600",
-      buttonText: "In Sviluppo"
+      bgColor: "bg-green-50 dark:bg-green-900/20",
+      iconColor: "text-green-600",
+      buttonText: "Apri Consulente"
     }
   ];
 

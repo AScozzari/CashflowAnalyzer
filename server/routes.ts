@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 // Storage will be imported dynamically to avoid circular dependency
 import { aiService } from "./ai-service";
+import { fiscalAIService } from "./fiscal-ai-service";
 import { eq, desc, sum, count, sql } from "drizzle-orm";
 import { bankTransactions, movements } from "@shared/schema";
 import { 
@@ -1715,6 +1716,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('[AI SETTINGS] Error updating AI settings:', error);
       res.status(500).json({ error: 'Failed to update AI settings' });
+    }
+  }));
+
+  // === FISCAL AI ROUTES ===
+  
+  // Get fiscal advice
+  app.post("/api/fiscal-ai/advice", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { question } = req.body;
+      if (!question) {
+        return res.status(400).json({ error: 'Question is required' });
+      }
+
+      const advice = await fiscalAIService.getFiscalAdvice(req.user.id, question);
+      res.json(advice);
+    } catch (error: any) {
+      console.error('[FISCAL AI] Error getting fiscal advice:', error);
+      res.status(500).json({ 
+        error: 'Failed to get fiscal advice',
+        details: error.message 
+      });
+    }
+  }));
+
+  // Analyze fiscal situation
+  app.get("/api/fiscal-ai/analysis", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const analysis = await fiscalAIService.analyzeFiscalSituation(req.user.id);
+      res.json(analysis);
+    } catch (error: any) {
+      console.error('[FISCAL AI] Error analyzing fiscal situation:', error);
+      res.status(500).json({ 
+        error: 'Failed to analyze fiscal situation',
+        details: error.message 
+      });
     }
   }));
 
