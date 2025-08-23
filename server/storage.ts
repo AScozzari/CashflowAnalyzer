@@ -2190,11 +2190,30 @@ async getMovements(filters: {
       const sessions = await db
         .select({
           id: aiChatHistory.sessionId,
-          title: sql<string>`CASE 
-            WHEN ${aiChatHistory.sessionId} IS NOT NULL 
-            THEN CONCAT('Chat ', SUBSTRING(${aiChatHistory.sessionId}, 1, 8))
-            ELSE 'Conversazione'
-          END`,
+          title: sql<string>`COALESCE(
+            CASE 
+              WHEN (
+                SELECT content FROM ${aiChatHistory} 
+                WHERE user_id = ${userId} 
+                AND session_id = ${aiChatHistory.sessionId} 
+                AND role = 'user' 
+                ORDER BY created_at ASC LIMIT 1
+              ) IS NOT NULL 
+              THEN CONCAT(
+                SUBSTRING(
+                  (SELECT content FROM ${aiChatHistory} 
+                   WHERE user_id = ${userId} 
+                   AND session_id = ${aiChatHistory.sessionId} 
+                   AND role = 'user' 
+                   ORDER BY created_at ASC LIMIT 1), 
+                  1, 40
+                ), 
+                '...'
+              )
+              ELSE CONCAT('Chat ', SUBSTRING(${aiChatHistory.sessionId}, 1, 8))
+            END,
+            'Nuova Conversazione'
+          )`,
           lastMessage: sql<string>`(
             SELECT content FROM ${aiChatHistory} 
             WHERE user_id = ${userId} AND session_id = ${aiChatHistory.sessionId} 
