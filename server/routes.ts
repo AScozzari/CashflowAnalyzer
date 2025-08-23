@@ -1826,8 +1826,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Gestione diversi tipi di file
       if (fileType.includes('image')) {
         // Per immagini, usa GPT-4o Vision
-        const imageBase64 = req.file.buffer.toString('base64');
+        const fs = require('fs');
+        const imageBuffer = fs.readFileSync(req.file.path);
+        const imageBase64 = imageBuffer.toString('base64');
         const result = await documentAIService.analyzeImageDocument(req.user.id, imageBase64, fileName, fileType);
+        
+        // Cleanup temporary file
+        fs.unlinkSync(req.file.path);
         
         res.json({
           id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -1838,8 +1843,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         return;
       } else {
-        // Per testi, estrai il contenuto
-        documentContent = req.file.buffer.toString('utf-8');
+        // Per testi, leggi il file dal disco
+        const fs = require('fs');
+        documentContent = fs.readFileSync(req.file.path, 'utf-8');
+        // Cleanup temporary file
+        fs.unlinkSync(req.file.path);
       }
 
       // Analizza il documento
@@ -1864,8 +1872,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cronologia analisi documenti
   app.get("/api/document-analysis/history", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      // Per ora restituiamo un array vuoto, in futuro si collegherà al database
-      const history = [];
+      // Return real history from database if available, otherwise empty array
+      let history = [];
+      
+      try {
+        // Try to get document analysis history from storage
+        if (storage.getDocumentAnalysisHistory) {
+          history = await storage.getDocumentAnalysisHistory(req.user.id);
+        }
+      } catch (dbError) {
+        // If database method doesn't exist yet, return empty array
+        console.log('[DOCUMENT ANALYSIS] History not yet implemented in database, returning empty array');
+      }
+      
       res.json(history);
     } catch (error: any) {
       console.error('[DOCUMENT ANALYSIS] Error fetching history:', error);
