@@ -137,7 +137,10 @@ export default function DocumentAnalyzerPage() {
     },
     onSuccess: (result: DocumentAnalysis) => {
       setAnalysisResult(result);
-      refetchHistory();
+      // FORZA REFRESH statistiche
+      setTimeout(() => {
+        refetchHistory();
+      }, 100);
       toast({
         title: "✅ Analisi Completata",
         description: `Documento ${result.fileName} analizzato con successo`,

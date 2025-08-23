@@ -71,9 +71,15 @@ export class DocumentAIService {
         messages: [
           {
             role: 'system',
-            content: `Sei un esperto consulente commerciale e fiscale italiano specializzato nell'analisi di documenti aziendali. 
-            Analizzi contratti, DDT, fatture, note di credito, raccomandate e qualsiasi documento aziendale con massima precisione.
-            Rispondi sempre in italiano e fornisci analisi dettagliate e professionali.`
+            content: `Sei un ESPERTO FISCALE ITALIANO per PMI. Analizzi SOLO documenti finanziari (fatture, DDT, contratti, ricevute).
+            
+            REGOLE ASSOLUTE:
+            - Se documento NON contiene importi/dati finanziari → confidence <0.5 e NO movimento
+            - Se documento illeggibile/generico → "Documento non finanziario" 
+            - Suggerisci movimento SOLO con importi chiari e certi
+            - Risposta sempre in italiano, JSON valido, dati reali
+            
+            Sei SEVERO: respingi documenti non finanziari.`
           },
           { role: 'user', content: prompt }
         ],
@@ -116,58 +122,62 @@ export class DocumentAIService {
   }
 
   private buildAdvancedPrompt(content: string, fileName: string, fileType: string): string {
-    // OTTIMIZZAZIONE CRITICA: Tronca contenuto per evitare limite token
-    const maxLength = 8000; // Circa 5-6k token
+    // OTTIMIZZAZIONE: Tronca contenuto per evitare limite token
+    const maxLength = 6000; // Ridotto per prompt più specifico
     const truncatedContent = content.length > maxLength 
-      ? content.substring(0, maxLength) + "\n\n[CONTENUTO TRONCATO PER LIMITE TOKEN]"
+      ? content.substring(0, maxLength) + "\n[TRONCATO]"
       : content;
 
-    return `DOCUMENTO: ${fileName} (${fileType})
+    return `ANALISI DOCUMENTO FINANZIARIO ITALIANO
 
-CONTENUTO:
-${truncatedContent}
+FILE: ${fileName}
+CONTENT: ${truncatedContent}
 
-JSON OUTPUT:
+ISTRUZIONI CRITICHE:
+1. SE NON È FATTURA/DDT/RICEVUTA/CONTRATTO → documentType: "Documento non finanziario"
+2. SE NON HAI IMPORTI CHIARI → suggestedMovement: null
+3. CONFIDENCE <0.5 se documento generico/illeggibile
+4. ESTRAI SOLO dati realmente visibili
+
+RISPOSTA JSON:
 {
-  "summary": "Analisi dettagliata professionale documento",
-  "keyPoints": ["Dettaglio specifico 1", "Aspetto rilevante 2", "Informazione chiave 3"],
-  "documentType": "Fattura|DDT|Contratto|Email|Lettera|Comunicazione",
+  "documentType": "Fattura Elettronica|DDT|Ricevuta|Contratto|Documento non finanziario",
+  "summary": "Breve descrizione del documento e contenuto principale",
+  "keyPoints": ["Dato importante 1", "Info rilevante 2", "Aspetto chiave 3"],
   "extractedData": {
-    "amounts": ["€1.250,00", "€275,00 IVA"],
+    "amounts": ["1.250,00", "IVA 275,00"],
     "dates": ["15/01/2024"],
-    "parties": ["Fornitore SRL", "Cliente SpA"],
-    "references": ["FT001/2024", "CIG123"],
-    "vatNumbers": ["IT12345678901"],
-    "addresses": ["Via Roma 1, Milano"],
-    "contacts": ["email@azienda.it"]
+    "parties": ["Fornitore ABC", "Cliente XYZ"],
+    "references": ["Fattura n. 123"],
+    "vatNumbers": ["IT01234567890"],
+    "addresses": ["Via Roma 1"],
+    "contacts": ["abc@email.it"]
   },
-  "suggestedMovement": SOLO SE FATTURA/RICEVUTA/DDT {
-    "type": "expense|income",
+  "suggestedMovement": SOLO SE DOCUMENTO FINANZIARIO CON IMPORTI {
+    "type": "income|expense",
     "amount": 1250.00,
-    "description": "Dettaglio specifico",
+    "description": "Descrizione servizio/prodotto",
     "date": "2024-01-15",
-    "confidence": 0.95,
-    "category": "Servizi",
-    "supplier": "Nome Fornitore",
-    "customer": "Nome Cliente",
-    "vatAmount": 275.00,
-    "netAmount": 1250.00
+    "confidence": 0.9,
+    "category": "Categoria appropriata",
+    "supplier": "Nome fornitore",
+    "netAmount": 1250.00,
+    "vatAmount": 275.00
   },
-  "confidence": 0.9,
-  "recommendations": ["Azione specifica 1", "Verifica 2"],
+  "confidence": NUMERO_0_1_BASATO_SU_CHIAREZZA_DOCUMENTO,
+  "recommendations": ["Azione da fare", "Verifica necessaria"],
   "compliance": {
     "isCompliant": true,
-    "issues": ["Problema specifico"],
-    "requirements": ["Obbligo normativo"]
+    "issues": ["Problema trovato"],
+    "requirements": ["Norma da rispettare"]
   }
 }
 
-REGOLE CRITICHE:
-- MOVIMENTO: suggerisci SOLO per fatture/ricevute/DDT con importi chiari
-- NON suggerire per: email, lettere, comunicazioni, manuali
-- CONFIDENCE: <0.6 se documento poco chiaro
-- COMPLIANCE: verifica normative italiane (FatturaPA, split payment)
-- ESTRAI: solo dati realmente presenti, non inventare`;
+REGOLE FERREE:
+❌ NON inventare dati
+❌ NON suggerire movimento per documenti generici
+❌ Confidence <0.5 se documento poco chiaro
+✅ Analizza solo documenti finanziari italiani`;
   }
 
   /**
