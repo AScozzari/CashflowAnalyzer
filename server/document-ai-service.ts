@@ -237,41 +237,37 @@ REGOLE CRITICHE:
   }
 
   /**
-   * Crea documento di analisi nel database
+   * Salva analisi documento nel database
    */
   async saveAnalysis(
     userId: string,
     fileName: string,
     fileType: string,
-    filePath: string,
-    analysisResult: any
+    fileSize: number,
+    analysisResult: any,
+    storage: any
   ): Promise<string> {
     try {
       const analysisRecord = {
-        id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         userId,
         fileName,
         fileType,
-        filePath,
-        status: 'completed' as const,
-        extractedData: JSON.stringify(analysisResult.extractedData),
-        aiAnalysis: JSON.stringify({
-          summary: analysisResult.summary,
-          keyPoints: analysisResult.keyPoints,
-          documentType: analysisResult.documentType,
-          recommendations: analysisResult.recommendations,
-          compliance: analysisResult.compliance,
-          suggestedMovement: analysisResult.suggestedMovement
-        }),
+        fileSize,
+        documentType: analysisResult.documentType,
+        summary: analysisResult.summary,
+        keyPoints: analysisResult.keyPoints,
+        extractedData: analysisResult.extractedData,
+        suggestedMovement: analysisResult.suggestedMovement,
+        confidence: analysisResult.confidence?.toString() || '0.8',
+        recommendations: analysisResult.recommendations,
+        compliance: analysisResult.compliance,
         tokensUsed: analysisResult.tokensUsed,
         processingTimeMs: analysisResult.processingTime,
-        completedAt: new Date()
+        status: 'completed' as const
       };
 
-      // Salva nel database (assumendo che esista un metodo nel storage)
-      // await storage.createDocumentJob(analysisRecord);
-      
-      return analysisRecord.id;
+      const savedAnalysis = await storage.saveDocumentAnalysis(analysisRecord);
+      return savedAnalysis.id;
     } catch (error: any) {
       console.error('[DOCUMENT AI] Save analysis failed:', error);
       throw new Error('Salvataggio analisi fallito');

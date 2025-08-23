@@ -1833,13 +1833,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Cleanup temporary file
         fs.unlinkSync(req.file.path);
         
-        res.json({
-          id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          fileName,
-          fileType,
-          ...result,
-          createdAt: new Date().toISOString()
-        });
+        // Salva l'analisi immagine nel database
+        try {
+          const savedAnalysisId = await documentAIService.saveAnalysis(
+            req.user.id, 
+            fileName, 
+            fileType, 
+            req.file.size,
+            result, 
+            storage
+          );
+          console.log(`[DOCUMENT ANALYSIS] Saved image analysis with ID: ${savedAnalysisId}`);
+          
+          res.json({
+            id: savedAnalysisId,
+            fileName,
+            fileType,
+            ...result,
+            createdAt: new Date().toISOString()
+          });
+        } catch (saveError: any) {
+          console.error('[DOCUMENT ANALYSIS] Failed to save image analysis:', saveError);
+          res.json({
+            id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            fileName,
+            fileType,
+            ...result,
+            createdAt: new Date().toISOString(),
+            warning: 'Analisi completata ma non salvata permanentemente'
+          });
+        }
         return;
       } else {
         // Per testi, leggi il file dal disco
@@ -1851,13 +1874,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Analizza il documento
       const result = await documentAIService.analyzeDocument(req.user.id, documentContent, fileName, fileType);
       
-      res.json({
-        id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        fileName,
-        fileType,
-        ...result,
-        createdAt: new Date().toISOString()
-      });
+      // Salva l'analisi nel database
+      try {
+        const savedAnalysisId = await documentAIService.saveAnalysis(
+          req.user.id, 
+          fileName, 
+          fileType, 
+          req.file.size,
+          result, 
+          storage
+        );
+        console.log(`[DOCUMENT ANALYSIS] Saved analysis with ID: ${savedAnalysisId}`);
+        
+        res.json({
+          id: savedAnalysisId,
+          fileName,
+          fileType,
+          ...result,
+          createdAt: new Date().toISOString()
+        });
+      } catch (saveError: any) {
+        console.error('[DOCUMENT ANALYSIS] Failed to save analysis:', saveError);
+        // Return analysis result even if save failed
+        res.json({
+          id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          fileName,
+          fileType,
+          ...result,
+          createdAt: new Date().toISOString(),
+          warning: 'Analisi completata ma non salvata permanentemente'
+        });
+      }
     } catch (error: any) {
       console.error('[DOCUMENT ANALYSIS] Error analyzing document:', error);
       res.status(500).json({ 

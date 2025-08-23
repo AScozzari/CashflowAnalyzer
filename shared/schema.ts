@@ -1594,6 +1594,39 @@ export type InsertCalendarIntegration = z.infer<typeof insertCalendarIntegration
 export type CalendarReminder = typeof calendarReminders.$inferSelect;
 export type InsertCalendarReminder = z.infer<typeof insertCalendarReminderSchema>;
 
+// Document Analysis - Archivio analisi documenti AI
+export const documentAnalysis = pgTable("document_analysis", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  fileSize: integer("file_size"),
+  documentType: text("document_type"), // Fattura, Contratto, DDT, etc
+  summary: text("summary"),
+  keyPoints: jsonb("key_points"), // Array di punti chiave
+  extractedData: jsonb("extracted_data"), // Dati estratti (importi, date, etc)
+  suggestedMovement: jsonb("suggested_movement"), // Movimento suggerito se presente
+  confidence: decimal("confidence", { precision: 3, scale: 2 }), // 0.00-1.00
+  recommendations: jsonb("recommendations"), // Array raccomandazioni  
+  compliance: jsonb("compliance"), // Stato conformità
+  tokensUsed: integer("tokens_used").default(0),
+  processingTimeMs: integer("processing_time_ms").default(0),
+  status: text("status").notNull().default('completed'), // 'processing', 'completed', 'failed'
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const documentAnalysisRelations = relations(documentAnalysis, ({ one }) => ({
+  user: one(users, {
+    fields: [documentAnalysis.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertDocumentAnalysisSchema = createInsertSchema(documentAnalysis);
+export type InsertDocumentAnalysis = z.infer<typeof insertDocumentAnalysisSchema>;
+export type DocumentAnalysis = typeof documentAnalysis.$inferSelect;
+
 // Extended types with relations
 export type MovementWithRelations = Movement & {
   company: Company;

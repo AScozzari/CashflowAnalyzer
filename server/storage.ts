@@ -4,6 +4,7 @@ import {
   smsSettings, smsTemplates, smsMessages, smsBlacklist, smsStatistics,
   aiSettings, aiChatHistory, aiDocumentJobs,
   securitySettings, loginAuditLog, activeSessions, passwordHistory, twoFactorAuth,
+  documentAnalysis,
   type Company, type InsertCompany,
   type Core, type InsertCore,
   type Resource, type InsertResource,
@@ -39,7 +40,8 @@ import {
   type SmsStatistics, type InsertSmsStatistics,
   calendarEvents, calendarReminders,
   type CalendarEvent, type InsertCalendarEvent,
-  type CalendarReminder, type InsertCalendarReminder
+  type CalendarReminder, type InsertCalendarReminder,
+  type DocumentAnalysis, type InsertDocumentAnalysis
 } from "@shared/schema";
 import { 
   BackupConfiguration, 
@@ -321,6 +323,12 @@ export interface IStorage {
   createCalendarReminder(reminder: InsertCalendarReminder): Promise<CalendarReminder>;
   updateCalendarReminder(id: string, reminder: Partial<InsertCalendarReminder>): Promise<CalendarReminder>;
   deleteCalendarReminder(id: string): Promise<void>;
+
+  // Document Analysis
+  saveDocumentAnalysis(analysis: InsertDocumentAnalysis): Promise<DocumentAnalysis>;
+  getDocumentAnalysisHistory(userId: string, limit?: number): Promise<DocumentAnalysis[]>;
+  getDocumentAnalysisById(id: string): Promise<DocumentAnalysis | undefined>;
+  deleteDocumentAnalysis(id: string): Promise<void>;
 
   // Session store per autenticazione
   sessionStore: session.Store;
@@ -3231,41 +3239,53 @@ async getMovements(filters: {
   }
 
   // Document Analysis methods
-  async createDocumentAnalysis(analysis: {
-    userId: string;
-    filename: string;
-    fileType: string;
-    analysis: string;
-    extractedData: any;
-    tokensUsed: number;
-    confidence: number;
-    processingTime: number;
-  }): Promise<any> {
-    // Mock implementation
-    return {
-      id: `doc_analysis_${Date.now()}`,
-      ...analysis,
-      status: 'completed' as const,
-      createdAt: new Date().toISOString()
-    };
+  async saveDocumentAnalysis(analysis: InsertDocumentAnalysis): Promise<DocumentAnalysis> {
+    try {
+      const [savedAnalysis] = await db.insert(documentAnalysis).values(analysis).returning();
+      return savedAnalysis;
+    } catch (error) {
+      console.error('Error saving document analysis:', error);
+      throw new Error('Failed to save document analysis');
+    }
   }
 
-  async getDocumentAnalysisHistory(userId: string): Promise<any[]> {
-    // Mock history data
-    return [
-      {
-        id: 'analysis_1',
-        filename: 'fattura_esempio.xml',
-        fileType: 'application/xml',
-        status: 'completed' as const,
-        analysis: 'Fattura elettronica analizzata con successo. Estratti dati fiscali completi.',
-        extractedData: { amount: 1500, vat: 22, supplier: 'Fornitore Esempio' },
-        tokensUsed: 450,
-        confidence: 0.92,
-        processingTime: 3,
-        createdAt: new Date(Date.now() - 86400000).toISOString()
+  async getDocumentAnalysisHistory(userId: string, limit: number = 15): Promise<DocumentAnalysis[]> {
+    try {
+      return await db
+        .select()
+        .from(documentAnalysis)
+        .where(eq(documentAnalysis.userId, userId))
+        .orderBy(desc(documentAnalysis.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error('Error fetching document analysis history:', error);
+      throw new Error('Failed to fetch document analysis history');
+    }
+  }
+
+  async getDocumentAnalysisById(id: string): Promise<DocumentAnalysis | undefined> {
+    try {
+      const [analysis] = await db
+        .select()
+        .from(documentAnalysis)
+        .where(eq(documentAnalysis.id, id));
+      return analysis;
+    } catch (error) {
+      console.error('Error fetching document analysis by ID:', error);
+      throw new Error('Failed to fetch document analysis');
+    }
+  }
+
+  async deleteDocumentAnalysis(id: string): Promise<void> {
+    try {
+      const result = await db.delete(documentAnalysis).where(eq(documentAnalysis.id, id));
+      if (result.rowCount === 0) {
+        throw new Error('Document analysis not found');
       }
-    ];
+    } catch (error) {
+      console.error('Error deleting document analysis:', error);
+      throw error instanceof Error ? error : new Error('Failed to delete document analysis');
+    }
   }
 
   // Raw query execution for AI natural language queries
