@@ -26,6 +26,7 @@ import { setupTelegramRoutes } from './routes/telegram';
 import { setupSmsRoutes } from './routes/sms';
 import aiInsightsRouter from './routes/ai-insights';
 import aiAnomaliesRouter from './routes/ai-anomalies';
+import { registerAIContextRoutes } from './routes/ai-context';
 import multer from 'multer';
 import type { Request } from 'express';
 import path from 'path';
@@ -177,6 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Routes
   app.use('/api/ai', aiInsightsRouter);
   app.use('/api/ai', aiAnomaliesRouter);
+  registerAIContextRoutes(app);
   // Companies
   app.get("/api/companies", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
