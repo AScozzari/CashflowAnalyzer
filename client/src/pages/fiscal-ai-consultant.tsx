@@ -112,11 +112,38 @@ export function FiscalAIConsultant() {
         references: data.references || [],
         confidence: data.confidence || 0.8
       };
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
       
-      // Update conversation or create new one
-      updateConversation(assistantMessage);
+      setMessages(prev => {
+        const updatedMessages = [...prev, assistantMessage];
+        
+        // Create new conversation if it's the first exchange
+        if (activeConversationId === 'new' && updatedMessages.length === 2) {
+          const firstUserMessage = updatedMessages.find(m => m.role === 'user');
+          const title = firstUserMessage?.content.substring(0, 40) + '...' || 'Nuova Conversazione';
+          
+          const newConversation: Conversation = {
+            id: `conv_${Date.now()}`,
+            title,
+            messages: updatedMessages,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          
+          setConversations(prev => [newConversation, ...prev]);
+          setActiveConversationId(newConversation.id);
+        } else if (activeConversationId !== 'new') {
+          // Update existing conversation
+          setConversations(prev => prev.map(conv => 
+            conv.id === activeConversationId 
+              ? { ...conv, messages: updatedMessages, updatedAt: new Date() }
+              : conv
+          ));
+        }
+        
+        return updatedMessages;
+      });
+      
+      setIsTyping(false);
     },
     onError: () => {
       setIsTyping(false);
@@ -194,28 +221,7 @@ export function FiscalAIConsultant() {
     }
   };
 
-  const updateConversation = (newMessage: ChatMessage) => {
-    if (activeConversationId === 'new' && messages.length === 0) {
-      // Create new conversation from first message
-      const title = messages[0]?.content.substring(0, 40) + '...' || 'Nuova Conversazione';
-      const newConversation: Conversation = {
-        id: `conv_${Date.now()}`,
-        title,
-        messages: [...messages, newMessage],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      setConversations(prev => [newConversation, ...prev]);
-      setActiveConversationId(newConversation.id);
-    } else {
-      // Update existing conversation
-      setConversations(prev => prev.map(conv => 
-        conv.id === activeConversationId 
-          ? { ...conv, messages: [...conv.messages, newMessage], updatedAt: new Date() }
-          : conv
-      ));
-    }
-  };
+  // Removed updateConversation function - logic moved to onSuccess
 
   const startNewConversation = () => {
     setMessages([]);
