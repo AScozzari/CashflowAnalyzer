@@ -7,6 +7,10 @@ import { BackupSettings } from "./backup-settings-fixed";
 import { LocalizationSettings } from "./localization-settings";
 import { GeneralSettings } from "./general-settings";
 import CalendarIntegrations from "./calendar-integrations";
+import DatabaseSettings from "./database-settings";
+import NotificationsSettings from "./notifications-settings";
+import ThemesSettings from "./themes-settings";
+import DocumentsSettings from "./documents-settings";
 
 export default function SystemConfigHorizontal() {
   const [activeTab, setActiveTab] = useState("general");
@@ -102,31 +106,11 @@ export default function SystemConfigHorizontal() {
             <CardContent className="p-8">
               {activeTab === "security" && <SecuritySettings />}
               {activeTab === "calendar" && <CalendarIntegrations />}
-              {activeTab === "database" && (
-                <PlaceholderSection 
-                  title="Configurazione Database"
-                  description="Impostazioni connessione, backup automatico, ottimizzazioni performance e monitoring"
-                />
-              )}
-              {activeTab === "notifications" && (
-                <PlaceholderSection 
-                  title="Sistema Notifiche"
-                  description="Configurazione WebSocket, email alerts, notifiche push e template personalizzati"
-                />
-              )}
+              {activeTab === "database" && <DatabaseSettings />}
+              {activeTab === "notifications" && <NotificationsSettings />}
               {activeTab === "localization" && <LocalizationSettings />}
-              {activeTab === "themes" && (
-                <PlaceholderSection 
-                  title="Temi e Interfaccia"
-                  description="Personalizzazione colori, layout, modalità scura/chiara e branding aziendale"
-                />
-              )}
-              {activeTab === "documents" && (
-                <PlaceholderSection 
-                  title="Gestione Documenti"
-                  description="Configurazione upload, storage cloud, processing PDF/XML e template FatturaPA"
-                />
-              )}
+              {activeTab === "themes" && <ThemesSettings />}
+              {activeTab === "documents" && <DocumentsSettings />}
               {activeTab === "general" && <GeneralSettings />}
               {activeTab === "users" && <SystemUsersManagement />}
               {activeTab === "backup" && <BackupSettings />}
