@@ -19,7 +19,6 @@ import AiChatPage from "@/pages/ai-chat";
 import AiToolsNewPage from "@/pages/ai-tools-new";
 import { FiscalAIConsultant } from "@/pages/fiscal-ai-consultant";
 import DocumentAnalyzerPage from "@/pages/document-analyzer";
-import AIContextOptimization from "@/pages/ai-context-optimization";
 import Communications from "@/pages/communications";
 import EntityExplorer from "@/pages/entity-explorer";
 import AuthPage from "@/pages/auth-page";
@@ -187,11 +186,6 @@ function Router() {
         </AppLayout>
       )} />
       
-      <ProtectedRoute path="/ai-context-optimization" component={() => (
-        <AppLayout>
-          <AIContextOptimization />
-        </AppLayout>
-      )} />
       
       <ProtectedRoute path="/communications" component={() => (
         <AppLayout>
