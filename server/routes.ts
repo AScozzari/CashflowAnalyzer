@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 // Storage will be imported dynamically to avoid circular dependency
 import { aiService } from "./ai-service";
 import { fiscalAIService } from "./fiscal-ai-service";
+import { documentAIService } from "./document-ai-service";
 import { eq, desc, sum, count, sql } from "drizzle-orm";
 import { bankTransactions, movements } from "@shared/schema";
 import { 
@@ -1804,6 +1805,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('[FISCAL AI] Error fetching documents:', error);
       res.status(500).json({ 
         error: 'Failed to fetch document history',
+        details: error.message 
+      });
+    }
+  }));
+
+  // === DOCUMENT ANALYSIS ENDPOINTS ===
+  
+  // Analisi documento professionale
+  app.post("/api/document-analysis/analyze", requireAuth, upload.single('document'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Nessun documento caricato' });
+      }
+
+      let documentContent = '';
+      const fileName = req.file.originalname;
+      const fileType = req.file.mimetype;
+
+      // Gestione diversi tipi di file
+      if (fileType.includes('image')) {
+        // Per immagini, usa GPT-4o Vision
+        const imageBase64 = req.file.buffer.toString('base64');
+        const result = await documentAIService.analyzeImageDocument(req.user.id, imageBase64, fileName, fileType);
+        
+        res.json({
+          id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          fileName,
+          fileType,
+          ...result,
+          createdAt: new Date().toISOString()
+        });
+        return;
+      } else {
+        // Per testi, estrai il contenuto
+        documentContent = req.file.buffer.toString('utf-8');
+      }
+
+      // Analizza il documento
+      const result = await documentAIService.analyzeDocument(req.user.id, documentContent, fileName, fileType);
+      
+      res.json({
+        id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        fileName,
+        fileType,
+        ...result,
+        createdAt: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('[DOCUMENT ANALYSIS] Error analyzing document:', error);
+      res.status(500).json({ 
+        error: 'Errore nell\'analisi del documento',
+        details: error.message 
+      });
+    }
+  }));
+
+  // Cronologia analisi documenti
+  app.get("/api/document-analysis/history", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Per ora restituiamo un array vuoto, in futuro si collegherà al database
+      const history = [];
+      res.json(history);
+    } catch (error: any) {
+      console.error('[DOCUMENT ANALYSIS] Error fetching history:', error);
+      res.status(500).json({ 
+        error: 'Errore nel recupero della cronologia',
         details: error.message 
       });
     }
