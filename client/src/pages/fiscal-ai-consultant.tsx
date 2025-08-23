@@ -128,14 +128,19 @@ export function FiscalAIConsultant() {
   // Chat mutations
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest('/api/fiscal-ai/chat', {
+      const response = await fetch('/api/fiscal-ai/advice', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message: message })
+        body: JSON.stringify({ question: message })
       });
-      return response;
+      
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+      
+      return response.json();
     },
     onMutate: (message: string) => {
       // Add user message immediately
@@ -154,7 +159,7 @@ export function FiscalAIConsultant() {
       const assistantMessage: ChatMessage = {
         id: `assistant_${Date.now()}`,
         role: 'assistant',
-        content: data.reply || data.message || 'Risposta ricevuta',
+        content: data.answer || 'Risposta ricevuta',
         timestamp: new Date(),
         suggestions: data.suggestions || [],
         references: data.references || [],
@@ -435,181 +440,41 @@ export function FiscalAIConsultant() {
           </div>
         </TabsContent>
 
-        {/* Analysis Tab */}
+        {/* Analysis Tab - Placeholder */}
         <TabsContent value="analysis" className="space-y-6">
-          {analysisLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3].map(i => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader>
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="h-3 bg-gray-200 rounded"></div>
-                      <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : analysis ? (
-            <>
-              {/* Summary */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <FileText className="h-5 w-5" />
-                    <span>Situazione Fiscale</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">{analysis.summary}</p>
-                  
-                  <div className="flex items-center space-x-6">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium">Rischio:</span>
-                      <Badge variant="outline" className={riskColors[analysis.riskLevel]}>
-                        {analysis.riskLevel.toUpperCase()}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium">Compliance:</span>
-                      <Badge variant="outline" className={complianceColors[analysis.compliance]}>
-                        {analysis.compliance === 'compliant' ? 'CONFORME' : 
-                         analysis.compliance === 'warning' ? 'ATTENZIONE' : 'CRITICO'}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Scadenze */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Calendar className="h-5 w-5" />
-                      <span>Prossime Scadenze</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {analysis.deadlines.map((deadline, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div>
-                            <p className="font-medium text-sm">{deadline.description}</p>
-                            <p className="text-xs text-muted-foreground">{deadline.date}</p>
-                          </div>
-                          {deadline.amount && (
-                            <Badge variant="secondary">
-                              €{deadline.amount.toLocaleString('it-IT')}
-                            </Badge>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Ottimizzazioni con suggerimenti actionable */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <TrendingUp className="h-5 w-5" />
-                      <span>Ottimizzazioni Fiscali</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Strategie concrete per ridurre il carico fiscale della tua PMI
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {analysis.optimizations.map((opt, index) => (
-                        <div key={index} className="p-4 border rounded-lg hover:shadow-sm transition-shadow">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-sm text-green-700 mb-1">{opt.type}</h4>
-                              <Badge className="bg-green-100 text-green-800 text-xs">
-                                Risparmio: €{opt.potentialSaving.toLocaleString('it-IT')}
-                              </Badge>
-                            </div>
-                            <Button size="sm" variant="outline" className="ml-2">
-                              <MessageCircle className="h-3 w-3 mr-1" />
-                              Chiedi dettagli
-                            </Button>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-3">{opt.description}</p>
-                          <div className="space-y-2">
-                            <div className="text-xs">
-                              <span className="font-medium text-gray-700">Requisiti: </span>
-                              <span className="text-gray-600">{opt.requirements.join(', ')}</span>
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {['Detrazioni fiscali', 'Crediti d\'imposta', 'Regimi agevolati'].slice(0, index + 1).map((tag, tagIndex) => (
-                                <Badge key={tagIndex} variant="secondary" className="text-xs">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Suggerimenti aggiuntivi sempre visibili */}
-                      <div className="border-t pt-4 mt-6">
-                        <h5 className="font-medium text-sm mb-3 flex items-center">
-                          <Sparkles className="h-4 w-4 mr-2 text-blue-500" />
-                          Suggerimenti Specializzati per PMI
-                        </h5>
-                        <div className="grid grid-cols-1 gap-3">
-                          {[
-                            {
-                              title: "IRES Premiale 2025",
-                              description: "Riduzioni aliquota fino al 27.5% per investimenti R&D",
-                              action: "Scopri requisiti",
-                              saving: "2,500"
-                            },
-                            {
-                              title: "Super Ammortamento",
-                              description: "130% deducibilità per beni strumentali digitali",
-                              action: "Calcola beneficio",
-                              saving: "5,000"
-                            },
-                            {
-                              title: "Patent Box",
-                              description: "Tassazione agevolata al 10% sui redditi da IP",
-                              action: "Verifica applicabilità",
-                              saving: "8,000"
-                            }
-                          ].map((suggestion, idx) => (
-                            <div key={idx} className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                              <div className="flex items-start justify-between mb-2">
-                                <h6 className="font-medium text-sm text-blue-900">{suggestion.title}</h6>
-                                <Badge variant="outline" className="text-blue-700 border-blue-200">
-                                  ~€{suggestion.saving}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-blue-700 mb-2">{suggestion.description}</p>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="h-7 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
-                                onClick={() => setInputMessage(`Dimmi tutto su ${suggestion.title} per la mia PMI`)}
-                              >
-                                {suggestion.action}
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <span>Analisi Fiscale Automatizzata</span>
+              </CardTitle>
+              <CardDescription>
+                Sistema di analisi AI della situazione fiscale aziendale
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                  <Calculator className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Funzionalità in Sviluppo</h3>
+                <p className="text-muted-foreground mb-4 max-w-md">
+                  L'analisi fiscale automatizzata è attualmente in fase di sviluppo. 
+                  Utilizza il chat AI per ottenere consulenze fiscali personalizzate.
+                </p>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const tabsTrigger = document.querySelector('[data-state="active"]')?.parentElement?.querySelector('[value="chat"]') as HTMLElement;
+                    tabsTrigger?.click();
+                  }}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Usa Chat Consulente AI
+                </Button>
               </div>
-            </>
-          ) : null}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Chat AI Professionale */}
