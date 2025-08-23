@@ -3673,59 +3673,9 @@ async getMovements(filters: {
   }
 
   // === BACKUP SYSTEM IMPLEMENTATION ===
+  // NOTE: MemStorage backup methods removed - use DatabaseStorage for real implementations
 
-  async getBackupConfigurations(): Promise<any[]> {
-    // Return mock backup configurations for now
-    return [
-      {
-        id: "1",
-        name: "Daily Database Backup",
-        type: "database",
-        provider: "google_cloud",
-        frequency: "daily",
-        enabled: true,
-        lastBackup: new Date().toISOString(),
-        retention: 30,
-        encryption: true
-      },
-      {
-        id: "2", 
-        name: "Weekly Full System Backup",
-        type: "full_system",
-        provider: "amazon_s3",
-        frequency: "weekly",
-        enabled: true,
-        lastBackup: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        retention: 90,
-        encryption: true
-      }
-    ];
-  }
-
-  async createBackupConfiguration(config: any): Promise<any> {
-    // Simulate creating a new backup configuration
-    const newConfig = {
-      id: Date.now().toString(),
-      ...config,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    return newConfig;
-  }
-
-  async updateBackupConfiguration(id: string, config: any): Promise<any> {
-    // Simulate updating backup configuration
-    return {
-      id,
-      ...config,
-      updatedAt: new Date().toISOString()
-    };
-  }
-
-  async deleteBackupConfiguration(id: string): Promise<void> {
-    // Simulate deletion - in real implementation would delete from database
-    console.log(`Backup configuration ${id} deleted`);
-  }
+  // Backup CRUD methods removed from MemStorage - use DatabaseStorage instead
 
   async getBackupJobs(limit: number = 50): Promise<any[]> {
     // Return recent backup jobs
@@ -3806,53 +3756,155 @@ async getMovements(filters: {
   // === LOCALIZATION IMPLEMENTATION ===
 
   async getLocalizationSettings(): Promise<any> {
-    return {
-      id: "1",
-      defaultLanguage: "it",
-      availableLanguages: ["it", "en", "fr", "de", "es"],
-      dateFormat: "DD/MM/YYYY",
-      timeFormat: "24h",
-      timezone: "Europe/Rome",
-      currency: "EUR",
-      currencySymbol: "€",
-      thousandsSeparator: ".",
-      decimalSeparator: ",",
-      numberFormat: "1.234,56",
-      updatedAt: new Date().toISOString()
-    };
+    try {
+      // Get localization settings from database
+      const config = await db.select().from(systemConfigs)
+        .where(eq(systemConfigs.key, 'localization_settings'))
+        .limit(1);
+      
+      if (config.length === 0) {
+        // Create default localization settings if none exist
+        const defaultSettings = {
+          defaultLanguage: "it",
+          availableLanguages: ["it", "en", "fr", "de", "es"],
+          dateFormat: "DD/MM/YYYY",
+          timeFormat: "24h",
+          timezone: "Europe/Rome", 
+          currency: "EUR",
+          currencySymbol: "€",
+          thousandsSeparator: ".",
+          decimalSeparator: ",",
+          numberFormat: "1.234,56"
+        };
+        
+        const [newConfig] = await db.insert(systemConfigs).values({
+          key: 'localization_settings',
+          value: JSON.stringify(defaultSettings),
+          category: 'localization',
+          description: 'System localization configuration'
+        }).returning();
+        
+        return {
+          id: newConfig.id,
+          ...defaultSettings,
+          updatedAt: newConfig.updatedAt
+        };
+      }
+      
+      const settings = JSON.parse(config[0].value);
+      return {
+        id: config[0].id,
+        ...settings,
+        updatedAt: config[0].updatedAt
+      };
+    } catch (error) {
+      console.error('Error fetching localization settings:', error);
+      throw new Error('Failed to fetch localization settings');
+    }
   }
 
   async updateLocalizationSettings(settings: any): Promise<any> {
-    return {
-      ...settings,
-      updatedAt: new Date().toISOString()
-    };
+    try {
+      const { id, ...settingsData } = settings;
+      
+      const [updatedConfig] = await db.update(systemConfigs)
+        .set({
+          value: JSON.stringify(settingsData),
+          updatedAt: new Date()
+        })
+        .where(eq(systemConfigs.key, 'localization_settings'))
+        .returning();
+      
+      if (!updatedConfig) {
+        throw new Error('Localization settings not found');
+      }
+      
+      return {
+        id: updatedConfig.id,
+        ...JSON.parse(updatedConfig.value),
+        updatedAt: updatedConfig.updatedAt
+      };
+    } catch (error) {
+      console.error('Error updating localization settings:', error);
+      throw new Error('Failed to update localization settings');
+    }
   }
 
   // === THEME IMPLEMENTATION ===
 
   async getThemeSettings(): Promise<any> {
-    return {
-      id: "1",
-      defaultTheme: "light",
-      allowUserThemeSelection: true,
-      availableThemes: ["light", "dark", "auto"],
-      primaryColor: "#0066cc",
-      secondaryColor: "#6c757d",
-      accentColor: "#28a745",
-      fontFamily: "Inter",
-      fontSize: "14px",
-      compactMode: false,
-      animations: true,
-      updatedAt: new Date().toISOString()
-    };
+    try {
+      // Get theme settings from database
+      const config = await db.select().from(systemConfigs)
+        .where(eq(systemConfigs.key, 'theme_settings'))
+        .limit(1);
+      
+      if (config.length === 0) {
+        // Create default theme settings if none exist
+        const defaultSettings = {
+          defaultTheme: "light",
+          allowUserThemeSelection: true,
+          availableThemes: ["light", "dark", "auto"],
+          primaryColor: "#0066cc",
+          secondaryColor: "#6c757d", 
+          accentColor: "#28a745",
+          fontFamily: "Inter",
+          fontSize: "14px",
+          compactMode: false,
+          animations: true
+        };
+        
+        const [newConfig] = await db.insert(systemConfigs).values({
+          key: 'theme_settings',
+          value: JSON.stringify(defaultSettings),
+          category: 'ui',
+          description: 'System theme and UI configuration'
+        }).returning();
+        
+        return {
+          id: newConfig.id,
+          ...defaultSettings,
+          updatedAt: newConfig.updatedAt
+        };
+      }
+      
+      const settings = JSON.parse(config[0].value);
+      return {
+        id: config[0].id,
+        ...settings,
+        updatedAt: config[0].updatedAt
+      };
+    } catch (error) {
+      console.error('Error fetching theme settings:', error);
+      throw new Error('Failed to fetch theme settings');
+    }
   }
 
   async updateThemeSettings(settings: any): Promise<any> {
-    return {
-      ...settings,
-      updatedAt: new Date().toISOString()
-    };
+    try {
+      const { id, ...settingsData } = settings;
+      
+      const [updatedConfig] = await db.update(systemConfigs)
+        .set({
+          value: JSON.stringify(settingsData),
+          updatedAt: new Date()
+        })
+        .where(eq(systemConfigs.key, 'theme_settings'))
+        .returning();
+      
+      if (!updatedConfig) {
+        throw new Error('Theme settings not found');
+      }
+      
+      return {
+        id: updatedConfig.id,
+        ...JSON.parse(updatedConfig.value),
+        updatedAt: updatedConfig.updatedAt
+      };
+    } catch (error) {
+      console.error('Error updating theme settings:', error);
+      throw new Error('Failed to update theme settings');
+    }
   }
 }
 
