@@ -2098,6 +2098,282 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // === SYSTEM CONFIGURATION ENDPOINTS ===
+  
+  // Inizializza SystemService
+  let systemServiceInstance: any = null;
+  try {
+    const systemServiceModule = await import('./services/system-service');
+    const SystemService = systemServiceModule.SystemService || systemServiceModule.default;
+    systemServiceInstance = new SystemService();
+  } catch (error) {
+    console.error('[SYSTEM SERVICE] Error loading SystemService:', error);
+  }
+
+  // Get system configurations
+  app.get("/api/system/config", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      if (!systemServiceInstance) {
+        return res.status(500).json({ error: 'System service not available' });
+      }
+      const configs = await systemServiceInstance.getConfigs();
+      res.json(configs);
+    } catch (error) {
+      console.error('[SYSTEM] Error fetching system config:', error);
+      res.status(500).json({ error: 'Failed to fetch system configurations' });
+    }
+  }));
+
+  // Update system configuration
+  app.put("/api/system/config/:key", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      if (!systemServiceInstance) {
+        return res.status(500).json({ error: 'System service not available' });
+      }
+      const { key } = req.params;
+      const { value } = req.body;
+      
+      if (!value) {
+        return res.status(400).json({ error: 'Value is required' });
+      }
+
+      const updatedConfig = await systemServiceInstance.updateConfig(key, value.toString());
+      res.json(updatedConfig);
+    } catch (error) {
+      console.error('[SYSTEM] Error updating config:', error);
+      res.status(500).json({ error: 'Failed to update configuration' });
+    }
+  }));
+
+  // Get system statistics
+  app.get("/api/system/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      if (!systemServiceInstance) {
+        return res.status(500).json({ error: 'System service not available' });
+      }
+      const stats = await systemServiceInstance.getStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('[SYSTEM] Error fetching system stats:', error);
+      res.status(500).json({ error: 'Failed to fetch system statistics' });
+    }
+  }));
+
+  // Get system logs
+  app.get("/api/system/logs", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      if (!systemServiceInstance) {
+        return res.status(500).json({ error: 'System service not available' });
+      }
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const logs = await systemServiceInstance.getLogs(limit);
+      res.json(logs);
+    } catch (error) {
+      console.error('[SYSTEM] Error fetching system logs:', error);
+      res.status(500).json({ error: 'Failed to fetch system logs' });
+    }
+  }));
+
+  // Clear system logs
+  app.delete("/api/system/logs", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      if (!systemServiceInstance) {
+        return res.status(500).json({ error: 'System service not available' });
+      }
+      await systemServiceInstance.clearLogs();
+      res.json({ success: true, message: 'System logs cleared successfully' });
+    } catch (error) {
+      console.error('[SYSTEM] Error clearing system logs:', error);
+      res.status(500).json({ error: 'Failed to clear system logs' });
+    }
+  }));
+
+  // === SECURITY SETTINGS ENDPOINTS ===
+
+  // Get security settings
+  app.get("/api/security/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const securitySettings = await storage.getSecuritySettings();
+      res.json(securitySettings);
+    } catch (error) {
+      console.error('[SECURITY] Error fetching security settings:', error);
+      res.status(500).json({ error: 'Failed to fetch security settings' });
+    }
+  }));
+
+  // Update security settings
+  app.put("/api/security/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const updatedSettings = await storage.updateSecuritySettings(req.body);
+      res.json(updatedSettings);
+    } catch (error) {
+      console.error('[SECURITY] Error updating security settings:', error);
+      res.status(500).json({ error: 'Failed to update security settings' });
+    }
+  }));
+
+  // Get security statistics
+  app.get("/api/security/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const stats = await storage.getSecurityStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('[SECURITY] Error fetching security stats:', error);
+      res.status(500).json({ error: 'Failed to fetch security statistics' });
+    }
+  }));
+
+  // === BACKUP SETTINGS ENDPOINTS ===
+
+  // Get all backup configurations
+  app.get("/api/backup/configurations", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const configs = await storage.getBackupConfigurations();
+      res.json(configs);
+    } catch (error) {
+      console.error('[BACKUP] Error fetching backup configurations:', error);
+      res.status(500).json({ error: 'Failed to fetch backup configurations' });
+    }
+  }));
+
+  // Create backup configuration
+  app.post("/api/backup/configurations", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const config = await storage.createBackupConfiguration(req.body);
+      res.status(201).json(config);
+    } catch (error) {
+      console.error('[BACKUP] Error creating backup configuration:', error);
+      res.status(500).json({ error: 'Failed to create backup configuration' });
+    }
+  }));
+
+  // Update backup configuration
+  app.put("/api/backup/configurations/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const config = await storage.updateBackupConfiguration(req.params.id, req.body);
+      res.json(config);
+    } catch (error) {
+      console.error('[BACKUP] Error updating backup configuration:', error);
+      res.status(500).json({ error: 'Failed to update backup configuration' });
+    }
+  }));
+
+  // Delete backup configuration
+  app.delete("/api/backup/configurations/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      await storage.deleteBackupConfiguration(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[BACKUP] Error deleting backup configuration:', error);
+      res.status(500).json({ error: 'Failed to delete backup configuration' });
+    }
+  }));
+
+  // Get backup jobs
+  app.get("/api/backup/jobs", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const jobs = await storage.getBackupJobs(limit);
+      res.json(jobs);
+    } catch (error) {
+      console.error('[BACKUP] Error fetching backup jobs:', error);
+      res.status(500).json({ error: 'Failed to fetch backup jobs' });
+    }
+  }));
+
+  // Manual backup execution
+  app.post("/api/backup/manual", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { configId } = req.body;
+      const job = await storage.createManualBackup(configId);
+      res.status(201).json(job);
+    } catch (error) {
+      console.error('[BACKUP] Error creating manual backup:', error);
+      res.status(500).json({ error: 'Failed to create manual backup' });
+    }
+  }));
+
+  // Get restore points
+  app.get("/api/backup/restore-points", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const points = await storage.getRestorePoints();
+      res.json(points);
+    } catch (error) {
+      console.error('[BACKUP] Error fetching restore points:', error);
+      res.status(500).json({ error: 'Failed to fetch restore points' });
+    }
+  }));
+
+  // Create restore point
+  app.post("/api/backup/restore-points", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const point = await storage.createRestorePoint(req.body);
+      res.status(201).json(point);
+    } catch (error) {
+      console.error('[BACKUP] Error creating restore point:', error);
+      res.status(500).json({ error: 'Failed to create restore point' });
+    }
+  }));
+
+  // Get backup statistics
+  app.get("/api/backup/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const stats = await storage.getBackupStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('[BACKUP] Error fetching backup stats:', error);
+      res.status(500).json({ error: 'Failed to fetch backup statistics' });
+    }
+  }));
+
+  // === LOCALIZATION SETTINGS ENDPOINTS ===
+
+  // Get localization settings
+  app.get("/api/localization/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getLocalizationSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('[LOCALIZATION] Error fetching localization settings:', error);
+      res.status(500).json({ error: 'Failed to fetch localization settings' });
+    }
+  }));
+
+  // Update localization settings
+  app.put("/api/localization/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.updateLocalizationSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error('[LOCALIZATION] Error updating localization settings:', error);
+      res.status(500).json({ error: 'Failed to update localization settings' });
+    }
+  }));
+
+  // === THEME SETTINGS ENDPOINTS ===
+
+  // Get theme settings
+  app.get("/api/themes/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getThemeSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('[THEMES] Error fetching theme settings:', error);
+      res.status(500).json({ error: 'Failed to fetch theme settings' });
+    }
+  }));
+
+  // Update theme settings
+  app.put("/api/themes/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.updateThemeSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error('[THEMES] Error updating theme settings:', error);
+      res.status(500).json({ error: 'Failed to update theme settings' });
+    }
+  }));
+
   // Create and return HTTP server
   const httpServer = createServer(app);
   return httpServer;

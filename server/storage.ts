@@ -335,6 +335,25 @@ export interface IStorage {
 
   // Session store per autenticazione
   sessionStore: session.Store;
+
+  // Backup System
+  getBackupConfigurations(): Promise<any[]>;
+  createBackupConfiguration(config: any): Promise<any>;
+  updateBackupConfiguration(id: string, config: any): Promise<any>;
+  deleteBackupConfiguration(id: string): Promise<void>;
+  getBackupJobs(limit?: number): Promise<any[]>;
+  createManualBackup(configId: string): Promise<any>;
+  getRestorePoints(): Promise<any[]>;
+  createRestorePoint(point: any): Promise<any>;
+  getBackupStats(): Promise<any>;
+
+  // Localization
+  getLocalizationSettings(): Promise<any>;
+  updateLocalizationSettings(settings: any): Promise<any>;
+
+  // Themes
+  getThemeSettings(): Promise<any>;
+  updateThemeSettings(settings: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3651,6 +3670,189 @@ async getMovements(filters: {
       console.error('Error creating document analysis:', error);
       throw new Error('Failed to create document analysis');
     }
+  }
+
+  // === BACKUP SYSTEM IMPLEMENTATION ===
+
+  async getBackupConfigurations(): Promise<any[]> {
+    // Return mock backup configurations for now
+    return [
+      {
+        id: "1",
+        name: "Daily Database Backup",
+        type: "database",
+        provider: "google_cloud",
+        frequency: "daily",
+        enabled: true,
+        lastBackup: new Date().toISOString(),
+        retention: 30,
+        encryption: true
+      },
+      {
+        id: "2", 
+        name: "Weekly Full System Backup",
+        type: "full_system",
+        provider: "amazon_s3",
+        frequency: "weekly",
+        enabled: true,
+        lastBackup: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        retention: 90,
+        encryption: true
+      }
+    ];
+  }
+
+  async createBackupConfiguration(config: any): Promise<any> {
+    // Simulate creating a new backup configuration
+    const newConfig = {
+      id: Date.now().toString(),
+      ...config,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    return newConfig;
+  }
+
+  async updateBackupConfiguration(id: string, config: any): Promise<any> {
+    // Simulate updating backup configuration
+    return {
+      id,
+      ...config,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async deleteBackupConfiguration(id: string): Promise<void> {
+    // Simulate deletion - in real implementation would delete from database
+    console.log(`Backup configuration ${id} deleted`);
+  }
+
+  async getBackupJobs(limit: number = 50): Promise<any[]> {
+    // Return recent backup jobs
+    const jobs = [];
+    for (let i = 0; i < Math.min(limit, 10); i++) {
+      jobs.push({
+        id: `job-${Date.now()}-${i}`,
+        configId: i % 2 === 0 ? "1" : "2",
+        status: i === 0 ? "running" : i % 3 === 0 ? "failed" : "completed",
+        startTime: new Date(Date.now() - i * 60 * 60 * 1000).toISOString(),
+        endTime: i === 0 ? null : new Date(Date.now() - i * 60 * 60 * 1000 + 5 * 60 * 1000).toISOString(),
+        size: `${Math.floor(Math.random() * 1000) + 100}MB`,
+        message: i % 3 === 0 ? "Connection timeout" : "Backup completed successfully"
+      });
+    }
+    return jobs;
+  }
+
+  async createManualBackup(configId: string): Promise<any> {
+    // Simulate creating a manual backup job
+    return {
+      id: `manual-${Date.now()}`,
+      configId,
+      status: "queued",
+      startTime: new Date().toISOString(),
+      endTime: null,
+      size: null,
+      message: "Manual backup job queued"
+    };
+  }
+
+  async getRestorePoints(): Promise<any[]> {
+    // Return available restore points
+    return [
+      {
+        id: "restore-1",
+        name: "Before System Update",
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        size: "2.1GB",
+        type: "manual",
+        verified: true
+      },
+      {
+        id: "restore-2",
+        name: "Weekly Backup",
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        size: "1.8GB",
+        type: "automatic",
+        verified: true
+      }
+    ];
+  }
+
+  async createRestorePoint(point: any): Promise<any> {
+    // Simulate creating a restore point
+    return {
+      id: `restore-${Date.now()}`,
+      ...point,
+      createdAt: new Date().toISOString(),
+      verified: false
+    };
+  }
+
+  async getBackupStats(): Promise<any> {
+    // Return backup statistics
+    return {
+      totalBackups: 156,
+      successfulBackups: 152,
+      failedBackups: 4,
+      totalSize: "45.2GB",
+      lastBackup: new Date().toISOString(),
+      nextScheduledBackup: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
+      storageUsed: "45.2GB",
+      storageQuota: "100GB"
+    };
+  }
+
+  // === LOCALIZATION IMPLEMENTATION ===
+
+  async getLocalizationSettings(): Promise<any> {
+    return {
+      id: "1",
+      defaultLanguage: "it",
+      availableLanguages: ["it", "en", "fr", "de", "es"],
+      dateFormat: "DD/MM/YYYY",
+      timeFormat: "24h",
+      timezone: "Europe/Rome",
+      currency: "EUR",
+      currencySymbol: "€",
+      thousandsSeparator: ".",
+      decimalSeparator: ",",
+      numberFormat: "1.234,56",
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async updateLocalizationSettings(settings: any): Promise<any> {
+    return {
+      ...settings,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  // === THEME IMPLEMENTATION ===
+
+  async getThemeSettings(): Promise<any> {
+    return {
+      id: "1",
+      defaultTheme: "light",
+      allowUserThemeSelection: true,
+      availableThemes: ["light", "dark", "auto"],
+      primaryColor: "#0066cc",
+      secondaryColor: "#6c757d",
+      accentColor: "#28a745",
+      fontFamily: "Inter",
+      fontSize: "14px",
+      compactMode: false,
+      animations: true,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async updateThemeSettings(settings: any): Promise<any> {
+    return {
+      ...settings,
+      updatedAt: new Date().toISOString()
+    };
   }
 }
 

@@ -273,6 +273,10 @@ class SystemService {
     }
   }
 
+  async getStats(): Promise<SystemStats> {
+    return this.getSystemStats();
+  }
+
   async getSystemStats(): Promise<SystemStats> {
     try {
       const memInfo = os.totalmem();
@@ -452,6 +456,23 @@ class SystemService {
       this.apiStats.errors++;
     }
   }
+
+  async clearLogs(): Promise<void> {
+    try {
+      await fs.writeFile(this.logsPath, JSON.stringify([], null, 2));
+      await this.log('INFO', 'System logs cleared', 'system-service', {
+        clearedBy: 'admin',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error clearing logs:', error);
+      throw error;
+    }
+  }
 }
+
+// Export the SystemService class as default
+export { SystemService };
+export default SystemService;
 
 export const systemService = new SystemService();
