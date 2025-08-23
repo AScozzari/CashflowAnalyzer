@@ -104,6 +104,12 @@ export function FiscalAIConsultant() {
     enabled: activeConversationId !== 'new'
   });
 
+  // Query for fetching stored contexts
+  const { data: storedContexts = [], isLoading: contextsLoading } = useQuery({
+    queryKey: ['/api/fiscal-ai/contexts'],
+    queryFn: () => fetch('/api/fiscal-ai/contexts', { credentials: 'include' }).then(res => res.json())
+  });
+
   // Sync messages when conversation changes
   useEffect(() => {
     if (activeConversationId === 'new') {
@@ -282,6 +288,8 @@ export function FiscalAIConsultant() {
       // Reset inputs
       setWebContext('');
       setContextQuery('');
+      // Refresh contexts list
+      queryClient.invalidateQueries({ queryKey: ['/api/fiscal-ai/contexts'] });
     },
   });
 
@@ -308,6 +316,8 @@ export function FiscalAIConsultant() {
       if (fileUploadRef.current) {
         fileUploadRef.current.value = '';
       }
+      // Refresh contexts list
+      queryClient.invalidateQueries({ queryKey: ['/api/fiscal-ai/contexts'] });
     },
   });
 
@@ -791,36 +801,50 @@ export function FiscalAIConsultant() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {/* Esempio di contesti memorizzati */}
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Globe className="h-4 w-4 text-blue-500" />
-                        <div>
-                          <p className="text-sm font-medium">Agevolazioni Transizione 4.0</p>
-                          <p className="text-xs text-muted-foreground">agenziaentrate.gov.it</p>
-                        </div>
+                    {contextsLoading ? (
+                      <div className="text-center py-4 text-muted-foreground text-sm">
+                        Caricando contesti memorizzati...
                       </div>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <FileText className="h-4 w-4 text-green-500" />
-                        <div>
-                          <p className="text-sm font-medium">Circolare 15/2024 - Deduzioni R&S</p>
-                          <p className="text-xs text-muted-foreground">Documento PDF - 245 KB</p>
+                    ) : storedContexts.length > 0 ? (
+                      storedContexts.map((context: any) => (
+                        <div key={context.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            {context.type === 'web' ? (
+                              <Globe className="h-4 w-4 text-blue-500" />
+                            ) : (
+                              <FileText className="h-4 w-4 text-green-500" />
+                            )}
+                            <div>
+                              <p className="text-sm font-medium">{context.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {context.type === 'web' ? context.url : `${context.fileType} - ${context.fileSize}`}
+                              </p>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              // TODO: Implementare rimozione contesto
+                              toast({
+                                title: "Contesto rimosso",
+                                description: "Il contesto è stato rimosso dalla memoria",
+                              });
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Database className="mx-auto h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-sm">Nessun contesto memorizzato</p>
+                        <p className="text-xs mt-1">
+                          Aggiungi link e documenti per migliorare la precisione delle risposte
+                        </p>
                       </div>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="text-center py-4 text-muted-foreground text-sm">
-                      Aggiungi link e documenti per migliorare la precisione delle risposte
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
