@@ -1754,6 +1754,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Upload and analyze document
+  app.post("/api/fiscal-ai/upload-document", requireAuth, upload.single('document'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No document uploaded' });
+      }
+
+      // Analyze the uploaded document
+      const analysis = await fiscalAIService.analyzeDocument(req.user.id, req.file);
+      
+      // Create document analysis record
+      const documentAnalysis = await storage.createDocumentAnalysis({
+        userId: req.user.id,
+        filename: req.file.originalname,
+        fileType: req.file.mimetype,
+        analysis: analysis.analysis,
+        extractedData: analysis.extractedData,
+        tokensUsed: analysis.tokensUsed || 0,
+        confidence: analysis.confidence || 0.8,
+        processingTime: analysis.processingTime || 0
+      });
+
+      res.json({
+        id: documentAnalysis.id,
+        name: req.file.originalname,
+        type: req.file.mimetype,
+        size: req.file.size,
+        analysis: analysis.analysis,
+        extractedData: analysis.extractedData,
+        confidence: analysis.confidence,
+        processingTime: analysis.processingTime
+      });
+    } catch (error: any) {
+      console.error('[FISCAL AI] Error uploading document:', error);
+      res.status(500).json({ 
+        error: 'Failed to upload and analyze document',
+        details: error.message 
+      });
+    }
+  }));
+
+  // Get document analysis history
+  app.get("/api/fiscal-ai/documents", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const documents = await storage.getDocumentAnalysisHistory(req.user.id);
+      res.json(documents);
+    } catch (error: any) {
+      console.error('[FISCAL AI] Error fetching documents:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch document history',
+        details: error.message 
+      });
+    }
+  }));
+
   // === CALENDAR EVENTS ROUTES ===
   
   // Get all calendar events for user

@@ -3446,6 +3446,71 @@ async getMovements(filters: {
       throw new Error('Failed to delete calendar reminder');
     }
   }
+  // === DOCUMENT ANALYSIS METHODS ===
+
+  async createDocumentAnalysis(data: {
+    userId: string;
+    filename: string;
+    fileType: string;
+    analysis: string;
+    extractedData: any;
+    tokensUsed: number;
+    confidence: number;
+    processingTime: number;
+  }): Promise<any> {
+    const id = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    
+    // For now store in memory, would need a proper table in production
+    const docAnalysis = {
+      id,
+      userId: data.userId,
+      filename: data.filename,
+      fileType: data.fileType,
+      analysis: data.analysis,
+      extractedData: data.extractedData,
+      tokensUsed: data.tokensUsed,
+      confidence: data.confidence,
+      processingTime: data.processingTime,
+      createdAt: new Date()
+    };
+
+    // Store in memory for this session
+    if (!this.documentAnalyses) {
+      this.documentAnalyses = [];
+    }
+    this.documentAnalyses.push(docAnalysis);
+
+    return docAnalysis;
+  }
+
+  async getDocumentAnalysisHistory(userId: string): Promise<any[]> {
+    if (!this.documentAnalyses) {
+      return [];
+    }
+    
+    return this.documentAnalyses
+      .filter((doc: any) => doc.userId === userId)
+      .sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 50);
+  }
+
+  async getDocumentAnalysis(id: string): Promise<any | null> {
+    if (!this.documentAnalyses) {
+      return null;
+    }
+    
+    return this.documentAnalyses.find((doc: any) => doc.id === id) || null;
+  }
+
+  async deleteDocumentAnalysis(id: string): Promise<void> {
+    if (!this.documentAnalyses) {
+      return;
+    }
+    
+    this.documentAnalyses = this.documentAnalyses.filter((doc: any) => doc.id !== id);
+  }
+
+  private documentAnalyses: any[] = [];
 }
 
 // Initialize DatabaseStorage with proper error handling

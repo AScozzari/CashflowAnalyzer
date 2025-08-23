@@ -244,6 +244,133 @@ Fornisci analisi completa in JSON:
   }
 
   /**
+   * Analizza documento fiscale caricato
+   */
+  async analyzeDocument(userId: string, file: any): Promise<{
+    analysis: string;
+    extractedData: any;
+    confidence: number;
+    tokensUsed: number;
+    processingTime: number;
+  }> {
+    if (!this.isConfigured) {
+      throw new Error('Servizio AI non configurato');
+    }
+
+    const startTime = Date.now();
+    
+    try {
+      const knowledgeBase = this.getFiscalKnowledgeBase();
+      const fileContent = this.extractFileContent(file);
+
+      const prompt = `Analizza questo documento fiscale per PMI italiana:
+
+DOCUMENTO:
+Nome: ${file.originalname}
+Tipo: ${file.mimetype}
+Contenuto: ${fileContent}
+
+NORMATIVE 2025:
+${knowledgeBase}
+
+Fornisci analisi dettagliata in JSON:
+{
+  "analysis": "Descrizione dettagliata del documento e implicazioni fiscali",
+  "extractedData": {
+    "tipo": "fattura/bilancio/dichiarazione",
+    "data": "2024-12-01",
+    "importo": 1500.00,
+    "iva": 22,
+    "soggetto": "Nome fornitore/cliente",
+    "codiceFiscale": "IT12345678901",
+    "note": "Informazioni aggiuntive"
+  },
+  "suggerimenti": [
+    "Suggerimento operativo 1",
+    "Suggerimento operativo 2"
+  ],
+  "complianceCheck": {
+    "status": "conforme/attenzione/critico",
+    "issues": ["Eventuale problema 1", "Eventuale problema 2"]
+  },
+  "opportunitaFiscali": [
+    {
+      "tipo": "deduzione/detrazione/credito",
+      "descrizione": "Spiegazione opportunità",
+      "risparmio": 150.00
+    }
+  ]
+}`;
+
+      const response = await this.openai!.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'Sei un commercialista senior esperto in analisi documenti fiscali per PMI italiane. Fornisci analisi dettagliate e consigli operativi.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.1,
+        max_tokens: 4000
+      });
+
+      const analysisResult = JSON.parse(response.choices[0].message.content || '{}');
+      const processingTime = Date.now() - startTime;
+
+      return {
+        analysis: analysisResult.analysis || 'Analisi completata',
+        extractedData: analysisResult.extractedData || {},
+        confidence: this.calculateConfidence(analysisResult),
+        tokensUsed: response.usage?.total_tokens || 0,
+        processingTime
+      };
+
+    } catch (error: any) {
+      console.error('[FISCAL AI] Errore nell\'analisi documento:', error);
+      throw new Error(`Errore nell'analisi del documento: ${error.message}`);
+    }
+  }
+
+  /**
+   * Estrae il contenuto dal file caricato
+   */
+  private extractFileContent(file: any): string {
+    // Per ora restituiamo informazioni base del file
+    // In una implementazione reale, si potrebbero usare librerie per estrarre testo da PDF, XML, etc.
+    return `
+File: ${file.originalname}
+Dimensione: ${(file.size / 1024).toFixed(2)} KB
+Tipo MIME: ${file.mimetype}
+Data caricamento: ${new Date().toISOString()}
+
+Contenuto: [Analisi contenuto file - implementazione estesa per PDF, XML, Excel in arrivo]
+`;
+  }
+
+  /**
+   * Calcola confidenza basata sui risultati dell'analisi
+   */
+  private calculateConfidence(analysisResult: any): number {
+    let confidence = 0.7; // Base confidence
+    
+    if (analysisResult.extractedData && Object.keys(analysisResult.extractedData).length > 0) {
+      confidence += 0.1;
+    }
+    
+    if (analysisResult.suggerimenti && analysisResult.suggerimenti.length > 0) {
+      confidence += 0.1;
+    }
+    
+    if (analysisResult.complianceCheck) {
+      confidence += 0.1;
+    }
+    
+    return Math.min(confidence, 1.0);
+  }
+
+  /**
    * Prepara il context finanziario per l'AI
    */
   private prepareFiscalContext(movements: any[]): string {
