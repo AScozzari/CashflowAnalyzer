@@ -1754,6 +1754,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // === CALENDAR EVENTS ROUTES ===
+  
+  // Get all calendar events for user
+  app.get("/api/calendar/events", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const events = await storage.getCalendarEvents(req.user.id);
+      res.json(events);
+    } catch (error) {
+      console.error('[CALENDAR] Error fetching events:', error);
+      res.status(500).json({ error: 'Failed to fetch calendar events' });
+    }
+  }));
+
+  // Get calendar events by date range
+  app.get("/api/calendar/events/range", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { startDate, endDate } = req.query;
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: 'Start date and end date are required' });
+      }
+      
+      const events = await storage.getCalendarEventsByDateRange(
+        new Date(startDate as string),
+        new Date(endDate as string),
+        req.user.id
+      );
+      res.json(events);
+    } catch (error) {
+      console.error('[CALENDAR] Error fetching events by date range:', error);
+      res.status(500).json({ error: 'Failed to fetch calendar events by date range' });
+    }
+  }));
+
+  // Get single calendar event
+  app.get("/api/calendar/events/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const event = await storage.getCalendarEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ error: 'Calendar event not found' });
+      }
+      res.json(event);
+    } catch (error) {
+      console.error('[CALENDAR] Error fetching event:', error);
+      res.status(500).json({ error: 'Failed to fetch calendar event' });
+    }
+  }));
+
+  // Create calendar event
+  app.post("/api/calendar/events", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const eventData = {
+        ...req.body,
+        createdByUserId: req.user.id,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate)
+      };
+      
+      const newEvent = await storage.createCalendarEvent(eventData);
+      res.status(201).json(newEvent);
+    } catch (error) {
+      console.error('[CALENDAR] Error creating event:', error);
+      res.status(500).json({ error: 'Failed to create calendar event' });
+    }
+  }));
+
+  // Update calendar event
+  app.put("/api/calendar/events/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const updateData = { ...req.body };
+      if (req.body.startDate) {
+        updateData.startDate = new Date(req.body.startDate);
+      }
+      if (req.body.endDate) {
+        updateData.endDate = new Date(req.body.endDate);
+      }
+      
+      const updatedEvent = await storage.updateCalendarEvent(req.params.id, updateData);
+      res.json(updatedEvent);
+    } catch (error) {
+      console.error('[CALENDAR] Error updating event:', error);
+      res.status(500).json({ error: 'Failed to update calendar event' });
+    }
+  }));
+
+  // Delete calendar event
+  app.delete("/api/calendar/events/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      await storage.deleteCalendarEvent(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[CALENDAR] Error deleting event:', error);
+      res.status(500).json({ error: 'Failed to delete calendar event' });
+    }
+  }));
+
+  // === CALENDAR REMINDERS ROUTES ===
+  
+  // Get reminders for an event
+  app.get("/api/calendar/events/:eventId/reminders", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const reminders = await storage.getCalendarReminders(req.params.eventId);
+      res.json(reminders);
+    } catch (error) {
+      console.error('[CALENDAR] Error fetching reminders:', error);
+      res.status(500).json({ error: 'Failed to fetch calendar reminders' });
+    }
+  }));
+
+  // Create calendar reminder
+  app.post("/api/calendar/reminders", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const reminderData = {
+        ...req.body,
+        recipientUserId: req.user.id,
+        scheduledFor: new Date(req.body.scheduledFor)
+      };
+      
+      const newReminder = await storage.createCalendarReminder(reminderData);
+      res.status(201).json(newReminder);
+    } catch (error) {
+      console.error('[CALENDAR] Error creating reminder:', error);
+      res.status(500).json({ error: 'Failed to create calendar reminder' });
+    }
+  }));
+
+  // Update calendar reminder
+  app.put("/api/calendar/reminders/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const updateData = { ...req.body };
+      if (req.body.scheduledFor) {
+        updateData.scheduledFor = new Date(req.body.scheduledFor);
+      }
+      
+      const updatedReminder = await storage.updateCalendarReminder(req.params.id, updateData);
+      res.json(updatedReminder);
+    } catch (error) {
+      console.error('[CALENDAR] Error updating reminder:', error);
+      res.status(500).json({ error: 'Failed to update calendar reminder' });
+    }
+  }));
+
+  // Delete calendar reminder
+  app.delete("/api/calendar/reminders/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      await storage.deleteCalendarReminder(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[CALENDAR] Error deleting reminder:', error);
+      res.status(500).json({ error: 'Failed to delete calendar reminder' });
+    }
+  }));
+
   // Create and return HTTP server
   const httpServer = createServer(app);
   return httpServer;

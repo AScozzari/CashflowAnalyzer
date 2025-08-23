@@ -36,7 +36,10 @@ import {
   type SmsTemplate, type InsertSmsTemplate,
   type SmsMessage, type InsertSmsMessage,
   type SmsBlacklist, type InsertSmsBlacklist,
-  type SmsStatistics, type InsertSmsStatistics
+  type SmsStatistics, type InsertSmsStatistics,
+  calendarEvents, calendarReminders,
+  type CalendarEvent, type InsertCalendarEvent,
+  type CalendarReminder, type InsertCalendarReminder
 } from "@shared/schema";
 import { 
   BackupConfiguration, 
@@ -304,6 +307,20 @@ export interface IStorage {
   getSmsBlacklist(): Promise<SmsBlacklist[]>;
   addToSmsBlacklist(entry: InsertSmsBlacklist): Promise<SmsBlacklist>;
   removeFromSmsBlacklist(phoneNumber: string): Promise<void>;
+
+  // Calendar Events
+  getCalendarEvents(userId?: string): Promise<CalendarEvent[]>;
+  getCalendarEvent(id: string): Promise<CalendarEvent | undefined>;
+  createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent>;
+  updateCalendarEvent(id: string, event: Partial<InsertCalendarEvent>): Promise<CalendarEvent>;
+  deleteCalendarEvent(id: string): Promise<void>;
+  getCalendarEventsByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<CalendarEvent[]>;
+
+  // Calendar Reminders
+  getCalendarReminders(eventId: string): Promise<CalendarReminder[]>;
+  createCalendarReminder(reminder: InsertCalendarReminder): Promise<CalendarReminder>;
+  updateCalendarReminder(id: string, reminder: Partial<InsertCalendarReminder>): Promise<CalendarReminder>;
+  deleteCalendarReminder(id: string): Promise<void>;
 
   // Session store per autenticazione
   sessionStore: session.Store;
@@ -3254,6 +3271,179 @@ async getMovements(filters: {
     } catch (error) {
       console.error('Error executing raw query:', error);
       throw new Error('Query execution failed');
+    }
+  }
+
+  // Calendar Events Implementation
+  async getCalendarEvents(userId?: string): Promise<CalendarEvent[]> {
+    try {
+      let whereConditions = [eq(calendarEvents.isActive, true)];
+      
+      if (userId) {
+        whereConditions.push(
+          or(
+            eq(calendarEvents.createdByUserId, userId),
+            eq(calendarEvents.assignedToUserId, userId)
+          )
+        );
+      }
+      
+      const query = db.select().from(calendarEvents).where(and(...whereConditions));
+      
+      const events = await query.orderBy(calendarEvents.startDate);
+      return events;
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      throw new Error('Failed to fetch calendar events');
+    }
+  }
+
+  async getCalendarEvent(id: string): Promise<CalendarEvent | undefined> {
+    try {
+      const [event] = await db.select().from(calendarEvents)
+        .where(and(eq(calendarEvents.id, id), eq(calendarEvents.isActive, true)));
+      return event || undefined;
+    } catch (error) {
+      console.error('Error fetching calendar event:', error);
+      throw new Error('Failed to fetch calendar event');
+    }
+  }
+
+  async createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent> {
+    try {
+      const [newEvent] = await db.insert(calendarEvents).values({
+        ...event,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return newEvent;
+    } catch (error) {
+      console.error('Error creating calendar event:', error);
+      throw new Error('Failed to create calendar event');
+    }
+  }
+
+  async updateCalendarEvent(id: string, event: Partial<InsertCalendarEvent>): Promise<CalendarEvent> {
+    try {
+      const [updatedEvent] = await db
+        .update(calendarEvents)
+        .set({ ...event, updatedAt: new Date() })
+        .where(eq(calendarEvents.id, id))
+        .returning();
+      
+      if (!updatedEvent) {
+        throw new Error('Calendar event not found');
+      }
+      
+      return updatedEvent;
+    } catch (error) {
+      console.error('Error updating calendar event:', error);
+      throw new Error('Failed to update calendar event');
+    }
+  }
+
+  async deleteCalendarEvent(id: string): Promise<void> {
+    try {
+      // Soft delete - mark as inactive instead of actual deletion
+      const result = await db
+        .update(calendarEvents)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(calendarEvents.id, id));
+      
+      if (result.rowCount === 0) {
+        throw new Error('Calendar event not found');
+      }
+    } catch (error) {
+      console.error('Error deleting calendar event:', error);
+      throw new Error('Failed to delete calendar event');
+    }
+  }
+
+  async getCalendarEventsByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<CalendarEvent[]> {
+    try {
+      let whereConditions = [
+        eq(calendarEvents.isActive, true),
+        gte(calendarEvents.startDate, startDate),
+        lte(calendarEvents.endDate, endDate)
+      ];
+      
+      if (userId) {
+        whereConditions.push(
+          or(
+            eq(calendarEvents.createdByUserId, userId),
+            eq(calendarEvents.assignedToUserId, userId)
+          )
+        );
+      }
+      
+      const query = db.select().from(calendarEvents).where(and(...whereConditions));
+      
+      const events = await query.orderBy(calendarEvents.startDate);
+      return events;
+    } catch (error) {
+      console.error('Error fetching calendar events by date range:', error);
+      throw new Error('Failed to fetch calendar events by date range');
+    }
+  }
+
+  // Calendar Reminders Implementation
+  async getCalendarReminders(eventId: string): Promise<CalendarReminder[]> {
+    try {
+      const reminders = await db.select().from(calendarReminders)
+        .where(and(
+          eq(calendarReminders.eventId, eventId),
+          eq(calendarReminders.isActive, true)
+        ))
+        .orderBy(calendarReminders.reminderTime);
+      return reminders;
+    } catch (error) {
+      console.error('Error fetching calendar reminders:', error);
+      throw new Error('Failed to fetch calendar reminders');
+    }
+  }
+
+  async createCalendarReminder(reminder: InsertCalendarReminder): Promise<CalendarReminder> {
+    try {
+      const [newReminder] = await db.insert(calendarReminders).values({
+        ...reminder,
+        createdAt: new Date()
+      }).returning();
+      return newReminder;
+    } catch (error) {
+      console.error('Error creating calendar reminder:', error);
+      throw new Error('Failed to create calendar reminder');
+    }
+  }
+
+  async updateCalendarReminder(id: string, reminder: Partial<InsertCalendarReminder>): Promise<CalendarReminder> {
+    try {
+      const [updatedReminder] = await db
+        .update(calendarReminders)
+        .set(reminder)
+        .where(eq(calendarReminders.id, id))
+        .returning();
+      
+      if (!updatedReminder) {
+        throw new Error('Calendar reminder not found');
+      }
+      
+      return updatedReminder;
+    } catch (error) {
+      console.error('Error updating calendar reminder:', error);
+      throw new Error('Failed to update calendar reminder');
+    }
+  }
+
+  async deleteCalendarReminder(id: string): Promise<void> {
+    try {
+      const result = await db.delete(calendarReminders).where(eq(calendarReminders.id, id));
+      
+      if (result.rowCount === 0) {
+        throw new Error('Calendar reminder not found');
+      }
+    } catch (error) {
+      console.error('Error deleting calendar reminder:', error);
+      throw new Error('Failed to delete calendar reminder');
     }
   }
 }

@@ -118,6 +118,13 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
   const watchedCompanyId = form.watch("companyId");
   const watchedEntityType = form.watch("entityType");
 
+  // Reminder functionality
+  const [enableReminder, setEnableReminder] = useState(false);
+  const [reminderDate, setReminderDate] = useState<Date | null>(null);
+  const [reminderType, setReminderType] = useState<'notification' | 'email' | 'sms' | 'whatsapp'>('notification');
+  const [reminderTime, setReminderTime] = useState(60); // minutes before
+  const [reminderPriority, setReminderPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+
   // Data queries
   const { data: companies = [] } = useQuery<Company[]>({ queryKey: ["/api/companies"] });
   const { data: cores = [] } = useQuery<Core[]>({ queryKey: ["/api/cores"] });
@@ -129,6 +136,43 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
   const { data: reasons = [] } = useQuery<MovementReason[]>({ queryKey: ["/api/movement-reasons"] });
   const { data: suppliers = [] } = useQuery<Supplier[]>({ queryKey: ["/api/suppliers"] });
   const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["/api/customers"] });
+
+  // Calendar reminder mutation
+  const createCalendarReminderMutation = useMutation({
+    mutationFn: async ({ eventData, reminderData }: { eventData: any; reminderData: any }) => {
+      // Create calendar event first
+      const eventResponse = await apiRequest('/calendar/events', {
+        method: 'POST',
+        body: JSON.stringify(eventData),
+      });
+
+      // Create reminder for the event
+      if (reminderData) {
+        await apiRequest('/calendar/reminders', {
+          method: 'POST', 
+          body: JSON.stringify({
+            ...reminderData,
+            eventId: eventResponse.id,
+          }),
+        });
+      }
+
+      return eventResponse;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Reminder creato",
+        description: "Il reminder è stato aggiunto al calendario.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione del reminder: " + error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   // Filter data based on selected company
   const filteredCores = cores.filter(core => core.companyId === watchedCompanyId);
@@ -379,10 +423,36 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
   const handleSubmit = async (data: MovementFormData) => {
     setIsSubmitting(true);
     try {
+      let createdMovement;
+      
       if (movement) {
-        await updateMovementMutation.mutateAsync(data);
+        createdMovement = await updateMovementMutation.mutateAsync(data);
       } else {
-        await createMovementMutation.mutateAsync(data);
+        createdMovement = await createMovementMutation.mutateAsync(data);
+      }
+
+      // Create calendar reminder if enabled
+      if (enableReminder && reminderDate && createdMovement) {
+        const eventData = {
+          title: `Reminder: ${data.type === 'income' ? 'Entrata' : 'Uscita'} - €${data.amount}`,
+          description: `${data.notes || 'Movimento finanziario'}\nImporto: €${data.amount}\nData: ${data.flowDate}`,
+          startDate: reminderDate.toISOString(),
+          endDate: new Date(reminderDate.getTime() + 60 * 60 * 1000).toISOString(), // 1 hour duration
+          type: 'reminder',
+          priority: reminderPriority,
+          color: data.type === 'income' ? '#22c55e' : '#ef4444',
+          linkedMovementId: createdMovement.id,
+        };
+
+        const reminderData = {
+          reminderType: reminderType,
+          reminderTime: reminderTime,
+          reminderUnit: 'minutes',
+          scheduledFor: new Date(reminderDate.getTime() - reminderTime * 60 * 1000).toISOString(),
+          recipientUserId: 'current-user', // Will be set by backend
+        };
+
+        await createCalendarReminderMutation.mutateAsync({ eventData, reminderData });
       }
     } finally {
       setIsSubmitting(false);
