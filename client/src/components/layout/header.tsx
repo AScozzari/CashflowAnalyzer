@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { LogOut, User, Shield, CreditCard, Bot } from "lucide-react";
+import { LogOut, User, Shield, CreditCard, Bot, Calendar } from "lucide-react";
 import { Link } from "wouter";
 import { NotificationsBell } from "./notifications-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -73,6 +73,20 @@ export default function Header({ title, subtitle, action }: HeaderProps) {
           <MobileNavigation />
           {action && <div className="hidden sm:block">{action}</div>}
           
+          {/* Calendar Shortcut */}
+          <Link href="/calendar">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2 hover:bg-purple-50 dark:hover:bg-purple-900/20 relative group" 
+              data-testid="calendar-shortcut"
+              title="Calendario"
+            >
+              <Calendar className="h-5 w-5 text-purple-600 group-hover:text-purple-700" />
+              <span className="sr-only">Calendario</span>
+            </Button>
+          </Link>
+
           {/* AI Chat Shortcut */}
           <Link href="/ai-chat">
             <Button 

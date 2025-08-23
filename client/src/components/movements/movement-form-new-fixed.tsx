@@ -22,7 +22,8 @@ import {
   Phone,
   Building,
   Hash,
-  Users
+  Users,
+  Bell
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import CompactXMLUploader from "./xml-invoice-uploader-compact";
 import { AiDocumentUpload } from "./ai-document-upload";
+import MovementRemindModal from "./movement-remind-modal";
 import type { MovementWithRelations, Company, Core, Resource, Office, Iban, Tag, MovementStatus, MovementReason, Supplier, Customer } from "@shared/schema";
 
 // Schema del form con validazione
@@ -79,6 +81,8 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [aiExtractedData, setAiExtractedData] = useState<any>(null);
+  const [showRemindModal, setShowRemindModal] = useState(false);
+  const [enableRemind, setEnableRemind] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -989,6 +993,60 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
               </CardContent>
             </Card>
 
+            {/* Remind Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-orange-600" />
+                  Promemoria
+                </CardTitle>
+                <CardDescription>
+                  Crea un promemoria per questo movimento
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="enableRemind"
+                    checked={enableRemind}
+                    onChange={(e) => setEnableRemind(e.target.checked)}
+                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    data-testid="checkbox-enable-remind"
+                  />
+                  <label htmlFor="enableRemind" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Imposta un promemoria per questo movimento
+                  </label>
+                </div>
+                
+                {enableRemind && (
+                  <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                          Promemoria attivato
+                        </p>
+                        <p className="text-xs text-orange-600 dark:text-orange-300 mt-1">
+                          Configura il promemoria dopo aver salvato il movimento
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRemindModal(true)}
+                        className="border-orange-300 text-orange-700 hover:bg-orange-100 dark:border-orange-600 dark:text-orange-200 dark:hover:bg-orange-800"
+                        data-testid="button-configure-remind"
+                      >
+                        <Bell className="h-4 w-4 mr-2" />
+                        Configura Ora
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Buttons */}
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={onClose}>
@@ -1007,6 +1065,29 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
             </div>
           </form>
         </Form>
+
+        {/* Remind Modal */}
+        <MovementRemindModal
+          isOpen={showRemindModal}
+          onClose={() => setShowRemindModal(false)}
+          movementData={{
+            type: form.watch("type"),
+            amount: form.watch("amount"),
+            description: form.watch("notes"),
+            flowDate: form.watch("flowDate"),
+            companyName: companies.find(c => c.id === form.watch("companyId"))?.name,
+            entityName: form.watch("entityType") === "customer" 
+              ? customers.find(c => c.id === form.watch("customerId"))?.name || 
+                `${customers.find(c => c.id === form.watch("customerId"))?.firstName} ${customers.find(c => c.id === form.watch("customerId"))?.lastName}`.trim()
+              : form.watch("entityType") === "supplier"
+              ? suppliers.find(s => s.id === form.watch("supplierId"))?.name
+              : resources.find(r => r.id === form.watch("resourceId"))?.firstName + " " + resources.find(r => r.id === form.watch("resourceId"))?.lastName
+          }}
+          onSave={(remindData) => {
+            console.log("Remind data saved:", remindData);
+            // This will be handled by the mutation in the modal
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
