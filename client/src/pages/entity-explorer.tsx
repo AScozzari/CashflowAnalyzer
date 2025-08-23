@@ -73,7 +73,7 @@ export default function EntityExplorer() {
   const [searchResults, setSearchResults] = useState<EntitySearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Mock search function - in real app would be API call
+  // Real search function using API
   const performSearch = async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -82,46 +82,26 @@ export default function EntityExplorer() {
 
     setIsSearching(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Mock results
-    const mockResults: EntitySearchResult[] = [
-      {
-        id: '1',
-        name: 'Acme Corporation',
-        type: 'supplier' as const,
-        subtitle: 'Fornitore • acme@example.com',
-        status: 'Attivo'
-      },
-      {
-        id: '2',
-        name: 'Mario Rossi',
-        type: 'customer' as const,
-        subtitle: 'Cliente • mario.rossi@email.com',
-        status: 'Attivo'
-      },
-      {
-        id: '3',
-        name: 'Giulia Bianchi',
-        type: 'resource' as const,
-        subtitle: 'Risorsa • Contabilità',
-        status: 'Attivo'
-      },
-      {
-        id: '4',
-        name: 'Tech Solutions SRL',
-        type: 'supplier' as const,
-        subtitle: 'Fornitore • tech@solutions.it',
-        status: 'Attivo'
+    try {
+      // Real API call to search entities
+      const response = await fetch('/api/search/entities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      
+      if (response.ok) {
+        const results = await response.json();
+        setSearchResults(results || []);
+      } else {
+        setSearchResults([]);
       }
-    ].filter(item => 
-      item.name.toLowerCase().includes(query.toLowerCase()) ||
-      item.subtitle.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    setSearchResults(mockResults);
-    setIsSearching(false);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   // Fetch entity details when selected
@@ -129,12 +109,12 @@ export default function EntityExplorer() {
     queryKey: ['/api/entities', selectedEntity?.id, selectedEntity?.type],
     enabled: !!selectedEntity,
     queryFn: async (): Promise<EntityDetails> => {
-      // Mock entity details - in real app would be API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      return {
-        entity: {
-          id: selectedEntity!.id,
+      // Real API call to get entity details
+      const response = await fetch(`/api/entities/${selectedEntity!.id}?type=${selectedEntity!.type}`);
+      if (response.ok) {
+        return await response.json();
+      }
+      throw new Error('Failed to fetch entity details');
           name: selectedEntity!.name,
           email: 'test@example.com',
           phone: '+39 123 456 7890',

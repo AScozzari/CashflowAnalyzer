@@ -28,45 +28,27 @@ export default function CompactXMLUploader({ onDataParsed }: CompactXMLUploaderP
     setIsProcessing(true);
 
     try {
-      // Simulazione dei dati estratti dal file XML per test
-      const mockParsedData = {
-        supplier: {
-          vatNumber: "12345678901",
-          name: "Fornitore Test S.r.l.",
-          taxCode: "RSSMRA85M01H501Z",
-          address: "Via Roma 123",
-          city: "Milano",
-          zipCode: "20100"
-        },
-        invoice: {
-          documentNumber: "2025/001",
-          documentDate: "2025-01-10",
-          totalAmount: 1220.00,
-          vatAmount: 220.00,
-          netAmount: 1000.00,
-          description: "Servizi di consulenza informatica"
-        },
-        movementSuggestion: {
-          type: 'expense' as const,
-          amount: "1220.00",
-          flowDate: "2025-01-10",
-          documentNumber: "2025/001",
-          description: "Servizi di consulenza informatica",
-          vatAmount: 220.00,
-          netAmount: 1000.00,
-          notes: "Fattura elettronica - Fornitore Test S.r.l. (P.IVA: 12345678901)"
-        }
-      };
+      // Real XML parsing using server API
+      const formData = new FormData();
+      formData.append('file', selectedFile);
 
-      // Per ora simulo una risposta di successo
-      toast({
-        title: "XML Elaborato (Simulazione)",
-        description: `Estratti dati da fattura ${mockParsedData.invoice.documentNumber}`,
+      const response = await apiRequest('/api/xml/parse-invoice', {
+        method: 'POST',
+        body: formData,
       });
 
-      if (onDataParsed) {
-        onDataParsed(mockParsedData);
+      if (response.success) {
+        toast({
+          title: "XML Elaborato con Successo",
+          description: `Estratti dati da fattura ${response.data.invoice.documentNumber}`,
+        });
+
+        // Pass parsed real data to parent component
+        onDataParsed?.(response.data);
+      } else {
+        throw new Error(response.error || 'Errore parsing XML');
       }
+
 
       setIsOpen(false);
       setSelectedFile(null);

@@ -1290,6 +1290,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupWhatsAppRoutes(app);
   setupTelegramRoutes(app);
   setupSmsRoutes(app);
+
+  // Email stats endpoint
+  app.get("/api/email/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const stats = await storage.getEmailStats();
+      res.json({
+        totalEmails: stats.total || 0,
+        sentEmails: stats.sent || 0,
+        failedEmails: stats.failed || 0
+      });
+    } catch (error) {
+      console.error('Error fetching email stats:', error);
+      res.status(500).json({ error: 'Failed to get email statistics' });
+    }
+  }));
+
   
   // Auto-initialize Telegram service with existing settings
   const initializeTelegramService = async () => {
@@ -1942,6 +1958,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: 'Errore nel recupero della cronologia',
         details: error.message 
+      });
+    }
+  }));
+
+  // === XML INVOICE PARSING ENDPOINTS ===
+  
+  // Parse FatturaPA XML invoice
+  app.post("/api/xml/parse-invoice", requireAuth, upload.single('file'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'Nessun file XML caricato' });
+      }
+
+      const fileName = req.file.originalname;
+      const fileType = req.file.mimetype;
+      
+      // Verify it's an XML file
+      if (!fileType.includes('xml') && !fileName.toLowerCase().endsWith('.xml')) {
+        fs.unlinkSync(req.file.path); // Clean up
+        return res.status(400).json({ success: false, error: 'File deve essere in formato XML' });
+      }
+
+      // Read XML file content
+      const xmlContent = fs.readFileSync(req.file.path, 'utf-8');
+      
+      // Parse with FatturaPA parser
+      const parsedData = await xmlInvoiceParser.parseInvoiceXML(xmlContent);
+      
+      // Clean up temporary file
+      fs.unlinkSync(req.file.path);
+      
+      console.log('[XML PARSER] Successfully parsed FatturaPA:', fileName);
+      
+      res.json({
+        success: true,
+        data: parsedData,
+        fileName,
+        message: 'Fattura XML elaborata con successo'
+      });
+      
+    } catch (error: any) {
+      // Clean up temporary file on error
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      console.error('[XML PARSER] Error parsing invoice:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: `Errore parsing XML: ${error.message || 'Formato non valido'}` 
       });
     }
   }));

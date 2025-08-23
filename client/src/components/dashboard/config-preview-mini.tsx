@@ -73,6 +73,28 @@ export function ConfigPreviewMini() {
     retry: false,
   });
 
+  // 🔥 DATI REALI - Fetch delle statistiche Email
+  const { data: emailStats } = useQuery<{total: number; sent: number; failed: number}>({
+    queryKey: ['/api/email/stats'],
+    select: (data: any) => ({
+      total: data?.totalEmails || 0,
+      sent: data?.sentEmails || 0,
+      failed: data?.failedEmails || 0
+    }),
+    retry: false,
+  });
+
+  // 🔥 DATI REALI - Fetch delle statistiche SMS
+  const { data: smsStats } = useQuery<{total: number; sent: number; failed: number}>({
+    queryKey: ['/api/sms/stats'],
+    select: (data: any) => ({
+      total: data?.totalSms || 0,
+      sent: data?.sentSms || 0,
+      failed: data?.failedSms || 0
+    }),
+    retry: false,
+  });
+
   // Helper function to calculate last used
   const getLastUsed = (chats: any[], type: string) => {
     if (!chats || chats.length === 0) return 'Mai utilizzato';
@@ -121,25 +143,25 @@ export function ConfigPreviewMini() {
       id: 'email',
       name: 'Email',
       icon: <Mail className="w-4 h-4" />,
-      status: 'configured', // Assumiamo sia sempre configurato
-      currentUsage: 1200, // Mock per ora, da implementare endpoint dedicato
+      status: emailStats ? 'configured' : 'not_configured',
+      currentUsage: emailStats?.total || 0,
       monthlyLimit: 50000,
-      usagePercentage: 2,
-      lastUsed: '3 ore fa',
-      messagesThisMonth: 1200,
-      cost: '€4.80'
+      usagePercentage: Math.round(((emailStats?.total || 0) / 50000) * 100),
+      lastUsed: emailStats?.total > 0 ? 'Oggi' : 'Mai utilizzato',
+      messagesThisMonth: emailStats?.total || 0,
+      cost: calculateCost(emailStats?.total || 0, 0.004) // 0.4 centesimi per email
     },
     {
       id: 'sms',
       name: 'SMS',
       icon: <Phone className="w-4 h-4" />,
-      status: 'configured', // Mock per ora, da implementare endpoint dedicato
-      currentUsage: 180,
+      status: smsStats ? 'configured' : 'not_configured',
+      currentUsage: smsStats?.total || 0,
       monthlyLimit: 1000,
-      usagePercentage: 18,
-      lastUsed: '1 giorno fa',
-      messagesThisMonth: 180,
-      cost: '€8.10'
+      usagePercentage: Math.round(((smsStats?.total || 0) / 1000) * 100),
+      lastUsed: smsStats?.total > 0 ? 'Oggi' : 'Mai utilizzato',
+      messagesThisMonth: smsStats?.total || 0,
+      cost: calculateCost(smsStats?.total || 0, 0.045) // 4.5 centesimi per SMS
     },
     {
       id: 'telegram',

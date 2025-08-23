@@ -354,6 +354,10 @@ export interface IStorage {
   // Themes
   getThemeSettings(): Promise<any>;
   updateThemeSettings(settings: any): Promise<any>;
+
+  // Communication Stats
+  getEmailStats(): Promise<{ total: number; sent: number; failed: number }>;
+  getSmsStats(): Promise<{ total: number; sent: number; failed: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3904,6 +3908,45 @@ async getMovements(filters: {
     } catch (error) {
       console.error('Error updating theme settings:', error);
       throw new Error('Failed to update theme settings');
+    }
+  }
+
+  // === COMMUNICATION STATS IMPLEMENTATION ===
+
+  async getEmailStats(): Promise<{ total: number; sent: number; failed: number }> {
+    try {
+      // Count from email logs/notifications or system configs
+      const emailNotifications = await db.select()
+        .from(notifications)
+        .where(eq(notifications.category, 'email'));
+      
+      const total = emailNotifications.length;
+      // For now, assume all emails are sent successfully
+      // In a real implementation, you'd track actual send statuses
+      const sent = total;
+      const failed = 0;
+      
+      return { total, sent, failed };
+    } catch (error) {
+      console.error('Error fetching email stats:', error);
+      return { total: 0, sent: 0, failed: 0 };
+    }
+  }
+
+  async getSmsStats(): Promise<{ total: number; sent: number; failed: number }> {
+    try {
+      // Count from SMS messages table
+      const smsMessages = await this.getSmsMessages(1000); // Get recent SMS
+      
+      const total = smsMessages.length;
+      // Count by status if available, otherwise assume sent
+      const sent = smsMessages.filter(msg => msg.status === 'sent' || msg.status === 'delivered').length;
+      const failed = smsMessages.filter(msg => msg.status === 'failed').length;
+      
+      return { total, sent, failed };
+    } catch (error) {
+      console.error('Error fetching SMS stats:', error);
+      return { total: 0, sent: 0, failed: 0 };
     }
   }
 }

@@ -49,52 +49,17 @@ export function EmailInterface() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
 
-  // Mock email data
-  const emails: Email[] = [
-    {
-      id: "1",
-      from: "cliente@example.com",
-      subject: "Richiesta informazioni fatturazione",
-      body: "Buongiorno, vorrei avere maggiori informazioni sui vostri servizi di fatturazione elettronica...",
-      timestamp: "2025-08-15 09:30",
-      read: false,
-      starred: false
-    },
-    {
-      id: "2", 
-      from: "fornitore@supplier.it",
-      subject: "Conferma ordine materiali",
-      body: "Confermiamo l'ordine dei materiali richiesti. La consegna è prevista per...",
-      timestamp: "2025-08-15 08:15",
-      read: true,
-      starred: true
-    }
-  ];
+  // Load emails from API
+  const { data: emails = [] } = useQuery<Email[]>({
+    queryKey: ['/api/emails'],
+    retry: false,
+  });
 
-  // Mock email templates
-  const templates: EmailTemplate[] = [
-    {
-      id: "1",
-      name: "Benvenuto Cliente",
-      subject: "Benvenuto in EasyCashFlows",
-      body: "Gentile {nome_cliente},\n\nBenvenuto nella nostra piattaforma EasyCashFlows...",
-      category: "onboarding"
-    },
-    {
-      id: "2",
-      name: "Reminder Pagamento",
-      subject: "Promemoria pagamento fattura {numero_fattura}",
-      body: "Gentile {nome_cliente},\n\nLe ricordiamo che la fattura {numero_fattura} è in scadenza...",
-      category: "payments"
-    },
-    {
-      id: "3",
-      name: "Conferma Ordine",
-      subject: "Conferma ordine {numero_ordine}",
-      body: "Gentile {nome_cliente},\n\nConfermiamo la ricezione del vostro ordine...",
-      category: "orders"
-    }
-  ];
+  // Load email templates from API
+  const { data: templates = [] } = useQuery<EmailTemplate[]>({
+    queryKey: ['/api/email/templates'],
+    retry: false,
+  });
 
   const handleComposeWithTemplate = (template: EmailTemplate) => {
     setSelectedTemplate(template);

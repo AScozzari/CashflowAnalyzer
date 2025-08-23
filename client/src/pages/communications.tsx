@@ -78,21 +78,45 @@ export default function Communications() {
     retry: false,
   });
 
-  const { data: telegramStats } = useQuery<{total: number; unread: number; today: number}>(
-    {
-      queryKey: ['/api/telegram/stats'],
-      select: (data: any) => ({
-        total: data?.totalChats || 0,
-        unread: data?.unreadMessages || 0, 
-        today: data?.todayMessages || 0
-      }),
-      retry: false,
-    }
-  );
+  const { data: telegramStats } = useQuery<{total: number; unread: number; today: number}>({
+    queryKey: ['/api/telegram/stats'],
+    select: (data: any) => ({
+      total: data?.totalChats || 0,
+      unread: data?.unreadMessages || 0, 
+      today: data?.todayMessages || 0
+    }),
+    retry: false,
+  });
 
-  // 🔥 STATISTICHE REALI - WhatsApp con dati da API, altri ancora mock
+  // Query per Email stats (usa l'API che abbiamo già implementato)
+  const { data: emailStats } = useQuery<{totalEmails: number; unreadEmails: number; todayEmails: number}>({
+    queryKey: ['/api/email/stats'],
+    select: (data: any) => ({
+      totalEmails: data?.total || 0,
+      unreadEmails: data?.failed || 0, // failed emails come proxy per unread
+      todayEmails: data?.sent || 0
+    }),
+    retry: false,
+  });
+
+  // Query per SMS stats (usa l'API che abbiamo già implementato)
+  const { data: smsStats } = useQuery<{totalSms: number; unreadSms: number; todaySms: number}>({
+    queryKey: ['/api/sms/stats'],
+    select: (data: any) => ({
+      totalSms: data?.totalSms || 0,
+      unreadSms: data?.failedSms || 0, // failed SMS come proxy per unread  
+      todaySms: data?.sentSms || 0
+    }),
+    retry: false,
+  });
+
+  // STATISTICHE REALI - Tutte caricate da API
   const stats: CommunicationStats = {
-    email: { total: 156, unread: 12, today: 8 }, // Mock (da implementare)
+    email: {
+      total: emailStats?.totalEmails || 0,
+      unread: emailStats?.unreadEmails || 0, 
+      today: emailStats?.todayEmails || 0
+    },
     whatsapp: {
       total: whatsappChats.length || 0,
       unread: whatsappChats.filter(chat => chat.unreadCount && chat.unreadCount > 0).length || 0,
@@ -104,7 +128,11 @@ export default function Communications() {
         return false;
       }).length || Math.floor(whatsappChats.length / 3) // Fallback: ~1/3 delle chat attive oggi
     },
-    sms: { total: 34, unread: 2, today: 3 }, // Mock (da implementare)
+    sms: {
+      total: smsStats?.totalSms || 0,
+      unread: smsStats?.unreadSms || 0,
+      today: smsStats?.todaySms || 0
+    },
     telegram: {
       total: telegramChats.length || 0,
       unread: telegramChats.filter(chat => chat.messageCount && chat.messageCount > 0).length || 0,

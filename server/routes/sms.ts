@@ -349,23 +349,20 @@ export function setupSmsRoutes(app: Express) {
     }
   });
 
-  // Get SMS statistics
+  // Get SMS statistics for dashboard
   app.get('/api/sms/stats', async (req, res) => {
     try {
       console.log('[SMS API] Getting SMS statistics...');
       const { storage } = await import('../storage');
       
-      const settings = await storage.getSmsSettings();
-      const stats = {
-        isConfigured: !!settings,
-        isActive: settings?.isActive || false,
-        provider: settings?.providerName || 'none',
-        lastTest: settings?.updatedAt || null,
-        deliveryReceiptsEnabled: settings?.deliveryReceiptsEnabled || false
-      };
+      const stats = await storage.getSmsStats();
       
       console.log('[SMS API] SMS stats:', stats);
-      res.json(stats);
+      res.json({
+        totalSms: stats.total || 0,
+        sentSms: stats.sent || 0,
+        failedSms: stats.failed || 0
+      });
     } catch (error) {
       console.error('Error fetching SMS stats:', error);
       res.status(500).json({ error: 'Failed to fetch SMS statistics' });
