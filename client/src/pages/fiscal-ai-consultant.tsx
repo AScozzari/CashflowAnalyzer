@@ -14,7 +14,12 @@ import {
   Settings,
   Trash2,
   Eye,
-  Download
+  Download,
+  Search,
+  Globe,
+  TrendingUp,
+  BarChart3,
+  Zap
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +31,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Header from '@/components/layout/header';
 import { Link } from 'wouter';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface ChatMessage {
   id: string;
@@ -59,8 +66,16 @@ export function FiscalAIConsultant() {
   const [isTyping, setIsTyping] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string>('new');
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeTab, setActiveTab] = useState('chat');
+  
+  // Ottimizzazione state
+  const [webContext, setWebContext] = useState('');
+  const [documentContext, setDocumentContext] = useState<File | null>(null);
+  const [contextQuery, setContextQuery] = useState('');
+  const [optimizationResults, setOptimizationResults] = useState<any>(null);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const fileUploadRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Chat mutation
@@ -146,6 +161,74 @@ export function FiscalAIConsultant() {
     }
   });
 
+  // Ottimizzazione mutations
+  const naturalLanguageQueryMutation = useMutation({
+    mutationFn: async (query: string) => {
+      const response = await apiRequest('POST', '/api/ai/natural-language-query', { query });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setOptimizationResults(data);
+      toast({
+        title: "✅ Query Eseguita",
+        description: `Trovati ${data.resultCount} risultati`,
+      });
+    },
+  });
+
+  const contextOptimizationMutation = useMutation({
+    mutationFn: async ({ webContext, query }: { webContext: string; query: string }) => {
+      const response = await apiRequest('POST', '/api/ai/optimize-context', { 
+        webContext, 
+        query,
+        includeWebSearch: !!webContext
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setOptimizationResults(data);
+      toast({
+        title: "🔍 Contesto Ottimizzato",
+        description: "Il contesto è stato migliorato con successo",
+      });
+    },
+  });
+
+  const documentUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('document', file);
+      const response = await fetch('/api/fiscal-ai/upload-document', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Upload fallito');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setOptimizationResults(data);
+      toast({
+        title: "📄 Documento Analizzato",
+        description: "L'analisi del documento è stata completata",
+      });
+    },
+  });
+
+  const chartGenerationMutation = useMutation({
+    mutationFn: async (query: string) => {
+      const response = await apiRequest('POST', '/api/ai/generate-chart', { query });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setOptimizationResults(data);
+      toast({
+        title: "📊 Grafico Generato",
+        description: "Il grafico è stato creato con successo",
+      });
+    },
+  });
+
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -181,6 +264,34 @@ export function FiscalAIConsultant() {
     setConversations(prev => prev.filter(conv => conv.id !== conversationId));
     if (activeConversationId === conversationId) {
       startNewConversation();
+    }
+  };
+
+  // Ottimizzazione handlers
+  const handleNaturalLanguageQuery = () => {
+    if (!contextQuery.trim()) return;
+    naturalLanguageQueryMutation.mutate(contextQuery);
+  };
+
+  const handleContextOptimization = () => {
+    if (!contextQuery.trim()) return;
+    contextOptimizationMutation.mutate({ webContext, query: contextQuery });
+  };
+
+  const handleDocumentUpload = () => {
+    if (!documentContext) return;
+    documentUploadMutation.mutate(documentContext);
+  };
+
+  const handleChartGeneration = () => {
+    if (!contextQuery.trim()) return;
+    chartGenerationMutation.mutate(contextQuery);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setDocumentContext(file);
     }
   };
 
@@ -289,24 +400,50 @@ export function FiscalAIConsultant() {
         </div>
       </div>
 
-      {/* Main Chat Area */}
+      {/* Main Content with Tabs */}
       <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
+        {/* Navigation Header */}
         <div className="bg-white border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-blue-500 text-white">
-                  <Bot className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h2 className="font-semibold">Consulente Fiscale AI</h2>
-                <p className="text-xs text-muted-foreground">Sempre online • Specialista PMI</p>
-              </div>
+            <div>
+              <h2 className="text-xl font-semibold">
+                {activeTab === 'chat' ? (
+                  activeConversationId === 'new' ? 'Nuova Conversazione' : 
+                  conversations.find(c => c.id === activeConversationId)?.title || 'Conversazione'
+                ) : 'Ottimizzazione Contesti AI'}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {activeTab === 'chat' ? 'Risolvi i tuoi dubbi fiscali con l\'AI' : 'Migliora il contesto per risposte più precise'}
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Link href="/document-analyzer">
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <Eye className="h-4 w-4" />
+                  <span>Document Analyzer</span>
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          <div className="bg-white border-b border-gray-200 px-4">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="chat" className="flex items-center space-x-2">
+                <MessageCircle className="h-4 w-4" />
+                <span>Chat</span>
+              </TabsTrigger>
+              <TabsTrigger value="optimization" className="flex items-center space-x-2">
+                <Zap className="h-4 w-4" />
+                <span>Ottimizzazione</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* Chat Tab Content */}
+          <TabsContent value="chat" className="flex-1 flex flex-col mt-0 space-y-0">
 
         {/* Chat Messages */}
         <ScrollArea className="flex-1 p-4">
@@ -423,15 +560,6 @@ export function FiscalAIConsultant() {
               </div>
               <div className="flex space-x-1">
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadDocumentMutation.isPending}
-                  className="h-[44px] w-[44px] p-0"
-                >
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-                <Button
                   data-testid="button-send-message"
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || sendMessageMutation.isPending}
@@ -447,6 +575,195 @@ export function FiscalAIConsultant() {
             </div>
           </div>
         </div>
+        </TabsContent>
+
+        {/* Optimization Tab Content */}
+        <TabsContent value="optimization" className="flex-1 flex flex-col mt-0 space-y-0">
+          <div className="flex-1 p-6 space-y-6">
+            <div className="max-w-4xl mx-auto">
+              {/* Header Ottimizzazione */}
+              <div className="text-center mb-8">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-3 bg-gradient-to-r from-purple-500 to-blue-600 rounded-full">
+                    <Zap className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-bold mb-2">Ottimizzazione Contesti AI</h2>
+                <p className="text-muted-foreground">
+                  Migliora la precisione delle risposte attraverso web search e analisi documenti
+                </p>
+              </div>
+
+              {/* Web Context Optimization */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Globe className="h-5 w-5" />
+                    <span>Contesto Web</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Aggiungi informazioni da fonti web per migliorare il contesto delle risposte
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="web-context">URL o fonte web</Label>
+                    <Input
+                      id="web-context"
+                      data-testid="input-web-context"
+                      placeholder="https://esempio.com/normativa-fiscale..."
+                      value={webContext}
+                      onChange={(e) => setWebContext(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="context-query">Query per il contesto</Label>
+                    <Textarea
+                      id="context-query"
+                      data-testid="input-context-query"
+                      placeholder="Descri cosa cercare nel web per migliorare il contesto..."
+                      value={contextQuery}
+                      onChange={(e) => setContextQuery(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <Button
+                    data-testid="button-optimize-context"
+                    onClick={handleContextOptimization}
+                    disabled={contextOptimizationMutation.isPending || !contextQuery.trim()}
+                    className="w-full"
+                  >
+                    {contextOptimizationMutation.isPending ? (
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4 mr-2" />
+                    )}
+                    Ottimizza Contesto
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Document Upload */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Upload className="h-5 w-5" />
+                    <span>Analisi Documenti</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Carica documenti per migliorare il contesto fiscale
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Seleziona documento</Label>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        ref={fileUploadRef}
+                        type="file"
+                        onChange={handleFileSelect}
+                        accept=".pdf,.xml,.jpg,.jpeg,.png,.doc,.docx"
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => fileUploadRef.current?.click()}
+                        className="flex-1"
+                      >
+                        <Paperclip className="h-4 w-4 mr-2" />
+                        {documentContext ? documentContext.name : 'Scegli File'}
+                      </Button>
+                    </div>
+                  </div>
+                  <Button
+                    data-testid="button-upload-document"
+                    onClick={handleDocumentUpload}
+                    disabled={documentUploadMutation.isPending || !documentContext}
+                    className="w-full"
+                  >
+                    {documentUploadMutation.isPending ? (
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-2" />
+                    )}
+                    Analizza Documento
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Natural Language Query */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Search className="h-5 w-5" />
+                    <span>Query Avanzate</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Esegui query complesse sui tuoi dati finanziari
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button
+                    data-testid="button-natural-query"
+                    onClick={handleNaturalLanguageQuery}
+                    disabled={naturalLanguageQueryMutation.isPending || !contextQuery.trim()}
+                    className="w-full"
+                  >
+                    {naturalLanguageQueryMutation.isPending ? (
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                    )}
+                    Esegui Query Avanzata
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Chart Generation */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <BarChart3 className="h-5 w-5" />
+                    <span>Generazione Grafici AI</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Genera grafici intelligenti basati sui tuoi dati
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button
+                    data-testid="button-generate-chart"
+                    onClick={handleChartGeneration}
+                    disabled={chartGenerationMutation.isPending || !contextQuery.trim()}
+                    className="w-full"
+                  >
+                    {chartGenerationMutation.isPending ? (
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                    )}
+                    Genera Grafico
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Results Display */}
+              {optimizationResults && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Risultati Ottimizzazione</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-auto">
+                      {JSON.stringify(optimizationResults, null, 2)}
+                    </pre>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+        </Tabs>
       </div>
       </div>
     </div>
