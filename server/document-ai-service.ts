@@ -78,8 +78,8 @@ export class DocumentAIService {
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.2, // Bassa per massima precisione
-        max_tokens: 4000
+        temperature: 0.1, // Massima precisione
+        max_tokens: 2000
       });
 
       const analysis = response.choices[0]?.message?.content;
@@ -116,65 +116,58 @@ export class DocumentAIService {
   }
 
   private buildAdvancedPrompt(content: string, fileName: string, fileType: string): string {
-    return `ANALIZZA QUESTO DOCUMENTO AZIENDALE:
+    // OTTIMIZZAZIONE CRITICA: Tronca contenuto per evitare limite token
+    const maxLength = 8000; // Circa 5-6k token
+    const truncatedContent = content.length > maxLength 
+      ? content.substring(0, maxLength) + "\n\n[CONTENUTO TRONCATO PER LIMITE TOKEN]"
+      : content;
 
-NOME FILE: ${fileName}
-TIPO FILE: ${fileType}
+    return `DOCUMENTO: ${fileName} (${fileType})
 
-CONTENUTO DOCUMENTO:
-${content}
+CONTENUTO:
+${truncatedContent}
 
-ANALISI RICHIESTA - Rispondi in JSON con questa struttura esatta:
+JSON OUTPUT:
 {
-  "summary": "Riassunto professionale del documento in 2-3 frasi",
-  "keyPoints": [
-    "Punto chiave 1",
-    "Punto chiave 2", 
-    "Punto chiave 3"
-  ],
-  "documentType": "Tipo specifico (Fattura, Contratto, DDT, Nota Credito, Raccomandata, etc.)",
+  "summary": "Analisi dettagliata professionale documento",
+  "keyPoints": ["Dettaglio specifico 1", "Aspetto rilevante 2", "Informazione chiave 3"],
+  "documentType": "Fattura|DDT|Contratto|Email|Lettera|Comunicazione",
   "extractedData": {
-    "amounts": ["tutti gli importi trovati con valuta"],
-    "dates": ["tutte le date trovate"],
-    "parties": ["soggetti/aziende coinvolti"],
-    "references": ["numeri documento, protocolli, etc."],
-    "vatNumbers": ["partite IVA se presenti"],
-    "addresses": ["indirizzi se presenti"],
-    "contacts": ["email, telefoni se presenti"]
+    "amounts": ["€1.250,00", "€275,00 IVA"],
+    "dates": ["15/01/2024"],
+    "parties": ["Fornitore SRL", "Cliente SpA"],
+    "references": ["FT001/2024", "CIG123"],
+    "vatNumbers": ["IT12345678901"],
+    "addresses": ["Via Roma 1, Milano"],
+    "contacts": ["email@azienda.it"]
   },
-  "suggestedMovement": {
-    "type": "income o expense (solo se il documento rappresenta chiaramente un movimento finanziario)",
-    "amount": "importo numerico principale",
-    "description": "descrizione movimento suggerito",
-    "date": "data movimento in formato YYYY-MM-DD",
-    "confidence": "confidenza 0-1 sulla correttezza del movimento suggerito",
-    "category": "categoria movimento (vendite, acquisti, spese generali, etc.)",
-    "supplier": "nome fornitore se è una spesa",
-    "customer": "nome cliente se è un ricavo", 
-    "vatAmount": "importo IVA se presente",
-    "netAmount": "importo netto se presente"
+  "suggestedMovement": SOLO SE FATTURA/RICEVUTA/DDT {
+    "type": "expense|income",
+    "amount": 1250.00,
+    "description": "Dettaglio specifico",
+    "date": "2024-01-15",
+    "confidence": 0.95,
+    "category": "Servizi",
+    "supplier": "Nome Fornitore",
+    "customer": "Nome Cliente",
+    "vatAmount": 275.00,
+    "netAmount": 1250.00
   },
-  "confidence": "confidenza generale 0-1 sull'intera analisi",
-  "recommendations": [
-    "Raccomandazione 1 per gestione del documento",
-    "Raccomandazione 2 per follow-up"
-  ],
+  "confidence": 0.9,
+  "recommendations": ["Azione specifica 1", "Verifica 2"],
   "compliance": {
-    "isCompliant": "true/false conformità normativa italiana",
-    "issues": ["eventuali problemi di conformità"],
-    "requirements": ["requisiti normativi da rispettare"]
+    "isCompliant": true,
+    "issues": ["Problema specifico"],
+    "requirements": ["Obbligo normativo"]
   }
 }
 
-ISTRUZIONI SPECIFICHE:
-- Identifica con precisione il tipo di documento
-- Estrai TUTTI i dati finanziari, date e riferimenti
-- Suggerisci un movimento finanziario SOLO se è chiaramente evidente 
-- Valuta conformità fiscale italiana (FatturaPA, IVA, etc.)
-- Fornisci raccomandazioni pratiche
-- Usa confidenza realistica basata sulla chiarezza dei dati
-- Per importi usa formato numerico puro (es: 1250.50)
-- Per date usa formato ISO (YYYY-MM-DD)`;
+REGOLE CRITICHE:
+- MOVIMENTO: suggerisci SOLO per fatture/ricevute/DDT con importi chiari
+- NON suggerire per: email, lettere, comunicazioni, manuali
+- CONFIDENCE: <0.6 se documento poco chiaro
+- COMPLIANCE: verifica normative italiane (FatturaPA, split payment)
+- ESTRAI: solo dati realmente presenti, non inventare`;
   }
 
   /**
