@@ -24,6 +24,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import Header from '@/components/layout/header';
+import { Link } from 'wouter';
 
 interface ChatMessage {
   id: string;
@@ -41,15 +43,6 @@ interface ChatMessage {
   confidence?: number;
 }
 
-interface DocumentUpload {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  uploadedAt: Date;
-  analysis?: string;
-  extractedData?: any;
-}
 
 interface Conversation {
   id: string;
@@ -66,10 +59,8 @@ export function FiscalAIConsultant() {
   const [isTyping, setIsTyping] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string>('new');
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [uploadedDocuments, setUploadedDocuments] = useState<DocumentUpload[]>([]);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Chat mutation
@@ -155,47 +146,6 @@ export function FiscalAIConsultant() {
     }
   });
 
-  // Document upload mutation
-  const uploadDocumentMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('document', file);
-      
-      const response = await fetch('/api/fiscal-ai/upload-document', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to upload document');
-      }
-      
-      return response.json();
-    },
-    onSuccess: (data) => {
-      const newDoc: DocumentUpload = {
-        id: data.id,
-        name: data.name,
-        type: data.type,
-        size: data.size,
-        uploadedAt: new Date(),
-        analysis: data.analysis,
-        extractedData: data.extractedData
-      };
-      setUploadedDocuments(prev => [...prev, newDoc]);
-      toast({
-        title: "Successo",
-        description: "Documento caricato e analizzato con successo"
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Errore",
-        description: "Errore nel caricamento del documento",
-        variant: "destructive"
-      });
-    }
-  });
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -214,12 +164,6 @@ export function FiscalAIConsultant() {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      uploadDocumentMutation.mutate(file);
-    }
-  };
 
   // Removed updateConversation function - logic moved to onSuccess
 
@@ -250,7 +194,11 @@ export function FiscalAIConsultant() {
   ];
 
   return (
-    <div className="h-screen bg-gray-50 flex">
+    <div className="h-screen bg-gray-50 flex flex-col">
+      {/* Header Standard EasyCashFlows */}
+      <Header title="Consulente Fiscale AI" subtitle="Specializzato in normative italiane per PMI" />
+      
+      <div className="flex-1 flex">
       {/* Sidebar - Conversazioni */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         {/* Header Sidebar */}
@@ -315,37 +263,29 @@ export function FiscalAIConsultant() {
           </div>
         </ScrollArea>
 
-        {/* Documenti Caricati */}
+        {/* Ottimizzazione AI - Link alla pagina Document Analyzer */}
         <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium">Documenti</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              className="h-6 w-6 p-0"
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium">Strumenti AI</h3>
+            <Settings className="h-4 w-4 text-gray-500" />
+          </div>
+          <Link to="/document-analyzer">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full text-left justify-start h-auto p-3 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
             >
-              <Upload className="h-3 w-3" />
-            </Button>
-          </div>
-          <div className="space-y-1 max-h-32 overflow-y-auto">
-            {uploadedDocuments.map((doc) => (
-              <div key={doc.id} className="flex items-center space-x-2 text-xs p-2 bg-gray-50 rounded">
-                <FileText className="h-3 w-3 text-blue-500" />
-                <span className="flex-1 truncate">{doc.name}</span>
-                <Button variant="ghost" size="sm" className="h-4 w-4 p-0">
-                  <Eye className="h-2 w-2" />
-                </Button>
+              <div className="flex items-center space-x-3 w-full">
+                <div className="p-1.5 bg-blue-500 rounded-full">
+                  <Brain className="h-3 w-3 text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium text-blue-900">Document Analyzer Pro</p>
+                  <p className="text-xs text-blue-700">Ottimizza contesto e analisi documenti</p>
+                </div>
               </div>
-            ))}
-          </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileUpload} 
-            className="hidden"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.xml"
-          />
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -507,6 +447,7 @@ export function FiscalAIConsultant() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
