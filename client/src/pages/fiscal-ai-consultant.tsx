@@ -157,6 +157,8 @@ export function FiscalAIConsultant() {
       queryClient.invalidateQueries({ 
         queryKey: ['/api/fiscal-ai/conversations', activeConversationId, 'messages'] 
       });
+      // Aggiorna anche la lista conversazioni per il conteggio messaggi
+      queryClient.invalidateQueries({ queryKey: ['/api/fiscal-ai/conversations'] });
     }
   });
 
@@ -431,7 +433,7 @@ export function FiscalAIConsultant() {
             {conversations.map((conversation: any) => (
               <div
                 key={conversation.id}
-                className={`p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors ${
+                className={`group p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors ${
                   activeConversationId === conversation.id ? 'bg-blue-50 border border-blue-200' : ''
                 }`}
                 onClick={() => loadConversation(conversation)}
