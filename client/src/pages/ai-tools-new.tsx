@@ -61,19 +61,20 @@ export default function AiToolsNewPage() {
     {
       id: "document-ai",
       title: "Analisi Documenti AI",
-      description: "Upload e parsing automatico FatturaPA",
+      description: "OCR avanzato e analisi intelligente di tutti i documenti aziendali",
       icon: FileText,
       status: "active",
-      location: "Movements",
-      route: "/movements",
+      location: "AI Tools",
+      route: "/document-analyzer",
       features: [
-        "📄 Riconoscimento FatturaPA",
-        "⚡ Estrazione dati automatica",
-        "🎯 Creazione movimenti suggeriti"
+        "📄 Riconoscimento automatico tipo documento",
+        "⚡ OCR AI con GPT-4o Vision per immagini",
+        "🎯 Suggerimenti movimenti finanziari automatici",
+        "🔍 Supporta PDF, XML, Immagini, Office"
       ],
       bgColor: "bg-purple-50 dark:bg-purple-900/20",
       iconColor: "text-purple-600",
-      buttonText: "Prova Upload AI"
+      buttonText: "Apri Analizzatore AI"
     },
     {
       id: "fiscal-ai",

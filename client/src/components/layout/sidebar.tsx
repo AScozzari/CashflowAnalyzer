@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Calendar, Pin, PinOff, ChevronLeft, Bot, MessageSquare, Search, Brain, FileSearch } from "lucide-react";
+import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Calendar, Pin, PinOff, ChevronLeft, Bot, MessageSquare, Search, Brain } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -31,7 +31,6 @@ export default function Sidebar({ isCollapsed: externalCollapsed, onCollapsedCha
       { name: "Analytics", href: "/analytics", icon: TrendingUp },
       { name: "Esplora Entità", href: "/entity-explorer", icon: Search },
       { name: "AI Tools", href: "/ai-tools", icon: Brain },
-      { name: "Analisi Documenti", href: "/document-analyzer", icon: FileSearch },
       { name: "Comunicazioni", href: "/communications", icon: MessageSquare },
     ];
 
