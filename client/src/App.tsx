@@ -14,6 +14,7 @@ import Dashboard from "@/pages/dashboard-professional";
 import Movements from "@/pages/movements";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
+import Calendar from "@/pages/calendar";
 import AiChatPage from "@/pages/ai-chat";
 import AiToolsNewPage from "@/pages/ai-tools-new";
 import Communications from "@/pages/communications";
@@ -150,6 +151,12 @@ function Router() {
       <ProtectedRoute path="/analytics" component={() => (
         <AppLayout>
           <Analytics />
+        </AppLayout>
+      )} />
+      
+      <ProtectedRoute path="/calendar" component={() => (
+        <AppLayout>
+          <Calendar />
         </AppLayout>
       )} />
       
