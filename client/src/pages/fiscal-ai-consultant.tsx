@@ -462,7 +462,7 @@ export function FiscalAIConsultant() {
         {/* Input Area */}
         <div className="bg-white border-t border-gray-200 p-4">
           <div className="max-w-4xl mx-auto">
-            <div className="flex space-x-3">
+            <div className="flex space-x-2 items-end">
               <div className="flex-1">
                 <Textarea
                   data-testid="input-fiscal-chat"
@@ -470,30 +470,32 @@ export function FiscalAIConsultant() {
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="min-h-[60px] resize-none"
+                  className="min-h-[44px] max-h-[120px] resize-none text-sm"
                   disabled={sendMessageMutation.isPending}
+                  rows={1}
                 />
               </div>
-              <div className="flex flex-col space-y-2">
+              <div className="flex space-x-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadDocumentMutation.isPending}
+                  className="h-[44px] w-[44px] p-0"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
                 <Button
                   data-testid="button-send-message"
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || sendMessageMutation.isPending}
-                  className="h-[60px] px-4"
+                  className="h-[44px] px-4"
                 >
                   {sendMessageMutation.isPending ? (
                     <Clock className="h-4 w-4 animate-spin" />
                   ) : (
                     <Send className="h-4 w-4" />
                   )}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="h-[60px] px-4"
-                  disabled={uploadDocumentMutation.isPending}
-                >
-                  <Paperclip className="h-4 w-4" />
                 </Button>
               </div>
             </div>

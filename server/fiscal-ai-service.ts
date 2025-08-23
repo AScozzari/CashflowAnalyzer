@@ -10,20 +10,14 @@ export class FiscalAIService {
   private isConfigured = false;
 
   constructor() {
-    this.initializeOpenAI();
-  }
-
-  private async initializeOpenAI() {
-    try {
-      // Usa le impostazioni AI dell'admin per il servizio fiscale
-      const settings = await storage.getAiSettings('admin');
-      if (settings?.openaiApiKey) {
-        this.openai = new OpenAI({ apiKey: settings.openaiApiKey });
-        this.isConfigured = true;
-        console.log('[FISCAL AI] Initialized with OpenAI API');
-      }
-    } catch (error) {
-      console.warn('[FISCAL AI] OpenAI not configured, service disabled');
+    const apiKey = process.env.OPENAI_API_KEY;
+    this.isConfigured = !!apiKey;
+    
+    if (this.isConfigured) {
+      this.openai = new OpenAI({ apiKey });
+      console.log('[FISCAL AI] Service initialized with OpenAI API');
+    } else {
+      console.warn('[FISCAL AI] OpenAI API key not found, service disabled');
     }
   }
 
