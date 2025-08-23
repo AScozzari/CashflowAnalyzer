@@ -1826,7 +1826,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Gestione diversi tipi di file
       if (fileType.includes('image')) {
         // Per immagini, usa GPT-4o Vision
-        const fs = require('fs');
         const imageBuffer = fs.readFileSync(req.file.path);
         const imageBase64 = imageBuffer.toString('base64');
         const result = await documentAIService.analyzeImageDocument(req.user.id, imageBase64, fileName, fileType);
@@ -1844,7 +1843,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       } else {
         // Per testi, leggi il file dal disco
-        const fs = require('fs');
         documentContent = fs.readFileSync(req.file.path, 'utf-8');
         // Cleanup temporary file
         fs.unlinkSync(req.file.path);
