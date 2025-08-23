@@ -647,7 +647,7 @@ export default function DocumentsSettings() {
                   />
                 </div>
 
-                {stats?.storage.percentage > 90 && (
+                {(stats?.storage.percentage || 0) > 90 && (
                   <Alert>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
@@ -656,11 +656,11 @@ export default function DocumentsSettings() {
                   </Alert>
                 )}
 
-                {stats?.processing.failed > 0 && (
+                {(stats?.processing.failed || 0) > 0 && (
                   <Alert>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                      {stats.processing.failed} documenti hanno fallito l'elaborazione. 
+                      {stats?.processing.failed || 0} documenti hanno fallito l'elaborazione. 
                       Controlla i log per dettagli.
                     </AlertDescription>
                   </Alert>
