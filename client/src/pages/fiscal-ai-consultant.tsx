@@ -476,30 +476,6 @@ export function FiscalAIConsultant() {
           </div>
         </ScrollArea>
 
-        {/* Ottimizzazione AI - Link alla pagina Document Analyzer */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium">Strumenti AI</h3>
-            <Settings className="h-4 w-4 text-gray-500" />
-          </div>
-          <Link to="/document-analyzer">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-left justify-start h-auto p-3 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
-            >
-              <div className="flex items-center space-x-3 w-full">
-                <div className="p-1.5 bg-blue-500 rounded-full">
-                  <Brain className="h-3 w-3 text-white" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-blue-900">Document Analyzer Pro</p>
-                  <p className="text-xs text-blue-700">Ottimizza contesto e analisi documenti</p>
-                </div>
-              </div>
-            </Button>
-          </Link>
-        </div>
       </div>
 
       {/* Main Content with Tabs */}
@@ -517,14 +493,6 @@ export function FiscalAIConsultant() {
               <p className="text-sm text-muted-foreground">
                 {activeTab === 'chat' ? 'Risolvi i tuoi dubbi fiscali con l\'AI' : 'Migliora il contesto per risposte più precise'}
               </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Link href="/document-analyzer">
-                <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                  <Eye className="h-4 w-4" />
-                  <span>Document Analyzer</span>
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
