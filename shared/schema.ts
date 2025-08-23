@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, timestamp, boolean, date, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, timestamp, boolean, date, jsonb, real } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -1626,6 +1626,63 @@ export const documentAnalysisRelations = relations(documentAnalysis, ({ one }) =
 export const insertDocumentAnalysisSchema = createInsertSchema(documentAnalysis);
 export type InsertDocumentAnalysis = z.infer<typeof insertDocumentAnalysisSchema>;
 export type DocumentAnalysis = typeof documentAnalysis.$inferSelect;
+
+// === FISCAL AI CONVERSATIONS ===
+
+export const fiscalAiConversations = pgTable("fiscal_ai_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  
+  // Conversation metadata
+  messageCount: integer("message_count").default(0),
+  lastMessageAt: timestamp("last_message_at"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const fiscalAiMessages = pgTable("fiscal_ai_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull().references(() => fiscalAiConversations.id, { onDelete: 'cascade' }),
+  role: text("role").notNull(), // 'user' | 'assistant'
+  content: text("content").notNull(),
+  
+  // AI Response metadata  
+  confidence: real("confidence"),
+  tokensUsed: integer("tokens_used"),
+  
+  // Suggestions and references
+  suggestions: jsonb("suggestions").default([]),
+  references: jsonb("references").default([]),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Fiscal AI Relations
+export const fiscalAiConversationRelations = relations(fiscalAiConversations, ({ many, one }) => ({
+  messages: many(fiscalAiMessages),
+  user: one(users, {
+    fields: [fiscalAiConversations.userId],
+    references: [users.id],
+  }),
+}));
+
+export const fiscalAiMessageRelations = relations(fiscalAiMessages, ({ one }) => ({
+  conversation: one(fiscalAiConversations, {
+    fields: [fiscalAiMessages.conversationId],
+    references: [fiscalAiConversations.id],
+  }),
+}));
+
+// Fiscal AI Types
+export const insertFiscalAiConversationSchema = createInsertSchema(fiscalAiConversations);
+export const insertFiscalAiMessageSchema = createInsertSchema(fiscalAiMessages);
+
+export type FiscalAiConversation = typeof fiscalAiConversations.$inferSelect;
+export type InsertFiscalAiConversation = z.infer<typeof insertFiscalAiConversationSchema>;
+export type FiscalAiMessage = typeof fiscalAiMessages.$inferSelect;
+export type InsertFiscalAiMessage = z.infer<typeof insertFiscalAiMessageSchema>;
 
 // Extended types with relations
 export type MovementWithRelations = Movement & {

@@ -5,6 +5,7 @@ import {
   aiSettings, aiChatHistory, aiDocumentJobs,
   securitySettings, loginAuditLog, activeSessions, passwordHistory, twoFactorAuth,
   documentAnalysis,
+  fiscalAiConversations, fiscalAiMessages,
   type Company, type InsertCompany,
   type Core, type InsertCore,
   type Resource, type InsertResource,
@@ -41,7 +42,9 @@ import {
   calendarEvents, calendarReminders,
   type CalendarEvent, type InsertCalendarEvent,
   type CalendarReminder, type InsertCalendarReminder,
-  type DocumentAnalysis, type InsertDocumentAnalysis
+  type DocumentAnalysis, type InsertDocumentAnalysis,
+  type FiscalAiConversation, type InsertFiscalAiConversation,
+  type FiscalAiMessage, type InsertFiscalAiMessage
 } from "@shared/schema";
 import { 
   BackupConfiguration, 
@@ -2273,6 +2276,128 @@ async getMovements(filters: {
     }
   }
 
+  // === FISCAL AI CONVERSATIONS ===
+  
+  async getFiscalAiConversations(userId: string): Promise<FiscalAiConversation[]> {
+    try {
+      return await db.select()
+        .from(fiscalAiConversations)
+        .where(eq(fiscalAiConversations.userId, userId))
+        .orderBy(desc(fiscalAiConversations.updatedAt));
+    } catch (error) {
+      console.error('Error fetching fiscal AI conversations:', error);
+      return [];
+    }
+  }
+
+  async getFiscalAiConversation(conversationId: string, userId: string): Promise<FiscalAiConversation | null> {
+    try {
+      const [conversation] = await db.select()
+        .from(fiscalAiConversations)
+        .where(and(
+          eq(fiscalAiConversations.id, conversationId),
+          eq(fiscalAiConversations.userId, userId)
+        ));
+      return conversation || null;
+    } catch (error) {
+      console.error('Error fetching fiscal AI conversation:', error);
+      return null;
+    }
+  }
+
+  async createFiscalAiConversation(conversation: InsertFiscalAiConversation): Promise<FiscalAiConversation> {
+    try {
+      const [newConversation] = await db.insert(fiscalAiConversations)
+        .values(conversation)
+        .returning();
+      return newConversation;
+    } catch (error) {
+      console.error('Error creating fiscal AI conversation:', error);
+      throw new Error('Failed to create fiscal AI conversation');
+    }
+  }
+
+  async updateFiscalAiConversation(conversationId: string, userId: string, updates: Partial<FiscalAiConversation>): Promise<FiscalAiConversation | null> {
+    try {
+      const [updatedConversation] = await db.update(fiscalAiConversations)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(and(
+          eq(fiscalAiConversations.id, conversationId),
+          eq(fiscalAiConversations.userId, userId)
+        ))
+        .returning();
+      return updatedConversation || null;
+    } catch (error) {
+      console.error('Error updating fiscal AI conversation:', error);
+      throw new Error('Failed to update fiscal AI conversation');
+    }
+  }
+
+  async deleteFiscalAiConversation(conversationId: string, userId: string): Promise<void> {
+    try {
+      await db.delete(fiscalAiConversations)
+        .where(and(
+          eq(fiscalAiConversations.id, conversationId),
+          eq(fiscalAiConversations.userId, userId)
+        ));
+    } catch (error) {
+      console.error('Error deleting fiscal AI conversation:', error);
+      throw new Error('Failed to delete fiscal AI conversation');
+    }
+  }
+
+  // === FISCAL AI MESSAGES ===
+
+  async getFiscalAiMessages(conversationId: string, userId: string): Promise<FiscalAiMessage[]> {
+    try {
+      // Verifica che l'utente possieda la conversazione
+      const conversation = await this.getFiscalAiConversation(conversationId, userId);
+      if (!conversation) {
+        return [];
+      }
+      
+      return await db.select()
+        .from(fiscalAiMessages)
+        .where(eq(fiscalAiMessages.conversationId, conversationId))
+        .orderBy(fiscalAiMessages.createdAt);
+    } catch (error) {
+      console.error('Error fetching fiscal AI messages:', error);
+      return [];
+    }
+  }
+
+  async createFiscalAiMessage(message: InsertFiscalAiMessage): Promise<FiscalAiMessage> {
+    try {
+      const [newMessage] = await db.insert(fiscalAiMessages)
+        .values(message)
+        .returning();
+      
+      // Aggiorna contatori nella conversazione
+      await db.update(fiscalAiConversations)
+        .set({
+          messageCount: sql`${fiscalAiConversations.messageCount} + 1`,
+          lastMessageAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(fiscalAiConversations.id, message.conversationId));
+      
+      return newMessage;
+    } catch (error) {
+      console.error('Error creating fiscal AI message:', error);
+      throw new Error('Failed to create fiscal AI message');
+    }
+  }
+
+  async deleteFiscalAiMessages(conversationId: string): Promise<void> {
+    try {
+      await db.delete(fiscalAiMessages)
+        .where(eq(fiscalAiMessages.conversationId, conversationId));
+    } catch (error) {
+      console.error('Error deleting fiscal AI messages:', error);
+      throw new Error('Failed to delete fiscal AI messages');
+    }
+  }
+
   // === BACKUP MANAGEMENT === 
   // TEMPORARILY DISABLED TO FIX NOTIFICATIONS API - WILL RE-ENABLE AFTER NOTIFICATIONS WORK
   /*
@@ -3316,20 +3441,25 @@ async getMovements(filters: {
   // Calendar Events Implementation
   async getCalendarEvents(userId?: string): Promise<CalendarEvent[]> {
     try {
-      let whereConditions = [eq(calendarEvents.isActive, true)];
+      let whereCondition;
       
       if (userId) {
-        whereConditions.push(
+        whereCondition = and(
+          eq(calendarEvents.isActive, true),
           or(
             eq(calendarEvents.createdByUserId, userId),
             eq(calendarEvents.assignedToUserId, userId)
           )
         );
+      } else {
+        whereCondition = eq(calendarEvents.isActive, true);
       }
       
-      const query = db.select().from(calendarEvents).where(and(...whereConditions));
-      
-      const events = await query.orderBy(calendarEvents.startDate);
+      const events = await db.select()
+        .from(calendarEvents)
+        .where(whereCondition)
+        .orderBy(calendarEvents.startDate);
+        
       return events;
     } catch (error) {
       console.error('Error fetching calendar events:', error);
@@ -3400,24 +3530,31 @@ async getMovements(filters: {
 
   async getCalendarEventsByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<CalendarEvent[]> {
     try {
-      let whereConditions = [
-        eq(calendarEvents.isActive, true),
-        gte(calendarEvents.startDate, startDate),
-        lte(calendarEvents.endDate, endDate)
-      ];
+      let whereCondition;
       
       if (userId) {
-        whereConditions.push(
+        whereCondition = and(
+          eq(calendarEvents.isActive, true),
+          gte(calendarEvents.startDate, startDate),
+          lte(calendarEvents.endDate, endDate),
           or(
             eq(calendarEvents.createdByUserId, userId),
             eq(calendarEvents.assignedToUserId, userId)
           )
         );
+      } else {
+        whereCondition = and(
+          eq(calendarEvents.isActive, true),
+          gte(calendarEvents.startDate, startDate),
+          lte(calendarEvents.endDate, endDate)
+        );
       }
       
-      const query = db.select().from(calendarEvents).where(and(...whereConditions));
-      
-      const events = await query.orderBy(calendarEvents.startDate);
+      const events = await db.select()
+        .from(calendarEvents)
+        .where(whereCondition)
+        .orderBy(calendarEvents.startDate);
+        
       return events;
     } catch (error) {
       console.error('Error fetching calendar events by date range:', error);
@@ -3496,60 +3633,25 @@ async getMovements(filters: {
     tokensUsed: number;
     confidence: number;
     processingTime: number;
-  }): Promise<any> {
-    const id = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-    
-    // For now store in memory, would need a proper table in production
-    const docAnalysis = {
-      id,
-      userId: data.userId,
-      filename: data.filename,
-      fileType: data.fileType,
-      analysis: data.analysis,
-      extractedData: data.extractedData,
-      tokensUsed: data.tokensUsed,
-      confidence: data.confidence,
-      processingTime: data.processingTime,
-      createdAt: new Date()
-    };
-
-    // Store in memory for this session
-    if (!this.documentAnalyses) {
-      this.documentAnalyses = [];
+  }): Promise<DocumentAnalysis> {
+    try {
+      const docData: InsertDocumentAnalysis = {
+        userId: data.userId,
+        filename: data.filename,
+        fileType: data.fileType,
+        analysis: data.analysis,
+        extractedData: data.extractedData,
+        tokensUsed: data.tokensUsed,
+        confidence: data.confidence,
+        processingTime: data.processingTime
+      };
+      
+      return await this.saveDocumentAnalysis(docData);
+    } catch (error) {
+      console.error('Error creating document analysis:', error);
+      throw new Error('Failed to create document analysis');
     }
-    this.documentAnalyses.push(docAnalysis);
-
-    return docAnalysis;
   }
-
-  async getDocumentAnalysisHistory(userId: string): Promise<any[]> {
-    if (!this.documentAnalyses) {
-      return [];
-    }
-    
-    return this.documentAnalyses
-      .filter((doc: any) => doc.userId === userId)
-      .sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, 50);
-  }
-
-  async getDocumentAnalysis(id: string): Promise<any | null> {
-    if (!this.documentAnalyses) {
-      return null;
-    }
-    
-    return this.documentAnalyses.find((doc: any) => doc.id === id) || null;
-  }
-
-  async deleteDocumentAnalysis(id: string): Promise<void> {
-    if (!this.documentAnalyses) {
-      return;
-    }
-    
-    this.documentAnalyses = this.documentAnalyses.filter((doc: any) => doc.id !== id);
-  }
-
-  private documentAnalyses: any[] = [];
 }
 
 // Initialize DatabaseStorage with proper error handling

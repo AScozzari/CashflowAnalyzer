@@ -1722,6 +1722,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // === FISCAL AI ROUTES ===
   
+  // Register Fiscal AI conversation routes
+  const { registerFiscalAiRoutes } = await import('./routes/fiscal-ai');
+  registerFiscalAiRoutes(app, requireAuth);
+  
   // Get fiscal advice
   app.post("/api/fiscal-ai/advice", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {

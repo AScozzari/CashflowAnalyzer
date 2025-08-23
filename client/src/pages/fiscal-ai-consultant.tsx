@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Brain, 
   Send, 
@@ -65,7 +66,6 @@ export function FiscalAIConsultant() {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string>('new');
-  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeTab, setActiveTab] = useState('chat');
   
   // Ottimizzazione state
@@ -77,8 +77,99 @@ export function FiscalAIConsultant() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileUploadRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Chat mutation
+  // Query for fetching conversations
+  const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
+    queryKey: ['/api/fiscal-ai/conversations'],
+    queryFn: () => fetch('/api/fiscal-ai/conversations', { credentials: 'include' }).then(res => res.json())
+  });
+
+  // Query for fetching messages of active conversation
+  const { data: conversationMessages = [] } = useQuery({
+    queryKey: ['/api/fiscal-ai/conversations', activeConversationId, 'messages'],
+    queryFn: () => {
+      if (activeConversationId === 'new') return [];
+      return fetch(`/api/fiscal-ai/conversations/${activeConversationId}/messages`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(messages => messages.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.createdAt),
+          suggestions: msg.metadata?.suggestions || [],
+          references: msg.metadata?.references || [],
+          confidence: msg.metadata?.confidence || 0.8
+        })));
+    },
+    enabled: activeConversationId !== 'new'
+  });
+
+  // Sync messages when conversation changes
+  useEffect(() => {
+    if (activeConversationId === 'new') {
+      setMessages([]);
+    } else {
+      setMessages(conversationMessages);
+    }
+  }, [activeConversationId, conversationMessages]);
+
+  // Create conversation mutation
+  const createConversationMutation = useMutation({
+    mutationFn: async (title: string) => {
+      const response = await fetch('/api/fiscal-ai/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to create conversation');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/fiscal-ai/conversations'] });
+    }
+  });
+
+  // Create message mutation
+  const createMessageMutation = useMutation({
+    mutationFn: async ({ conversationId, role, content, metadata }: { 
+      conversationId: string; 
+      role: string; 
+      content: string; 
+      metadata?: any 
+    }) => {
+      const response = await fetch(`/api/fiscal-ai/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, content, metadata }),
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to create message');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/fiscal-ai/conversations', activeConversationId, 'messages'] 
+      });
+    }
+  });
+
+  // Delete conversation mutation
+  const deleteConversationMutation = useMutation({
+    mutationFn: async (conversationId: string) => {
+      const response = await fetch(`/api/fiscal-ai/conversations/${conversationId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to delete conversation');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/fiscal-ai/conversations'] });
+    }
+  });
+
+  // Chat mutation with persistence
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       const response = await fetch('/api/fiscal-ai/advice', {
@@ -86,7 +177,8 @@ export function FiscalAIConsultant() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ question: message })
+        body: JSON.stringify({ question: message }),
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -107,7 +199,7 @@ export function FiscalAIConsultant() {
       setInputMessage('');
       setIsTyping(true);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data, originalMessage) => {
       // Add assistant response
       const assistantMessage: ChatMessage = {
         id: `assistant_${Date.now()}`,
@@ -119,35 +211,46 @@ export function FiscalAIConsultant() {
         confidence: data.confidence || 0.8
       };
       
-      setMessages(prev => {
-        const updatedMessages = [...prev, assistantMessage];
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      try {
+        let currentConversationId = activeConversationId;
         
         // Create new conversation if it's the first exchange
-        if (activeConversationId === 'new' && updatedMessages.length === 2) {
-          const firstUserMessage = updatedMessages.find(m => m.role === 'user');
-          const title = firstUserMessage?.content.substring(0, 40) + '...' || 'Nuova Conversazione';
-          
-          const newConversation: Conversation = {
-            id: `conv_${Date.now()}`,
-            title,
-            messages: updatedMessages,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-          
-          setConversations(prev => [newConversation, ...prev]);
-          setActiveConversationId(newConversation.id);
-        } else if (activeConversationId !== 'new') {
-          // Update existing conversation
-          setConversations(prev => prev.map(conv => 
-            conv.id === activeConversationId 
-              ? { ...conv, messages: updatedMessages, updatedAt: new Date() }
-              : conv
-          ));
+        if (activeConversationId === 'new') {
+          const title = originalMessage.substring(0, 40) + '...' || 'Nuova Conversazione';
+          const newConversation = await createConversationMutation.mutateAsync(title);
+          currentConversationId = newConversation.id;
+          setActiveConversationId(currentConversationId);
         }
         
-        return updatedMessages;
-      });
+        // Save user message to database
+        await createMessageMutation.mutateAsync({
+          conversationId: currentConversationId,
+          role: 'user',
+          content: originalMessage
+        });
+        
+        // Save assistant message to database
+        await createMessageMutation.mutateAsync({
+          conversationId: currentConversationId,
+          role: 'assistant',
+          content: data.answer || 'Risposta ricevuta',
+          metadata: {
+            suggestions: data.suggestions || [],
+            references: data.references || [],
+            confidence: data.confidence || 0.8
+          }
+        });
+        
+      } catch (error) {
+        console.error('Error saving messages:', error);
+        toast({
+          title: "Avviso",
+          description: "Conversazione non salvata automaticamente",
+          variant: "destructive"
+        });
+      }
       
       setIsTyping(false);
     },
@@ -255,13 +358,12 @@ export function FiscalAIConsultant() {
     setActiveConversationId('new');
   };
 
-  const loadConversation = (conversation: Conversation) => {
-    setMessages(conversation.messages);
+  const loadConversation = (conversation: any) => {
     setActiveConversationId(conversation.id);
   };
 
   const deleteConversation = (conversationId: string) => {
-    setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+    deleteConversationMutation.mutate(conversationId);
     if (activeConversationId === conversationId) {
       startNewConversation();
     }
@@ -336,7 +438,7 @@ export function FiscalAIConsultant() {
         {/* Lista Conversazioni */}
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
-            {conversations.map((conversation) => (
+            {conversations.map((conversation: any) => (
               <div
                 key={conversation.id}
                 className={`p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors ${
@@ -348,13 +450,13 @@ export function FiscalAIConsultant() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{conversation.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {conversation.messages.length} messaggi
+                      {conversation.messageCount || 0} messaggi
                     </p>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
                       deleteConversation(conversation.id);
                     }}
@@ -409,7 +511,7 @@ export function FiscalAIConsultant() {
               <h2 className="text-xl font-semibold">
                 {activeTab === 'chat' ? (
                   activeConversationId === 'new' ? 'Nuova Conversazione' : 
-                  conversations.find(c => c.id === activeConversationId)?.title || 'Conversazione'
+                  conversations.find((c: any) => c.id === activeConversationId)?.title || 'Conversazione'
                 ) : 'Ottimizzazione Contesti AI'}
               </h2>
               <p className="text-sm text-muted-foreground">
