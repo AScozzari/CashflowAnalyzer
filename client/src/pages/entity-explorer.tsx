@@ -115,10 +115,7 @@ export default function EntityExplorer() {
         return await response.json();
       }
       throw new Error('Failed to fetch entity details');
-          name: selectedEntity!.name,
-          email: 'test@example.com',
-          phone: '+39 123 456 7890',
-          address: 'Via Roma 123, Milano',
+    },
           vatNumber: 'IT12345678901',
           createdAt: new Date().toISOString(),
         },
