@@ -8,7 +8,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AiSettings from "@/components/settings/ai-settings";
 import { ChannelSettingsCompact } from "@/components/settings/channel-settings-compact";
-import { Download, User, Shield } from "lucide-react";
+import CalendarIntegrations from "@/components/settings/calendar-integrations";
+import { Download, User, Shield, Calendar } from "lucide-react";
 import { FooterSignature } from "@/components/layout/footer-signature";
 
 export default function Settings() {

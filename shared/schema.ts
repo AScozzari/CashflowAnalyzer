@@ -385,6 +385,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [resources.id],
   }),
   notifications: many(notifications),
+  createdCalendarEvents: many(calendarEvents),
+  assignedCalendarEvents: many(calendarEvents),
+  calendarIntegrations: many(calendarIntegrations),
+  calendarReminders: many(calendarReminders),
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
@@ -431,7 +435,7 @@ export const movementReasonsRelations = relations(movementReasons, ({ many }) =>
   movements: many(movements),
 }));
 
-export const movementsRelations = relations(movements, ({ one }) => ({
+export const movementsRelations = relations(movements, ({ one, many }) => ({
   company: one(companies, {
     fields: [movements.companyId],
     references: [companies.id],
@@ -476,6 +480,8 @@ export const movementsRelations = relations(movements, ({ one }) => ({
     fields: [movements.bankTransactionId],
     references: [bankTransactions.id],
   }),
+  // Calendar relations
+  calendarEvents: many(calendarEvents),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({
@@ -1333,6 +1339,204 @@ export type ActiveSession = typeof activeSessions.$inferSelect;
 export type PasswordHistory = typeof passwordHistory.$inferSelect;
 export type TwoFactorAuth = typeof twoFactorAuth.$inferSelect;
 
+// ==========================================
+// CALENDAR SYSTEM TABLES
+// ==========================================
+
+// Calendar Events - Eventi del calendario
+export const calendarEvents = pgTable("calendar_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  isAllDay: boolean("is_all_day").notNull().default(false),
+  location: text("location"),
+  type: text("type").notNull().default('task'), // 'task', 'meeting', 'reminder', 'deadline'
+  priority: text("priority").notNull().default('medium'), // 'low', 'medium', 'high', 'urgent'
+  status: text("status").notNull().default('planned'), // 'planned', 'in_progress', 'completed', 'cancelled'
+  
+  // Recurring events
+  isRecurring: boolean("is_recurring").notNull().default(false),
+  recurrencePattern: text("recurrence_pattern"), // 'daily', 'weekly', 'monthly', 'yearly'
+  recurrenceInterval: integer("recurrence_interval").default(1), // ogni X giorni/settimane/mesi/anni
+  recurrenceEndDate: timestamp("recurrence_end_date"),
+  recurrenceCount: integer("recurrence_count"), // numero massimo di occorrenze
+  parentEventId: varchar("parent_event_id"), // riferimento all'evento ricorrente padre
+  
+  // Links to other entities
+  linkedMovementId: varchar("linked_movement_id"), // collegamento a movimento finanziario
+  linkedResourceId: varchar("linked_resource_id"), // collegamento a risorsa
+  linkedCompanyId: varchar("linked_company_id"), // collegamento a azienda
+  linkedSupplierId: varchar("linked_supplier_id"), // collegamento a fornitore
+  linkedCustomerId: varchar("linked_customer_id"), // collegamento a cliente
+  
+  // External sync
+  googleCalendarEventId: text("google_calendar_event_id"), // ID evento su Google Calendar
+  outlookEventId: text("outlook_event_id"), // ID evento su Outlook
+  lastSyncedAt: timestamp("last_synced_at"),
+  syncStatus: text("sync_status").default('pending'), // 'pending', 'synced', 'error'
+  syncError: text("sync_error"),
+  
+  // User and metadata
+  createdByUserId: varchar("created_by_user_id").notNull(),
+  assignedToUserId: varchar("assigned_to_user_id"), // chi deve completare il task
+  tags: text("tags").array(), // array di tag per categorizzazione
+  color: text("color").default('#3B82F6'), // colore per visualizzazione
+  metadata: jsonb("metadata"), // dati aggiuntivi flessibili
+  
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Calendar Integrations - Configurazioni API esterne
+export const calendarIntegrations = pgTable("calendar_integrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(), // utente proprietario dell'integrazione
+  provider: text("provider").notNull(), // 'google', 'outlook'
+  providerAccountId: text("provider_account_id").notNull(), // ID account sul provider
+  email: text("email").notNull(), // email account collegato
+  
+  // OAuth tokens
+  accessToken: text("access_token"), // crittografato
+  refreshToken: text("refresh_token"), // crittografato  
+  tokenType: text("token_type").default('Bearer'),
+  expiresAt: timestamp("expires_at"),
+  scope: text("scope"), // permessi concessi
+  
+  // Calendar settings
+  defaultCalendarId: text("default_calendar_id"), // calendario predefinito per sync
+  syncEnabled: boolean("sync_enabled").notNull().default(true),
+  syncDirection: text("sync_direction").notNull().default('outbound'), // 'outbound', 'inbound', 'bidirectional'
+  syncFrequency: text("sync_frequency").default('immediate'), // 'immediate', 'hourly', 'daily'
+  lastSyncAt: timestamp("last_sync_at"),
+  
+  // Event filtering
+  syncAllEvents: boolean("sync_all_events").notNull().default(true),
+  eventPrefix: text("event_prefix").default('[ECF]'), // prefisso per eventi sincronizzati
+  
+  // Status and metadata
+  isActive: boolean("is_active").notNull().default(true),
+  lastError: text("last_error"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Calendar Reminders - Sistema di promemoria
+export const calendarReminders = pgTable("calendar_reminders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").notNull(),
+  reminderType: text("reminder_type").notNull(), // 'notification', 'email', 'sms', 'whatsapp'
+  reminderTime: integer("reminder_time").notNull(), // minuti prima dell'evento
+  reminderUnit: text("reminder_unit").notNull().default('minutes'), // 'minutes', 'hours', 'days'
+  
+  // Status
+  isActive: boolean("is_active").notNull().default(true),
+  isSent: boolean("is_sent").notNull().default(false),
+  sentAt: timestamp("sent_at"),
+  scheduledFor: timestamp("scheduled_for").notNull(), // quando inviare il reminder
+  
+  // Delivery details
+  recipientUserId: varchar("recipient_user_id").notNull(),
+  recipientEmail: text("recipient_email"),
+  recipientPhone: text("recipient_phone"),
+  deliveryStatus: text("delivery_status").default('pending'), // 'pending', 'sent', 'delivered', 'failed'
+  deliveryError: text("delivery_error"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Calendar schema validations
+export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCalendarIntegrationSchema = createInsertSchema(calendarIntegrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCalendarReminderSchema = createInsertSchema(calendarReminders).omit({
+  id: true,
+  createdAt: true,
+});
+
+// ==========================================
+// CALENDAR RELATIONS
+// ==========================================
+
+// Calendar Events Relations
+export const calendarEventsRelations = relations(calendarEvents, ({ one, many }) => ({
+  // User relations
+  createdByUser: one(users, {
+    fields: [calendarEvents.createdByUserId],
+    references: [users.id],
+  }),
+  assignedToUser: one(users, {
+    fields: [calendarEvents.assignedToUserId],
+    references: [users.id],
+  }),
+  
+  // Linked entities relations
+  linkedMovement: one(movements, {
+    fields: [calendarEvents.linkedMovementId],
+    references: [movements.id],
+  }),
+  linkedResource: one(resources, {
+    fields: [calendarEvents.linkedResourceId],
+    references: [resources.id],
+  }),
+  linkedCompany: one(companies, {
+    fields: [calendarEvents.linkedCompanyId],
+    references: [companies.id],
+  }),
+  linkedSupplier: one(suppliers, {
+    fields: [calendarEvents.linkedSupplierId],
+    references: [suppliers.id],
+  }),
+  linkedCustomer: one(customers, {
+    fields: [calendarEvents.linkedCustomerId],
+    references: [customers.id],
+  }),
+  
+  // Parent-child for recurring events
+  parentEvent: one(calendarEvents, {
+    fields: [calendarEvents.parentEventId],
+    references: [calendarEvents.id],
+  }),
+  childEvents: many(calendarEvents),
+  
+  // Reminders
+  reminders: many(calendarReminders),
+}));
+
+// Calendar Integrations Relations
+export const calendarIntegrationsRelations = relations(calendarIntegrations, ({ one }) => ({
+  user: one(users, {
+    fields: [calendarIntegrations.userId],
+    references: [users.id],
+  }),
+}));
+
+// Calendar Reminders Relations
+export const calendarRemindersRelations = relations(calendarReminders, ({ one }) => ({
+  event: one(calendarEvents, {
+    fields: [calendarReminders.eventId],
+    references: [calendarEvents.id],
+  }),
+  recipientUser: one(users, {
+    fields: [calendarReminders.recipientUserId],
+    references: [users.id],
+  }),
+}));
+
+// Note: Calendar relations are integrated in existing entity relations above
+
 
 
 // Types
@@ -1379,6 +1583,16 @@ export type EmailSettings = typeof emailSettings.$inferSelect;
 export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
 
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+
+// Calendar Types
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
+
+export type CalendarIntegration = typeof calendarIntegrations.$inferSelect;
+export type InsertCalendarIntegration = z.infer<typeof insertCalendarIntegrationSchema>;
+
+export type CalendarReminder = typeof calendarReminders.$inferSelect;
+export type InsertCalendarReminder = z.infer<typeof insertCalendarReminderSchema>;
 
 // Extended types with relations
 export type MovementWithRelations = Movement & {

@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Database, Bell, Globe, Palette, FileText, Settings2, Users2, Lock } from "lucide-react";
+import { Shield, Database, Bell, Globe, Palette, FileText, Settings2, Users2, Lock, Calendar } from "lucide-react";
 import SystemUsersManagement from "./system-users-management";
 import { SecuritySettings } from "./security-settings";
 import { BackupSettings } from "./backup-settings-fixed";
 import { LocalizationSettings } from "./localization-settings";
 import { GeneralSettings } from "./general-settings";
+import CalendarIntegrations from "./calendar-integrations";
 
 export default function SystemConfigHorizontal() {
   const [activeTab, setActiveTab] = useState("general");
 
   const tabs = [
     { id: "security", label: "Sicurezza", icon: Shield, color: "bg-red-500" },
+    { id: "calendar", label: "Calendario", icon: Calendar, color: "bg-blue-500" },
     { id: "database", label: "Database", icon: Database, color: "bg-green-500" },
     { id: "notifications", label: "Notifiche", icon: Bell, color: "bg-yellow-500" },
     { id: "localization", label: "Localizzazione", icon: Globe, color: "bg-purple-500" },
@@ -99,6 +101,7 @@ export default function SystemConfigHorizontal() {
           <Card className="border-0 shadow-lg bg-white dark:bg-gray-800">
             <CardContent className="p-8">
               {activeTab === "security" && <SecuritySettings />}
+              {activeTab === "calendar" && <CalendarIntegrations />}
               {activeTab === "database" && (
                 <PlaceholderSection 
                   title="Configurazione Database"

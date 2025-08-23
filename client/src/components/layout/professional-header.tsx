@@ -1,4 +1,4 @@
-import { Bell, Menu, Settings, User, MessageSquare, Mail, Smartphone, MessageCircle, TrendingUp, X } from "lucide-react";
+import { Bell, Menu, Settings, User, MessageSquare, Mail, Smartphone, MessageCircle, TrendingUp, X, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -22,6 +22,8 @@ import { it } from "date-fns/locale";
 import { useState, useEffect } from "react";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import CalendarWeeklyView from "@/components/calendar/calendar-weekly-view";
 
 interface ProfessionalHeaderProps {
   onToggleSidebar?: () => void;
@@ -69,6 +71,7 @@ export function ProfessionalHeader({ onToggleSidebar, sidebarOpen = false }: Pro
   const { user } = useAuth();
   const { data: notifications, isLoading } = useNotifications();
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Categorize notifications
   const categorizedNotifications = {
@@ -162,6 +165,18 @@ export function ProfessionalHeader({ onToggleSidebar, sidebarOpen = false }: Pro
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Calendar Button */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setCalendarOpen(true)}
+            className="relative hover:bg-gray-100 dark:hover:bg-gray-800"
+            data-testid="button-calendar"
+          >
+            <Calendar className="h-5 w-5" />
+            {/* TODO: Add calendar event count badge */}
+          </Button>
+
           {/* Professional Notification Bell */}
           <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>
             <DropdownMenuTrigger asChild>
@@ -323,6 +338,15 @@ export function ProfessionalHeader({ onToggleSidebar, sidebarOpen = false }: Pro
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Calendar Dialog */}
+      <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0">
+          <CalendarWeeklyView 
+            onClose={() => setCalendarOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
