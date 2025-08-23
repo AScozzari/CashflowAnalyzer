@@ -25,7 +25,8 @@ import {
   Paperclip,
   RotateCw,
   Trash2,
-  Eye
+  Eye,
+  User
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -127,9 +128,12 @@ export function FiscalAIConsultant() {
   // Chat mutations
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest('/fiscal-ai/advice', {
+      const response = await apiRequest('/api/fiscal-ai/chat', {
         method: 'POST',
-        body: JSON.stringify({ question: message }),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: message })
       });
       return response;
     },
@@ -150,11 +154,11 @@ export function FiscalAIConsultant() {
       const assistantMessage: ChatMessage = {
         id: `assistant_${Date.now()}`,
         role: 'assistant',
-        content: data.answer,
+        content: data.reply || data.message || 'Risposta ricevuta',
         timestamp: new Date(),
-        suggestions: data.suggestions,
-        references: data.references,
-        confidence: data.confidence
+        suggestions: data.suggestions || [],
+        references: data.references || [],
+        confidence: data.confidence || 0.8
       };
       setMessages(prev => [...prev, assistantMessage]);
       setIsTyping(false);
@@ -509,31 +513,97 @@ export function FiscalAIConsultant() {
                   </CardContent>
                 </Card>
 
-                {/* Ottimizzazioni */}
+                {/* Ottimizzazioni con suggerimenti actionable */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <TrendingUp className="h-5 w-5" />
-                      <span>Ottimizzazioni</span>
+                      <span>Ottimizzazioni Fiscali</span>
                     </CardTitle>
+                    <CardDescription>
+                      Strategie concrete per ridurre il carico fiscale della tua PMI
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {analysis.optimizations.map((opt, index) => (
-                        <div key={index} className="p-3 border rounded-lg">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-medium text-sm">{opt.type}</h4>
-                            <Badge className="bg-green-100 text-green-800">
-                              €{opt.potentialSaving.toLocaleString('it-IT')}
-                            </Badge>
+                        <div key={index} className="p-4 border rounded-lg hover:shadow-sm transition-shadow">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-sm text-green-700 mb-1">{opt.type}</h4>
+                              <Badge className="bg-green-100 text-green-800 text-xs">
+                                Risparmio: €{opt.potentialSaving.toLocaleString('it-IT')}
+                              </Badge>
+                            </div>
+                            <Button size="sm" variant="outline" className="ml-2">
+                              <MessageCircle className="h-3 w-3 mr-1" />
+                              Chiedi dettagli
+                            </Button>
                           </div>
-                          <p className="text-xs text-muted-foreground mb-2">{opt.description}</p>
-                          <div className="text-xs">
-                            <span className="font-medium">Requisiti: </span>
-                            {opt.requirements.join(', ')}
+                          <p className="text-sm text-muted-foreground mb-3">{opt.description}</p>
+                          <div className="space-y-2">
+                            <div className="text-xs">
+                              <span className="font-medium text-gray-700">Requisiti: </span>
+                              <span className="text-gray-600">{opt.requirements.join(', ')}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {['Detrazioni fiscali', 'Crediti d\'imposta', 'Regimi agevolati'].slice(0, index + 1).map((tag, tagIndex) => (
+                                <Badge key={tagIndex} variant="secondary" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       ))}
+
+                      {/* Suggerimenti aggiuntivi sempre visibili */}
+                      <div className="border-t pt-4 mt-6">
+                        <h5 className="font-medium text-sm mb-3 flex items-center">
+                          <Sparkles className="h-4 w-4 mr-2 text-blue-500" />
+                          Suggerimenti Specializzati per PMI
+                        </h5>
+                        <div className="grid grid-cols-1 gap-3">
+                          {[
+                            {
+                              title: "IRES Premiale 2025",
+                              description: "Riduzioni aliquota fino al 27.5% per investimenti R&D",
+                              action: "Scopri requisiti",
+                              saving: "2,500"
+                            },
+                            {
+                              title: "Super Ammortamento",
+                              description: "130% deducibilità per beni strumentali digitali",
+                              action: "Calcola beneficio",
+                              saving: "5,000"
+                            },
+                            {
+                              title: "Patent Box",
+                              description: "Tassazione agevolata al 10% sui redditi da IP",
+                              action: "Verifica applicabilità",
+                              saving: "8,000"
+                            }
+                          ].map((suggestion, idx) => (
+                            <div key={idx} className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                              <div className="flex items-start justify-between mb-2">
+                                <h6 className="font-medium text-sm text-blue-900">{suggestion.title}</h6>
+                                <Badge variant="outline" className="text-blue-700 border-blue-200">
+                                  ~€{suggestion.saving}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-blue-700 mb-2">{suggestion.description}</p>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="h-7 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                                onClick={() => setInputMessage(`Dimmi tutto su ${suggestion.title} per la mia PMI`)}
+                              >
+                                {suggestion.action}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -542,139 +612,136 @@ export function FiscalAIConsultant() {
           ) : null}
         </TabsContent>
 
-        {/* Consulenza AI */}
+        {/* Chat AI Professionale */}
         <TabsContent value="chat" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Chiedi al Commercialista AI</CardTitle>
-              <CardDescription>
-                Fai domande specifiche sulla tua situazione fiscale. L'AI conosce le normative italiane 2025.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">La tua domanda</label>
-                <Textarea
-                  data-testid="input-fiscal-question"
-                  placeholder="Es: Come posso ottimizzare le tasse sulla mia PMI? Posso usufruire dell'IRES premiale?"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              
-              <Button
-                data-testid="button-ask-question"
-                onClick={handleSendMessage}
-                disabled={!inputMessage.trim() || sendMessageMutation.isPending}
-                className="w-full"
-              >
-                {sendMessageMutation.isPending ? (
-                  <>
-                    <Clock className="h-4 w-4 mr-2 animate-spin" />
-                    Analizzando...
-                  </>
-                ) : (
-                  <>
-                    <Brain className="h-4 w-4 mr-2" />
-                    Chiedi Consiglio
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Risposta AI - Rimossa perché ora usiamo il sistema chat */}
-          {false && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Consulenza Professionale</span>
-                  <Badge className="bg-blue-100 text-blue-800">
-                    Confidenza: {Math.round(advice.confidence * 100)}%
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="prose max-w-none">
-                  <p className="text-sm">{advice.answer}</p>
-                </div>
-
-                {/* Suggerimenti */}
-                {advice.suggestions.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="font-medium">Azioni Consigliate</h4>
-                    {advice.suggestions.map((suggestion, index) => (
-                      <Alert key={index} className="border-l-4 border-l-blue-500">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <strong className="text-sm">{suggestion.title}</strong>
-                              <Badge className={priorityColors[suggestion.priority]}>
-                                {suggestion.priority.toUpperCase()}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{suggestion.description}</p>
-                            <div className="text-xs">
-                              <span className="font-medium">Impatto: </span>{suggestion.impact}
-                            </div>
-                            <div className="text-xs">
-                              <span className="font-medium">Azione richiesta: </span>{suggestion.actionRequired}
-                            </div>
-                          </div>
-                        </AlertDescription>
-                      </Alert>
+          {/* Chat Interface principale - stile ChatGPT */}
+          <div className="space-y-4">
+            {/* Storico conversazioni */}
+            <div className="bg-white border rounded-lg min-h-[500px] max-h-[600px] overflow-y-auto p-4">
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                  <Brain className="h-12 w-12 text-blue-500 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Consulente Fiscale AI</h3>
+                  <p className="text-muted-foreground mb-6">Esperto in normative fiscali italiane. Fai la tua prima domanda!</p>
+                  
+                  {/* Suggerimenti veloci cliccabili */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-2xl">
+                    {[
+                      "Come funziona l'IRES premiale 2025?",
+                      "Quali detrazioni posso applicare?",
+                      "Come ottimizzare i pagamenti IVA?",
+                      "Scadenze fiscali 2025 da non perdere?"
+                    ].map((suggestion, idx) => (
+                      <Button
+                        key={idx}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInputMessage(suggestion)}
+                        className="text-left justify-start h-auto p-3 whitespace-normal"
+                      >
+                        <MessageCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                        {suggestion}
+                      </Button>
                     ))}
                   </div>
-                )}
-
-                {/* Riferimenti normativi */}
-                {advice.references.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Riferimenti Normativi</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {advice.references.map((ref, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {ref}
-                        </Badge>
-                      ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((message) => (
+                    <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] rounded-lg p-3 ${
+                        message.role === 'user' 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-gray-100 text-gray-900'
+                      }`}>
+                        <div className="flex items-start space-x-2">
+                          {message.role === 'assistant' && <Brain className="h-4 w-4 mt-1 flex-shrink-0" />}
+                          <div className="flex-1">
+                            <p className="whitespace-pre-wrap">{message.content}</p>
+                            <p className="text-xs mt-1 opacity-70">
+                              {new Date(message.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            
+                            {/* Suggerimenti seguiti (solo per l'AI) */}
+                            {message.role === 'assistant' && message.suggestions && (
+                              <div className="mt-3 space-y-2">
+                                <p className="text-xs font-medium opacity-80">Suggerimenti correlati:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {message.suggestions.slice(0, 3).map((suggestion, idx) => (
+                                    <Button
+                                      key={idx}
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setInputMessage(suggestion.title)}
+                                      className="text-xs h-auto p-1.5 border-current"
+                                    >
+                                      {suggestion.title}
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          {message.role === 'user' && <User className="h-4 w-4 mt-1 flex-shrink-0" />}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Domande suggerite */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Domande Comuni</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {[
-                  "Come funziona l'IRES premiale 2025?",
-                  "Quali detrazioni posso applicare?",
-                  "Come ottimizzare i pagamenti IVA?",
-                  "Che agevolazioni ho per la mia PMI?",
-                  "Scadenze fiscali 2025 da non perdere?",
-                  "Come ridurre il carico fiscale legalmente?"
-                ].map((q, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setQuestion(q)}
-                    className="text-left justify-start text-xs"
-                    data-testid={`button-suggested-${index}`}
-                  >
-                    {q}
-                  </Button>
-                ))}
+                  ))}
+                  
+                  {/* Indicatore di digitazione */}
+                  {sendMessageMutation.isPending && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 rounded-lg p-3">
+                        <div className="flex items-center space-x-2">
+                          <Brain className="h-4 w-4" />
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Input area */}
+            <div className="flex space-x-2">
+              <div className="flex-1">
+                <Textarea
+                  data-testid="input-fiscal-chat"
+                  placeholder="Scrivi la tua domanda al Consulente Fiscale AI..."
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  className="min-h-[60px] resize-none"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (inputMessage.trim()) {
+                        handleSendMessage();
+                      }
+                    }
+                  }}
+                />
               </div>
-            </CardContent>
-          </Card>
+              <Button
+                data-testid="button-send-message"
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim() || sendMessageMutation.isPending}
+                className="h-[60px] px-4"
+              >
+                {sendMessageMutation.isPending ? (
+                  <Clock className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Sezioni rimosse - ora usiamo solo la chat integrata */}
         </TabsContent>
 
         {/* Ottimizzazioni Dettagliate */}
