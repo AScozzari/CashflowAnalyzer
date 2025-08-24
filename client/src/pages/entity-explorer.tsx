@@ -109,67 +109,17 @@ export default function EntityExplorer() {
     queryKey: ['/api/entities', selectedEntity?.id, selectedEntity?.type],
     enabled: !!selectedEntity,
     queryFn: async (): Promise<EntityDetails> => {
-      try {
-        // Real API call to get entity details
-        const response = await fetch(`/api/entities/${selectedEntity!.id}?type=${selectedEntity!.type}`);
-        if (response.ok) {
-          return await response.json();
-        }
-      } catch (error) {
-        console.log('API not available, using mock data');
+      // SOLO API REALI - No fallback mock data
+      const response = await fetch(`/api/entities/${selectedEntity!.id}?type=${selectedEntity!.type}`);
+      
+      if (!response.ok) {
+        throw new Error(`Entity API failed: ${response.status} ${response.statusText}`);
       }
       
-      // Fallback to mock data if API is not available
-      return {
-        entity: {
-          id: selectedEntity!.id,
-          name: selectedEntity!.name,
-          email: 'info@example.com',
-          phone: '+39 123 456 7890',
-          address: 'Via Roma 123, Milano, MI, 20121',
-          vatNumber: 'IT12345678901',
-          createdAt: new Date(),
-        } as any,
-        type: selectedEntity!.type,
-        movements: [
-          {
-            id: '1',
-            amount: '1500.00',
-            type: 'income' as const,
-            description: 'Fattura #001',
-            flowDate: new Date().toISOString(),
-            insertDate: new Date().toISOString(),
-            status: { name: 'Saldato' },
-            reason: { name: 'Vendita servizi' }
-          },
-          {
-            id: '2',
-            amount: '800.00',
-            type: 'expense' as const,
-            description: 'Acquisto materiali',
-            flowDate: new Date(Date.now() - 86400000).toISOString(),
-            insertDate: new Date(Date.now() - 86400000).toISOString(),
-            status: { name: 'Da Saldare' },
-            reason: { name: 'Acquisto beni' }
-          }
-        ] as any,
-        communications: {
-          whatsapp: [
-            { id: '1', message: 'Buongiorno, invio fattura', date: new Date().toISOString(), direction: 'outbound' },
-            { id: '2', message: 'Ricevuto, grazie', date: new Date(Date.now() - 3600000).toISOString(), direction: 'inbound' }
-          ],
-          email: [
-            { id: '1', subject: 'Fattura #001', date: new Date(Date.now() - 86400000).toISOString(), direction: 'outbound' }
-          ],
-          sms: []
-        },
-        stats: {
-          totalMovements: 2,
-          totalAmount: 2300,
-          lastActivity: new Date().toISOString(),
-          averageAmount: 1150
-        }
-      };
+      const entityData = await response.json();
+      
+      console.log('[ENTITY EXPLORER] ✅ Real entity data loaded:', entityData);
+      return entityData;
     }
   });
 

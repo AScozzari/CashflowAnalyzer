@@ -585,11 +585,11 @@ Rispondi in JSON:
         throw new Error('Impossibile generare query SQL dalla domanda');
       }
 
-      // For now, return mock data since we need storage.executeRawQuery implementation
-      const mockResults = [
-        { id: 1, descrizione: "Esempio movimento", importo: 1000, dataOperazione: "2025-01-15" },
-        { id: 2, descrizione: "Altro movimento", importo: -500, dataOperazione: "2025-01-10" }
-      ];
+      // IMPLEMENTAZIONE REALE: Esegui query SQL reale sul database
+      console.log(`[AI SERVICE] Executing real SQL query: ${sqlQuery}`);
+      
+      const realResults = await storage.executeRealQuery(sqlQuery, userId);
+      console.log(`[AI SERVICE] Real query returned ${realResults.length} results`);
 
       const executionTime = Date.now() - startTime;
 
@@ -597,9 +597,9 @@ Rispondi in JSON:
         id: `query_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         query,
         sqlQuery,
-        results: mockResults,
+        results: realResults,
         executionTime,
-        resultCount: mockResults.length,
+        resultCount: realResults.length,
         confidence: result.confidence || 0.8,
         suggestions: result.suggestions || [],
         createdAt: new Date().toISOString()
@@ -640,8 +640,8 @@ Rispondi in JSON:
     const aiSettings = await storage.getAiSettings(userId);
 
     try {
-      // Generate mock data for chart based on query analysis
-      const mockData = this.generateMockChartData(query);
+      // IMPLEMENTAZIONE REALE: Genera dati reali dal database
+      const realData = await this.generateRealChartData(query, userId, storage);
 
       // Generate chart configuration using AI
       const prompt = `Genera una configurazione grafico per questi dati finanziari:
@@ -649,8 +649,8 @@ Rispondi in JSON:
 Query originale: "${query}"
 Tipo richiesto: ${options?.chartType || 'automatico'}
 
-Dati disponibili:
-${JSON.stringify(mockData.slice(0, 3), null, 2)}
+Dati disponibili (reali dal database):
+${JSON.stringify(realData.slice(0, 3), null, 2)}
 
 Genera configurazione in JSON:
 {
@@ -686,10 +686,10 @@ Genera configurazione in JSON:
         id: `chart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         title: config.title || 'Grafico Generato AI',
         type: config.type || 'bar',
-        data: mockData,
+        data: realData,
         config: {
-          xKey: config.config?.xKey || Object.keys(mockData[0])[0],
-          yKeys: config.config?.yKeys || [Object.keys(mockData[0])[1]],
+          xKey: config.config?.xKey || Object.keys(realData[0] || {})[0] || 'date',
+          yKeys: config.config?.yKeys || [Object.keys(realData[0] || {})[1] || 'amount'],
           colors: config.config?.colors || ['#3b82f6', '#ef4444', '#10b981']
         },
         description: config.description || 'Grafico generato automaticamente dall\'AI',
@@ -703,36 +703,155 @@ Genera configurazione in JSON:
     }
   }
 
-  private generateMockChartData(query: string): any[] {
-    const lowerQuery = query.toLowerCase();
+  private async generateRealChartData(query: string, userId: string, storage: any): Promise<any[]> {
+    try {
+      console.log(`[AI SERVICE] Generating real chart data for query: ${query}`);
+      
+      const lowerQuery = query.toLowerCase();
+      let chartData = [];
+      
+      if (lowerQuery.includes('entrate') || lowerQuery.includes('ricavi') || lowerQuery.includes('income')) {
+        // Query reale per entrate dal database
+        const movements = await storage.getMovements({ type: 'income' });
+        chartData = await this.processMovementsForChart(movements, 'income');
+      } else if (lowerQuery.includes('spese') || lowerQuery.includes('costi') || lowerQuery.includes('expense')) {
+        // Query reale per spese dal database
+        const movements = await storage.getMovements({ type: 'expense' });
+        chartData = await this.processMovementsForChart(movements, 'expense');
+      } else if (lowerQuery.includes('categoria') || lowerQuery.includes('ripartizione')) {
+        // Analisi per categoria dal database
+        const movements = await storage.getMovements();
+        chartData = await this.groupMovementsByCategory(movements);
+      } else if (lowerQuery.includes('trend') || lowerQuery.includes('andamento')) {
+        // Analisi trend temporale dal database
+        const movements = await storage.getMovements();
+        chartData = await this.analyzeMovementsTrend(movements);
+      } else {
+        // Query combinata per andamento generale
+        const allMovements = await storage.getMovements();
+        chartData = await this.combineMovementsForChart(allMovements);
+      }
+      
+      console.log(`[AI SERVICE] Generated ${chartData.length} real data points`);
+      return chartData.length > 0 ? chartData : [{ message: 'Nessun dato disponibile per questa query' }];
+      
+    } catch (error) {
+      console.error(`[AI SERVICE] Error generating real chart data:`, error);
+      throw new Error(`Errore nella generazione dei dati: ${error}`);
+    }
+  }
+
+  // Helper method: Process movements for charts
+  private async processMovementsForChart(movements: any[], type: string): Promise<any[]> {
+    const monthlyData = new Map();
     
-    if (lowerQuery.includes('entrate') || lowerQuery.includes('ricavi')) {
-      return [
-        { periodo: 'Gen 2025', entrate: 15000, uscite: 8000 },
-        { periodo: 'Feb 2025', entrate: 18000, uscite: 9500 },
-        { periodo: 'Mar 2025', entrate: 22000, uscite: 11000 },
-        { periodo: 'Apr 2025', entrate: 19000, uscite: 10200 },
-        { periodo: 'Mag 2025', entrate: 25000, uscite: 12500 }
-      ];
+    movements.forEach(movement => {
+      const date = new Date(movement.flowDate || movement.createdAt);
+      const monthKey = date.toLocaleDateString('it-IT', { year: 'numeric', month: 'short' });
+      
+      if (!monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, { periodo: monthKey, importo: 0, conteggio: 0 });
+      }
+      
+      const data = monthlyData.get(monthKey);
+      data.importo += parseFloat(movement.amount || 0);
+      data.conteggio += 1;
+    });
+    
+    return Array.from(monthlyData.values()).sort((a, b) => 
+      new Date(a.periodo).getTime() - new Date(b.periodo).getTime()
+    );
+  }
+
+  // Helper method: Group movements by category 
+  private async groupMovementsByCategory(movements: any[]): Promise<any[]> {
+    const categoryData = new Map();
+    let total = 0;
+    
+    movements.forEach(movement => {
+      const category = movement.reason?.name || movement.category || 'Altro';
+      const amount = parseFloat(movement.amount || 0);
+      
+      if (!categoryData.has(category)) {
+        categoryData.set(category, { categoria: category, valore: 0 });
+      }
+      
+      categoryData.get(category).valore += Math.abs(amount);
+      total += Math.abs(amount);
+    });
+    
+    // Calculate percentages
+    return Array.from(categoryData.values()).map(item => ({
+      ...item,
+      percentuale: total > 0 ? Math.round((item.valore / total) * 100) : 0
+    }));
+  }
+
+  // Helper method: Analyze trends
+  private async analyzeMovementsTrend(movements: any[]): Promise<any[]> {
+    const trendData = new Map();
+    
+    movements.forEach(movement => {
+      const date = new Date(movement.flowDate || movement.createdAt);
+      const monthKey = date.toLocaleDateString('it-IT', { year: 'numeric', month: 'long' });
+      const amount = parseFloat(movement.amount || 0);
+      
+      if (!trendData.has(monthKey)) {
+        trendData.set(monthKey, { mese: monthKey, importo: 0, numero: 0, trend: 'stabile' });
+      }
+      
+      const data = trendData.get(monthKey);
+      data.importo += Math.abs(amount);
+      data.numero += 1;
+    });
+    
+    // Calculate trend direction
+    const sortedData = Array.from(trendData.values()).sort((a, b) => 
+      new Date(a.mese).getTime() - new Date(b.mese).getTime()
+    );
+    
+    for (let i = 1; i < sortedData.length; i++) {
+      const current = sortedData[i];
+      const previous = sortedData[i - 1];
+      
+      if (current.importo > previous.importo * 1.1) {
+        current.trend = 'crescita';
+      } else if (current.importo < previous.importo * 0.9) {
+        current.trend = 'decrescita';
+      } else {
+        current.trend = 'stabile';
+      }
     }
     
-    if (lowerQuery.includes('categoria') || lowerQuery.includes('ripartizione')) {
-      return [
-        { categoria: 'Consulenze', valore: 35000, percentuale: 40 },
-        { categoria: 'Prodotti', valore: 28000, percentuale: 32 },
-        { categoria: 'Servizi', valore: 15000, percentuale: 17 },
-        { categoria: 'Altri', valore: 9500, percentuale: 11 }
-      ];
-    }
+    return sortedData;
+  }
+
+  // Helper method: Combine movements for general charts
+  private async combineMovementsForChart(movements: any[]): Promise<any[]> {
+    const monthlyData = new Map();
     
-    // Default financial trend data
-    return [
-      { mese: 'Gennaio', importo: 12500, numero: 45 },
-      { mese: 'Febbraio', importo: 15800, numero: 52 },
-      { mese: 'Marzo', importo: 18200, numero: 61 },
-      { mese: 'Aprile', importo: 14600, numero: 48 },
-      { mese: 'Maggio', importo: 21300, numero: 67 }
-    ];
+    movements.forEach(movement => {
+      const date = new Date(movement.flowDate || movement.createdAt);
+      const monthKey = date.toLocaleDateString('it-IT', { year: 'numeric', month: 'short' });
+      const amount = parseFloat(movement.amount || 0);
+      const type = movement.type;
+      
+      if (!monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, { data: monthKey, entrate: 0, uscite: 0, netto: 0 });
+      }
+      
+      const data = monthlyData.get(monthKey);
+      if (type === 'income') {
+        data.entrate += amount;
+      } else if (type === 'expense') {
+        data.uscite += Math.abs(amount);
+      }
+      data.netto = data.entrate - data.uscite;
+    });
+    
+    return Array.from(monthlyData.values()).sort((a, b) => 
+      new Date(a.data).getTime() - new Date(b.data).getTime()
+    );
   }
 
   private getDatabaseSchema(): string {

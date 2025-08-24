@@ -286,8 +286,8 @@ class SystemService {
       // Get disk usage
       const diskUsage = await this.getDiskUsage();
       
-      // Get database stats (simulated for now)
-      const dbStats = await this.getDatabaseStats();
+      // Get database stats (REAL IMPLEMENTATION)
+      const dbStats = await this.getRealDatabaseStats();
 
       // Calculate API stats
       const avgResponseTime = this.apiStats.requests > 0 
@@ -355,13 +355,76 @@ class SystemService {
     }
   }
 
-  private async getDatabaseStats() {
-    // Simulated database stats - in a real app, you'd query your actual database
-    return {
-      connections: Math.floor(Math.random() * 20) + 5,
-      queries: Math.floor(Math.random() * 10000) + 1000,
-      size: `${Math.floor(Math.random() * 500) + 100} MB`
-    };
+  private async getRealDatabaseStats() {
+    try {
+      console.log('[SYSTEM SERVICE] Getting real database statistics...');
+      
+      // Import database connection
+      const { db } = await import('../db');
+      const { sql } = await import('drizzle-orm');
+      
+      // Get real database metrics
+      const [dbSize] = await db.execute(sql`
+        SELECT pg_size_pretty(pg_database_size(current_database())) as size,
+               (SELECT count(*) FROM pg_stat_activity WHERE state = 'active') as connections,
+               (SELECT sum(calls) FROM pg_stat_user_functions) as queries
+      `);
+      
+      // Get additional table statistics
+      const [tableStats] = await db.execute(sql`
+        SELECT 
+          schemaname,
+          tablename,
+          n_tup_ins + n_tup_upd + n_tup_del as total_operations
+        FROM pg_stat_user_tables 
+        ORDER BY total_operations DESC 
+        LIMIT 1
+      `);
+      
+      const connections = Number(dbSize.rows[0]?.connections || 0);
+      const queries = Number(dbSize.rows[0]?.queries || 0);
+      const size = dbSize.rows[0]?.size || '0 MB';
+      
+      console.log(`[SYSTEM SERVICE] Real DB stats: ${connections} connections, ${queries} queries, ${size}`);
+      
+      return {
+        connections,
+        queries: queries || (tableStats.rows[0]?.total_operations || 0),
+        size: size,
+        // Additional real metrics
+        activeConnections: connections,
+        idleConnections: Math.max(0, 10 - connections), // Assuming pool size of 10
+        mostActiveTable: tableStats.rows[0]?.tablename || 'movements',
+        totalOperations: Number(tableStats.rows[0]?.total_operations || 0)
+      };
+    } catch (error) {
+      console.error('[SYSTEM SERVICE] Error getting real database stats:', error);
+      
+      // Fallback with basic real metrics
+      try {
+        const { db } = await import('../db');
+        const { sql } = await import('drizzle-orm');
+        
+        // Simple query to at least get connection count
+        const [basicStats] = await db.execute(sql`SELECT 1 as test`);
+        
+        return {
+          connections: 1, // At least one connection worked
+          queries: 1,
+          size: 'Unknown',
+          error: 'Limited stats available'
+        };
+      } catch (fallbackError) {
+        console.error('[SYSTEM SERVICE] Fallback database stats failed:', fallbackError);
+        
+        return {
+          connections: 0,
+          queries: 0,
+          size: 'Unavailable',
+          error: 'Database connection failed'
+        };
+      }
+    }
   }
 
   async getLogs(limit: number = 50): Promise<LogEntry[]> {

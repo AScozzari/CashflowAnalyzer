@@ -102,14 +102,36 @@ export function setupTelegramRoutes(app: Express): void {
       
       const botInfo = telegramService.isInitialized() ? await telegramService.getBotInfo() : null;
       
+      // IMPLEMENTAZIONE REALE: Calcola statistiche reali dal database
+      const messages = await storage.getTelegramMessages();
+      
+      // Calcola messaggi non letti
+      const unreadMessages = messages.filter(msg => 
+        msg.readStatus !== 'read' && msg.direction === 'inbound'
+      ).length;
+      
+      // Calcola messaggi di oggi
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayMessages = messages.filter(msg => 
+        new Date(msg.createdAt) >= startOfDay
+      ).length;
+      
+      console.log(`[TELEGRAM STATS] Real stats: ${unreadMessages} unread, ${todayMessages} today`);
+      
       res.json({
         configured: settings.length > 0,
         isActive: settings.length > 0 && settings[0].isActive,
         username: botInfo?.username || settings[0]?.botUsername,
         webhook: botInfo && telegramService.isInitialized(),
         totalChats: chats.length,
-        unreadMessages: 0, // Placeholder
-        todayMessages: 0 // Placeholder
+        unreadMessages, // REAL VALUE from database
+        todayMessages, // REAL VALUE from database
+        // Additional real metrics
+        totalMessages: messages.length,
+        outboundMessages: messages.filter(msg => msg.direction === 'outbound').length,
+        inboundMessages: messages.filter(msg => msg.direction === 'inbound').length,
+        aiGeneratedMessages: messages.filter(msg => msg.isAiGenerated).length
       });
     } catch (error) {
       console.error('Error fetching Telegram stats:', error);
@@ -473,7 +495,7 @@ export function setupTelegramRoutes(app: Express): void {
       const { chatId } = req.params;
       console.log('[TELEGRAM API] Getting messages for chat:', chatId);
       
-      // ✅ IMPLEMENTAZIONE TEMPORANEA: Restituisci messaggi fake + reali dal database 
+      // ✅ IMPLEMENTAZIONE REALE: Restituisci solo messaggi reali dal database 
       const realMessages = [];
       
       try {
