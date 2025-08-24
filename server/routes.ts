@@ -2704,6 +2704,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // === DATABASE MANAGEMENT ENDPOINTS ===
+
+  // Get database statistics - REAL IMPLEMENTATION
+  app.get("/api/database/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[DATABASE] Fetching real database statistics...');
+      
+      // Get real database statistics
+      const { getRealDatabaseStats } = await import('./services/database-service');
+      const stats = await getRealDatabaseStats();
+      
+      console.log('[DATABASE] Statistics retrieved successfully');
+      res.json(stats);
+    } catch (error) {
+      console.error('[DATABASE] Error fetching database stats:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch database statistics',
+        details: error.message 
+      });
+    }
+  }));
+
+  // Database optimization
+  app.post("/api/database/optimize", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[DATABASE] Starting database optimization...');
+      
+      const { optimizeDatabase } = await import('./services/database-service');
+      const result = await optimizeDatabase();
+      
+      console.log('[DATABASE] Optimization completed successfully');
+      res.json({
+        success: true,
+        message: 'Database optimization completed successfully',
+        details: result
+      });
+    } catch (error) {
+      console.error('[DATABASE] Error optimizing database:', error);
+      res.status(500).json({ 
+        error: 'Failed to optimize database',
+        details: error.message 
+      });
+    }
+  }));
+
+  // Manual backup trigger
+  app.post("/api/database/backup", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[DATABASE] Starting manual backup...');
+      
+      const { createManualDatabaseBackup } = await import('./services/database-service');
+      const backupResult = await createManualDatabaseBackup();
+      
+      console.log('[DATABASE] Manual backup completed successfully');
+      res.json({
+        success: true,
+        message: 'Manual backup completed successfully',
+        backup: backupResult
+      });
+    } catch (error) {
+      console.error('[DATABASE] Error creating manual backup:', error);
+      res.status(500).json({ 
+        error: 'Failed to create manual backup',
+        details: error.message 
+      });
+    }
+  }));
+
+  // Update database statistics
+  app.post("/api/database/update-stats", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[DATABASE] Updating database statistics...');
+      
+      const { updateDatabaseStatistics } = await import('./services/database-service');
+      await updateDatabaseStatistics();
+      
+      console.log('[DATABASE] Statistics updated successfully');
+      res.json({
+        success: true,
+        message: 'Database statistics updated successfully'
+      });
+    } catch (error) {
+      console.error('[DATABASE] Error updating database statistics:', error);
+      res.status(500).json({ 
+        error: 'Failed to update database statistics',
+        details: error.message 
+      });
+    }
+  }));
+
   // === DATABASE SETTINGS ENDPOINTS ===
 
   // Get database settings
