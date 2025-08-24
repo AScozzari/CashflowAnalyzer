@@ -52,7 +52,8 @@ import {
   type DatabaseSettings, type InsertDatabaseSettings,
   type LocalizationSettings, type InsertLocalizationSettings,
   type DocumentsSettings, type InsertDocumentsSettings,
-  type ThemesSettings, type InsertThemesSettings
+  type ThemesSettings, type InsertThemesSettings,
+  notificationSettings, type NotificationSettings, type InsertNotificationSettings
 } from "@shared/schema";
 import { 
   BackupConfiguration, 
@@ -2544,6 +2545,76 @@ async getMovements(filters: {
     } catch (error) {
       console.error('Error deleting fiscal AI messages:', error);
       throw new Error('Failed to delete fiscal AI messages');
+    }
+  }
+
+  // === NOTIFICATION SETTINGS MANAGEMENT ===
+  
+  async getNotificationSettings(userId: string): Promise<NotificationSettings> {
+    try {
+      const [existing] = await db.select()
+        .from(notificationSettings)
+        .where(eq(notificationSettings.userId, userId));
+      
+      if (existing) {
+        return existing;
+      }
+      
+      // Create default settings if none exist
+      const defaultSettings: InsertNotificationSettings = {
+        userId: userId,
+        enableNotifications: true,
+        enableSounds: true,
+        enableDesktopNotifications: true,
+        emailEnabled: true,
+        emailDigestEnabled: false,
+        emailDigestFrequency: 'daily',
+        pushEnabled: true,
+        pushOnMovements: true,
+        pushOnMessages: true,
+        pushOnAlerts: true,
+        smsEnabled: false,
+        smsOnUrgent: true,
+        smsQuietHours: false,
+        smsQuietStart: '22:00',
+        smsQuietEnd: '08:00',
+        whatsappEnabled: false,
+        webhookEnabled: false,
+        categoriesEnabled: ['movement', 'whatsapp', 'sms', 'email', 'system'],
+        priorityThreshold: 'all',
+        retryAttempts: 3,
+        retryDelay: 30,
+        maxQueueSize: 1000
+      };
+      
+      const [newSettings] = await db.insert(notificationSettings)
+        .values(defaultSettings)
+        .returning();
+      
+      return newSettings;
+    } catch (error) {
+      console.error('Error fetching notification settings:', error);
+      throw new Error('Failed to fetch notification settings');
+    }
+  }
+
+  async updateNotificationSettings(userId: string, updates: Partial<NotificationSettings>): Promise<NotificationSettings> {
+    try {
+      // Ensure user settings exist first
+      await this.getNotificationSettings(userId);
+      
+      const [updatedSettings] = await db.update(notificationSettings)
+        .set({ 
+          ...updates, 
+          updatedAt: new Date() 
+        })
+        .where(eq(notificationSettings.userId, userId))
+        .returning();
+      
+      return updatedSettings;
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+      throw new Error('Failed to update notification settings');
     }
   }
 

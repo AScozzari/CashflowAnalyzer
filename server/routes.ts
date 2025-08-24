@@ -1515,6 +1515,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // === NOTIFICATION SETTINGS API ENDPOINTS ===
+
+  // Get notification settings
+  app.get("/api/notifications/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      const settings = await storage.getNotificationSettings(userId);
+      res.json(settings);
+    } catch (error) {
+      console.error('[NOTIFICATIONS] Error fetching settings:', error);
+      res.status(500).json({ error: 'Failed to fetch notification settings' });
+    }
+  }));
+
+  // Update notification settings
+  app.put("/api/notifications/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      const settings = await storage.updateNotificationSettings(userId, req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error('[NOTIFICATIONS] Error updating settings:', error);
+      res.status(500).json({ error: 'Failed to update notification settings' });
+    }
+  }));
+
+  // Get notification statistics
+  app.get("/api/notifications/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      const { getNotificationStats } = await import('./services/notification-service');
+      const stats = await getNotificationStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error('[NOTIFICATIONS] Error fetching stats:', error);
+      res.status(500).json({ error: 'Failed to fetch notification statistics' });
+    }
+  }));
+
+  // Test notification
+  app.post("/api/notifications/test", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { channel, message } = req.body;
+      const userId = req.user.id;
+      
+      const { sendTestNotification } = await import('./services/notification-service');
+      const result = await sendTestNotification(userId, channel, message);
+      res.json(result);
+    } catch (error) {
+      console.error('[NOTIFICATIONS] Error sending test notification:', error);
+      res.status(500).json({ error: 'Failed to send test notification' });
+    }
+  }));
+
+  // Get notification settings
+  app.get("/api/notifications/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      const settings = await storage.getNotificationSettings(userId);
+      res.json(settings);
+    } catch (error) {
+      console.error('[NOTIFICATIONS] Error fetching settings:', error);
+      res.status(500).json({ error: 'Failed to fetch notification settings' });
+    }
+  }));
+
+  // Update notification settings
+  app.put("/api/notifications/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      const updates = req.body;
+      
+      const updatedSettings = await storage.updateNotificationSettings(userId, updates);
+      res.json(updatedSettings);
+    } catch (error) {
+      console.error('[NOTIFICATIONS] Error updating settings:', error);
+      res.status(500).json({ error: 'Failed to update notification settings' });
+    }
+  }));
+
   // Recent communications activities for communications center
   app.get("/api/recent-activities", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {

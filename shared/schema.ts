@@ -1948,6 +1948,57 @@ export const themesSettings = pgTable("themes_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// === NOTIFICATION SETTINGS SCHEMA ===
+export const notificationSettings = pgTable("notification_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").unique().notNull(),
+  
+  // General settings
+  enableNotifications: boolean("enable_notifications").notNull().default(true),
+  enableSounds: boolean("enable_sounds").notNull().default(true),
+  enableDesktopNotifications: boolean("enable_desktop_notifications").notNull().default(true),
+  
+  // Email notifications
+  emailEnabled: boolean("email_enabled").notNull().default(true),
+  emailDigestEnabled: boolean("email_digest_enabled").notNull().default(false),
+  emailDigestFrequency: text("email_digest_frequency").notNull().default("daily"), // 'immediate' | 'hourly' | 'daily' | 'weekly'
+  
+  // Push notifications  
+  pushEnabled: boolean("push_enabled").notNull().default(true),
+  pushOnMovements: boolean("push_on_movements").notNull().default(true),
+  pushOnMessages: boolean("push_on_messages").notNull().default(true),
+  pushOnAlerts: boolean("push_on_alerts").notNull().default(true),
+  
+  // SMS notifications
+  smsEnabled: boolean("sms_enabled").notNull().default(false),
+  smsOnUrgent: boolean("sms_on_urgent").notNull().default(true),
+  smsQuietHours: boolean("sms_quiet_hours").notNull().default(false),
+  smsQuietStart: text("sms_quiet_start").notNull().default("22:00"),
+  smsQuietEnd: text("sms_quiet_end").notNull().default("08:00"),
+  
+  // WhatsApp notifications
+  whatsappEnabled: boolean("whatsapp_enabled").notNull().default(false),
+  whatsappTemplateId: text("whatsapp_template_id"),
+  
+  // Webhook notifications
+  webhookEnabled: boolean("webhook_enabled").notNull().default(false),
+  webhookUrl: text("webhook_url"),
+  webhookSecret: text("webhook_secret"),
+  webhookEvents: text("webhook_events").array(), // Array of event types
+  
+  // Filtering
+  categoriesEnabled: text("categories_enabled").array(), // Array of category IDs
+  priorityThreshold: text("priority_threshold").notNull().default("all"), // 'all' | 'normal' | 'high' | 'urgent'
+  
+  // Advanced
+  retryAttempts: integer("retry_attempts").notNull().default(3),
+  retryDelay: integer("retry_delay").notNull().default(30), // seconds
+  maxQueueSize: integer("max_queue_size").notNull().default(1000),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Extended types with relations
 export type MovementWithRelations = Movement & {
   company: Company;
@@ -1989,6 +2040,8 @@ export type DocumentsSettings = typeof documentsSettings.$inferSelect;
 export type InsertDocumentsSettings = typeof documentsSettings.$inferInsert;
 export type ThemesSettings = typeof themesSettings.$inferSelect;
 export type InsertThemesSettings = typeof themesSettings.$inferInsert;
+export type NotificationSettings = typeof notificationSettings.$inferSelect;
+export type InsertNotificationSettings = typeof notificationSettings.$inferInsert;
 
 // === BACKUP SYSTEM TYPES ===
 export type BackupConfiguration = typeof backupConfigurations.$inferSelect;
@@ -2009,6 +2062,7 @@ export const insertBackupConfigurationSchema = createInsertSchema(backupConfigur
 export const insertBackupJobSchema = createInsertSchema(backupJobs);
 export const insertRestorePointSchema = createInsertSchema(restorePoints);
 export const insertBackupAuditLogSchema = createInsertSchema(backupAuditLog);
+export const insertNotificationSettingsSchema = createInsertSchema(notificationSettings);
 
 // Re-export all specialized schemas
 export * from "./user-schema";

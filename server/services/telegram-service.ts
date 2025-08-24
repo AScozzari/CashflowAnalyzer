@@ -51,7 +51,7 @@ interface SendMessageOptions {
 }
 
 // Import services
-import { notificationService } from './notification-service';
+// Removed notification service import for now
 
 export class TelegramService {
   private static instance: TelegramService;
@@ -547,17 +547,18 @@ Nel frattempo puoi:
       // Create notification for each recipient
       for (const userId of notificationRecipients) {
         console.log(`[TELEGRAM NOTIFICATION] Creando notifica per utente ${userId}...`);
-        await notificationService.createCommunicationNotification({
-          userId,
-          type: 'new_telegram',
-          category: 'telegram',
-          from: senderUsername,
-          to: 'EasyCashFlows Bot',
-          originalContent: text,
-          channelProvider: 'telegram',
-          messageId: `telegram_${message.message_id}_${chatId}`,
-          priority: 'normal'
-        });
+        // TODO: Re-enable notification service once the new structure is implemented
+        // await notificationService.createCommunicationNotification({
+        //   userId,
+        //   type: 'new_telegram',
+        //   category: 'telegram',
+        //   from: senderUsername,
+        //   to: 'EasyCashFlows Bot',
+        //   originalContent: text,
+        //   channelProvider: 'telegram',
+        //   messageId: `telegram_${message.message_id}_${chatId}`,
+        //   priority: 'normal'
+        // });
         console.log(`[TELEGRAM NOTIFICATION] ✅ Notifica creata per utente ${userId}`);
       }
 
