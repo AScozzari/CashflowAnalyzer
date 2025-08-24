@@ -4217,23 +4217,75 @@ async getMovements(filters: {
 
   private async performRealBackup(backupId: string, configId: string): Promise<void> {
     try {
-      console.log(`[STORAGE] Performing real backup ${backupId} for config ${configId}`);
+      console.log(`[STORAGE] Performing REAL backup ${backupId} for config ${configId}`);
       
-      // Simulate backup process - in real implementation would backup to Google Cloud Storage
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate backup time
+      const startTime = new Date();
       
-      // Update job status to completed
+      // REAL BACKUP IMPLEMENTATION - Export actual database data
+      const { RealBackupService } = await import('./services/real-backup-service');
+      const backupData = await RealBackupService.createFullDatabaseBackup();
+      
+      // REAL CLOUD STORAGE - Save to Google Cloud Storage if available
+      let cloudPath = '';
+      let actualSize = 0;
+      
+      if (process.env.GOOGLE_CLOUD_STORAGE_BUCKET) {
+        const { Storage } = await import('@google-cloud/storage');
+        const storage = new Storage();
+        const bucket = storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET);
+        
+        const fileName = `backup-${backupId}-${Date.now()}.json`;
+        const file = bucket.file(`backups/${fileName}`);
+        
+        const backupJSON = JSON.stringify(backupData, null, 2);
+        actualSize = Buffer.byteLength(backupJSON, 'utf8');
+        
+        await file.save(backupJSON, {
+          metadata: {
+            contentType: 'application/json',
+            metadata: {
+              backupId,
+              configId,
+              timestamp: startTime.toISOString(),
+              version: '1.0'
+            }
+          }
+        });
+        
+        cloudPath = `gs://${process.env.GOOGLE_CLOUD_STORAGE_BUCKET}/backups/${fileName}`;
+        console.log(`[STORAGE] Backup saved to Google Cloud Storage: ${cloudPath}`);
+      } else {
+        // Fallback: Save locally if no cloud storage
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        
+        const backupDir = path.join(process.cwd(), 'backups');
+        await fs.mkdir(backupDir, { recursive: true });
+        
+        const fileName = `backup-${backupId}-${Date.now()}.json`;
+        const filePath = path.join(backupDir, fileName);
+        
+        const backupJSON = JSON.stringify(backupData, null, 2);
+        actualSize = Buffer.byteLength(backupJSON, 'utf8');
+        
+        await fs.writeFile(filePath, backupJSON);
+        cloudPath = filePath;
+        console.log(`[STORAGE] Backup saved locally: ${cloudPath}`);
+      }
+      
+      const endTime = new Date();
       const completedJobData = {
         id: backupId,
         configId,
         status: "completed",
-        startTime: new Date(Date.now() - 2000).toISOString(),
-        endTime: new Date().toISOString(),
-        size: "156MB",
-        sizeBytes: 163840000, // 156MB in bytes
-        message: "Backup completed successfully",
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        size: this.formatBytes(actualSize),
+        sizeBytes: actualSize,
+        message: "Real backup completed successfully",
         type: "manual",
-        cloudPath: `gs://easycashflows-backups/${backupId}.tar.gz`
+        cloudPath,
+        recordCount: Object.keys(backupData.tables || {}).reduce((sum, key) => sum + (backupData.tables[key]?.length || 0), 0)
       };
       
       await db.update(systemConfigs)
@@ -4270,17 +4322,90 @@ async getMovements(filters: {
 
   private async createRealRestorePoint(restoreId: string, restoreData: any): Promise<void> {
     try {
-      console.log(`[STORAGE] Creating real restore point ${restoreId}`);
+      console.log(`[STORAGE] Creating REAL restore point ${restoreId}`);
       
-      // Simulate restore point creation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const startTime = new Date();
+      
+      // REAL RESTORE POINT - Create actual database snapshot
+      const { RealBackupService } = await import('./services/real-backup-service');
+      const currentState = await RealBackupService.createFullDatabaseBackup();
+      
+      // REAL VERIFICATION - Check data integrity
+      const verificationResult = await RealBackupService.verifyDatabaseIntegrity(currentState);
+      
+      let cloudPath = '';
+      let actualSize = 0;
+      
+      if (process.env.GOOGLE_CLOUD_STORAGE_BUCKET) {
+        const { Storage } = await import('@google-cloud/storage');
+        const storage = new Storage();
+        const bucket = storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET);
+        
+        const fileName = `restore-point-${restoreId}-${Date.now()}.json`;
+        const file = bucket.file(`restore-points/${fileName}`);
+        
+        const restoreJSON = JSON.stringify({
+          ...currentState,
+          restoreMetadata: {
+            restoreId,
+            timestamp: startTime.toISOString(),
+            verification: verificationResult,
+            originalData: restoreData
+          }
+        }, null, 2);
+        
+        actualSize = Buffer.byteLength(restoreJSON, 'utf8');
+        
+        await file.save(restoreJSON, {
+          metadata: {
+            contentType: 'application/json',
+            metadata: {
+              restoreId,
+              timestamp: startTime.toISOString(),
+              verified: verificationResult.valid,
+              version: '1.0'
+            }
+          }
+        });
+        
+        cloudPath = `gs://${process.env.GOOGLE_CLOUD_STORAGE_BUCKET}/restore-points/${fileName}`;
+        console.log(`[STORAGE] Restore point saved to Google Cloud Storage: ${cloudPath}`);
+      } else {
+        // Fallback: Save locally
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        
+        const restoreDir = path.join(process.cwd(), 'restore-points');
+        await fs.mkdir(restoreDir, { recursive: true });
+        
+        const fileName = `restore-point-${restoreId}-${Date.now()}.json`;
+        const filePath = path.join(restoreDir, fileName);
+        
+        const restoreJSON = JSON.stringify({
+          ...currentState,
+          restoreMetadata: {
+            restoreId,
+            timestamp: startTime.toISOString(),
+            verification: verificationResult
+          }
+        }, null, 2);
+        
+        actualSize = Buffer.byteLength(restoreJSON, 'utf8');
+        await fs.writeFile(filePath, restoreJSON);
+        cloudPath = filePath;
+        console.log(`[STORAGE] Restore point saved locally: ${cloudPath}`);
+      }
       
       // Update restore point status to verified
       const verifiedData = {
         ...restoreData,
-        verified: true,
-        status: 'completed',
-        cloudPath: `gs://easycashflows-backups/restore-${restoreId}.snapshot`
+        verified: verificationResult.valid,
+        status: verificationResult.valid ? 'completed' : 'failed',
+        cloudPath,
+        size: this.formatBytes(actualSize),
+        sizeBytes: actualSize,
+        verificationErrors: verificationResult.errors || [],
+        recordCount: Object.keys(currentState.tables || {}).reduce((sum, key) => sum + (currentState.tables[key]?.length || 0), 0)
       };
       
       await db.update(systemConfigs)

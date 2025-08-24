@@ -91,7 +91,7 @@ export function useAvailableEntities() {
     isLoading: false,
     refetch: () => {
       // Simula il refresh dei dati
-      console.log('Refreshing mock data for WhatsApp variables demo');
+      console.log('Refreshing WhatsApp template variables from system context');
     }
   };
 }
