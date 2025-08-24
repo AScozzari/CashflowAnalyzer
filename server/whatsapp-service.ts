@@ -195,7 +195,7 @@ export class WhatsAppNotificationEngine {
   async evaluateConditions(
     conditions: NotificationCondition[], 
     data: Record<string, any>
-  ): boolean {
+  ): Promise<boolean> {
     return conditions.every(condition => {
       const fieldValue = data[condition.field];
       const targetValue = condition.value;
@@ -293,9 +293,11 @@ export class WhatsAppNotificationEngine {
 
       const successCount = results.filter(r => r.success).length;
       
+      const successResult = results.find(r => r.success);
+      
       return {
         success: successCount > 0,
-        messageId: results.find(r => r.success)?.messageId,
+        messageId: successResult && 'messageId' in successResult ? successResult.messageId : undefined,
         error: successCount === 0 ? 'All sends failed' : undefined,
       };
 

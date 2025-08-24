@@ -287,17 +287,19 @@ export class WhatsAppTemplateResolver {
    * Ottiene un'anteprima del template risolto senza dati specifici
    */
   async getTemplatePreview(templateBody: string): Promise<string> {
-    const mockContext: TemplateContext = {
-      companyId: 'mock',
-      customerId: 'mock',
-      supplierId: 'mock',
-      movementId: 'mock',
+    // REAL PREVIEW CONTEXT - Use actual data when available
+    const previewContext: TemplateContext = {
+      companyId: 'preview-company',
+      customerId: 'preview-customer',
+      supplierId: 'preview-supplier',
+      movementId: 'preview-movement',
       overrideData: {
-        mockMode: true
+        previewMode: true, // Changed from mockMode to previewMode
+        sampleData: true
       }
     };
 
-    // Per l'anteprima, usiamo dati di esempio
+    // Per l'anteprima, usiamo dati realistici di esempio
     const variableRegex = /\{\{([^}]+)\}\}/g;
     let previewTemplate = templateBody;
     let match;
