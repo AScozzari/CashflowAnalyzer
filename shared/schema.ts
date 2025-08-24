@@ -1711,6 +1711,11 @@ export type UserWithResource = User & {
   lastName?: string;   // Derived from resource
 };
 
+// Aliases for backward compatibility
+export const operationalSites = offices;
+export const movementCategories = movementReasons;
+export const systemConfigs = securitySettings;
+
 // Re-export all specialized schemas
 export * from "./user-schema";
 export * from "./security-schema";

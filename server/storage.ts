@@ -4618,3 +4618,6 @@ async getMovements(filters: {
 console.log('[STORAGE] Initializing DatabaseStorage...');
 export const storage = new DatabaseStorage();
 console.log('[STORAGE] DatabaseStorage initialized successfully');
+
+// Export db for use by backup services and other modules
+export { db };
