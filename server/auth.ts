@@ -34,42 +34,57 @@ function generateResetToken(): string {
 }
 
 export function setupAuth(app: Express) {
+  // Session settings with default timeout (will be updated dynamically)
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "cashflow-secret-key-change-in-production",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 24 ore
+      maxAge: 24 * 60 * 60 * 1000, // Default 24 hours (updated dynamically)
       httpOnly: true,
       secure: false, // Disabled for Replit development
       sameSite: 'lax', // Allow cross-site cookies for Replit
     },
   };
 
+  // Update session timeout dynamically from security settings
+  (async () => {
+    try {
+      const { securityManager } = await import('./services/security-manager');
+      const dynamicTimeout = await securityManager.getSessionTimeout();
+      sessionSettings.cookie!.maxAge = dynamicTimeout;
+      console.log(`[SECURITY] Session timeout set to ${dynamicTimeout/1000}s from database`);
+    } catch (error) {
+      console.error('[SECURITY] Error loading dynamic session timeout:', error);
+    }
+  })();
+
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Rate limiting per protezione brute force
+  // Rate limiting per protezione brute force (enhanced by dynamic middleware)
   const loginAttempts = new Map<string, { attempts: number; lastAttempt: number }>();
-  const MAX_ATTEMPTS = 5;
-  const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minuti
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // Controllo rate limiting
+        // Controllo rate limiting - DEFAULT VALUES (dynamic middleware will handle this)
         const userAttempts = loginAttempts.get(username) || { attempts: 0, lastAttempt: 0 };
         const now = Date.now();
+        
+        // Use default values for passport strategy (dynamic middleware provides additional protection)
+        const MAX_ATTEMPTS = 5;
+        const LOCKOUT_TIME = 15 * 60 * 1000;
         
         // Reset contatore se sono passati più di 15 minuti
         if (now - userAttempts.lastAttempt > LOCKOUT_TIME) {
           userAttempts.attempts = 0;
         }
         
-        // Blocco temporaneo se troppi tentativi
+        // Blocco temporaneo se troppi tentativi (additional protection via dynamic middleware)
         if (userAttempts.attempts >= MAX_ATTEMPTS) {
           const timeLeft = Math.ceil((LOCKOUT_TIME - (now - userAttempts.lastAttempt)) / 60000);
           return done(null, false, { 

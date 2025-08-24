@@ -130,6 +130,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup calendar integrations API
   const { setupCalendarIntegrationRoutes } = await import('./routes/calendar-integrations');
   setupCalendarIntegrationRoutes(app);
+
+  // Apply dynamic security middleware
+  const { 
+    dynamicApiLimiter, 
+    dynamicLoginLimiter, 
+    createDynamicSessionSecurity, 
+    createDynamicAuditLogger,
+    validatePasswordMiddleware 
+  } = await import('./services/dynamic-security-middleware');
+  
+  // Apply dynamic API rate limiting
+  app.use('/api', async (req, res, next) => {
+    const limiter = await dynamicApiLimiter.getApiLimiter();
+    limiter(req, res, next);
+  });
+  
+  // Apply dynamic login rate limiting  
+  app.use('/api/auth/login', async (req, res, next) => {
+    const limiter = await dynamicLoginLimiter.getLoginLimiter();
+    limiter(req, res, next);
+  });
+  
+  // Apply dynamic session security
+  app.use(createDynamicSessionSecurity());
+  
+  // Apply dynamic audit logging
+  app.use(createDynamicAuditLogger());
+  
+  // Apply password validation on relevant endpoints
+  app.use(['/api/auth/register', '/api/auth/change-password', '/api/users/password'], validatePasswordMiddleware);
   
   console.log('✅ Multi-Channel Webhook System initialized:');
   console.log('   • WhatsApp: Twilio + LinkMobility (AI-powered)');
@@ -2428,7 +2458,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update security settings
   app.put("/api/security/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const updatedSettings = await storage.updateSecuritySettings(req.body);
+      // Use security manager to update settings (this triggers dynamic middleware refresh)
+      const { securityManager } = await import('./services/security-manager');
+      const updatedSettings = await securityManager.updateSettings(req.body);
+      
+      console.log('[SECURITY] Security settings updated successfully - middleware will auto-refresh');
       res.json(updatedSettings);
     } catch (error) {
       console.error('[SECURITY] Error updating security settings:', error);
