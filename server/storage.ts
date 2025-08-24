@@ -3689,6 +3689,98 @@ async getMovements(filters: {
     return true;
   }
 
+  // === CALENDAR INTEGRATIONS MANAGEMENT ===
+
+  async getCalendarIntegrationsByUser(userId: string): Promise<CalendarIntegration[]> {
+    try {
+      const integrations = await db.select().from(calendarIntegrations)
+        .where(and(eq(calendarIntegrations.userId, userId), eq(calendarIntegrations.isActive, true)))
+        .orderBy(calendarIntegrations.createdAt);
+      
+      return integrations;
+    } catch (error) {
+      console.error('Error fetching calendar integrations:', error);
+      throw new Error('Failed to fetch calendar integrations');
+    }
+  }
+
+  async getCalendarIntegration(id: string): Promise<CalendarIntegration | undefined> {
+    try {
+      const [integration] = await db.select().from(calendarIntegrations)
+        .where(and(eq(calendarIntegrations.id, id), eq(calendarIntegrations.isActive, true)));
+      return integration || undefined;
+    } catch (error) {
+      console.error('Error fetching calendar integration:', error);
+      throw new Error('Failed to fetch calendar integration');
+    }
+  }
+
+  async createCalendarIntegration(integration: InsertCalendarIntegration): Promise<CalendarIntegration> {
+    try {
+      const [newIntegration] = await db.insert(calendarIntegrations).values({
+        ...integration,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return newIntegration;
+    } catch (error) {
+      console.error('Error creating calendar integration:', error);
+      throw new Error('Failed to create calendar integration');
+    }
+  }
+
+  async updateCalendarIntegration(id: string, integration: Partial<InsertCalendarIntegration>): Promise<CalendarIntegration> {
+    try {
+      const [updatedIntegration] = await db
+        .update(calendarIntegrations)
+        .set({ ...integration, updatedAt: new Date() })
+        .where(eq(calendarIntegrations.id, id))
+        .returning();
+      
+      if (!updatedIntegration) {
+        throw new Error('Calendar integration not found');
+      }
+      
+      return updatedIntegration;
+    } catch (error) {
+      console.error('Error updating calendar integration:', error);
+      throw new Error('Failed to update calendar integration');
+    }
+  }
+
+  async deleteCalendarIntegration(id: string): Promise<void> {
+    try {
+      // Soft delete - mark as inactive
+      const result = await db
+        .update(calendarIntegrations)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(calendarIntegrations.id, id));
+      
+      if (result.rowCount === 0) {
+        throw new Error('Calendar integration not found');
+      }
+    } catch (error) {
+      console.error('Error deleting calendar integration:', error);
+      throw new Error('Failed to delete calendar integration');
+    }
+  }
+
+  async getCalendarEventsByUser(userId: string): Promise<CalendarEvent[]> {
+    try {
+      const events = await db.select().from(calendarEvents)
+        .where(and(
+          eq(calendarEvents.createdByUserId, userId),
+          eq(calendarEvents.isActive, true)
+        ))
+        .orderBy(calendarEvents.startDate);
+      
+      return events;
+    } catch (error) {
+      console.error('Error fetching calendar events by user:', error);
+      throw new Error('Failed to fetch calendar events by user');
+    }
+  }
+
   // Calendar Events Implementation
   async getCalendarEvents(userId?: string): Promise<CalendarEvent[]> {
     try {

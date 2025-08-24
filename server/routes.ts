@@ -126,6 +126,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup webhook queue monitoring API
   const { setupWebhookQueueRoutes } = await import('./routes/webhook-queue');
   setupWebhookQueueRoutes(app);
+
+  // Setup calendar integrations API
+  const { setupCalendarIntegrationRoutes } = await import('./routes/calendar-integrations');
+  setupCalendarIntegrationRoutes(app);
   
   console.log('✅ Multi-Channel Webhook System initialized:');
   console.log('   • WhatsApp: Twilio + LinkMobility (AI-powered)');
@@ -133,6 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log('   • Email: SendGrid (AI-powered)');
   console.log('   • Messenger: Facebook (AI-powered)');
   console.log('✅ Webhook Queue System initialized with priorities and retry logic');
+  console.log('✅ Calendar Integrations System initialized (Google Calendar + Microsoft Outlook)');
 
   // Security middleware globali
   // Security headers applied selectively (X-Frame-Options handled in main index.ts)
