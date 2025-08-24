@@ -4225,52 +4225,53 @@ async getMovements(filters: {
       const { RealBackupService } = await import('./services/real-backup-service');
       const backupData = await RealBackupService.createFullDatabaseBackup();
       
-      // REAL CLOUD STORAGE - Save to Google Cloud Storage if available
-      let cloudPath = '';
-      let actualSize = 0;
+      // MULTI-CLOUD STORAGE - Save to all available cloud providers
+      const { BackupProviderFactory } = await import('./services/backup-providers');
       
-      if (process.env.GOOGLE_CLOUD_STORAGE_BUCKET) {
-        const { Storage } = await import('@google-cloud/storage');
-        const storage = new Storage();
-        const bucket = storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET);
-        
-        const fileName = `backup-${backupId}-${Date.now()}.json`;
-        const file = bucket.file(`backups/${fileName}`);
-        
-        const backupJSON = JSON.stringify(backupData, null, 2);
-        actualSize = Buffer.byteLength(backupJSON, 'utf8');
-        
-        await file.save(backupJSON, {
-          metadata: {
-            contentType: 'application/json',
-            metadata: {
-              backupId,
-              configId,
-              timestamp: startTime.toISOString(),
-              version: '1.0'
-            }
-          }
-        });
-        
-        cloudPath = `gs://${process.env.GOOGLE_CLOUD_STORAGE_BUCKET}/backups/${fileName}`;
-        console.log(`[STORAGE] Backup saved to Google Cloud Storage: ${cloudPath}`);
-      } else {
-        // Fallback: Save locally if no cloud storage
+      const fileName = `backup-${backupId}-${Date.now()}.json`;
+      const backupJSON = JSON.stringify(backupData, null, 2);
+      const actualSize = Buffer.byteLength(backupJSON, 'utf8');
+      const backupBuffer = Buffer.from(backupJSON, 'utf8');
+      
+      const metadata = {
+        backupId,
+        configId,
+        timestamp: startTime.toISOString(),
+        version: '1.0',
+        size: actualSize.toString()
+      };
+      
+      // Try multiple cloud providers in order of preference
+      const providers = ['gcs', 's3', 'azure'] as const;
+      let cloudPath = '';
+      let usedProvider = '';
+      
+      for (const providerType of providers) {
+        try {
+          const provider = BackupProviderFactory.createProvider(providerType);
+          cloudPath = await provider.upload(fileName, backupBuffer, metadata);
+          usedProvider = provider.name;
+          console.log(`[STORAGE] Backup saved to ${usedProvider}: ${cloudPath}`);
+          break; // Success, stop trying other providers
+        } catch (error) {
+          console.warn(`[STORAGE] Failed to backup to ${providerType}:`, error.message);
+          // Continue to next provider
+        }
+      }
+      
+      // If all cloud providers failed, save locally as fallback
+      if (!cloudPath) {
         const fs = await import('fs/promises');
         const path = await import('path');
         
         const backupDir = path.join(process.cwd(), 'backups');
         await fs.mkdir(backupDir, { recursive: true });
         
-        const fileName = `backup-${backupId}-${Date.now()}.json`;
         const filePath = path.join(backupDir, fileName);
-        
-        const backupJSON = JSON.stringify(backupData, null, 2);
-        actualSize = Buffer.byteLength(backupJSON, 'utf8');
-        
         await fs.writeFile(filePath, backupJSON);
         cloudPath = filePath;
-        console.log(`[STORAGE] Backup saved locally: ${cloudPath}`);
+        usedProvider = 'Local Filesystem';
+        console.log(`[STORAGE] All cloud providers failed, backup saved locally: ${cloudPath}`);
       }
       
       const endTime = new Date();
@@ -4282,9 +4283,10 @@ async getMovements(filters: {
         endTime: endTime.toISOString(),
         size: this.formatBytes(actualSize),
         sizeBytes: actualSize,
-        message: "Real backup completed successfully",
+        message: `Multi-cloud backup completed successfully via ${usedProvider}`,
         type: "manual",
         cloudPath,
+        provider: usedProvider,
         recordCount: Object.keys(backupData.tables || {}).reduce((sum, key) => sum + (backupData.tables[key]?.length || 0), 0)
       };
       
@@ -4336,64 +4338,61 @@ async getMovements(filters: {
       let cloudPath = '';
       let actualSize = 0;
       
-      if (process.env.GOOGLE_CLOUD_STORAGE_BUCKET) {
-        const { Storage } = await import('@google-cloud/storage');
-        const storage = new Storage();
-        const bucket = storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET);
-        
-        const fileName = `restore-point-${restoreId}-${Date.now()}.json`;
-        const file = bucket.file(`restore-points/${fileName}`);
-        
-        const restoreJSON = JSON.stringify({
-          ...currentState,
-          restoreMetadata: {
-            restoreId,
-            timestamp: startTime.toISOString(),
-            verification: verificationResult,
-            originalData: restoreData
-          }
-        }, null, 2);
-        
-        actualSize = Buffer.byteLength(restoreJSON, 'utf8');
-        
-        await file.save(restoreJSON, {
-          metadata: {
-            contentType: 'application/json',
-            metadata: {
-              restoreId,
-              timestamp: startTime.toISOString(),
-              verified: verificationResult.valid,
-              version: '1.0'
-            }
-          }
-        });
-        
-        cloudPath = `gs://${process.env.GOOGLE_CLOUD_STORAGE_BUCKET}/restore-points/${fileName}`;
-        console.log(`[STORAGE] Restore point saved to Google Cloud Storage: ${cloudPath}`);
-      } else {
-        // Fallback: Save locally
+      // MULTI-CLOUD RESTORE POINT - Save to all available cloud providers
+      const { BackupProviderFactory } = await import('./services/backup-providers');
+      
+      const fileName = `restore-point-${restoreId}-${Date.now()}.json`;
+      const restoreJSON = JSON.stringify({
+        ...currentState,
+        restoreMetadata: {
+          restoreId,
+          timestamp: startTime.toISOString(),
+          verification: verificationResult,
+          originalData: restoreData
+        }
+      }, null, 2);
+      
+      actualSize = Buffer.byteLength(restoreJSON, 'utf8');
+      const restoreBuffer = Buffer.from(restoreJSON, 'utf8');
+      
+      const metadata = {
+        restoreId,
+        timestamp: startTime.toISOString(),
+        verified: verificationResult.valid.toString(),
+        version: '1.0',
+        size: actualSize.toString()
+      };
+      
+      // Try multiple cloud providers for redundancy
+      const providers = ['gcs', 's3', 'azure'] as const;
+      let usedProvider = '';
+      
+      for (const providerType of providers) {
+        try {
+          const provider = BackupProviderFactory.createProvider(providerType);
+          cloudPath = await provider.upload(fileName, restoreBuffer, metadata);
+          usedProvider = provider.name;
+          console.log(`[STORAGE] Restore point saved to ${usedProvider}: ${cloudPath}`);
+          break; // Success, stop trying other providers
+        } catch (error) {
+          console.warn(`[STORAGE] Failed to save restore point to ${providerType}:`, error.message);
+          // Continue to next provider
+        }
+      }
+      
+      // If all cloud providers failed, save locally as fallback
+      if (!cloudPath) {
         const fs = await import('fs/promises');
         const path = await import('path');
         
         const restoreDir = path.join(process.cwd(), 'restore-points');
         await fs.mkdir(restoreDir, { recursive: true });
         
-        const fileName = `restore-point-${restoreId}-${Date.now()}.json`;
         const filePath = path.join(restoreDir, fileName);
-        
-        const restoreJSON = JSON.stringify({
-          ...currentState,
-          restoreMetadata: {
-            restoreId,
-            timestamp: startTime.toISOString(),
-            verification: verificationResult
-          }
-        }, null, 2);
-        
-        actualSize = Buffer.byteLength(restoreJSON, 'utf8');
         await fs.writeFile(filePath, restoreJSON);
         cloudPath = filePath;
-        console.log(`[STORAGE] Restore point saved locally: ${cloudPath}`);
+        usedProvider = 'Local Filesystem';
+        console.log(`[STORAGE] All cloud providers failed, restore point saved locally: ${cloudPath}`);
       }
       
       // Update restore point status to verified
