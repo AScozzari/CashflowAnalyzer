@@ -45,6 +45,7 @@ Preferred communication style: Simple, everyday language.
 - **Banking API Integration**: Comprehensive system for Italian banks with PSD2 compliance, dynamic configuration, and transaction verification.
 - **Multi-Channel Webhook System**: Complete webhook system for all communication channels (WhatsApp, SMS, Email, Messenger) with unified AI handling and business hours logic.
 - **Professional Notification System**: Enhanced categorized notification bell system with multi-channel support (Movements, WhatsApp, SMS, Email, Messenger) with actionable URLs and priority levels.
+- **Product Catalog Management**: Complete system for managing product listings, pricing, and inventory with support for Italian business requirements.
 
 ## Design Patterns
 - **Component Composition**: Reusable UI components.
@@ -103,3 +104,37 @@ Preferred communication style: Simple, everyday language.
 - **Request Format**: JSON payload for POST requests
 - **Response Format**: JSON with `result: "OK"` for success
 - **Integration Pattern**: Login → Get credentials → Send SMS with auth headers
+
+# Product Catalog & Pricing System
+
+## Product Management Features
+- **Product Listing**: Comprehensive product database with Italian business code standards
+- **Pricing Management**: Multi-tier pricing system with customer-specific pricing
+- **Inventory Tracking**: Real-time inventory management with low-stock alerts
+- **Product Categories**: Hierarchical categorization system for easy organization
+- **Barcode Integration**: Support for Italian and European barcode standards (EAN-13, Code128)
+- **Product Variants**: Size, color, and specification variant management
+- **Seasonal Pricing**: Time-based pricing rules for seasonal products
+- **Bulk Operations**: Import/export functionality for large product catalogs
+
+## Italian Business Compliance
+- **Codice Articolo**: Italian standard product coding system
+- **IVA Categories**: Automatic VAT calculation based on product category
+- **Fattura Elettronica**: Integration with FatturaPA for electronic invoicing
+- **Nomenclatura Combinata**: EU customs classification support
+- **ATECO Codes**: Economic activity classification integration
+
+## Pricing & Discounts
+- **Multi-Currency Support**: Euro primary with foreign currency options
+- **Customer Pricing Tiers**: B2B, B2C, wholesale, and VIP pricing levels
+- **Volume Discounts**: Automatic quantity-based price breaks
+- **Promotional Pricing**: Time-limited offers and seasonal campaigns
+- **Dynamic Pricing**: AI-suggested pricing based on market conditions
+- **Cost Analysis**: Margin calculation and profitability insights
+
+## Integration Points
+- **Financial Movements**: Automatic transaction recording from sales
+- **Inventory Valuation**: Real-time inventory value for financial reporting
+- **Tax Reporting**: Automated VAT and tax compliance reporting
+- **Analytics Dashboard**: Product performance metrics and insights
+- **Multi-Channel Sales**: Integration with e-commerce and POS systems
