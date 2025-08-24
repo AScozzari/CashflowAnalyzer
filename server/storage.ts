@@ -6,6 +6,7 @@ import {
   securitySettings, loginAuditLog, activeSessions, passwordHistory, twoFactorAuth,
   documentAnalysis,
   fiscalAiConversations, fiscalAiMessages,
+  databaseSettings, localizationSettings, documentsSettings, themesSettings,
   type Company, type InsertCompany,
   type Core, type InsertCore,
   type Resource, type InsertResource,
@@ -45,7 +46,11 @@ import {
   type CalendarReminder, type InsertCalendarReminder,
   type DocumentAnalysis, type InsertDocumentAnalysis,
   type FiscalAiConversation, type InsertFiscalAiConversation,
-  type FiscalAiMessage, type InsertFiscalAiMessage
+  type FiscalAiMessage, type InsertFiscalAiMessage,
+  type DatabaseSettings, type InsertDatabaseSettings,
+  type LocalizationSettings, type InsertLocalizationSettings,
+  type DocumentsSettings, type InsertDocumentsSettings,
+  type ThemesSettings, type InsertThemesSettings
 } from "@shared/schema";
 import { 
   BackupConfiguration, 
@@ -348,13 +353,22 @@ export interface IStorage {
   createRestorePoint(point: any): Promise<any>;
   getBackupStats(): Promise<any>;
 
-  // Localization
-  getLocalizationSettings(): Promise<any>;
-  updateLocalizationSettings(settings: any): Promise<any>;
-
-  // Themes
-  getThemeSettings(): Promise<any>;
-  updateThemeSettings(settings: any): Promise<any>;
+  // === NEW SETTINGS METHODS ===
+  // Database Settings
+  getDatabaseSettings(): Promise<DatabaseSettings | undefined>;
+  updateDatabaseSettings(settings: Partial<InsertDatabaseSettings>): Promise<DatabaseSettings>;
+  
+  // Localization Settings  
+  getLocalizationSettings(): Promise<LocalizationSettings | undefined>;
+  updateLocalizationSettings(settings: Partial<InsertLocalizationSettings>): Promise<LocalizationSettings>;
+  
+  // Documents Settings
+  getDocumentsSettings(): Promise<DocumentsSettings | undefined>;
+  updateDocumentsSettings(settings: Partial<InsertDocumentsSettings>): Promise<DocumentsSettings>;
+  
+  // Themes Settings
+  getThemesSettings(): Promise<ThemesSettings | undefined>;
+  updateThemesSettings(settings: Partial<InsertThemesSettings>): Promise<ThemesSettings>;
 
   // Communication Stats
   getEmailStats(): Promise<{ total: number; sent: number; failed: number }>;
@@ -4421,157 +4435,201 @@ async getMovements(filters: {
     }
   }
 
-  // === LOCALIZATION IMPLEMENTATION ===
+  // === NEW SETTINGS IMPLEMENTATIONS ===
 
-  async getLocalizationSettings(): Promise<any> {
+  // Database Settings
+  async getDatabaseSettings(): Promise<DatabaseSettings | undefined> {
     try {
-      // Get localization settings from database
-      const config = await db.select().from(securitySettings)
-        .where(eq(securitySettings.key, 'localization_settings'))
-        .limit(1);
-      
-      if (config.length === 0) {
-        // Create default localization settings if none exist
-        const defaultSettings = {
-          defaultLanguage: "it",
-          availableLanguages: ["it", "en", "fr", "de", "es"],
-          dateFormat: "DD/MM/YYYY",
-          timeFormat: "24h",
-          timezone: "Europe/Rome", 
-          currency: "EUR",
-          currencySymbol: "€",
-          thousandsSeparator: ".",
-          decimalSeparator: ",",
-          numberFormat: "1.234,56"
-        };
-        
-        const [newConfig] = await db.insert(securitySettings).values({
-          key: 'localization_settings',
-          value: JSON.stringify(defaultSettings),
-          category: 'localization',
-          description: 'System localization configuration'
-        }).returning();
-        
-        return {
-          id: newConfig.id,
-          ...defaultSettings,
-          updatedAt: newConfig.updatedAt
-        };
-      }
-      
-      const settings = JSON.parse(config[0].value);
-      return {
-        id: config[0].id,
-        ...settings,
-        updatedAt: config[0].updatedAt
-      };
+      const result = await db.select().from(databaseSettings).limit(1);
+      return result[0];
     } catch (error) {
-      console.error('Error fetching localization settings:', error);
-      throw new Error('Failed to fetch localization settings');
+      console.error('Error fetching database settings:', error);
+      return undefined;
     }
   }
 
-  async updateLocalizationSettings(settings: any): Promise<any> {
+  async updateDatabaseSettings(settings: Partial<InsertDatabaseSettings>): Promise<DatabaseSettings> {
     try {
-      const { id, ...settingsData } = settings;
+      const existing = await this.getDatabaseSettings();
       
-      const [updatedConfig] = await db.update(securitySettings)
-        .set({
-          value: JSON.stringify(settingsData),
-          updatedAt: new Date()
-        })
-        .where(eq(securitySettings.key, 'localization_settings'))
-        .returning();
-      
-      if (!updatedConfig) {
-        throw new Error('Localization settings not found');
+      if (!existing) {
+        // Create default settings first
+        const defaultSettings: InsertDatabaseSettings = {
+          maxConnections: 10,
+          connectionTimeout: 5000,
+          queryTimeout: 30000,
+          autoVacuumEnabled: true,
+          logSlowQueries: true,
+          slowQueryThreshold: 1000,
+          autoBackupEnabled: true,
+          backupRetentionDays: 30,
+          backupInterval: 86400,
+          enableQueryLogging: false,
+          enableConnectionMetrics: true,
+          enablePerformanceMetrics: true,
+          ...settings
+        };
+        const result = await db.insert(databaseSettings).values([defaultSettings]).returning();
+        return result[0];
       }
+
+      const result = await db.update(databaseSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(databaseSettings.id, existing.id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating database settings:', error);
+      throw new Error('Failed to update database settings');
+    }
+  }
+
+  // Localization Settings
+  async getLocalizationSettings(): Promise<LocalizationSettings | undefined> {
+    try {
+      const result = await db.select().from(localizationSettings).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching localization settings:', error);
+      return undefined;
+    }
+  }
+
+  async updateLocalizationSettings(settings: Partial<InsertLocalizationSettings>): Promise<LocalizationSettings> {
+    try {
+      const existing = await this.getLocalizationSettings();
       
-      return {
-        id: updatedConfig.id,
-        ...JSON.parse(updatedConfig.value),
-        updatedAt: updatedConfig.updatedAt
-      };
+      if (!existing) {
+        // Create default settings first
+        const defaultSettings: InsertLocalizationSettings = {
+          defaultLanguage: "it",
+          availableLanguages: ["it", "en", "fr", "de", "es"],
+          autoDetectLanguage: false,
+          country: "IT",
+          region: "Europe/Rome",
+          timezone: "Europe/Rome",
+          dateFormat: "DD/MM/YYYY",
+          timeFormat: "24h",
+          numberFormat: "comma",
+          currency: "EUR",
+          currencySymbol: "€",
+          currencyPosition: "after",
+          fiscalYearStart: "01-01",
+          weekStart: "monday",
+          workingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+          workingHoursStart: "09:00",
+          workingHoursEnd: "18:00",
+          rtlLayout: false,
+          compactNumbers: true,
+          localizedIcons: true,
+          ...settings
+        };
+        const result = await db.insert(localizationSettings).values([defaultSettings]).returning();
+        return result[0];
+      }
+
+      const result = await db.update(localizationSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(localizationSettings.id, existing.id))
+        .returning();
+      return result[0];
     } catch (error) {
       console.error('Error updating localization settings:', error);
       throw new Error('Failed to update localization settings');
     }
   }
 
-  // === THEME IMPLEMENTATION ===
-
-  async getThemeSettings(): Promise<any> {
+  // Documents Settings
+  async getDocumentsSettings(): Promise<DocumentsSettings | undefined> {
     try {
-      // Get theme settings from database
-      const config = await db.select().from(securitySettings)
-        .where(eq(securitySettings.key, 'theme_settings'))
-        .limit(1);
-      
-      if (config.length === 0) {
-        // Create default theme settings if none exist
-        const defaultSettings = {
-          defaultTheme: "light",
-          allowUserThemeSelection: true,
-          availableThemes: ["light", "dark", "auto"],
-          primaryColor: "#0066cc",
-          secondaryColor: "#6c757d", 
-          accentColor: "#28a745",
-          fontFamily: "Inter",
-          fontSize: "14px",
-          compactMode: false,
-          animations: true
-        };
-        
-        const [newConfig] = await db.insert(securitySettings).values({
-          key: 'theme_settings',
-          value: JSON.stringify(defaultSettings),
-          category: 'ui',
-          description: 'System theme and UI configuration'
-        }).returning();
-        
-        return {
-          id: newConfig.id,
-          ...defaultSettings,
-          updatedAt: newConfig.updatedAt
-        };
-      }
-      
-      const settings = JSON.parse(config[0].value);
-      return {
-        id: config[0].id,
-        ...settings,
-        updatedAt: config[0].updatedAt
-      };
+      const result = await db.select().from(documentsSettings).limit(1);
+      return result[0];
     } catch (error) {
-      console.error('Error fetching theme settings:', error);
-      throw new Error('Failed to fetch theme settings');
+      console.error('Error fetching documents settings:', error);
+      return undefined;
     }
   }
 
-  async updateThemeSettings(settings: any): Promise<any> {
+  async updateDocumentsSettings(settings: Partial<InsertDocumentsSettings>): Promise<DocumentsSettings> {
     try {
-      const { id, ...settingsData } = settings;
+      const existing = await this.getDocumentsSettings();
       
-      const [updatedConfig] = await db.update(securitySettings)
-        .set({
-          value: JSON.stringify(settingsData),
-          updatedAt: new Date()
-        })
-        .where(eq(securitySettings.key, 'theme_settings'))
-        .returning();
-      
-      if (!updatedConfig) {
-        throw new Error('Theme settings not found');
+      if (!existing) {
+        // Create default settings first
+        const defaultSettings: InsertDocumentsSettings = {
+          maxFileSize: 10,
+          allowedFormats: ["pdf", "xml", "xlsx", "docx", "jpg", "png"],
+          storageProvider: "gcp",
+          autoBackup: true,
+          autoProcessXML: true,
+          validateFatturaPA: true,
+          extractMetadata: true,
+          generateThumbnails: true,
+          encryptFiles: true,
+          requireApproval: false,
+          accessLogging: true,
+          virusScan: false,
+          retentionDays: 2555,
+          autoArchive: true,
+          archiveAfterDays: 365,
+          ...settings
+        };
+        const result = await db.insert(documentsSettings).values([defaultSettings]).returning();
+        return result[0];
       }
-      
-      return {
-        id: updatedConfig.id,
-        ...JSON.parse(updatedConfig.value),
-        updatedAt: updatedConfig.updatedAt
-      };
+
+      const result = await db.update(documentsSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(documentsSettings.id, existing.id))
+        .returning();
+      return result[0];
     } catch (error) {
-      console.error('Error updating theme settings:', error);
-      throw new Error('Failed to update theme settings');
+      console.error('Error updating documents settings:', error);
+      throw new Error('Failed to update documents settings');
+    }
+  }
+
+  // Themes Settings
+  async getThemesSettings(): Promise<ThemesSettings | undefined> {
+    try {
+      const result = await db.select().from(themesSettings).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching themes settings:', error);
+      return undefined;
+    }
+  }
+
+  async updateThemesSettings(settings: Partial<InsertThemesSettings>): Promise<ThemesSettings> {
+    try {
+      const existing = await this.getThemesSettings();
+      
+      if (!existing) {
+        // Create default settings first
+        const defaultSettings: InsertThemesSettings = {
+          defaultTheme: "light",
+          allowUserThemeChange: true,
+          primaryColor: "#3b82f6",
+          accentColor: "#10b981",
+          sidebarPosition: "left",
+          compactMode: false,
+          showBreadcrumbs: true,
+          animationsEnabled: true,
+          appName: "EasyCashFlows",
+          ...settings
+        };
+        const result = await db.insert(themesSettings).values([defaultSettings]).returning();
+        return result[0];
+      }
+
+      const result = await db.update(themesSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(themesSettings.id, existing.id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating themes settings:', error);
+      throw new Error('Failed to update themes settings');
     }
   }
 

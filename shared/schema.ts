@@ -1688,6 +1688,133 @@ export type InsertFiscalAiConversation = z.infer<typeof insertFiscalAiConversati
 export type FiscalAiMessage = typeof fiscalAiMessages.$inferSelect;
 export type InsertFiscalAiMessage = z.infer<typeof insertFiscalAiMessageSchema>;
 
+// === DATABASE CONFIGURATION SCHEMA ===
+export const databaseSettings = pgTable("database_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Connection settings
+  maxConnections: integer("max_connections").notNull().default(10),
+  connectionTimeout: integer("connection_timeout").notNull().default(5000), // milliseconds
+  queryTimeout: integer("query_timeout").notNull().default(30000), // milliseconds
+  
+  // Performance settings
+  autoVacuumEnabled: boolean("auto_vacuum_enabled").notNull().default(true),
+  logSlowQueries: boolean("log_slow_queries").notNull().default(true),
+  slowQueryThreshold: integer("slow_query_threshold").notNull().default(1000), // milliseconds
+  
+  // Backup settings
+  autoBackupEnabled: boolean("auto_backup_enabled").notNull().default(true),
+  backupRetentionDays: integer("backup_retention_days").notNull().default(30),
+  backupInterval: integer("backup_interval").notNull().default(86400), // seconds (24h)
+  
+  // Monitoring settings
+  enableQueryLogging: boolean("enable_query_logging").notNull().default(false),
+  enableConnectionMetrics: boolean("enable_connection_metrics").notNull().default(true),
+  enablePerformanceMetrics: boolean("enable_performance_metrics").notNull().default(true),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// === LOCALIZATION CONFIGURATION SCHEMA ===
+export const localizationSettings = pgTable("localization_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Language settings
+  defaultLanguage: text("default_language").notNull().default("it"),
+  availableLanguages: text("available_languages").array().notNull().default(sql`ARRAY['it', 'en', 'fr', 'de', 'es']`),
+  autoDetectLanguage: boolean("auto_detect_language").notNull().default(false),
+  
+  // Regional settings
+  country: text("country").notNull().default("IT"),
+  region: text("region").notNull().default("Europe/Rome"),
+  timezone: text("timezone").notNull().default("Europe/Rome"),
+  
+  // Format settings
+  dateFormat: text("date_format").notNull().default("DD/MM/YYYY"),
+  timeFormat: text("time_format").notNull().default("24h"),
+  numberFormat: text("number_format").notNull().default("comma"), // comma, dot, space
+  currency: text("currency").notNull().default("EUR"),
+  currencySymbol: text("currency_symbol").notNull().default("€"),
+  currencyPosition: text("currency_position").notNull().default("after"), // before, after
+  
+  // Business settings
+  fiscalYearStart: text("fiscal_year_start").notNull().default("01-01"), // MM-DD format
+  weekStart: text("week_start").notNull().default("monday"), // sunday, monday
+  workingDays: text("working_days").array().notNull().default(sql`ARRAY['monday', 'tuesday', 'wednesday', 'thursday', 'friday']`),
+  workingHoursStart: text("working_hours_start").notNull().default("09:00"),
+  workingHoursEnd: text("working_hours_end").notNull().default("18:00"),
+  
+  // UI preferences
+  rtlLayout: boolean("rtl_layout").notNull().default(false),
+  compactNumbers: boolean("compact_numbers").notNull().default(true),
+  localizedIcons: boolean("localized_icons").notNull().default(true),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// === DOCUMENTS CONFIGURATION SCHEMA ===
+export const documentsSettings = pgTable("documents_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Storage configuration
+  maxFileSize: integer("max_file_size").notNull().default(10), // MB
+  allowedFormats: text("allowed_formats").array().notNull().default(sql`ARRAY['pdf', 'xml', 'xlsx', 'docx', 'jpg', 'png']`),
+  storageProvider: text("storage_provider").notNull().default("gcp"), // local, gcp, s3, azure
+  autoBackup: boolean("auto_backup").notNull().default(true),
+  
+  // Processing settings
+  autoProcessXML: boolean("auto_process_xml").notNull().default(true),
+  validateFatturaPA: boolean("validate_fattura_pa").notNull().default(true),
+  extractMetadata: boolean("extract_metadata").notNull().default(true),
+  generateThumbnails: boolean("generate_thumbnails").notNull().default(true),
+  
+  // Security settings
+  encryptFiles: boolean("encrypt_files").notNull().default(true),
+  requireApproval: boolean("require_approval").notNull().default(false),
+  accessLogging: boolean("access_logging").notNull().default(true),
+  virusScan: boolean("virus_scan").notNull().default(false),
+  
+  // Retention policy
+  retentionDays: integer("retention_days").notNull().default(2555), // 7 years
+  autoArchive: boolean("auto_archive").notNull().default(true),
+  archiveAfterDays: integer("archive_after_days").notNull().default(365),
+  
+  // Templates
+  fatturapaTemplate: text("fattura_pa_template"),
+  invoiceTemplate: text("invoice_template"),
+  reportTemplate: text("report_template"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// === THEMES CONFIGURATION SCHEMA ===
+export const themesSettings = pgTable("themes_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Theme settings
+  defaultTheme: text("default_theme").notNull().default("light"), // light, dark, auto
+  allowUserThemeChange: boolean("allow_user_theme_change").notNull().default(true),
+  primaryColor: text("primary_color").notNull().default("#3b82f6"), // blue
+  accentColor: text("accent_color").notNull().default("#10b981"), // emerald
+  
+  // Layout settings
+  sidebarPosition: text("sidebar_position").notNull().default("left"), // left, right
+  compactMode: boolean("compact_mode").notNull().default(false),
+  showBreadcrumbs: boolean("show_breadcrumbs").notNull().default(true),
+  animationsEnabled: boolean("animations_enabled").notNull().default(true),
+  
+  // Branding
+  logoUrl: text("logo_url"),
+  faviconUrl: text("favicon_url"),
+  appName: text("app_name").notNull().default("EasyCashFlows"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Extended types with relations
 export type MovementWithRelations = Movement & {
   company: Company;
@@ -1719,6 +1846,22 @@ export type UserWithResource = User & {
 export const operationalSites = offices;
 export const movementCategories = movementReasons;
 export const systemConfigs = securitySettings;
+
+// === NEW SETTINGS TYPES ===
+export type DatabaseSettings = typeof databaseSettings.$inferSelect;
+export type InsertDatabaseSettings = typeof databaseSettings.$inferInsert;
+export type LocalizationSettings = typeof localizationSettings.$inferSelect;
+export type InsertLocalizationSettings = typeof localizationSettings.$inferInsert;
+export type DocumentsSettings = typeof documentsSettings.$inferSelect;
+export type InsertDocumentsSettings = typeof documentsSettings.$inferInsert;
+export type ThemesSettings = typeof themesSettings.$inferSelect;
+export type InsertThemesSettings = typeof themesSettings.$inferInsert;
+
+// === INSERT SCHEMAS FOR VALIDATION ===
+export const insertDatabaseSettingsSchema = createInsertSchema(databaseSettings);
+export const insertLocalizationSettingsSchema = createInsertSchema(localizationSettings);
+export const insertDocumentsSettingsSchema = createInsertSchema(documentsSettings);
+export const insertThemesSettingsSchema = createInsertSchema(themesSettings);
 
 // Re-export all specialized schemas
 export * from "./user-schema";

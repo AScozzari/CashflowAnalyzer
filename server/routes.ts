@@ -2704,12 +2704,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // === DATABASE SETTINGS ENDPOINTS ===
+
+  // Get database settings
+  app.get("/api/database/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getDatabaseSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('[DATABASE] Error fetching database settings:', error);
+      res.status(500).json({ error: 'Failed to fetch database settings' });
+    }
+  }));
+
+  // Update database settings
+  app.put("/api/database/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.updateDatabaseSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error('[DATABASE] Error updating database settings:', error);
+      res.status(500).json({ error: 'Failed to update database settings' });
+    }
+  }));
+
+  // === DOCUMENTS SETTINGS ENDPOINTS ===
+
+  // Get documents settings
+  app.get("/api/documents/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getDocumentsSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('[DOCUMENTS] Error fetching documents settings:', error);
+      res.status(500).json({ error: 'Failed to fetch documents settings' });
+    }
+  }));
+
+  // Update documents settings
+  app.put("/api/documents/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.updateDocumentsSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error('[DOCUMENTS] Error updating documents settings:', error);
+      res.status(500).json({ error: 'Failed to update documents settings' });
+    }
+  }));
+
   // === THEME SETTINGS ENDPOINTS ===
 
   // Get theme settings
   app.get("/api/themes/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const settings = await storage.getThemeSettings();
+      const settings = await storage.getThemesSettings();
       res.json(settings);
     } catch (error) {
       console.error('[THEMES] Error fetching theme settings:', error);
@@ -2720,7 +2768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update theme settings
   app.put("/api/themes/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const settings = await storage.updateThemeSettings(req.body);
+      const settings = await storage.updateThemesSettings(req.body);
       res.json(settings);
     } catch (error) {
       console.error('[THEMES] Error updating theme settings:', error);
