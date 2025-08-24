@@ -712,6 +712,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Movements
+
+  // Movement stats endpoint (used by dashboard) - MUST BE BEFORE /api/movements/:id
+  app.get("/api/movements/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const user = req.user;
+      let period;
+      
+      if (startDate && endDate) {
+        period = {
+          startDate: startDate as string,
+          endDate: endDate as string,
+        };
+      }
+      
+      let resourceIdFilter = undefined;
+      if (user.role === 'user' && user.resourceId) {
+        resourceIdFilter = user.resourceId;
+      }
+      
+      const stats = await storage.getMovementStats(period, resourceIdFilter);
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching movement stats:', error);
+      res.status(500).json({ message: "Failed to fetch movement stats" });
+    }
+  }));
+
   app.get("/api/movements", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { page = 1, limit = 50, ...filters } = req.query;
@@ -846,6 +874,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/movements/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
+      // Skip stats route - it should be handled by specific endpoint above
+      if (req.params.id === 'stats') {
+        return res.status(404).json({ message: "Route conflict - stats should be handled separately" });
+      }
+      
       const user = req.user;
       const movement = await storage.getMovement(req.params.id);
       if (!movement) {
@@ -962,6 +995,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Analytics
+
+  // Analytics stats endpoint (used by analytics page)
   app.get("/api/analytics/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { startDate, endDate } = req.query;
@@ -997,6 +1032,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Analytics overview endpoint 
+  app.get("/api/analytics/overview", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const user = req.user;
+      let resourceIdFilter = undefined;
+      if (user.role === 'user' && user.resourceId) {
+        resourceIdFilter = user.resourceId;
+      }
+      
+      // Get overview stats for last 30 days
+      const period = {
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        endDate: new Date().toISOString()
+      };
+      
+      const [stats, cashFlow] = await Promise.all([
+        storage.getMovementStats(period, resourceIdFilter),
+        storage.getCashFlowData(30, resourceIdFilter)
+      ]);
+      
+      res.json({
+        stats,
+        cashFlow,
+        period
+      });
+    } catch (error) {
+      console.error('Error fetching analytics overview:', error);
+      res.status(500).json({ message: "Failed to fetch analytics overview" });
+    }
+  }));
+
   app.get("/api/analytics/cash-flow", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const daysParam = req.query.days as string;
@@ -1022,6 +1088,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching cash flow data:', error);
       res.status(500).json({ message: "Failed to fetch cash flow data" });
+    }
+  }));
+
+  // WhatsApp connection test endpoint
+  app.get("/api/whatsapp/test-connection", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getWhatsAppSettings();
+      
+      if (!settings || !settings.accountSid || !settings.authToken) {
+        return res.json({
+          success: false,
+          error: "WhatsApp settings not configured"
+        });
+      }
+      
+      // Test Twilio connection
+      const isConnected = settings.accountSid && settings.authToken;
+      
+      res.json({
+        success: isConnected,
+        provider: "Twilio",
+        accountSid: settings.accountSid ? `***${settings.accountSid.slice(-4)}` : null,
+        status: isConnected ? "connected" : "disconnected"
+      });
+    } catch (error) {
+      console.error('Error testing WhatsApp connection:', error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to test WhatsApp connection" 
+      });
     }
   }));
 

@@ -716,7 +716,12 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => {/* TODO: Aprire modal nuovo cliente */}}
+                              onClick={() => {
+                                toast({
+                                  title: "Nuovo Cliente",
+                                  description: "Funzione in sviluppo - sarà disponibile nel prossimo aggiornamento",
+                                });
+                              }}
                               className="h-7 px-2 text-xs bg-blue-50 hover:bg-blue-100 border-blue-200"
                               title="Crea nuovo cliente"
                             >
@@ -766,7 +771,12 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => {/* TODO: Aprire modal nuovo fornitore */}}
+                              onClick={() => {
+                                toast({
+                                  title: "Nuovo Fornitore",
+                                  description: "Funzione in sviluppo - sarà disponibile nel prossimo aggiornamento",
+                                });
+                              }}
                               className="h-7 px-2 text-xs bg-green-50 hover:bg-green-100 border-green-200"
                               title="Crea nuovo fornitore"
                             >
