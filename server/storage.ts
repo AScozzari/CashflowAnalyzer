@@ -687,6 +687,102 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // ========= NUOVI METODI IBAN PER API BANCARIE REALI =========
+
+  async getIbanByValue(ibanValue: string): Promise<Iban | undefined> {
+    try {
+      const [iban] = await db
+        .select()
+        .from(ibans)
+        .where(eq(ibans.iban, ibanValue));
+      
+      return iban;
+    } catch (error) {
+      console.error('Error fetching IBAN by value:', error);
+      throw new Error('Failed to fetch IBAN by value');
+    }
+  }
+
+  async updateIbanApiConfig(id: string, config: {
+    apiProvider?: string;
+    apiCredentials?: string;
+    sandboxMode?: boolean;
+    isEnabled?: boolean;
+    lastSync?: Date | null;
+  }): Promise<Iban> {
+    try {
+      const updateData: Partial<InsertIban> = {};
+      
+      if (config.apiProvider !== undefined) updateData.apiProvider = config.apiProvider;
+      if (config.apiCredentials !== undefined) updateData.apiCredentials = config.apiCredentials;
+      if (config.sandboxMode !== undefined) updateData.sandboxMode = config.sandboxMode;
+      if (config.isEnabled !== undefined) updateData.autoSyncEnabled = config.isEnabled;
+      if (config.lastSync !== undefined) updateData.lastSync = config.lastSync;
+
+      const [updatedIban] = await db
+        .update(ibans)
+        .set(updateData)
+        .where(eq(ibans.id, id))
+        .returning();
+      
+      if (!updatedIban) {
+        throw new Error('IBAN not found for API configuration update');
+      }
+      
+      console.log(`[STORAGE] IBAN API config updated: ${updatedIban.iban.slice(-4)} -> ${config.apiProvider}`);
+      return updatedIban;
+    } catch (error) {
+      console.error('Error updating IBAN API config:', error);
+      throw new Error('Failed to update IBAN API config');
+    }
+  }
+
+  async updateIbanCertificates(id: string, certificates: {
+    qwacCertificate?: string;
+    qsealCertificate?: string;
+    certificatesUploaded?: boolean;
+    certificatesValidUntil?: string;
+  }): Promise<Iban> {
+    try {
+      const updateData: Partial<InsertIban> = {};
+      
+      // Per ora salviamo i certificati nei campi esistenti
+      // In futuro potremmo creare una tabella dedicata per i certificati
+      if (certificates.qwacCertificate !== undefined) {
+        updateData.apiCredentials = JSON.stringify({
+          ...JSON.parse(updateData.apiCredentials || '{}'),
+          qwacCertificate: certificates.qwacCertificate
+        });
+      }
+      
+      if (certificates.qsealCertificate !== undefined) {
+        const existing = JSON.parse(updateData.apiCredentials || '{}');
+        updateData.apiCredentials = JSON.stringify({
+          ...existing,
+          qsealCertificate: certificates.qsealCertificate
+        });
+      }
+
+      const [updatedIban] = await db
+        .update(ibans)
+        .set(updateData)
+        .where(eq(ibans.id, id))
+        .returning();
+      
+      if (!updatedIban) {
+        throw new Error('IBAN not found for certificates update');
+      }
+      
+      console.log(`[STORAGE] IBAN certificates updated: ${updatedIban.iban.slice(-4)} -> PSD2 certs`);
+      return updatedIban;
+    } catch (error) {
+      console.error('Error updating IBAN certificates:', error);
+      throw new Error('Failed to update IBAN certificates');
+    }
+  }
+
+  // ========= FINE METODI IBAN API BANCARIE =========
+
   // Offices
   async getOffices(): Promise<Office[]> {
     try {

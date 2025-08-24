@@ -377,11 +377,11 @@ export default function BankingApiSetup({ iban, onClose }: BankingApiSetupProps)
                       </div>
                     </div>
                     
-                    {provider.banksCovered && (
+                    {'banksCovered' in provider && provider.banksCovered && (
                       <div>
                         <p className="text-xs text-muted-foreground mb-2">Banche coperte:</p>
                         <div className="flex flex-wrap gap-1">
-                          {provider.banksCovered.map((bank, idx) => (
+                          {provider.banksCovered.map((bank: string, idx: number) => (
                             <Badge key={idx} variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                               {bank}
                             </Badge>

@@ -1119,45 +1119,193 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
   
-  // Banking sync single IBAN
+  // Banking sync single IBAN - IMPLEMENTAZIONE REALE
   app.post("/api/banking/sync/:ibanId", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { ibanId } = req.params;
+      console.log(`[BANKING API] Sincronizzazione reale IBAN ${ibanId}`);
       
-      // Mock sync result - in production this would sync with actual bank APIs
-      const result = {
-        synced: Math.floor(Math.random() * 10) + 1,
-        matched: Math.floor(Math.random() * 5) + 1,
-        errors: [],
-        message: `Sincronizzazione IBAN ${ibanId} completata`
-      };
+      // SYNC REALE con API bancarie
+      const { syncBankTransactions } = await import('./banking-sync');
+      const result = await syncBankTransactions(ibanId);
       
-      res.json(result);
-    } catch (error) {
+      res.json({
+        synced: result.synced,
+        matched: result.matched,
+        errors: result.errors,
+        message: `Sincronizzazione IBAN ${ibanId} completata: ${result.synced} transazioni, ${result.matched} match`
+      });
+    } catch (error: any) {
       console.error('Error syncing IBAN:', error);
-      res.status(500).json({ error: "Failed to sync IBAN" });
+      res.status(500).json({ 
+        error: "Failed to sync IBAN",
+        message: error?.message || 'Errore sconosciuto'
+      });
     }
   }));
   
-  // Banking sync all IBANs  
+  // Banking sync all IBANs - IMPLEMENTAZIONE REALE
   app.post("/api/banking/sync-all", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      // Mock sync all result
-      const result = {
-        totalSynced: Math.floor(Math.random() * 50) + 10,
-        totalMatched: Math.floor(Math.random() * 25) + 5,
-        synced: Math.floor(Math.random() * 50) + 10,
-        matched: Math.floor(Math.random() * 25) + 5,
-        errors: [],
-        message: "Sincronizzazione di tutti gli IBAN completata"
-      };
+      console.log(`[BANKING API] Sincronizzazione reale di tutti gli IBAN abilitati`);
       
-      res.json(result);
-    } catch (error) {
+      // SYNC REALE di tutti gli IBAN abilitati
+      const { syncAllEnabledIbans } = await import('./banking-sync');
+      const result = await syncAllEnabledIbans();
+      
+      res.json({
+        totalSynced: result.totalSynced,
+        totalMatched: result.totalMatched,
+        synced: result.synced || result.totalSynced,
+        matched: result.matched || result.totalMatched,
+        errors: result.errors,
+        message: `Sincronizzazione globale completata: ${result.totalSynced} transazioni, ${result.totalMatched} match`
+      });
+    } catch (error: any) {
       console.error('Error syncing all IBANs:', error);
-      res.status(500).json({ error: "Failed to sync all IBANs" });
+      res.status(500).json({ 
+        error: "Failed to sync all IBANs",
+        message: error?.message || 'Errore sconosciuto'
+      });
     }
   }));
+
+  // ========= NUOVI ENDPOINT BANKING API REALI =========
+
+  // Banking configuration API - Salva configurazione API bancaria
+  app.post("/api/banking/configure", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { provider, iban, credentials, sandboxMode } = req.body;
+      console.log(`[BANKING API] Configurazione ${provider} per IBAN ${iban.slice(-4)}`);
+      
+      // Validazione input
+      if (!provider || !iban || !credentials) {
+        return res.status(400).json({ error: "Provider, IBAN e credenziali richiesti" });
+      }
+
+      // Salva configurazione API nel database
+      const existingIban = await storage.getIbanByValue(iban);
+      if (!existingIban) {
+        return res.status(404).json({ error: "IBAN non trovato nel sistema" });
+      }
+
+      await storage.updateIbanApiConfig(existingIban.id, {
+        apiProvider: provider,
+        apiCredentials: JSON.stringify(credentials),
+        sandboxMode: !!sandboxMode,
+        isEnabled: true,
+        lastSync: null
+      });
+
+      res.json({
+        success: true,
+        message: `Configurazione ${provider} salvata per IBAN ${iban.slice(-4)}`,
+        provider,
+        sandboxMode: !!sandboxMode
+      });
+
+    } catch (error: any) {
+      console.error('Error configuring banking API:', error);
+      res.status(500).json({ 
+        error: "Failed to configure banking API",
+        message: error?.message || 'Errore sconosciuto'
+      });
+    }
+  }));
+
+  // Banking test connection API - Testa connessione API
+  app.post("/api/banking/test-connection", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { provider, iban, credentials, sandboxMode } = req.body;
+      console.log(`[BANKING API] Test connessione ${provider} per IBAN ${iban.slice(-4)}`);
+      
+      // Import test function
+      const { testBankingConnection } = await import('./banking-sync');
+      const result = await testBankingConnection(provider, iban, credentials, sandboxMode);
+
+      res.json({
+        success: result.success,
+        message: result.message,
+        details: result.details,
+        accountFound: result.accountFound,
+        provider: provider
+      });
+
+    } catch (error: any) {
+      console.error('Error testing banking connection:', error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to test banking connection",
+        message: error?.message || 'Errore sconosciuto'
+      });
+    }
+  }));
+
+  // Banking OAuth2 callback - Gestisce callback OAuth2
+  app.get("/api/banking/oauth/callback", handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { code, state } = req.query;
+      console.log(`[BANKING API] OAuth2 callback - code: ${code?.slice(0, 10)}...`);
+      
+      if (!code || !state) {
+        return res.status(400).json({ error: "Codice o state mancanti nel callback OAuth2" });
+      }
+
+      // Import OAuth handler
+      const { handleOAuth2Callback } = await import('./banking-sync');
+      const result = await handleOAuth2Callback(code, state);
+
+      // Redirect to success page
+      res.redirect(`/settings/banking?oauth_success=true&provider=${result.provider}`);
+
+    } catch (error: any) {
+      console.error('Error handling OAuth2 callback:', error);
+      res.redirect(`/settings/banking?oauth_error=true&message=${encodeURIComponent(error?.message || 'OAuth2 failed')}`);
+    }
+  }));
+
+  // Banking certificates upload - Gestisce upload certificati PSD2
+  app.post("/api/banking/certificates", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { ibanId, qwacCertificate, qsealCertificate } = req.body;
+      console.log(`[BANKING API] Upload certificati per IBAN ${ibanId}`);
+      
+      if (!qwacCertificate || !qsealCertificate) {
+        return res.status(400).json({ error: "Certificati QWAC e QSEAL richiesti" });
+      }
+
+      // Validazione formato certificati
+      const { validateCertificates } = await import('./banking-sync');
+      const validation = await validateCertificates(qwacCertificate, qsealCertificate);
+      
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      // Salva certificati (crittografati)
+      await storage.updateIbanCertificates(ibanId, {
+        qwacCertificate: qwacCertificate,
+        qsealCertificate: qsealCertificate,
+        certificatesUploaded: true,
+        certificatesValidUntil: validation.validUntil
+      });
+
+      res.json({
+        success: true,
+        message: "Certificati PSD2 caricati e validati",
+        validUntil: validation.validUntil
+      });
+
+    } catch (error: any) {
+      console.error('Error uploading certificates:', error);
+      res.status(500).json({ 
+        error: "Failed to upload certificates",
+        message: error?.message || 'Errore sconosciuto'
+      });
+    }
+  }));
+
+  // ========= FINE ENDPOINT BANKING REALI =========
 
   // NOTIFICATIONS API - Missing routes
   app.get("/api/notifications", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
