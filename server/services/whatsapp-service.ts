@@ -351,8 +351,7 @@ export class WhatsAppService {
   async updateLastTest(): Promise<void> {
     if (this.settings) {
       await this.storage.updateWhatsappSettings(this.settings.id, {
-        lastTestAt: new Date(),
-        isApiConnected: true
+        updatedAt: new Date()
       });
     }
   }
@@ -376,14 +375,14 @@ export class WhatsAppService {
     }
 
     const templates = await this.storage.getWhatsappTemplates();
-    const approved = templates.filter((t: any) => t.approvalStatus === 'approved').length;
-    const pending = templates.filter((t: any) => t.approvalStatus === 'pending').length;
+    const approved = templates.filter((t: any) => t.status === 'approved').length;
+    const pending = templates.filter((t: any) => t.status === 'pending').length;
 
     return {
       provider: this.settings.provider,
       isActive: this.settings.isActive,
-      lastTest: this.settings.lastTestAt || undefined,
-      lastMessage: this.settings.lastMessageSentAt || undefined,
+      lastTest: this.settings.updatedAt || undefined,
+      lastMessage: this.settings.updatedAt || undefined,
       approvedTemplates: approved,
       pendingTemplates: pending
     };

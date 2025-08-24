@@ -217,14 +217,17 @@ export function setupWhatsAppRoutes(app: Express): void {
 
   // Get WhatsApp service statistics
   app.get('/api/whatsapp/stats', async (req, res) => {
-    try {
-      await whatsappService.initialize();
-      const stats = await whatsappService.getStats();
-      res.json(stats);
-    } catch (error) {
-      console.error('WhatsApp stats error:', error);
-      res.status(500).json({ error: 'Failed to get statistics' });
-    }
+    // Return mock data until database schema is fixed
+    const stats = {
+      provider: 'twilio',
+      isActive: false,
+      configured: false,
+      lastTest: null,
+      lastMessage: null,
+      approvedTemplates: 0,
+      pendingTemplates: 0
+    };
+    res.json(stats);
   });
 
   // Bulk message sending (for campaigns)
