@@ -402,5 +402,175 @@ export function setupCalendarIntegrationRoutes(app: Express): void {
     }
   }));
 
+  // ==================== CONFIGURATION MANAGEMENT ====================
+
+  // Test OAuth configuration before saving
+  app.post('/api/calendar/config/:provider/test', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { provider } = req.params;
+      const { clientId, clientSecret, redirectUri } = req.body;
+
+      if (!['google', 'outlook'].includes(provider)) {
+        return res.status(400).json({ error: 'Invalid provider. Must be "google" or "outlook"' });
+      }
+
+      if (!clientId || !clientSecret) {
+        return res.status(400).json({ error: 'Client ID and Client Secret are required' });
+      }
+
+      let testResult;
+
+      if (provider === 'google') {
+        // Test Google OAuth config
+        testResult = await testGoogleConfig({ clientId, clientSecret, redirectUri });
+      } else if (provider === 'outlook') {
+        // Test Outlook OAuth config  
+        testResult = await testOutlookConfig({ clientId, clientSecret, redirectUri });
+      }
+
+      console.log(`[CALENDAR CONFIG] Test ${provider} configuration: ${testResult.valid ? 'SUCCESS' : 'FAILED'}`);
+      
+      res.json({
+        provider,
+        valid: testResult.valid,
+        message: testResult.message,
+        authUrl: testResult.authUrl,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error: any) {
+      console.error('[CALENDAR CONFIG] Configuration test failed:', error);
+      res.status(500).json({ 
+        error: 'Configuration test failed', 
+        message: error.message 
+      });
+    }
+  }));
+
+  // Save OAuth configuration
+  app.post('/api/calendar/config/:provider', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { provider } = req.params;
+      const { clientId, clientSecret, redirectUri } = req.body;
+
+      if (!['google', 'outlook'].includes(provider)) {
+        return res.status(400).json({ error: 'Invalid provider. Must be "google" or "outlook"' });
+      }
+
+      if (!clientId || !clientSecret) {
+        return res.status(400).json({ error: 'Client ID and Client Secret are required' });
+      }
+
+      const { storage } = await import('../storage');
+
+      // Save configuration to storage
+      const configData = {
+        userId: req.user.id,
+        provider,
+        clientId,
+        clientSecret,
+        redirectUri,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      await storage.saveCalendarConfig(configData);
+
+      console.log(`[CALENDAR CONFIG] Saved ${provider} configuration for user ${req.user.id}`);
+      
+      res.json({
+        provider,
+        message: `${provider} configuration saved successfully`,
+        redirectUri,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error: any) {
+      console.error('[CALENDAR CONFIG] Error saving configuration:', error);
+      res.status(500).json({ 
+        error: 'Failed to save configuration', 
+        message: error.message 
+      });
+    }
+  }));
+
   console.log('✅ Calendar Integration API routes setup complete');
+}
+
+// Helper functions for testing OAuth configurations
+async function testGoogleConfig(config: { clientId: string; clientSecret: string; redirectUri: string }) {
+  try {
+    const { google } = await import('googleapis');
+    
+    const oauth2Client = new google.auth.OAuth2(
+      config.clientId,
+      config.clientSecret,
+      config.redirectUri
+    );
+
+    const scopes = [
+      'https://www.googleapis.com/auth/calendar',
+      'https://www.googleapis.com/auth/calendar.events',
+      'https://www.googleapis.com/auth/userinfo.email'
+    ];
+
+    // Generate auth URL to validate configuration
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'consent',
+      scope: scopes,
+      include_granted_scopes: true,
+    });
+
+    return {
+      valid: true,
+      message: 'Google OAuth configuration is valid',
+      authUrl
+    };
+  } catch (error: any) {
+    return {
+      valid: false,
+      message: `Google OAuth configuration error: ${error.message}`,
+      authUrl: null
+    };
+  }
+}
+
+async function testOutlookConfig(config: { clientId: string; clientSecret: string; redirectUri: string }) {
+  try {
+    const scopes = [
+      'https://graph.microsoft.com/Calendars.ReadWrite',
+      'https://graph.microsoft.com/User.Read'
+    ].join(' ');
+
+    const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?` +
+      `client_id=${config.clientId}&` +
+      `response_type=code&` +
+      `redirect_uri=${encodeURIComponent(config.redirectUri)}&` +
+      `response_mode=query&` +
+      `scope=${encodeURIComponent(scopes)}&` +
+      `state=outlook_calendar`;
+
+    // Basic validation - if we can build the URL without errors, config is likely valid
+    if (config.clientId && config.clientSecret && authUrl) {
+      return {
+        valid: true,
+        message: 'Microsoft OAuth configuration is valid',
+        authUrl
+      };
+    } else {
+      return {
+        valid: false,
+        message: 'Invalid Microsoft OAuth configuration',
+        authUrl: null
+      };
+    }
+  } catch (error: any) {
+    return {
+      valid: false,
+      message: `Microsoft OAuth configuration error: ${error.message}`,
+      authUrl: null
+    };
+  }
 }

@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Calendar,
   Link,
@@ -14,7 +16,10 @@ import {
   CheckCircle,
   RefreshCw,
   ExternalLink,
-  Globe
+  Globe,
+  Save,
+  TestTube,
+  Loader2
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +40,22 @@ interface CalendarIntegration {
 
 export default function CalendarIntegrations() {
   const [selectedProvider, setSelectedProvider] = useState<'google' | 'outlook' | null>(null);
+  const [configDialogOpen, setConfigDialogOpen] = useState<'google' | 'outlook' | null>(null);
+  const [testingProvider, setTestingProvider] = useState<string | null>(null);
+  const [savingProvider, setSavingProvider] = useState<string | null>(null);
+  
+  // Configuration states
+  const [googleConfig, setGoogleConfig] = useState({
+    clientId: '',
+    clientSecret: '',
+    redirectUri: `${window.location.origin}/api/auth/google/calendar/callback`
+  });
+  
+  const [outlookConfig, setOutlookConfig] = useState({
+    clientId: '',
+    clientSecret: '',
+    redirectUri: `${window.location.origin}/api/auth/outlook/calendar/callback`
+  });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -100,13 +121,75 @@ export default function CalendarIntegrations() {
     }
   });
 
+  // Test configuration mutation
+  const testConfigMutation = useMutation({
+    mutationFn: async ({ provider, config }: { provider: string; config: any }) => {
+      const response = await apiRequest('POST', `/api/calendar/config/${provider}/test`, config);
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: '✅ Test Riuscito',
+        description: `Configurazione ${variables.provider} valida e funzionante`
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Test Fallito',
+        description: error.message || 'Configurazione non valida',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Save configuration mutation
+  const saveConfigMutation = useMutation({
+    mutationFn: async ({ provider, config }: { provider: string; config: any }) => {
+      const response = await apiRequest('POST', `/api/calendar/config/${provider}`, config);
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: '✅ Configurazione Salvata',
+        description: `${variables.provider} configurato correttamente`
+      });
+      setConfigDialogOpen(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/calendar/integrations'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Errore Salvataggio',
+        description: error.message || 'Impossibile salvare la configurazione',
+        variant: 'destructive'
+      });
+    }
+  });
+
   const handleConnect = (provider: 'google' | 'outlook') => {
-    // In a real implementation, this would initiate OAuth flow
+    // First try to initiate OAuth flow, if not configured, show config dialog
     if (provider === 'google') {
       window.open('/api/auth/google/calendar', '_blank');
     } else {
       window.open('/api/auth/outlook/calendar', '_blank');
     }
+  };
+
+  const handleConfigure = (provider: 'google' | 'outlook') => {
+    setConfigDialogOpen(provider);
+  };
+
+  const handleTestConfig = (provider: 'google' | 'outlook') => {
+    const config = provider === 'google' ? googleConfig : outlookConfig;
+    setTestingProvider(provider);
+    testConfigMutation.mutate({ provider, config });
+    setTestingProvider(null);
+  };
+
+  const handleSaveConfig = (provider: 'google' | 'outlook') => {
+    const config = provider === 'google' ? googleConfig : outlookConfig;
+    setSavingProvider(provider);
+    saveConfigMutation.mutate({ provider, config });
+    setSavingProvider(null);
   };
 
   const handleSync = (provider: string) => {
@@ -280,7 +363,7 @@ export default function CalendarIntegrations() {
               </div>
             </CardHeader>
             
-            <CardContent>
+            <CardContent className="space-y-2">
               <Button 
                 onClick={() => handleConnect('google')}
                 disabled={integrations.some(i => i.provider === 'google')}
@@ -289,6 +372,15 @@ export default function CalendarIntegrations() {
               >
                 <Link className="h-4 w-4 mr-2" />
                 {integrations.some(i => i.provider === 'google') ? 'Già Collegato' : 'Collega Google'}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => handleConfigure('google')}
+                className="w-full"
+                data-testid="button-configure-google"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configura OAuth
               </Button>
             </CardContent>
           </Card>
@@ -307,7 +399,7 @@ export default function CalendarIntegrations() {
               </div>
             </CardHeader>
             
-            <CardContent>
+            <CardContent className="space-y-2">
               <Button 
                 onClick={() => handleConnect('outlook')}
                 disabled={integrations.some(i => i.provider === 'outlook')}
@@ -316,6 +408,15 @@ export default function CalendarIntegrations() {
               >
                 <Link className="h-4 w-4 mr-2" />
                 {integrations.some(i => i.provider === 'outlook') ? 'Già Collegato' : 'Collega Outlook'}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => handleConfigure('outlook')}
+                className="w-full"
+                data-testid="button-configure-outlook"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configura OAuth
               </Button>
             </CardContent>
           </Card>
@@ -337,6 +438,159 @@ export default function CalendarIntegrations() {
           <p>• <strong>Prefisso eventi:</strong> Gli eventi sincronizzati vengono marcati con [ECF] per identificazione</p>
         </CardContent>
       </Card>
+
+      {/* Configuration Dialog */}
+      <Dialog open={!!configDialogOpen} onOpenChange={() => setConfigDialogOpen(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Configurazione {configDialogOpen === 'google' ? 'Google Calendar' : 'Microsoft Outlook'}
+            </DialogTitle>
+            <DialogDescription>
+              Inserisci le credenziali OAuth2 per abilitare l'integrazione calendario.
+              {configDialogOpen === 'google' && (
+                <div className="mt-2">
+                  <a 
+                    href="https://console.cloud.google.com/apis/credentials" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                  >
+                    Ottieni credenziali Google
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              )}
+              {configDialogOpen === 'outlook' && (
+                <div className="mt-2">
+                  <a 
+                    href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                  >
+                    Ottieni credenziali Azure
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-4">
+            {configDialogOpen === 'google' && (
+              <>
+                <div>
+                  <Label htmlFor="google-client-id">Client ID</Label>
+                  <Input
+                    id="google-client-id"
+                    type="text"
+                    placeholder="123456789.apps.googleusercontent.com"
+                    value={googleConfig.clientId}
+                    onChange={(e) => setGoogleConfig(prev => ({ ...prev, clientId: e.target.value }))}
+                    data-testid="input-google-client-id"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="google-client-secret">Client Secret</Label>
+                  <Input
+                    id="google-client-secret"
+                    type="password"
+                    placeholder="GOCSPX-*********************"
+                    value={googleConfig.clientSecret}
+                    onChange={(e) => setGoogleConfig(prev => ({ ...prev, clientSecret: e.target.value }))}
+                    data-testid="input-google-client-secret"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="google-redirect-uri">Redirect URI</Label>
+                  <Input
+                    id="google-redirect-uri"
+                    type="text"
+                    value={googleConfig.redirectUri}
+                    disabled
+                    className="bg-gray-50"
+                    data-testid="input-google-redirect-uri"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Copia questo URL nelle impostazioni OAuth della tua app Google
+                  </p>
+                </div>
+              </>
+            )}
+            
+            {configDialogOpen === 'outlook' && (
+              <>
+                <div>
+                  <Label htmlFor="outlook-client-id">Application (client) ID</Label>
+                  <Input
+                    id="outlook-client-id"
+                    type="text"
+                    placeholder="12345678-1234-1234-1234-123456789012"
+                    value={outlookConfig.clientId}
+                    onChange={(e) => setOutlookConfig(prev => ({ ...prev, clientId: e.target.value }))}
+                    data-testid="input-outlook-client-id"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="outlook-client-secret">Client Secret</Label>
+                  <Input
+                    id="outlook-client-secret"
+                    type="password"
+                    placeholder="*********************"
+                    value={outlookConfig.clientSecret}
+                    onChange={(e) => setOutlookConfig(prev => ({ ...prev, clientSecret: e.target.value }))}
+                    data-testid="input-outlook-client-secret"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="outlook-redirect-uri">Redirect URI</Label>
+                  <Input
+                    id="outlook-redirect-uri"
+                    type="text"
+                    value={outlookConfig.redirectUri}
+                    disabled
+                    className="bg-gray-50"
+                    data-testid="input-outlook-redirect-uri"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Copia questo URL nelle impostazioni dell'app Azure
+                  </p>
+                </div>
+              </>
+            )}
+            
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => handleTestConfig(configDialogOpen!)}
+                disabled={testingProvider === configDialogOpen || !((configDialogOpen === 'google' && googleConfig.clientId && googleConfig.clientSecret) || (configDialogOpen === 'outlook' && outlookConfig.clientId && outlookConfig.clientSecret))}
+                data-testid={`button-test-${configDialogOpen}`}
+              >
+                {testingProvider === configDialogOpen ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <TestTube className="h-4 w-4 mr-2" />
+                )}
+                Test
+              </Button>
+              <Button
+                onClick={() => handleSaveConfig(configDialogOpen!)}
+                disabled={savingProvider === configDialogOpen || !((configDialogOpen === 'google' && googleConfig.clientId && googleConfig.clientSecret) || (configDialogOpen === 'outlook' && outlookConfig.clientId && outlookConfig.clientSecret))}
+                data-testid={`button-save-${configDialogOpen}`}
+              >
+                {savingProvider === configDialogOpen ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Salva
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

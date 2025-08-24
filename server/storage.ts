@@ -41,10 +41,11 @@ import {
   type SmsMessage, type InsertSmsMessage,
   type SmsBlacklist, type InsertSmsBlacklist,
   type SmsStatistics, type InsertSmsStatistics,
-  calendarEvents, calendarIntegrations, calendarReminders,
+  calendarEvents, calendarIntegrations, calendarReminders, calendarConfigs,
   type CalendarEvent, type InsertCalendarEvent,
   type CalendarIntegration, type InsertCalendarIntegration,
   type CalendarReminder, type InsertCalendarReminder,
+  type CalendarConfig, type InsertCalendarConfig,
   type DocumentAnalysis, type InsertDocumentAnalysis,
   type FiscalAiConversation, type InsertFiscalAiConversation,
   type FiscalAiMessage, type InsertFiscalAiMessage,
@@ -333,6 +334,19 @@ export interface IStorage {
   createCalendarReminder(reminder: InsertCalendarReminder): Promise<CalendarReminder>;
   updateCalendarReminder(id: string, reminder: Partial<InsertCalendarReminder>): Promise<CalendarReminder>;
   deleteCalendarReminder(id: string): Promise<void>;
+
+  // Calendar Configurations
+  saveCalendarConfig(config: InsertCalendarConfig): Promise<CalendarConfig>;
+  getCalendarConfig(userId: string, provider: string): Promise<CalendarConfig | undefined>;
+  updateCalendarConfig(id: string, config: Partial<InsertCalendarConfig>): Promise<CalendarConfig>;
+  deleteCalendarConfig(id: string): Promise<void>;
+
+  // Calendar Integrations
+  getCalendarIntegrationsByUser(userId: string): Promise<CalendarIntegration[]>;
+  getCalendarIntegration(id: string): Promise<CalendarIntegration | undefined>;
+  createCalendarIntegration(integration: InsertCalendarIntegration): Promise<CalendarIntegration>;
+  updateCalendarIntegration(id: string, integration: Partial<InsertCalendarIntegration>): Promise<CalendarIntegration>;
+  deleteCalendarIntegration(id: string): Promise<void>;
 
   // Document Analysis
   saveDocumentAnalysis(analysis: InsertDocumentAnalysis): Promise<DocumentAnalysis>;
@@ -3776,6 +3790,99 @@ async getMovements(filters: {
     } catch (error) {
       console.error('Error deleting calendar integration:', error);
       throw new Error('Failed to delete calendar integration');
+    }
+  }
+
+  // === CALENDAR CONFIGURATIONS MANAGEMENT ===
+
+  async saveCalendarConfig(config: InsertCalendarConfig): Promise<CalendarConfig> {
+    try {
+      // Check if config already exists for this user and provider
+      const [existingConfig] = await db.select().from(calendarConfigs)
+        .where(and(
+          eq(calendarConfigs.userId, config.userId),
+          eq(calendarConfigs.provider, config.provider),
+          eq(calendarConfigs.isActive, true)
+        ));
+
+      if (existingConfig) {
+        // Update existing config
+        const [updatedConfig] = await db
+          .update(calendarConfigs)
+          .set({ 
+            ...config, 
+            updatedAt: new Date() 
+          })
+          .where(eq(calendarConfigs.id, existingConfig.id))
+          .returning();
+        
+        console.log(`[CALENDAR CONFIG] Updated ${config.provider} config for user ${config.userId}`);
+        return updatedConfig;
+      } else {
+        // Create new config
+        const [newConfig] = await db.insert(calendarConfigs).values({
+          ...config,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }).returning();
+        
+        console.log(`[CALENDAR CONFIG] Created ${config.provider} config for user ${config.userId}`);
+        return newConfig;
+      }
+    } catch (error) {
+      console.error('Error saving calendar config:', error);
+      throw new Error('Failed to save calendar configuration');
+    }
+  }
+
+  async getCalendarConfig(userId: string, provider: string): Promise<CalendarConfig | undefined> {
+    try {
+      const [config] = await db.select().from(calendarConfigs)
+        .where(and(
+          eq(calendarConfigs.userId, userId),
+          eq(calendarConfigs.provider, provider),
+          eq(calendarConfigs.isActive, true)
+        ));
+      
+      return config || undefined;
+    } catch (error) {
+      console.error('Error fetching calendar config:', error);
+      throw new Error('Failed to fetch calendar configuration');
+    }
+  }
+
+  async updateCalendarConfig(id: string, config: Partial<InsertCalendarConfig>): Promise<CalendarConfig> {
+    try {
+      const [updatedConfig] = await db
+        .update(calendarConfigs)
+        .set({ ...config, updatedAt: new Date() })
+        .where(eq(calendarConfigs.id, id))
+        .returning();
+      
+      if (!updatedConfig) {
+        throw new Error('Calendar configuration not found');
+      }
+      
+      console.log(`[CALENDAR CONFIG] Updated config ${id}`);
+      return updatedConfig;
+    } catch (error) {
+      console.error('Error updating calendar config:', error);
+      throw new Error('Failed to update calendar configuration');
+    }
+  }
+
+  async deleteCalendarConfig(id: string): Promise<void> {
+    try {
+      // Soft delete - mark as inactive
+      await db
+        .update(calendarConfigs)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(calendarConfigs.id, id));
+      
+      console.log(`[CALENDAR CONFIG] Deleted config: ${id}`);
+    } catch (error) {
+      console.error('Error deleting calendar config:', error);
+      throw new Error('Failed to delete calendar configuration');
     }
   }
 

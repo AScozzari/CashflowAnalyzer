@@ -1395,6 +1395,25 @@ export const calendarEvents = pgTable("calendar_events", {
 });
 
 // Calendar Integrations - Configurazioni API esterne
+// Calendar OAuth Configurations - Stores OAuth app settings
+export const calendarConfigs = pgTable("calendar_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(), // utente proprietario della configurazione
+  provider: text("provider").notNull(), // 'google', 'outlook'
+  
+  // OAuth App Configuration
+  clientId: text("client_id").notNull(), // Client ID dall'app OAuth
+  clientSecret: text("client_secret").notNull(), // Client Secret dall'app OAuth (crittografato)
+  redirectUri: text("redirect_uri").notNull(), // URI di callback configurato nell'app
+  
+  // Status and metadata
+  isActive: boolean("is_active").notNull().default(true),
+  lastTestedAt: timestamp("last_tested_at"), // Ultimo test configurazione
+  testResult: jsonb("test_result"), // Risultato ultimo test
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const calendarIntegrations = pgTable("calendar_integrations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(), // utente proprietario dell'integrazione
@@ -1459,6 +1478,18 @@ export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit
   updatedAt: true,
 });
 
+export const insertCalendarConfigSchema = createInsertSchema(calendarConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastTestedAt: true
+}).extend({
+  provider: z.enum(['google', 'outlook']),
+  clientId: z.string().min(1, "Client ID richiesto"),
+  clientSecret: z.string().min(1, "Client Secret richiesto"),
+  redirectUri: z.string().url("Redirect URI deve essere un URL valido")
+});
+
 export const insertCalendarIntegrationSchema = createInsertSchema(calendarIntegrations).omit({
   id: true,
   createdAt: true,
@@ -1517,6 +1548,14 @@ export const calendarEventsRelations = relations(calendarEvents, ({ one, many })
   
   // Reminders
   reminders: many(calendarReminders),
+}));
+
+// Calendar Configs Relations
+export const calendarConfigsRelations = relations(calendarConfigs, ({ one }) => ({
+  user: one(users, {
+    fields: [calendarConfigs.userId],
+    references: [users.id],
+  }),
 }));
 
 // Calendar Integrations Relations
@@ -1591,6 +1630,9 @@ export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 // Calendar Types
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
+
+export type CalendarConfig = typeof calendarConfigs.$inferSelect;
+export type InsertCalendarConfig = z.infer<typeof insertCalendarConfigSchema>;
 
 export type CalendarIntegration = typeof calendarIntegrations.$inferSelect;
 export type InsertCalendarIntegration = z.infer<typeof insertCalendarIntegrationSchema>;
