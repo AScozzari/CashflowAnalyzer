@@ -2776,6 +2776,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // === USER MANAGEMENT ENDPOINTS ===
+  
+  // Get all users (Admin only)
+  app.get("/api/users", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const users = await storage.getUsers();
+      // Remove passwords from response
+      const usersWithoutPasswords = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      res.json(usersWithoutPasswords);
+    } catch (error) {
+      console.error('[USERS] Error fetching users:', error);
+      res.status(500).json({ error: 'Errore durante il recupero degli utenti' });
+    }
+  }));
+
+  // Create new user (Admin only) 
+  app.post("/api/users", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const userData = req.body;
+      
+      // Hash password if provided
+      if (userData.password) {
+        const { hashPassword } = await import('./auth');
+        userData.password = await hashPassword(userData.password);
+      }
+      
+      const newUser = await storage.createUser(userData);
+      // Remove password from response
+      const { password, ...userWithoutPassword } = newUser;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      console.error('[USERS] Error creating user:', error);
+      res.status(500).json({ error: 'Errore durante la creazione dell\'utente' });
+    }
+  }));
+
+  // Update user (Admin only)
+  app.put("/api/users/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { id } = req.params;
+      const userData = req.body;
+      
+      // Hash password if provided
+      if (userData.password) {
+        const { hashPassword } = await import('./auth');
+        userData.password = await hashPassword(userData.password);
+      }
+      
+      const updatedUser = await storage.updateUser(id, userData);
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'Utente non trovato' });
+      }
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error('[USERS] Error updating user:', error);
+      res.status(500).json({ error: 'Errore durante l\'aggiornamento dell\'utente' });
+    }
+  }));
+
+  // Delete user (Admin only)
+  app.delete("/api/users/:id", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteUser(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[USERS] Error deleting user:', error);
+      res.status(500).json({ error: 'Errore durante l\'eliminazione dell\'utente' });
+    }
+  }));
+
   // === ENTITY EXPLORER ENDPOINTS ===
 
   // Search entities (suppliers, customers, resources)

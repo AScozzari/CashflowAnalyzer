@@ -1716,6 +1716,97 @@ export const databaseSettings = pgTable("database_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// === BACKUP SYSTEM TABLES ===
+
+// Backup configurations table
+export const backupConfigurations = pgTable("backup_configurations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // 'database', 'files', 'full', 'incremental', 'differential'
+  scheduleType: text("schedule_type").notNull(), // 'daily', 'weekly', 'monthly', 'custom'
+  scheduleTime: text("schedule_time"), // HH:MM format
+  scheduleDay: integer("schedule_day"), // 0-6, 0 = Sunday
+  scheduleDate: integer("schedule_date"), // 1-31
+  schedule: text("schedule"), // Custom cron expression
+  enabled: boolean("enabled").notNull().default(true),
+  retentionDays: integer("retention_days").notNull(),
+  storageProvider: text("storage_provider").notNull(), // 'gcs', 's3', 'azure', 'local', 'ftp', 'sftp'
+  storagePath: text("storage_path"),
+  storageCredentials: jsonb("storage_credentials"),
+  encryptionEnabled: boolean("encryption_enabled").notNull().default(true),
+  encryptionKey: text("encryption_key"),
+  compressionEnabled: boolean("compression_enabled").notNull().default(true),
+  compressionAlgorithm: text("compression_algorithm").notNull().default('gzip'),
+  verificationEnabled: boolean("verification_enabled").notNull().default(true),
+  notificationEnabled: boolean("notification_enabled").notNull().default(true),
+  notificationEmail: text("notification_email"),
+  maxParallelJobs: integer("max_parallel_jobs").notNull().default(1),
+  timeoutMinutes: integer("timeout_minutes").notNull().default(60),
+  lastRunAt: timestamp("last_run_at"),
+  nextRunAt: timestamp("next_run_at"),
+  totalRuns: integer("total_runs").notNull().default(0),
+  successfulRuns: integer("successful_runs").notNull().default(0),
+  failedRuns: integer("failed_runs").notNull().default(0),
+  averageDurationSeconds: integer("average_duration_seconds"),
+  lastBackupSize: integer("last_backup_size"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Backup jobs table
+export const backupJobs = pgTable("backup_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  configurationId: varchar("configuration_id").notNull(),
+  status: text("status").notNull().default('pending'), // 'pending', 'running', 'completed', 'failed', 'cancelled'
+  type: text("type").notNull(), // 'database', 'files', 'full', 'incremental', 'differential'
+  priority: integer("priority").notNull().default(5),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  durationSeconds: integer("duration_seconds"),
+  backupSizeBytes: integer("backup_size_bytes"),
+  backupPath: text("backup_path"),
+  checksum: text("checksum"),
+  compressionRatio: real("compression_ratio"),
+  fileCount: integer("file_count"),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Restore points table
+export const restorePoints = pgTable("restore_points", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  backupJobId: varchar("backup_job_id").notNull(),
+  snapshotType: text("snapshot_type").notNull(), // 'manual', 'scheduled', 'automatic', 'pre_update', 'pre_migration'
+  verificationStatus: text("verification_status").notNull().default('pending'), // 'pending', 'verified', 'failed', 'skipped'
+  verificationDate: timestamp("verification_date"),
+  totalSizeBytes: integer("total_size_bytes"),
+  isArchived: boolean("is_archived").notNull().default(false),
+  expiresAt: timestamp("expires_at"),
+  tags: text("tags").array(),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Backup audit log table
+export const backupAuditLog = pgTable("backup_audit_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  action: text("action").notNull(), // 'configuration_created', 'backup_started', etc.
+  resourceType: text("resource_type").notNull(),
+  resourceId: varchar("resource_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  ipAddress: text("ip_address").notNull(),
+  userAgent: text("user_agent"),
+  details: jsonb("details"),
+  success: boolean("success").notNull().default(true),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // === LOCALIZATION CONFIGURATION SCHEMA ===
 export const localizationSettings = pgTable("localization_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1857,11 +1948,25 @@ export type InsertDocumentsSettings = typeof documentsSettings.$inferInsert;
 export type ThemesSettings = typeof themesSettings.$inferSelect;
 export type InsertThemesSettings = typeof themesSettings.$inferInsert;
 
+// === BACKUP SYSTEM TYPES ===
+export type BackupConfiguration = typeof backupConfigurations.$inferSelect;
+export type InsertBackupConfiguration = typeof backupConfigurations.$inferInsert;
+export type BackupJob = typeof backupJobs.$inferSelect;
+export type InsertBackupJob = typeof backupJobs.$inferInsert;
+export type RestorePoint = typeof restorePoints.$inferSelect;
+export type InsertRestorePoint = typeof restorePoints.$inferInsert;
+export type BackupAuditLog = typeof backupAuditLog.$inferSelect;
+export type InsertBackupAuditLog = typeof backupAuditLog.$inferInsert;
+
 // === INSERT SCHEMAS FOR VALIDATION ===
 export const insertDatabaseSettingsSchema = createInsertSchema(databaseSettings);
 export const insertLocalizationSettingsSchema = createInsertSchema(localizationSettings);
 export const insertDocumentsSettingsSchema = createInsertSchema(documentsSettings);
 export const insertThemesSettingsSchema = createInsertSchema(themesSettings);
+export const insertBackupConfigurationSchema = createInsertSchema(backupConfigurations);
+export const insertBackupJobSchema = createInsertSchema(backupJobs);
+export const insertRestorePointSchema = createInsertSchema(restorePoints);
+export const insertBackupAuditLogSchema = createInsertSchema(backupAuditLog);
 
 // Re-export all specialized schemas
 export * from "./user-schema";

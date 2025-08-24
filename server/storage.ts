@@ -2533,8 +2533,7 @@ async getMovements(filters: {
   }
 
   // === BACKUP MANAGEMENT === 
-  // TEMPORARILY DISABLED TO FIX NOTIFICATIONS API - WILL RE-ENABLE AFTER NOTIFICATIONS WORK
-  /*
+  // RE-ENABLED: Fixed notifications API, now implementing real backup functionality
   async createBackupConfiguration(config: BackupConfigurationInsert): Promise<BackupConfiguration> {
     try {
       const [result] = await db.insert(backupConfigurations).values({
@@ -2762,7 +2761,6 @@ async getMovements(filters: {
       throw new Error("Failed to fetch backup stats");
     }
   }
-  */
   // END TEMPORARY BACKUP DISABLE
 
   // AI Document Jobs Methods

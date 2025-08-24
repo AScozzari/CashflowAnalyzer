@@ -8,6 +8,13 @@
       "when": 1756056336498,
       "tag": "0000_sync_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1756064359634,
+      "tag": "0001_update_20250824_193917",
+      "breakpoints": true
     }
   ]
 }
