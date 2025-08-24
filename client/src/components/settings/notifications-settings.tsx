@@ -100,7 +100,7 @@ const notificationCategories = [
   { id: 'whatsapp', name: 'WhatsApp', icon: '💬' },
   { id: 'sms', name: 'SMS', icon: '📱' },
   { id: 'email', name: 'Email', icon: '📧' },
-  { id: 'messenger', name: 'Messenger', icon: '💌' },
+  { id: 'telegram', name: 'Telegram', icon: '✈️' },
   { id: 'system', name: 'Sistema', icon: '⚙️' },
   { id: 'security', name: 'Sicurezza', icon: '🔒' },
 ];
