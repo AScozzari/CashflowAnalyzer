@@ -171,7 +171,12 @@ export function WhatsAppInterfaceImproved() {
                 <Badge variant={aiAssistanceEnabled ? "default" : "secondary"} className="text-xs">
                   AI {aiAssistanceEnabled ? "ON" : "OFF"}
                 </Badge>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => window.location.href = '/settings?tab=channels'}
+                  data-testid="button-whatsapp-settings"
+                >
                   <Settings className="h-4 w-4" />
                 </Button>
               </div>

@@ -110,6 +110,7 @@ export default function Calendar() {
               variant="outline" 
               size="sm"
               className="gap-2"
+              onClick={() => window.location.href = '/settings?tab=system'}
               data-testid="button-calendar-settings"
             >
               <Settings className="h-4 w-4" />

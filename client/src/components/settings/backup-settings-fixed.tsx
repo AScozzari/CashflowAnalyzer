@@ -298,7 +298,12 @@ export function BackupSettings() {
                         <Badge variant={config.enabled ? "default" : "outline"}>
                           {config.enabled ? "Attivo" : "Disabilitato"}
                         </Badge>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setActiveTab('providers')}
+                          data-testid={`button-edit-config-${config.id}`}
+                        >
                           <Settings className="h-4 w-4" />
                         </Button>
                       </div>
