@@ -165,6 +165,17 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Email già esistente" });
       }
 
+      // Valida password secondo criteri di sicurezza
+      const { securityManager } = await import('./services/security-manager');
+      const passwordValidation = await securityManager.validatePassword(password);
+      if (!passwordValidation.valid) {
+        return res.status(400).json({ 
+          error: "Password non valida", 
+          details: passwordValidation.errors 
+        });
+      }
+    
+
       const hashedPassword = await hashPassword(password);
       
       const newUser = await storage.createUser({
