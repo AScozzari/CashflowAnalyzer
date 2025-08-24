@@ -39,8 +39,9 @@ import {
   type SmsMessage, type InsertSmsMessage,
   type SmsBlacklist, type InsertSmsBlacklist,
   type SmsStatistics, type InsertSmsStatistics,
-  calendarEvents, calendarReminders,
+  calendarEvents, calendarIntegrations, calendarReminders,
   type CalendarEvent, type InsertCalendarEvent,
+  type CalendarIntegration, type InsertCalendarIntegration,
   type CalendarReminder, type InsertCalendarReminder,
   type DocumentAnalysis, type InsertDocumentAnalysis,
   type FiscalAiConversation, type InsertFiscalAiConversation,
@@ -3985,7 +3986,7 @@ async getMovements(filters: {
         analysis: data.analysis,
         extractedData: data.extractedData,
         tokensUsed: data.tokensUsed,
-        confidence: data.confidence,
+        confidence: String(data.confidence),
         processingTime: data.processingTime
       };
       
@@ -4005,12 +4006,12 @@ async getMovements(filters: {
     try {
       console.log(`[STORAGE] Getting real backup jobs from database`);
       
-      // Get real backup jobs from systemConfigs table
+      // Get real backup jobs from securitySettings table
       const backupJobs = await db
         .select()
-        .from(systemConfigs)
-        .where(eq(systemConfigs.category, 'backup_jobs'))
-        .orderBy(desc(systemConfigs.updatedAt))
+        .from(securitySettings)
+        .where(eq(securitySettings.category, 'backup_jobs'))
+        .orderBy(desc(securitySettings.updatedAt))
         .limit(limit);
       
       return backupJobs.map(job => {
@@ -4052,7 +4053,7 @@ async getMovements(filters: {
         createdBy: "system"
       };
       
-      const [savedJob] = await db.insert(systemConfigs).values({
+      const [savedJob] = await db.insert(securitySettings).values({
         key: `backup_job_${backupId}`,
         value: JSON.stringify(jobData),
         category: 'backup_jobs',
@@ -4081,14 +4082,14 @@ async getMovements(filters: {
       // Get successful backup jobs that can be used as restore points
       const restorePoints = await db
         .select()
-        .from(systemConfigs)
+        .from(securitySettings)
         .where(
           and(
-            eq(systemConfigs.category, 'backup_jobs'),
+            eq(securitySettings.category, 'backup_jobs'),
             sql`JSON_EXTRACT(value, '$.status') = 'completed'`
           )
         )
-        .orderBy(desc(systemConfigs.updatedAt))
+        .orderBy(desc(securitySettings.updatedAt))
         .limit(10);
       
       return restorePoints.map(point => {
@@ -4123,7 +4124,7 @@ async getMovements(filters: {
         type: 'manual_restore_point'
       };
       
-      const [savedPoint] = await db.insert(systemConfigs).values({
+      const [savedPoint] = await db.insert(securitySettings).values({
         key: `restore_point_${restoreId}`,
         value: JSON.stringify(restoreData),
         category: 'restore_points',
@@ -4152,8 +4153,8 @@ async getMovements(filters: {
       // Get real statistics from backup jobs
       const allJobs = await db
         .select()
-        .from(systemConfigs)
-        .where(eq(systemConfigs.category, 'backup_jobs'));
+        .from(securitySettings)
+        .where(eq(securitySettings.category, 'backup_jobs'));
       
       const totalBackups = allJobs.length;
       const successfulBackups = allJobs.filter(job => {
@@ -4290,12 +4291,12 @@ async getMovements(filters: {
         recordCount: Object.keys(backupData.tables || {}).reduce((sum, key) => sum + (backupData.tables[key]?.length || 0), 0)
       };
       
-      await db.update(systemConfigs)
+      await db.update(securitySettings)
         .set({
           value: JSON.stringify(completedJobData),
           updatedAt: new Date()
         })
-        .where(eq(systemConfigs.key, `backup_job_${backupId}`));
+        .where(eq(securitySettings.key, `backup_job_${backupId}`));
       
       console.log(`[STORAGE] Backup ${backupId} completed successfully`);
     } catch (error) {
@@ -4313,12 +4314,12 @@ async getMovements(filters: {
         type: "manual"
       };
       
-      await db.update(systemConfigs)
+      await db.update(securitySettings)
         .set({
           value: JSON.stringify(failedJobData),
           updatedAt: new Date()
         })
-        .where(eq(systemConfigs.key, `backup_job_${backupId}`));
+        .where(eq(securitySettings.key, `backup_job_${backupId}`));
     }
   }
 
@@ -4407,12 +4408,12 @@ async getMovements(filters: {
         recordCount: Object.keys(currentState.tables || {}).reduce((sum, key) => sum + (currentState.tables[key]?.length || 0), 0)
       };
       
-      await db.update(systemConfigs)
+      await db.update(securitySettings)
         .set({
           value: JSON.stringify(verifiedData),
           updatedAt: new Date()
         })
-        .where(eq(systemConfigs.key, `restore_point_${restoreId}`));
+        .where(eq(securitySettings.key, `restore_point_${restoreId}`));
       
       console.log(`[STORAGE] Restore point ${restoreId} created and verified`);
     } catch (error) {
@@ -4425,8 +4426,8 @@ async getMovements(filters: {
   async getLocalizationSettings(): Promise<any> {
     try {
       // Get localization settings from database
-      const config = await db.select().from(systemConfigs)
-        .where(eq(systemConfigs.key, 'localization_settings'))
+      const config = await db.select().from(securitySettings)
+        .where(eq(securitySettings.key, 'localization_settings'))
         .limit(1);
       
       if (config.length === 0) {
@@ -4444,7 +4445,7 @@ async getMovements(filters: {
           numberFormat: "1.234,56"
         };
         
-        const [newConfig] = await db.insert(systemConfigs).values({
+        const [newConfig] = await db.insert(securitySettings).values({
           key: 'localization_settings',
           value: JSON.stringify(defaultSettings),
           category: 'localization',
@@ -4474,12 +4475,12 @@ async getMovements(filters: {
     try {
       const { id, ...settingsData } = settings;
       
-      const [updatedConfig] = await db.update(systemConfigs)
+      const [updatedConfig] = await db.update(securitySettings)
         .set({
           value: JSON.stringify(settingsData),
           updatedAt: new Date()
         })
-        .where(eq(systemConfigs.key, 'localization_settings'))
+        .where(eq(securitySettings.key, 'localization_settings'))
         .returning();
       
       if (!updatedConfig) {
@@ -4502,8 +4503,8 @@ async getMovements(filters: {
   async getThemeSettings(): Promise<any> {
     try {
       // Get theme settings from database
-      const config = await db.select().from(systemConfigs)
-        .where(eq(systemConfigs.key, 'theme_settings'))
+      const config = await db.select().from(securitySettings)
+        .where(eq(securitySettings.key, 'theme_settings'))
         .limit(1);
       
       if (config.length === 0) {
@@ -4521,7 +4522,7 @@ async getMovements(filters: {
           animations: true
         };
         
-        const [newConfig] = await db.insert(systemConfigs).values({
+        const [newConfig] = await db.insert(securitySettings).values({
           key: 'theme_settings',
           value: JSON.stringify(defaultSettings),
           category: 'ui',
@@ -4551,12 +4552,12 @@ async getMovements(filters: {
     try {
       const { id, ...settingsData } = settings;
       
-      const [updatedConfig] = await db.update(systemConfigs)
+      const [updatedConfig] = await db.update(securitySettings)
         .set({
           value: JSON.stringify(settingsData),
           updatedAt: new Date()
         })
-        .where(eq(systemConfigs.key, 'theme_settings'))
+        .where(eq(securitySettings.key, 'theme_settings'))
         .returning();
       
       if (!updatedConfig) {

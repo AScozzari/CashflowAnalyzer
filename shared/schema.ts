@@ -77,6 +77,7 @@ export const resources = pgTable("resources", {
   officeIds: text("office_ids").array(), // Array di ID delle sedi operative
   role: text("role").notNull().default('user'), // 'admin', 'finance', 'user'
   avatar: text("avatar"), // Percorso dell'immagine avatar
+  userId: varchar("user_id"), // For movements relation
   notes: text("notes"),
   isActive: boolean("is_active").notNull().default(true), // attivo = usabile per input, inattivo = solo ricerche
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -98,6 +99,8 @@ export const ibans = pgTable("ibans", {
   autoSyncEnabled: boolean("auto_sync_enabled").notNull().default(false), // Sincronizzazione automatica attiva
   lastSyncDate: timestamp("last_sync_date"), // Ultima sincronizzazione movimenti
   syncFrequency: text("sync_frequency").default('daily'), // 'hourly', 'daily', 'weekly'
+  sandboxMode: boolean("sandbox_mode").notNull().default(true), // Modalità sandbox per test
+  lastSync: timestamp("last_sync"), // Ultimo sync effettuato
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -268,6 +271,7 @@ export const movements = pgTable("movements", {
   tagId: varchar("tag_id"),
   supplierId: varchar("supplier_id"), // Riferimento al fornitore (per le spese)
   customerId: varchar("customer_id"), // Riferimento al cliente (per le entrate)
+  userId: varchar("user_id"), // User who created the movement
   
   // Campi per integrazione XML fatture
   xmlData: text("xml_data"), // Dati XML della fattura originale (se presente)
@@ -1721,3 +1725,5 @@ export * from "./user-schema";
 export * from "./security-schema";
 export * from "./backup-schema";
 export * from "./sms-schema";
+export * from "./whatsapp-schema";
+
