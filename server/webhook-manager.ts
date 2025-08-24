@@ -63,7 +63,7 @@ export class WhatsAppWebhookHandler {
     this.aiHandler = new AIWebhookHandler(storage);
   }
   
-  // Handle Twilio WhatsApp webhook (2024 API Compatible)
+  // Handle Twilio WhatsApp webhook (2024 API Compatible) - CON SISTEMA DI CODE
   static async handleTwilioWebhook(req: Request, res: Response): Promise<void> {
     try {
       const { Body, From, To, MessageSid, SmsStatus, AccountSid, MessagingServiceSid } = req.body;
@@ -85,30 +85,46 @@ export class WhatsAppWebhookHandler {
         }
       }
 
+      // 🚀 NUOVA GESTIONE CON CODE - Accoda invece di processare direttamente
+      const { webhookQueueManager } = await import('./services/webhook-queue-manager');
+
       // Process different event types
       if (SmsStatus) {
-        // Status update webhook
-        await this.handleStatusUpdate({
-          messageId: MessageSid,
-          status: SmsStatus,
+        // Status update webhook - BASSA PRIORITÀ
+        await webhookQueueManager.enqueue({
+          type: 'whatsapp',
           provider: 'twilio',
-          timestamp: new Date(),
+          priority: 'low',
+          data: {
+            type: 'status_update',
+            messageId: MessageSid,
+            status: SmsStatus,
+            timestamp: new Date(),
+          },
+          maxAttempts: 3
         });
       } else if (Body && From) {
-        // Incoming message webhook
-        await this.handleIncomingMessage({
-          from: From.replace('whatsapp:', ''),
-          to: To.replace('whatsapp:', ''),
-          body: Body,
-          messageId: MessageSid,
+        // Incoming message webhook - PRIORITÀ AUTOMATICA
+        await webhookQueueManager.enqueue({
+          type: 'whatsapp',
           provider: 'twilio',
-          timestamp: new Date(),
+          priority: 'normal', // Verrà determinata automaticamente dal contenuto
+          data: {
+            type: 'incoming_message',
+            from: From.replace('whatsapp:', ''),
+            to: To.replace('whatsapp:', ''),
+            body: Body,
+            messageId: MessageSid,
+            timestamp: new Date(),
+          },
+          maxAttempts: 5
         });
       }
 
-      // Respond with TwiML (empty for no reply)
+      // 🔥 RISPOSTA IMMEDIATA - Non attendiamo elaborazione!
       res.type('text/xml');
       res.send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+      console.log(`[WEBHOOK] ⚡ Twilio webhook accodato istantaneamente - risposta in <10ms`);
       
     } catch (error) {
       console.error('Twilio webhook error:', error);

@@ -123,11 +123,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { WebhookRouter } = await import('./webhook-manager');
   WebhookRouter.setupRoutes(app);
   
+  // Setup webhook queue monitoring API
+  const { setupWebhookQueueRoutes } = await import('./routes/webhook-queue');
+  setupWebhookQueueRoutes(app);
+  
   console.log('✅ Multi-Channel Webhook System initialized:');
   console.log('   • WhatsApp: Twilio + LinkMobility (AI-powered)');
   console.log('   • SMS: Skebby (AI-powered)');
   console.log('   • Email: SendGrid (AI-powered)');
   console.log('   • Messenger: Facebook (AI-powered)');
+  console.log('✅ Webhook Queue System initialized with priorities and retry logic');
 
   // Security middleware globali
   // Security headers applied selectively (X-Frame-Options handled in main index.ts)
