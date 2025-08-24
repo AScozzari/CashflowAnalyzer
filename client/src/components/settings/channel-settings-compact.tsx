@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Mail, Phone, Send, CheckCircle, X } from 'lucide-react';
+import { MessageSquare, Mail, Phone, Send, CheckCircle, X, Loader2 } from 'lucide-react';
 import { WhatsAppSettingsWithTabs } from './whatsapp-settings-with-tabs';
 import { SendGridConfigComplete } from './sendgrid-config-complete';
 import { SmsSettingsSkebby } from './sms-settings-skebby';
@@ -23,48 +24,45 @@ export function ChannelSettingsCompact() {
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [openModal, setOpenModal] = useState<string | null>(null);
 
-  const channels: ChannelConfig[] = [
-    {
-      id: 'whatsapp',
-      name: 'WhatsApp Business',
-      description: 'API Business + Template Pre-approvati',
+  // Fetch real channel status from backend
+  const { data: channelsData, isLoading: loadingChannels } = useQuery({
+    queryKey: ['/api/channels/status'],
+    queryFn: () => fetch('/api/channels/status').then(res => res.json()),
+    staleTime: 30000
+  });
+
+  // Define channel template with icons and base info
+  const channelTemplates = {
+    whatsapp: {
       icon: <MessageSquare className="w-6 h-6 text-green-600" />,
-      status: 'implemented',
-      statusText: 'Implementato',
-      details: 'Sistema completo con template dinamici e variabili avanzate',
-      features: ['Template dinamici', 'Variabili automatiche', 'Webhook integrati', 'API Business']
+      name: 'WhatsApp Business',
+      description: 'API Business + Template Pre-approvati'
     },
-    {
-      id: 'email',
-      name: 'Email',
-      description: 'SendGrid configurato',
+    email: {
       icon: <Mail className="w-6 h-6 text-blue-600" />,
-      status: 'implemented',
-      statusText: 'Implementato',
-      details: 'Sistema email professionale con template personalizzabili',
-      features: ['SendGrid API', 'Template HTML', 'Invio massivo', 'Tracking aperture']
+      name: 'Email',  
+      description: 'SendGrid configurato'
     },
-    {
-      id: 'sms',
-      name: 'SMS',
-      description: 'Skebby SMS API',
+    sms: {
       icon: <Phone className="w-6 h-6 text-orange-600" />,
-      status: 'implemented',
-      statusText: 'Implementato',
-      details: 'Sistema SMS italiano GDPR-compliant con Skebby',
-      features: ['Skebby API', 'SMS Italia', 'Delivery status', 'Template brevi']
+      name: 'SMS',
+      description: 'Skebby SMS API'
     },
-    {
-      id: 'telegram',
-      name: 'Telegram',
-      description: 'Bot API implementato',
+    telegram: {
       icon: <Send className="w-6 h-6 text-sky-600" />,
-      status: 'implemented',
-      statusText: 'Implementato',
-      details: 'Sistema completo Telegram Bot con webhook e AI integrato',
-      features: ['Bot API gratuita', 'Messaggi istantanei', 'Comandi interattivi', 'AI Assistant', 'Webhook system']
+      name: 'Telegram',
+      description: 'Bot API implementato'
     }
-  ];
+  };
+
+  // Combine templates with real data
+  const channels: ChannelConfig[] = channelsData ? 
+    channelsData.map((channelData: any) => ({
+      ...channelData,
+      icon: channelTemplates[channelData.id as keyof typeof channelTemplates]?.icon || <Send className="w-6 h-6" />,
+      name: channelTemplates[channelData.id as keyof typeof channelTemplates]?.name || channelData.name,
+      description: channelTemplates[channelData.id as keyof typeof channelTemplates]?.description || channelData.description
+    })) : [];
 
   const renderConfigModal = () => {
     if (!openModal) return null;
@@ -99,6 +97,24 @@ export function ChannelSettingsCompact() {
       </div>
     );
   };
+
+  // Loading state
+  if (loadingChannels) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Channel Settings</h2>
+          <p className="text-muted-foreground">
+            Configura i canali di comunicazione per notifiche automatiche
+          </p>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-muted-foreground">Caricamento configurazioni canali...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

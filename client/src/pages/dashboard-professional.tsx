@@ -925,7 +925,9 @@ export default function DashboardProfessional() {
                   <ArrowUpRight className="w-5 h-5 text-green-600" />
                   <span className="font-medium">Entrate Mensili</span>
                 </div>
-                <span className="text-lg font-bold text-green-600">+8.3%</span>
+                <span className={`text-lg font-bold ${monthlyStats.changes.income >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatChange(monthlyStats.changes.income)}
+                </span>
               </div>
               
               <div className="flex items-center justify-between p-4 rounded-lg bg-red-50 dark:bg-red-950/30">
@@ -933,15 +935,19 @@ export default function DashboardProfessional() {
                   <ArrowDownLeft className="w-5 h-5 text-red-600" />
                   <span className="font-medium">Uscite Mensili</span>
                 </div>
-                <span className="text-lg font-bold text-red-600">+2.1%</span>
+                <span className={`text-lg font-bold ${monthlyStats.changes.expenses <= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatChange(monthlyStats.changes.expenses)}
+                </span>
               </div>
               
               <div className="flex items-center justify-between p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30">
                 <div className="flex items-center space-x-3">
                   <TrendingUp className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium">EBITDA Mese Corrente</span>
+                  <span className="font-medium">Cash Flow Netto</span>
                 </div>
-                <span className="text-lg font-bold text-blue-600">+15.7%</span>
+                <span className={`text-lg font-bold ${monthlyStats.changes.netFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatChange(monthlyStats.changes.netFlow)}
+                </span>
               </div>
             </div>
           </CardContent>

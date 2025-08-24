@@ -7,6 +7,7 @@ import { MessageSquare, Mail, Phone, Send, Settings, Webhook } from 'lucide-reac
 import { EmailSettings } from './email-settings';
 import { WhatsAppSettingsWithTabs } from './whatsapp-settings-with-tabs';
 import { SmsSettingsSkebby } from './sms-settings-skebby';
+import TelegramSettings from './telegram-settings';
 
 export function ChannelSettings() {
   const [activeTab, setActiveTab] = useState('whatsapp');
@@ -76,17 +77,17 @@ export function ChannelSettings() {
           </CardContent>
         </Card>
 
-        <Card className="border-sky-200 dark:border-sky-800">
+        <Card className="border-green-200 dark:border-green-800">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Send className="w-5 h-5 text-sky-600" />
+                <Send className="w-5 h-5 text-green-600" />
                 <span className="font-medium">Telegram</span>
               </div>
-              <Badge variant="outline">Prossimamente</Badge>
+              <Badge variant="default" className="bg-green-600">Implementato</Badge>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-              Bot API gratuita
+              Bot API implementato
             </p>
           </CardContent>
         </Card>
@@ -130,16 +131,7 @@ export function ChannelSettings() {
 
         {/* Telegram Channel */}
         <TabsContent value="telegram">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Send className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">Telegram Bot</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Bot Telegram gratuito per notifiche e interazioni automatiche
-              </p>
-              <Badge variant="secondary">Coming Soon</Badge>
-            </CardContent>
-          </Card>
+          <TelegramSettings />
         </TabsContent>
       </Tabs>
     </div>
