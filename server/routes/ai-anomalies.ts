@@ -212,9 +212,7 @@ Considera: importi molto diversi dalla norma, pattern temporali strani, possibil
 
     } catch (parseError) {
       console.error('Error parsing AI anomaly response:', parseError);
-      
-      // Fallback detection if AI parsing fails
-      anomalyAnalysis = createFallbackAnomalyDetection(movements, analysisContext);
+      throw new Error('AI anomaly detection failed - no fallback available');
     }
 
     res.json(anomalyAnalysis);
@@ -222,8 +220,9 @@ Considera: importi molto diversi dalla norma, pattern temporali strani, possibil
   } catch (error) {
     console.error('AI Anomaly Detection Error:', error);
     res.status(500).json({ 
-      error: 'Failed to detect anomalies',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: 'AI anomaly detection service temporarily unavailable',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Real AI analysis required - no mock data available'
     });
   }
 });
@@ -243,41 +242,6 @@ function createSummaryFromAnomalies(anomalies: Anomaly[], totalChecked: number) 
   };
 }
 
-// Fallback anomaly detection function
-function createFallbackAnomalyDetection(movements: MovementWithRelations[], context: any) {
-  const anomalies: Anomaly[] = [];
-  
-  // Simple statistical outlier detection
-  movements.forEach(movement => {
-    const amount = parseFloat(movement.amount.toString());
-    
-    // Very large amounts (>3 std devs from mean)
-    if (Math.abs(amount - context.avg_amount) > 3 * context.std_deviation && amount > context.avg_amount * 2) {
-      anomalies.push({
-        id: `outlier_${movement.id}`,
-        movement_id: movement.id,
-        type: 'amount_outlier',
-        severity: amount > context.avg_amount * 5 ? 'high' : 'medium',
-        title: 'Importo Anomalo Rilevato',
-        description: `Transazione con importo significativamente diverso dalla media (€${amount.toLocaleString('it-IT')} vs media €${context.avg_amount.toFixed(0)})`,
-        risk_score: Math.min(100, Math.round((Math.abs(amount - context.avg_amount) / context.std_deviation) * 15)),
-        detected_at: new Date().toISOString(),
-        movement_details: {
-          amount: amount,
-          date: movement.flowDate || movement.insertDate || new Date().toISOString(),
-          description: (movement as any).description || undefined,
-          company_name: movement.companyId || undefined
-        },
-        recommendation: 'Verifica la correttezza dell\'importo e la legittimità della transazione'
-      });
-    }
-  });
-
-  return {
-    anomalies: anomalies.slice(0, 10), // Limit fallback anomalies
-    summary: createSummaryFromAnomalies(anomalies, movements.length),
-    last_scan: new Date().toISOString()
-  };
-}
+// REMOVED: createFallbackAnomalyDetection function eliminated - only real AI analysis allowed
 
 export default router;

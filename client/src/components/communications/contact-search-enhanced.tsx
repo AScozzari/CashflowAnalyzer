@@ -78,25 +78,7 @@ export function ContactSearchEnhanced({
 
   const isLoading = resourcesLoading || customersLoading || suppliersLoading;
 
-  // Debug logging
-  console.log('📊 Contact Search Debug:', {
-    resources: resources.length,
-    customers: customers.length, 
-    suppliers: suppliers.length,
-    withPhoneContacts: {
-      resources: resources.filter(r => r.mobile || r.phone).length,
-      customers: customers.filter(c => c.mobile || c.phone).length,
-      suppliers: suppliers.filter(s => s.mobile || s.phone).length
-    },
-    authErrors: {
-      resourcesError: resourcesError?.message?.includes('401') || resourcesError?.message?.includes('autenticato'),
-      customersError: customersError?.message?.includes('401') || customersError?.message?.includes('autenticato'), 
-      suppliersError: suppliersError?.message?.includes('401') || suppliersError?.message?.includes('autenticato')
-    },
-    sampleNames: [...resources.filter(r => r.mobile || r.phone).slice(0,2).map(r => `${r.firstName} ${r.lastName}`), 
-                 ...customers.filter(c => c.mobile || c.phone).slice(0,2).map(c => c.name || `${c.firstName} ${c.lastName}`),
-                 ...suppliers.filter(s => s.mobile || s.phone).slice(0,2).map(s => s.name)]
-  });
+  // REMOVED: Debug logging eliminated for production
 
   // Transform data into unified contact format
   const allContacts: Contact[] = useMemo(() => {

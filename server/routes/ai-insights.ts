@@ -158,9 +158,7 @@ Focus su: concentrazione clienti, volatilità cash flow, trend spese, opportunit
 
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
-      
-      // Fallback analysis if AI parsing fails
-      aiAnalysis = createFallbackAnalysis(analysisContext);
+      throw new Error('AI analysis failed - no fallback data available');
     }
 
     res.json(aiAnalysis);
@@ -168,75 +166,13 @@ Focus su: concentrazione clienti, volatilità cash flow, trend spese, opportunit
   } catch (error) {
     console.error('AI Insights Error:', error);
     res.status(500).json({ 
-      error: 'Failed to generate financial insights',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: 'AI insights service temporarily unavailable',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Real AI analysis required - no mock data available'
     });
   }
 });
 
-// Fallback analysis function
-function createFallbackAnalysis(context: any) {
-  const healthScore = context.net_cash_flow > 0 ? 
-    Math.min(100, 60 + (context.net_cash_flow / Math.max(context.total_income, 1)) * 40) : 
-    Math.max(0, 50 - Math.abs(context.net_cash_flow / Math.max(context.total_expenses, 1)) * 50);
-
-  const insights = [];
-
-  // Cash flow insight
-  if (context.net_cash_flow > 0) {
-    insights.push({
-      id: "cash_flow_positive",
-      type: "trend",
-      severity: "low",
-      title: "Cash Flow Positivo",
-      description: `Il cash flow netto è positivo (€${context.net_cash_flow.toLocaleString('it-IT')})`,
-      impact: "Liquidità disponibile per investimenti",
-      action: "Valuta opportunità di crescita o accantonamenti",
-      confidence: 95,
-      value: context.net_cash_flow,
-      trend: "up"
-    });
-  } else {
-    insights.push({
-      id: "cash_flow_negative", 
-      type: "risk",
-      severity: "high",
-      title: "Cash Flow Negativo",
-      description: `Il cash flow è negativo (€${context.net_cash_flow.toLocaleString('it-IT')})`,
-      impact: "Rischio liquidità a breve termine",
-      action: "Rivedi spese non essenziali e sollecita incassi",
-      confidence: 95,
-      value: context.net_cash_flow,
-      trend: "down"
-    });
-  }
-
-  // Transaction frequency insight
-  const avgTransaction = context.average_transaction;
-  insights.push({
-    id: "transaction_analysis",
-    type: "opportunity",
-    severity: "medium", 
-    title: "Analisi Transazioni",
-    description: `Media transazione: €${avgTransaction.toLocaleString('it-IT')}`,
-    impact: "Ottimizzazione gestione finanziaria",
-    action: "Considera automatizzazione piccoli pagamenti",
-    confidence: 80,
-    value: avgTransaction,
-    trend: "stable"
-  });
-
-  return {
-    financial_health_score: Math.round(healthScore),
-    summary: `Situazione finanziaria ${healthScore > 70 ? 'buona' : healthScore > 50 ? 'stabile' : 'da monitorare'} con ${context.transaction_count} transazioni analizzate.`,
-    key_insights: insights,
-    recommendations: [
-      "Monitora regolarmente il cash flow settimanale",
-      "Diversifica i canali di entrata quando possibile", 
-      "Mantieni una riserva di liquidità del 10-15%"
-    ],
-    generated_at: new Date().toISOString()
-  };
-}
+// REMOVED: createFallbackAnalysis function eliminated - only real AI analysis allowed
 
 export default router;

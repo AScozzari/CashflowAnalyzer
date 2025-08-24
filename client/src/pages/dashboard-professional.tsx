@@ -227,81 +227,147 @@ function EnhancedStatsGrid({ data, isLoading, movements }: { data: any; isLoadin
   }
 
   // Calculate current month stats from filtered movements with safety checks
-  const currentMonthStats = useMemo(() => {
+  const monthlyStats = useMemo(() => {
     // Safety check: ensure movements is an array
     if (!Array.isArray(movements) || movements.length === 0) {
-      return { income: 0, expenses: 0, netFlow: 0, movementCount: 0 };
+      return {
+        current: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
+        previous: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
+        changes: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 }
+      };
     }
     
     try {
-      const income = movements
-        .filter(m => m && m.type === 'income' && m.amount)
-        .reduce((sum, m) => {
-          const amount = parseFloat(m.amount);
-          return isNaN(amount) ? sum : sum + amount;
-        }, 0);
-        
-      const expenses = movements
-        .filter(m => m && m.type === 'expense' && m.amount)
-        .reduce((sum, m) => {
-          const amount = parseFloat(m.amount);
-          return isNaN(amount) ? sum : sum + amount;
-        }, 0);
-        
-      const netFlow = income - expenses;
-      const movementCount = movements.length;
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
       
-      return { income, expenses, netFlow, movementCount };
+      const isCurrentMonth = (movement: any) => {
+        const date = new Date(movement.flowDate || movement.insertDate);
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      };
+      
+      const isPreviousMonth = (movement: any) => {
+        const date = new Date(movement.flowDate || movement.insertDate);
+        return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
+      };
+      
+      const calculateMonthStats = (filterFn: (m: any) => boolean) => {
+        const monthMovements = movements.filter(filterFn);
+        
+        const income = monthMovements
+          .filter(m => m && m.type === 'income' && m.amount)
+          .reduce((sum, m) => {
+            const amount = parseFloat(m.amount);
+            return isNaN(amount) ? sum : sum + amount;
+          }, 0);
+          
+        const expenses = monthMovements
+          .filter(m => m && m.type === 'expense' && m.amount)
+          .reduce((sum, m) => {
+            const amount = parseFloat(m.amount);
+            return isNaN(amount) ? sum : sum + amount;
+          }, 0);
+          
+        const netFlow = income - expenses;
+        const movementCount = monthMovements.length;
+        
+        return { income, expenses, netFlow, movementCount };
+      };
+      
+      const current = calculateMonthStats(isCurrentMonth);
+      const previous = calculateMonthStats(isPreviousMonth);
+      
+      const calculateChange = (currentVal: number, previousVal: number) => {
+        if (previousVal === 0) return currentVal > 0 ? 100 : 0;
+        return ((currentVal - previousVal) / previousVal) * 100;
+      };
+      
+      const changes = {
+        income: calculateChange(current.income, previous.income),
+        expenses: calculateChange(current.expenses, previous.expenses),
+        netFlow: calculateChange(current.netFlow, previous.netFlow),
+        movementCount: calculateChange(current.movementCount, previous.movementCount)
+      };
+      
+      return { current, previous, changes };
     } catch (error) {
-      console.error('Error calculating current month stats:', error);
-      return { income: 0, expenses: 0, netFlow: 0, movementCount: 0 };
+      console.error('Error calculating monthly stats:', error);
+      return {
+        current: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
+        previous: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
+        changes: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 }
+      };
     }
   }, [movements]);
+
+  const formatChange = (changePercent: number) => {
+    const sign = changePercent >= 0 ? '+' : '';
+    return `${sign}${changePercent.toFixed(1)}%`;
+  };
+  
+  const getChangeType = (changePercent: number, isExpense: boolean = false) => {
+    // For expenses, negative change is good (less spending)
+    if (isExpense) {
+      return changePercent <= 0 ? 'positive' : 'negative';
+    }
+    // For income, netflow, movements - positive change is good
+    return changePercent >= 0 ? 'positive' : 'negative';
+  };
+  
+  const calculateProgress = (currentVal: number, maxExpected: number) => {
+    if (maxExpected === 0) return 0;
+    return Math.min(100, Math.max(0, (currentVal / maxExpected) * 100));
+  };
 
   const stats = [
     {
       title: "Entrate Mese Corrente",
-      value: currentMonthStats.income,
+      value: monthlyStats.current.income,
       icon: TrendingUp,
-      change: "+12.5%",
-      changeType: "positive",
+      change: formatChange(monthlyStats.changes.income),
+      changeType: getChangeType(monthlyStats.changes.income),
       gradient: "from-emerald-500/20 via-green-500/10 to-teal-500/5",
       iconColor: "text-emerald-600",
       bgColor: "bg-gradient-to-br from-emerald-50/80 to-green-50/40 dark:from-emerald-950/50 dark:to-green-950/20",
-      progress: 85
+      progress: calculateProgress(monthlyStats.current.income, monthlyStats.current.income + monthlyStats.current.expenses || 1)
     },
     {
       title: "Uscite Mese Corrente", 
-      value: currentMonthStats.expenses,
+      value: monthlyStats.current.expenses,
       icon: TrendingDown,
-      change: "-3.2%",
-      changeType: "positive",
+      change: formatChange(monthlyStats.changes.expenses),
+      changeType: getChangeType(monthlyStats.changes.expenses, true),
       gradient: "from-blue-500/20 via-indigo-500/10 to-purple-500/5",
       iconColor: "text-blue-600",
       bgColor: "bg-gradient-to-br from-blue-50/80 to-indigo-50/40 dark:from-blue-950/50 dark:to-indigo-950/20",
-      progress: 65
+      progress: calculateProgress(monthlyStats.current.expenses, monthlyStats.current.income + monthlyStats.current.expenses || 1)
     },
     {
       title: "Cash Flow Netto",
-      value: currentMonthStats.netFlow,
+      value: monthlyStats.current.netFlow,
       icon: DollarSign,
-      change: "+8.1%",
-      changeType: "positive",
+      change: formatChange(monthlyStats.changes.netFlow),
+      changeType: getChangeType(monthlyStats.changes.netFlow),
       gradient: "from-violet-500/20 via-purple-500/10 to-indigo-500/5",
       iconColor: "text-violet-600",
       bgColor: "bg-gradient-to-br from-violet-50/80 to-purple-50/40 dark:from-violet-950/50 dark:to-purple-950/20",
-      progress: 92
+      progress: monthlyStats.current.netFlow >= 0 ? 
+        Math.min(100, Math.max(50, 50 + (monthlyStats.current.netFlow / Math.max(monthlyStats.current.income, 1)) * 50)) :
+        Math.max(0, 50 + (monthlyStats.current.netFlow / Math.max(monthlyStats.current.expenses, 1)) * 50)
     },
     {
       title: "Movimenti del Mese",
-      value: currentMonthStats.movementCount,
+      value: monthlyStats.current.movementCount,
       icon: Activity,
-      change: "+15.3%",
-      changeType: "positive",
+      change: formatChange(monthlyStats.changes.movementCount),
+      changeType: getChangeType(monthlyStats.changes.movementCount),
       gradient: "from-orange-500/20 via-amber-500/10 to-yellow-500/5",
       iconColor: "text-orange-600",
       bgColor: "bg-gradient-to-br from-orange-50/80 to-amber-50/40 dark:from-orange-950/50 dark:to-amber-950/20",
-      progress: 78,
+      progress: Math.min(100, Math.max(0, (monthlyStats.current.movementCount / Math.max(monthlyStats.previous.movementCount, 5)) * 100)),
       suffix: " operazioni"
     }
   ];
