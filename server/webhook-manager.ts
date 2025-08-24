@@ -222,7 +222,7 @@ export class WhatsAppWebhookHandler {
 
       // 5. Create notification for incoming WhatsApp
       try {
-        const { notificationService } = await import('../services/notification-service');
+        const { notificationService } = await import('./services/notification-service');
         const recipients = await notificationService.determineNotificationRecipients({
           userId: '', 
           type: 'new_whatsapp',
@@ -361,12 +361,12 @@ export class SMSWebhookHandler {
           });
           
           // Send SMS response using SMS service
-          const { smsResponseService } = await import('../services/sms-response-service');
+          const { smsResponseService } = await import('./services/sms-response-service');
           if (aiResult.response) {
             await smsResponseService.sendSMSResponse(data.from, aiResult.response);
             
             // Create notification for incoming SMS
-            const { notificationService } = await import('../services/notification-service');
+            const { notificationService } = await import('./services/notification-service');
             const recipients = await notificationService.determineNotificationRecipients({
               userId: '', 
               type: 'new_sms',
@@ -391,8 +391,8 @@ export class SMSWebhookHandler {
           }
         } else {
           // Send business hours or auto-reply
-          const { smsResponseService } = await import('../services/sms-response-service');
-          const { BusinessHoursHandler } = await import('../ai-webhook-handler');
+          const { smsResponseService } = await import('./services/sms-response-service');
+          const { BusinessHoursHandler } = await import('./ai-webhook-handler');
           
           if (!BusinessHoursHandler.isBusinessHours()) {
             await smsResponseService.sendBusinessHoursResponse(data.from);
@@ -490,7 +490,7 @@ export class EmailWebhookHandler {
           });
           
           // Send email response using Email service
-          const { emailResponseService } = await import('../services/email-response-service');
+          const { emailResponseService } = await import('./services/email-response-service');
           if (aiResult.response) {
             await emailResponseService.sendEmailResponse(
               data.from,
@@ -500,7 +500,7 @@ export class EmailWebhookHandler {
             );
             
             // Create notification for incoming Email
-            const { notificationService } = await import('../services/notification-service');
+            const { notificationService } = await import('./services/notification-service');
             const recipients = await notificationService.determineNotificationRecipients({
               userId: '', 
               type: 'new_email',
@@ -526,8 +526,8 @@ export class EmailWebhookHandler {
           }
         } else {
           // Send business hours or auto-reply
-          const { emailResponseService } = await import('../services/email-response-service');
-          const { BusinessHoursHandler } = await import('../ai-webhook-handler');
+          const { emailResponseService } = await import('./services/email-response-service');
+          const { BusinessHoursHandler } = await import('./ai-webhook-handler');
           
           if (!BusinessHoursHandler.isBusinessHours()) {
             await emailResponseService.sendBusinessHoursResponse(
@@ -631,12 +631,12 @@ export class MessengerWebhookHandler {
           });
           
           // Send Messenger response using Messenger service
-          const { messengerResponseService } = await import('../services/messenger-response-service');
+          const { messengerResponseService } = await import('./services/messenger-response-service');
           if (aiResult.response) {
             await messengerResponseService.sendMessengerResponse(data.senderId, aiResult.response);
             
             // Create notification for incoming Messenger
-            const { notificationService } = await import('../services/notification-service');
+            const { notificationService } = await import('./services/notification-service');
             const recipients = await notificationService.determineNotificationRecipients({
               userId: '', 
               type: 'new_messenger',
@@ -662,8 +662,8 @@ export class MessengerWebhookHandler {
           }
         } else {
           // Send business hours or auto-reply
-          const { messengerResponseService } = await import('../services/messenger-response-service');
-          const { BusinessHoursHandler } = await import('../ai-webhook-handler');
+          const { messengerResponseService } = await import('./services/messenger-response-service');
+          const { BusinessHoursHandler } = await import('./ai-webhook-handler');
           
           if (!BusinessHoursHandler.isBusinessHours()) {
             await messengerResponseService.sendBusinessHoursResponse(data.senderId);
