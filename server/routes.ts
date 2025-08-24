@@ -2982,7 +2982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Update theme settings
-  app.put("/api/themes/settings", requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/themes/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const settings = await storage.updateThemesSettings(req.body);
       res.json(settings);
