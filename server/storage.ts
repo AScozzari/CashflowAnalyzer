@@ -7,6 +7,7 @@ import {
   documentAnalysis,
   fiscalAiConversations, fiscalAiMessages,
   databaseSettings, localizationSettings, documentsSettings, themesSettings,
+  backupConfigurations, backupJobs, restorePoints, backupAuditLog,
   type Company, type InsertCompany,
   type Core, type InsertCore,
   type Resource, type InsertResource,
