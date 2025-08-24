@@ -2776,6 +2776,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // === ENTITY EXPLORER ENDPOINTS ===
+
+  // Search entities (suppliers, customers, resources)
+  app.post("/api/search/entities", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { query } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.json([]);
+      }
+      
+      const searchTerm = query.toLowerCase().trim();
+      if (searchTerm.length < 2) {
+        return res.json([]);
+      }
+      
+      const results: any[] = [];
+      
+      // Search companies (as suppliers)
+      const companiesData = await storage.getCompanies();
+      companiesData.forEach(company => {
+        if (company.name.toLowerCase().includes(searchTerm) || 
+            company.vatNumber?.toLowerCase().includes(searchTerm) ||
+            company.fiscalCode?.toLowerCase().includes(searchTerm)) {
+          results.push({
+            id: company.id,
+            name: company.name,
+            type: 'supplier',
+            subtitle: `P.IVA: ${company.vatNumber || 'N/A'} • Codice Fiscale: ${company.fiscalCode || 'N/A'}`,
+            status: company.status
+          });
+        }
+      });
+      
+      // Search suppliers 
+      const suppliersData = await storage.getSuppliers();
+      suppliersData.forEach(supplier => {
+        if (supplier.name.toLowerCase().includes(searchTerm) ||
+            supplier.vatNumber?.toLowerCase().includes(searchTerm) ||
+            supplier.email?.toLowerCase().includes(searchTerm)) {
+          results.push({
+            id: supplier.id,
+            name: supplier.name,
+            type: 'supplier',
+            subtitle: `${supplier.email || 'Nessuna email'} • P.IVA: ${supplier.vatNumber || 'N/A'}`,
+            status: supplier.isActive ? 'Attivo' : 'Inattivo'
+          });
+        }
+      });
+      
+      // Search customers
+      const customersData = await storage.getCustomers();
+      customersData.forEach(customer => {
+        if (customer.name.toLowerCase().includes(searchTerm) ||
+            customer.email?.toLowerCase().includes(searchTerm) ||
+            customer.phone?.toLowerCase().includes(searchTerm)) {
+          results.push({
+            id: customer.id,
+            name: customer.name,
+            type: 'customer',
+            subtitle: `${customer.email || 'Nessuna email'} • Tel: ${customer.phone || 'N/A'}`,
+            status: customer.isActive ? 'Attivo' : 'Inattivo'
+          });
+        }
+      });
+      
+      // Search resources
+      const resourcesData = await storage.getResources();
+      resourcesData.forEach(resource => {
+        if (resource.name.toLowerCase().includes(searchTerm) ||
+            resource.email?.toLowerCase().includes(searchTerm) ||
+            resource.role?.toLowerCase().includes(searchTerm)) {
+          results.push({
+            id: resource.id,
+            name: resource.name,
+            type: 'resource',
+            subtitle: `${resource.email || 'Nessuna email'} • Ruolo: ${resource.role || 'N/A'}`,
+            status: resource.isActive ? 'Attivo' : 'Inattivo'
+          });
+        }
+      });
+      
+      console.log(`[ENTITY SEARCH] Query: "${query}" - Found ${results.length} results`);
+      res.json(results);
+      
+    } catch (error) {
+      console.error('Error searching entities:', error);
+      res.status(500).json({ message: "Failed to search entities" });
+    }
+  }));
+
+  // Get entity details by ID and type
+  app.get("/api/entities/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { id } = req.params;
+      const { type } = req.query;
+      
+      if (!type || !['supplier', 'customer', 'resource'].includes(type)) {
+        return res.status(400).json({ message: "Invalid entity type" });
+      }
+      
+      let entity = null;
+      let entityType = type;
+      
+      // Get entity based on type
+      if (type === 'supplier') {
+        // Try suppliers first, then companies
+        entity = await storage.getSupplier(id);
+        if (!entity) {
+          entity = await storage.getCompany(id);
+          if (entity) entityType = 'supplier'; // Company as supplier
+        }
+      } else if (type === 'customer') {
+        entity = await storage.getCustomer(id);
+      } else if (type === 'resource') {
+        entity = await storage.getResource(id);
+      }
+      
+      if (!entity) {
+        return res.status(404).json({ message: "Entity not found" });
+      }
+      
+      // Get related movements
+      const allMovements = await storage.getMovements();
+      let relatedMovements = [];
+      
+      if (type === 'supplier') {
+        relatedMovements = allMovements.filter(m => 
+          m.supplierId === id || m.companyId === id
+        );
+      } else if (type === 'customer') {
+        relatedMovements = allMovements.filter(m => m.customerId === id);
+      } else if (type === 'resource') {
+        relatedMovements = allMovements.filter(m => m.resourceId === id);
+      }
+      
+      // Calculate stats
+      const totalMovements = relatedMovements.length;
+      const totalAmount = relatedMovements.reduce((sum, m) => sum + (m.amount || 0), 0);
+      const lastActivity = relatedMovements.length > 0 
+        ? new Date(Math.max(...relatedMovements.map(m => new Date(m.insertDate || m.date).getTime()))).toISOString()
+        : new Date().toISOString();
+      const averageAmount = totalMovements > 0 ? totalAmount / totalMovements : 0;
+      
+      const entityDetails = {
+        entity,
+        type: entityType,
+        movements: relatedMovements,
+        communications: {
+          whatsapp: [], // TODO: Get from WhatsApp table
+          email: [], // TODO: Get from email logs
+          sms: [] // TODO: Get from SMS table
+        },
+        stats: {
+          totalMovements,
+          totalAmount,
+          lastActivity,
+          averageAmount
+        }
+      };
+      
+      console.log(`[ENTITY DETAILS] Entity ${id} (${type}) - ${totalMovements} movements, €${totalAmount.toFixed(2)}`);
+      res.json(entityDetails);
+      
+    } catch (error) {
+      console.error('Error fetching entity details:', error);
+      res.status(500).json({ message: "Failed to fetch entity details" });
+    }
+  }));
+
   // Create and return HTTP server
   const httpServer = createServer(app);
   return httpServer;
