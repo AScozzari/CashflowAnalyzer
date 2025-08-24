@@ -607,6 +607,7 @@ export default function NotificationsSettings() {
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="sms">SMS</SelectItem>
                     <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="telegram">Telegram</SelectItem>
                     <SelectItem value="push">Push</SelectItem>
                     <SelectItem value="webhook">Webhook</SelectItem>
                   </SelectContent>
