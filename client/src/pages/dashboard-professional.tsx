@@ -199,7 +199,13 @@ function DashboardChart({ title, subtitle, movements, isLoading, type }: {
 }
 
 // Enhanced Stats Cards with gradients and animations
-function EnhancedStatsGrid({ data, isLoading, movements }: { data: any; isLoading: boolean; movements: MovementWithRelations[] }) {
+function EnhancedStatsGrid({ data, isLoading, movements, monthlyStats, formatChange }: { 
+  data: any; 
+  isLoading: boolean; 
+  movements: MovementWithRelations[];
+  monthlyStats: any;
+  formatChange: (changePercent: number) => string;
+}) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
@@ -226,88 +232,6 @@ function EnhancedStatsGrid({ data, isLoading, movements }: { data: any; isLoadin
     );
   }
 
-  // Calculate current month stats from filtered movements with safety checks
-  const monthlyStats = useMemo(() => {
-    // Safety check: ensure movements is an array
-    if (!Array.isArray(movements) || movements.length === 0) {
-      return {
-        current: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
-        previous: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
-        changes: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 }
-      };
-    }
-    
-    try {
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-      
-      const isCurrentMonth = (movement: any) => {
-        const date = new Date(movement.flowDate || movement.insertDate);
-        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-      };
-      
-      const isPreviousMonth = (movement: any) => {
-        const date = new Date(movement.flowDate || movement.insertDate);
-        return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
-      };
-      
-      const calculateMonthStats = (filterFn: (m: any) => boolean) => {
-        const monthMovements = movements.filter(filterFn);
-        
-        const income = monthMovements
-          .filter(m => m && m.type === 'income' && m.amount)
-          .reduce((sum, m) => {
-            const amount = parseFloat(m.amount);
-            return isNaN(amount) ? sum : sum + amount;
-          }, 0);
-          
-        const expenses = monthMovements
-          .filter(m => m && m.type === 'expense' && m.amount)
-          .reduce((sum, m) => {
-            const amount = parseFloat(m.amount);
-            return isNaN(amount) ? sum : sum + amount;
-          }, 0);
-          
-        const netFlow = income - expenses;
-        const movementCount = monthMovements.length;
-        
-        return { income, expenses, netFlow, movementCount };
-      };
-      
-      const current = calculateMonthStats(isCurrentMonth);
-      const previous = calculateMonthStats(isPreviousMonth);
-      
-      const calculateChange = (currentVal: number, previousVal: number) => {
-        if (previousVal === 0) return currentVal > 0 ? 100 : 0;
-        return ((currentVal - previousVal) / previousVal) * 100;
-      };
-      
-      const changes = {
-        income: calculateChange(current.income, previous.income),
-        expenses: calculateChange(current.expenses, previous.expenses),
-        netFlow: calculateChange(current.netFlow, previous.netFlow),
-        movementCount: calculateChange(current.movementCount, previous.movementCount)
-      };
-      
-      return { current, previous, changes };
-    } catch (error) {
-      console.error('Error calculating monthly stats:', error);
-      return {
-        current: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
-        previous: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
-        changes: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 }
-      };
-    }
-  }, [movements]);
-
-  const formatChange = (changePercent: number) => {
-    const sign = changePercent >= 0 ? '+' : '';
-    return `${sign}${changePercent.toFixed(1)}%`;
-  };
-  
   const getChangeType = (changePercent: number, isExpense: boolean = false) => {
     // For expenses, negative change is good (less spending)
     if (isExpense) {
@@ -850,6 +774,88 @@ export default function DashboardProfessional() {
     }
   }, [movementsData, currentMonth, currentYear]);
 
+  // Calculate current month stats from filtered movements with safety checks
+  const monthlyStats = useMemo(() => {
+    // Safety check: ensure movements is an array
+    if (!Array.isArray(movements) || movements.length === 0) {
+      return {
+        current: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
+        previous: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
+        changes: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 }
+      };
+    }
+    
+    try {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+      
+      const isCurrentMonth = (movement: any) => {
+        const date = new Date(movement.flowDate || movement.insertDate);
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      };
+      
+      const isPreviousMonth = (movement: any) => {
+        const date = new Date(movement.flowDate || movement.insertDate);
+        return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
+      };
+      
+      const calculateMonthStats = (filterFn: (m: any) => boolean) => {
+        const monthMovements = movements.filter(filterFn);
+        
+        const income = monthMovements
+          .filter(m => m && m.type === 'income' && m.amount)
+          .reduce((sum, m) => {
+            const amount = parseFloat(m.amount);
+            return isNaN(amount) ? sum : sum + amount;
+          }, 0);
+          
+        const expenses = monthMovements
+          .filter(m => m && m.type === 'expense' && m.amount)
+          .reduce((sum, m) => {
+            const amount = parseFloat(m.amount);
+            return isNaN(amount) ? sum : sum + amount;
+          }, 0);
+          
+        const netFlow = income - expenses;
+        const movementCount = monthMovements.length;
+        
+        return { income, expenses, netFlow, movementCount };
+      };
+      
+      const current = calculateMonthStats(isCurrentMonth);
+      const previous = calculateMonthStats(isPreviousMonth);
+      
+      const calculateChange = (currentVal: number, previousVal: number) => {
+        if (previousVal === 0) return currentVal > 0 ? 100 : 0;
+        return ((currentVal - previousVal) / previousVal) * 100;
+      };
+      
+      const changes = {
+        income: calculateChange(current.income, previous.income),
+        expenses: calculateChange(current.expenses, previous.expenses),
+        netFlow: calculateChange(current.netFlow, previous.netFlow),
+        movementCount: calculateChange(current.movementCount, previous.movementCount)
+      };
+      
+      return { current, previous, changes };
+    } catch (error) {
+      console.error('Error calculating monthly stats:', error);
+      return {
+        current: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
+        previous: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 },
+        changes: { income: 0, expenses: 0, netFlow: 0, movementCount: 0 }
+      };
+    }
+  }, [movements]);
+
+  const formatChange = (changePercent: number) => {
+    const sign = changePercent >= 0 ? '+' : '';
+    return `${sign}${changePercent.toFixed(1)}%`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-blue-950/30 dark:to-indigo-950/20">
       <Header 
@@ -862,7 +868,13 @@ export default function DashboardProfessional() {
         <InstallPrompt />
         
         {/* Enhanced Stats Grid - Current Month Only */}
-        <EnhancedStatsGrid data={statsData} isLoading={statsLoading} movements={movements} />
+        <EnhancedStatsGrid 
+          data={statsData} 
+          isLoading={statsLoading} 
+          movements={movements} 
+          monthlyStats={monthlyStats}
+          formatChange={formatChange}
+        />
         
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
