@@ -786,7 +786,6 @@ function QuickActionsWidget({ onOpenNewMovement }: { onOpenNewMovement: () => vo
   );
 }
 
-// FORCE CACHE REFRESH - v2.0
 export default function DashboardProfessional() {
   const [, setLocation] = useLocation();
   const [isNewMovementModalOpen, setIsNewMovementModalOpen] = useState(false);
@@ -963,4 +962,4 @@ export default function DashboardProfessional() {
       <FooterSignature />
     </div>
   );
-}/* CACHE_CLEAR_1756066752 */
+}
