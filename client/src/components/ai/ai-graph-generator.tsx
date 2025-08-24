@@ -60,16 +60,40 @@ const CHART_TYPES = [
   { value: 'scatter', label: 'Grafico a Dispersione', icon: BarChart3 }
 ];
 
-const PRESET_QUERIES = [
-  "Andamento delle entrate e uscite negli ultimi 6 mesi",
-  "Distribuzione dei movimenti per categoria",
-  "Confronto performance tra core business",
-  "Trend stagionale delle transazioni",
-  "Analisi fornitori per volume di spesa",
-  "Evoluzione del cashflow nel tempo",
-  "Ripartizione geografica delle aziende clienti",
-  "Correlazione tra IVA e importi totali"
-];
+// Query generate dinamicamente basate sui dati reali del database
+const generateDynamicQueries = (movements: any[], companies: any[], suppliers: any[]) => {
+  const baseQueries = [
+    "Andamento delle entrate e uscite negli ultimi 6 mesi",
+    "Evoluzione del cashflow nel tempo",
+    "Distribuzione dei movimenti per categoria"
+  ];
+
+  const dynamicQueries = [];
+  
+  // Aggiungi query basate sui dati reali
+  if (movements?.length > 0) {
+    const categories = [...new Set(movements.map(m => m.category).filter(Boolean))];
+    if (categories.length > 0) {
+      dynamicQueries.push(`Analisi per categoria: ${categories.slice(0, 3).join(', ')}`);
+    }
+
+    const types = [...new Set(movements.map(m => m.type).filter(Boolean))];
+    if (types.length > 1) {
+      dynamicQueries.push("Confronto entrate vs uscite per periodo");
+    }
+  }
+
+  if (companies?.length > 0) {
+    dynamicQueries.push(`Performance delle ${companies.length} aziende registrate`);
+    dynamicQueries.push("Ripartizione geografica delle aziende clienti");
+  }
+
+  if (suppliers?.length > 0) {
+    dynamicQueries.push(`Analisi dei ${suppliers.length} fornitori per volume di spesa`);
+  }
+
+  return [...baseQueries, ...dynamicQueries].slice(0, 8);
+};
 
 const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'];
 
@@ -79,6 +103,28 @@ export function AIGraphGenerator({ onChartGenerated, dataSource = 'all' }: AIGra
   const [generatedCharts, setGeneratedCharts] = useState<ChartConfig[]>([]);
   const [viewingChart, setViewingChart] = useState<ChartConfig | null>(null);
   const { toast } = useToast();
+
+  // Fetch dati reali per generare query dinamiche
+  const { data: movements = [] } = useQuery({
+    queryKey: ['/api/movements'],
+    staleTime: 5 * 60 * 1000,
+    enabled: dataSource === 'all' || dataSource === 'movements'
+  });
+
+  const { data: companies = [] } = useQuery({
+    queryKey: ['/api/companies'],
+    staleTime: 5 * 60 * 1000,
+    enabled: dataSource === 'all' || dataSource === 'companies'
+  });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['/api/suppliers'],
+    staleTime: 5 * 60 * 1000,
+    enabled: dataSource === 'all'
+  });
+
+  // Genera preset queries dinamici basati sui dati reali
+  const PRESET_QUERIES = generateDynamicQueries(movements, companies, suppliers);
 
   // Generate chart mutation
   const generateChartMutation = useMutation({

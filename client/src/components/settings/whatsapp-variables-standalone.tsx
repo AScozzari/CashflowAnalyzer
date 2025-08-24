@@ -12,43 +12,54 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Sistema standalone che non dipende dal server
-const DEMO_VARIABLES = {
-  customer: [
-    { key: 'customer.name', label: 'Nome Cliente', type: 'text', example: 'Mario Rossi' },
-    { key: 'customer.email', label: 'Email Cliente', type: 'email', example: 'mario.rossi@email.it' },
-    { key: 'customer.phone', label: 'Telefono Cliente', type: 'phone', example: '+39 333 1234567' },
-    { key: 'customer.address', label: 'Indirizzo Cliente', type: 'text', example: 'Via Verdi 78, Torino' },
-    { key: 'customer.vat', label: 'Partita IVA Cliente', type: 'text', example: 'IT11223344556' }
-  ],
-  company: [
-    { key: 'company.name', label: 'Nome Azienda', type: 'text', example: 'EasyFlows S.r.l.' },
-    { key: 'company.email', label: 'Email Azienda', type: 'email', example: 'info@easyflows.it' },
-    { key: 'company.phone', label: 'Telefono Azienda', type: 'phone', example: '+39 02 1234567' },
-    { key: 'company.address', label: 'Indirizzo Azienda', type: 'text', example: 'Via Roma 123, Milano' },
-    { key: 'company.vat', label: 'Partita IVA Azienda', type: 'text', example: 'IT12345678901' }
-  ],
-  movement: [
-    { key: 'movement.amount', label: 'Importo Movimento', type: 'currency', example: '€1.250,00' },
-    { key: 'movement.description', label: 'Descrizione Movimento', type: 'text', example: 'Fattura servizi consulenza' },
-    { key: 'movement.date', label: 'Data Movimento', type: 'date', example: '15/03/2024' },
-    { key: 'movement.type', label: 'Tipo Movimento', type: 'text', example: 'Entrata' },
-    { key: 'movement.category', label: 'Categoria Movimento', type: 'text', example: 'Servizi' }
-  ],
-  supplier: [
-    { key: 'supplier.name', label: 'Nome Fornitore', type: 'text', example: 'Fornitore TechCorp' },
-    { key: 'supplier.email', label: 'Email Fornitore', type: 'email', example: 'orders@techcorp.it' },
-    { key: 'supplier.phone', label: 'Telefono Fornitore', type: 'phone', example: '+39 02 8887766' },
-    { key: 'supplier.address', label: 'Indirizzo Fornitore', type: 'text', example: 'Via Industria 12, Milano' },
-    { key: 'supplier.vat', label: 'Partita IVA Fornitore', type: 'text', example: 'IT77889900112' }
-  ],
-  system: [
-    { key: 'system.current_date', label: 'Data Corrente', type: 'date', example: new Date().toLocaleDateString('it-IT') },
-    { key: 'system.company_name', label: 'Nome Sistema', type: 'text', example: 'EasyCashFlows' },
-    { key: 'system.year', label: 'Anno Corrente', type: 'text', example: new Date().getFullYear().toString() },
-    { key: 'system.month', label: 'Mese Corrente', type: 'text', example: new Date().toLocaleDateString('it-IT', { month: 'long' }) }
-  ]
-};
+// Sistema completamente collegato al database reale
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+
+// Genera esempi dinamici basati sui dati reali del database
+function generateRealVariables(customers: any[], companies: any[], movements: any[], suppliers: any[]) {
+  const sampleCustomer = customers[0];
+  const sampleCompany = companies[0]; 
+  const sampleMovement = movements[0];
+  const sampleSupplier = suppliers[0];
+
+  return {
+    customer: [
+      { key: 'customer.name', label: 'Nome Cliente', type: 'text', example: sampleCustomer?.name || 'Nessun cliente' },
+      { key: 'customer.email', label: 'Email Cliente', type: 'email', example: sampleCustomer?.email || 'email@example.it' },
+      { key: 'customer.phone', label: 'Telefono Cliente', type: 'phone', example: sampleCustomer?.phone || '+39 333 0000000' },
+      { key: 'customer.address', label: 'Indirizzo Cliente', type: 'text', example: sampleCustomer?.address || 'Indirizzo non disponibile' },
+      { key: 'customer.vat', label: 'Partita IVA Cliente', type: 'text', example: sampleCustomer?.vatNumber || 'P.IVA non disponibile' }
+    ],
+    company: [
+      { key: 'company.name', label: 'Nome Azienda', type: 'text', example: sampleCompany?.name || 'Azienda non disponibile' },
+      { key: 'company.email', label: 'Email Azienda', type: 'email', example: sampleCompany?.email || 'email@azienda.it' },
+      { key: 'company.phone', label: 'Telefono Azienda', type: 'phone', example: sampleCompany?.phone || '+39 02 0000000' },
+      { key: 'company.address', label: 'Indirizzo Azienda', type: 'text', example: sampleCompany?.address || 'Indirizzo non disponibile' },
+      { key: 'company.vat', label: 'Partita IVA Azienda', type: 'text', example: sampleCompany?.vatNumber || 'P.IVA non disponibile' }
+    ],
+    movement: [
+      { key: 'movement.amount', label: 'Importo Movimento', type: 'currency', example: sampleMovement ? `€${parseFloat(sampleMovement.amount || '0').toLocaleString('it-IT')}` : '€0,00' },
+      { key: 'movement.description', label: 'Descrizione Movimento', type: 'text', example: sampleMovement?.description || 'Nessuna descrizione' },
+      { key: 'movement.date', label: 'Data Movimento', type: 'date', example: sampleMovement?.flowDate ? new Date(sampleMovement.flowDate).toLocaleDateString('it-IT') : new Date().toLocaleDateString('it-IT') },
+      { key: 'movement.type', label: 'Tipo Movimento', type: 'text', example: sampleMovement?.type === 'income' ? 'Entrata' : sampleMovement?.type === 'expense' ? 'Uscita' : 'Tipo non disponibile' },
+      { key: 'movement.category', label: 'Categoria Movimento', type: 'text', example: sampleMovement?.category || 'Categoria non disponibile' }
+    ],
+    supplier: [
+      { key: 'supplier.name', label: 'Nome Fornitore', type: 'text', example: sampleSupplier?.name || 'Nessun fornitore' },
+      { key: 'supplier.email', label: 'Email Fornitore', type: 'email', example: sampleSupplier?.email || 'email@fornitore.it' },
+      { key: 'supplier.phone', label: 'Telefono Fornitore', type: 'phone', example: sampleSupplier?.phone || '+39 02 0000000' },
+      { key: 'supplier.address', label: 'Indirizzo Fornitore', type: 'text', example: sampleSupplier?.address || 'Indirizzo non disponibile' },
+      { key: 'supplier.vat', label: 'Partita IVA Fornitore', type: 'text', example: sampleSupplier?.vatNumber || 'P.IVA non disponibile' }
+    ],
+    system: [
+      { key: 'system.current_date', label: 'Data Corrente', type: 'date', example: new Date().toLocaleDateString('it-IT') },
+      { key: 'system.company_name', label: 'Nome Sistema', type: 'text', example: 'EasyCashFlows' },
+      { key: 'system.year', label: 'Anno Corrente', type: 'text', example: new Date().getFullYear().toString() },
+      { key: 'system.month', label: 'Mese Corrente', type: 'text', example: new Date().toLocaleDateString('it-IT', { month: 'long' }) }
+    ]
+  };
+}
 
 interface VariableMapping {
   placeholder: string;
@@ -69,8 +80,34 @@ export function WhatsAppVariablesStandalone() {
     { placeholder: '{3}', dynamicVariable: '', label: '', type: 'text' }
   ]);
 
+  // Fetch dati reali dal database
+  const { data: customers = [], isLoading: customersLoading } = useQuery({
+    queryKey: ['/api/customers'],
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: companies = [], isLoading: companiesLoading } = useQuery({
+    queryKey: ['/api/companies'],
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: movements = [], isLoading: movementsLoading } = useQuery({
+    queryKey: ['/api/movements'],
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: suppliers = [], isLoading: suppliersLoading } = useQuery({
+    queryKey: ['/api/suppliers'],
+    staleTime: 5 * 60 * 1000
+  });
+
+  const isLoading = customersLoading || companiesLoading || movementsLoading || suppliersLoading;
+
+  // Genera variabili dinamiche basate sui dati reali
+  const REAL_VARIABLES = generateRealVariables(customers, companies, movements, suppliers);
+
   // Ottieni tutte le variabili in formato flat
-  const allVariables = Object.entries(DEMO_VARIABLES).flatMap(([category, variables]) =>
+  const allVariables = Object.entries(REAL_VARIABLES).flatMap(([category, variables]) =>
     variables.map(v => ({
       ...v,
       category,

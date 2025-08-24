@@ -12,56 +12,62 @@ import {
   CheckCircle, AlertCircle, Lightbulb 
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
-// Variabili organizzate per categoria
-const VARIABLE_CATEGORIES = {
-  customer: {
-    title: 'Cliente',
-    description: 'Dati del cliente (fatturazione, contatti)',
-    variables: [
-      { key: 'customer.name', label: 'Nome Cliente', example: 'Mario Rossi' },
-      { key: 'customer.email', label: 'Email Cliente', example: 'mario@email.it' },
-      { key: 'customer.phone', label: 'Telefono Cliente', example: '+39 333 1234567' },
-      { key: 'customer.company', label: 'Azienda Cliente', example: 'Rossi S.r.l.' },
-      { key: 'customer.address', label: 'Indirizzo Cliente', example: 'Via Roma 123, Milano' }
-    ]
-  },
-  company: {
-    title: 'Azienda',
-    description: 'Dati della tua azienda (mittente)',
-    variables: [
-      { key: 'company.name', label: 'Nome Azienda', example: 'La Mia Azienda S.r.l.' },
-      { key: 'company.email', label: 'Email Azienda', example: 'info@azienda.it' },
-      { key: 'company.phone', label: 'Telefono Azienda', example: '+39 02 1234567' },
-      { key: 'company.address', label: 'Indirizzo Azienda', example: 'Via Verdi 456, Roma' },
-      { key: 'company.vat', label: 'Partita IVA', example: 'IT12345678901' }
-    ]
-  },
-  movement: {
-    title: 'Movimento Finanziario',
-    description: 'Dati del movimento/fattura/pagamento',
-    variables: [
-      { key: 'movement.amount', label: 'Importo', example: '€1.250,00' },
-      { key: 'movement.description', label: 'Descrizione', example: 'Fattura servizi consulenza' },
-      { key: 'movement.date', label: 'Data Movimento', example: '15/03/2024' },
-      { key: 'movement.dueDate', label: 'Data Scadenza', example: '30/03/2024' },
-      { key: 'movement.invoiceNumber', label: 'Numero Fattura', example: 'FT-2024-001' }
-    ]
-  },
-  system: {
-    title: 'Sistema',
-    description: 'Dati automatici del sistema',
-    variables: [
-      { key: 'system.date', label: 'Data Oggi', example: new Date().toLocaleDateString('it-IT') },
-      { key: 'system.time', label: 'Ora Attuale', example: new Date().toLocaleTimeString('it-IT') },
-      { key: 'system.year', label: 'Anno Corrente', example: new Date().getFullYear().toString() },
-      { key: 'system.month', label: 'Mese Corrente', example: new Date().toLocaleDateString('it-IT', { month: 'long' }) }
-    ]
-  }
-};
+// Genera categorie dinamiche basate sui dati reali del database
+function generateRealVariableCategories(customers: any[], companies: any[], movements: any[]) {
+  const sampleCustomer = customers[0];
+  const sampleCompany = companies[0];
+  const sampleMovement = movements[0];
 
-// Lista piatta per compatibilità
-const AVAILABLE_VARIABLES = Object.values(VARIABLE_CATEGORIES).flatMap(category => category.variables);
+  return {
+    customer: {
+      title: 'Cliente',
+      description: 'Dati del cliente (fatturazione, contatti)',
+      variables: [
+        { key: 'customer.name', label: 'Nome Cliente', example: sampleCustomer?.name || 'Nessun cliente' },
+        { key: 'customer.email', label: 'Email Cliente', example: sampleCustomer?.email || 'email@cliente.it' },
+        { key: 'customer.phone', label: 'Telefono Cliente', example: sampleCustomer?.phone || '+39 333 0000000' },
+        { key: 'customer.company', label: 'Azienda Cliente', example: sampleCustomer?.companyName || 'Azienda cliente' },
+        { key: 'customer.address', label: 'Indirizzo Cliente', example: sampleCustomer?.address || 'Indirizzo non disponibile' }
+      ]
+    },
+    company: {
+      title: 'Azienda',
+      description: 'Dati della tua azienda (mittente)',
+      variables: [
+        { key: 'company.name', label: 'Nome Azienda', example: sampleCompany?.name || 'La Mia Azienda' },
+        { key: 'company.email', label: 'Email Azienda', example: sampleCompany?.email || 'info@azienda.it' },
+        { key: 'company.phone', label: 'Telefono Azienda', example: sampleCompany?.phone || '+39 02 0000000' },
+        { key: 'company.address', label: 'Indirizzo Azienda', example: sampleCompany?.address || 'Indirizzo non disponibile' },
+        { key: 'company.vat', label: 'Partita IVA', example: sampleCompany?.vatNumber || 'P.IVA non disponibile' }
+      ]
+    },
+    movement: {
+      title: 'Movimento Finanziario',
+      description: 'Dati del movimento/fattura/pagamento',
+      variables: [
+        { key: 'movement.amount', label: 'Importo', example: sampleMovement ? `€${parseFloat(sampleMovement.amount || '0').toLocaleString('it-IT')}` : '€0,00' },
+        { key: 'movement.description', label: 'Descrizione', example: sampleMovement?.description || 'Movimento non disponibile' },
+        { key: 'movement.date', label: 'Data Movimento', example: sampleMovement?.flowDate ? new Date(sampleMovement.flowDate).toLocaleDateString('it-IT') : new Date().toLocaleDateString('it-IT') },
+        { key: 'movement.dueDate', label: 'Data Scadenza', example: sampleMovement?.dueDate ? new Date(sampleMovement.dueDate).toLocaleDateString('it-IT') : 'Non definita' },
+        { key: 'movement.invoiceNumber', label: 'Numero Fattura', example: sampleMovement?.invoiceNumber || 'Numero non disponibile' }
+      ]
+    },
+    system: {
+      title: 'Sistema',
+      description: 'Dati automatici del sistema',
+      variables: [
+        { key: 'system.date', label: 'Data Oggi', example: new Date().toLocaleDateString('it-IT') },
+        { key: 'system.time', label: 'Ora Attuale', example: new Date().toLocaleTimeString('it-IT') },
+        { key: 'system.year', label: 'Anno Corrente', example: new Date().getFullYear().toString() },
+        { key: 'system.month', label: 'Mese Corrente', example: new Date().toLocaleDateString('it-IT', { month: 'long' }) }
+      ]
+    }
+  };
+}
+
+// Ora le variabili sono generate dinamicamente nel componente
 
 interface Mapping {
   old: string;
@@ -76,6 +82,28 @@ export function WhatsAppVariablesSimple() {
   const [previewResult, setPreviewResult] = useState('');
   const [copiedVariable, setCopiedVariable] = useState<string>('');
   const [selectedVariables, setSelectedVariables] = useState<string[]>([]);
+  
+  // Fetch dati reali dal database
+  const { data: customers = [], isLoading: customersLoading } = useQuery({
+    queryKey: ['/api/customers'],
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: companies = [], isLoading: companiesLoading } = useQuery({
+    queryKey: ['/api/companies'],
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: movements = [], isLoading: movementsLoading } = useQuery({
+    queryKey: ['/api/movements'],
+    staleTime: 5 * 60 * 1000
+  });
+
+  const isLoading = customersLoading || companiesLoading || movementsLoading;
+
+  // Genera categorie dinamiche
+  const VARIABLE_CATEGORIES = generateRealVariableCategories(customers, companies, movements);
+  const AVAILABLE_VARIABLES = Object.values(VARIABLE_CATEGORIES).flatMap(category => category.variables);
   
   // Mapping semplificato
   const [mappings, setMappings] = useState<Mapping[]>([
