@@ -2,13 +2,13 @@
 import { storage } from '../storage';
 import type { WhatsappSettings, WhatsappTemplate } from '../shared/schema';
 
-// Twilio 2024 API Configuration
+// Twilio API Configuration
 export interface TwilioConfig {
   accountSid: string;
   authToken: string;
-  apiVersion: '2024-09-01'; // Latest Twilio API version
+  apiVersion: '2010-04-01'; // 🔥 FIX: Twilio API version corretta
   baseUrl: 'https://api.twilio.com';
-  messagingServiceSid?: string; // New Twilio Messaging Service
+  messagingServiceSid?: string; // Twilio Messaging Service
 }
 
 // LinkMobility Configuration
@@ -81,7 +81,7 @@ export class WhatsAppService {
       return {
         accountSid: this.settings.accountSid!,
         authToken: this.settings.authToken!,
-        apiVersion: '2024-09-01',
+        apiVersion: '2010-04-01', // 🔥 FIX: Versione API Twilio corretta
         baseUrl: 'https://api.twilio.com',
         messagingServiceSid: (this.settings as any).messagingServiceSid
       } as TwilioConfig;
