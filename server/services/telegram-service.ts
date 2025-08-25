@@ -619,7 +619,7 @@ Nel frattempo puoi:
           messageType: message.text ? 'text' : 'other',
           isAiGenerated: false,
           delivered: true,
-          readStatus: 'unread'
+          readStatus: 'unread' // ✅ Text field: 'unread', 'read', 'delivered'
         });
         console.log(`[TELEGRAM SERVICE] ✅ Messaggio salvato: ${message.text?.substring(0, 50)}...`);
       } catch (msgError) {
