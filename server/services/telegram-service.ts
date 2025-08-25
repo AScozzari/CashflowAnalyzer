@@ -614,7 +614,7 @@ Nel frattempo puoi:
           chatId: existingChat?.id || chatId, // Use internal UUID if available
           telegramMessageId: message.message_id,
           content: message.text || 'Contenuto non disponibile',
-          direction: 'incoming',
+          direction: 'inbound',
           fromUser: message.from.username || `${message.from.first_name} ${message.from.last_name || ''}`.trim(),
           messageType: message.text ? 'text' : 'other',
           isAiGenerated: false,
