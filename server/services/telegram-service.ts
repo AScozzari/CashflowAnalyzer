@@ -1,5 +1,6 @@
 // Telegram Bot Service - Professional Implementation
 import { storage } from '../storage';
+import { aiService } from '../ai-service';
 
 export interface TelegramSettings {
   botToken: string;
@@ -350,8 +351,8 @@ export class TelegramService {
 
     // AI Response (if enabled)
     if (this.settings?.enableAiResponses) {
-      // TODO: Implement AI response using OpenAI service
-      console.log('AI responses not yet implemented');
+      console.log('🤖 Generando risposta AI...');
+      await this.generateAiResponse(chatId, text);
     }
   }
 
@@ -619,7 +620,7 @@ Nel frattempo puoi:
           messageType: message.text ? 'text' : 'other',
           isAiGenerated: false,
           delivered: true,
-          readStatus: false // ✅ Boolean: false = unread, true = read
+          readStatus: 'unread' // ✅ String: 'unread' = non letto, 'read' = letto
         });
         console.log(`[TELEGRAM SERVICE] ✅ Messaggio salvato: ${message.text?.substring(0, 50)}...`);
       } catch (msgError) {
@@ -641,6 +642,67 @@ Nel frattempo puoi:
 
   getSettings(): TelegramSettings | null {
     return this.settings;
+  }
+
+  private async generateAiResponse(chatId: number, userMessage: string): Promise<void> {
+    try {
+      console.log('[TELEGRAM AI] 🤖 Generating AI response...');
+      
+      // Use the existing AI service for chat completion
+      const sessionId = `telegram_${chatId}_${Date.now()}`;
+      
+      const result = await aiService.chatCompletion(
+        'b3bbda10-f9cf-4efe-a0f0-13154db55e93', // Use admin user for telegram responses
+        userMessage,
+        sessionId,
+        {
+          channel: 'telegram',
+          chatId: chatId,
+          source: 'telegram_bot'
+        },
+        'gpt-4o' // Use the latest model
+      );
+
+      console.log(`[TELEGRAM AI] ✅ AI response generated: "${result.response.substring(0, 100)}..."`);
+      console.log(`[TELEGRAM AI] 📊 Tokens used: ${result.tokensUsed}`);
+
+      // Send AI response back to Telegram
+      await this.sendMessage(chatId, result.response);
+
+      // Save AI response as a message in the database
+      await this.saveAiMessage(chatId, result.response);
+
+    } catch (error) {
+      console.error('[TELEGRAM AI] ❌ Error generating AI response:', error);
+      
+      // Send fallback message
+      const fallbackMessage = 'Mi dispiace, al momento non posso elaborare la tua richiesta. Ti risponderà presto un operatore! 🙏';
+      await this.sendMessage(chatId, fallbackMessage);
+    }
+  }
+
+  private async saveAiMessage(chatId: number, aiResponse: string): Promise<void> {
+    try {
+      // Get internal chat ID by searching for the telegram chat ID
+      const allChats = await storage.getTelegramChats();
+      const existingChat = allChats.find(chat => chat.telegramChatId === chatId.toString());
+      
+      await storage.createTelegramMessage({
+        chatId: existingChat?.id || chatId.toString(),
+        telegramMessageId: Date.now(), // Use timestamp as unique ID for AI messages
+        content: aiResponse,
+        direction: 'outbound',
+        fromUser: 'EasyFlbot (AI)',
+        messageType: 'text',
+        isAiGenerated: true,
+        delivered: true,
+        readStatus: 'unread'
+      });
+
+      console.log('[TELEGRAM AI] 💾 AI response saved to database');
+    } catch (error) {
+      console.error('[TELEGRAM AI] ❌ Error saving AI message:', error);
+    }
   }
 }
 
