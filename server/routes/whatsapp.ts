@@ -214,6 +214,8 @@ export function setupWhatsAppRoutes(app: Express): void {
 
       const data = await response.json();
       const importedTemplates = [];
+      const existingTemplates = await storage.getWhatsappTemplates();
+      let updatedCount = 0;
 
       for (const twilioTemplate of data.contents || []) {
         try {
@@ -279,16 +281,25 @@ export function setupWhatsAppRoutes(app: Express): void {
           };
 
           // Check if template already exists
-          const existingTemplates = await storage.getWhatsappTemplates();
-          const exists = existingTemplates.find(t => 
+          const existingTemplate = existingTemplates.find(t => 
             t.providerTemplateId === twilioTemplate.sid || t.name === templateData.name
           );
 
-          if (!exists) {
+          if (!existingTemplate) {
             const created = await storage.createWhatsappTemplate(templateData);
             importedTemplates.push(created);
           } else {
-            console.log(`Template ${templateData.name} already exists, skipping...`);
+            // Update existing template status and metadata
+            const updatedTemplate = await storage.updateWhatsappTemplate(existingTemplate.id, {
+              status: templateData.status,
+              body: templateData.body,
+              header: templateData.header,
+              buttons: templateData.buttons,
+              description: templateData.description,
+              tags: templateData.tags
+            });
+            updatedCount++;
+            console.log(`Template ${templateData.name} updated with latest Twilio data`);
           }
           
         } catch (templateError) {
@@ -299,9 +310,10 @@ export function setupWhatsAppRoutes(app: Express): void {
 
       res.json({
         success: true,
-        message: `Successfully imported ${importedTemplates.length} templates from Twilio`,
+        message: `Sincronizzazione completata: ${importedTemplates.length} nuovi template, ${updatedCount} aggiornati`,
         imported: importedTemplates,
-        totalFound: data.contents?.length || 0
+        totalFound: data.contents?.length || 0,
+        updated: updatedCount
       });
 
     } catch (error) {

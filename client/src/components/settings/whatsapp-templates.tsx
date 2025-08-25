@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle2, MessageSquare, Plus, Edit, Trash2, Phone, Smartphone, Shield } from "lucide-react";
+import { AlertCircle, CheckCircle2, MessageSquare, Plus, Edit, Trash2, Phone, Smartphone, Shield, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -81,6 +81,25 @@ export function WhatsAppTemplates() {
       toast({
         title: "Errore eliminazione template",
         description: error.message || "Impossibile eliminare il template",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Import templates from Twilio mutation
+  const importTemplatesMutation = useMutation({
+    mutationFn: () => apiRequest('/api/whatsapp/templates/import', 'POST'),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Sincronizzazione completata",
+        description: `Importati ${data.imported?.length || 0} template da Twilio`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/templates'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore sincronizzazione",
+        description: error.message || "Impossibile sincronizzare con Twilio",
         variant: "destructive",
       });
     },
@@ -163,14 +182,26 @@ export function WhatsAppTemplates() {
             Gestisci i template per i messaggi WhatsApp Business
           </p>
         </div>
-        <Button 
-          onClick={openNewDialog} 
-          className="bg-green-600 hover:bg-green-700"
-          data-testid="button-new-template"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nuovo Template
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => importTemplatesMutation.mutate()}
+            variant="outline"
+            disabled={importTemplatesMutation.isPending}
+            data-testid="button-sync-templates"
+            className="border-blue-200 text-blue-700 hover:bg-blue-50"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${importTemplatesMutation.isPending ? 'animate-spin' : ''}`} />
+            {importTemplatesMutation.isPending ? 'Sincronizzando...' : 'Sincronizza con Twilio'}
+          </Button>
+          <Button 
+            onClick={openNewDialog} 
+            className="bg-green-600 hover:bg-green-700"
+            data-testid="button-new-template"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuovo Template
+          </Button>
+        </div>
       </div>
 
       {/* Guidelines Alert */}
