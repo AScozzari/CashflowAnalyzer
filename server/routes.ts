@@ -3089,12 +3089,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Search companies (as suppliers)
       const companiesData = await storage.getCompanies();
       companiesData.forEach(company => {
-        if (company.name.toLowerCase().includes(searchTerm) || 
-            company.vatNumber?.toLowerCase().includes(searchTerm) ||
-            company.fiscalCode?.toLowerCase().includes(searchTerm)) {
+        if ((company.name?.toLowerCase().includes(searchTerm)) || 
+            (company.vatNumber?.toLowerCase().includes(searchTerm)) ||
+            (company.fiscalCode?.toLowerCase().includes(searchTerm))) {
           results.push({
             id: company.id,
-            name: company.name,
+            name: company.name || 'Nome non disponibile',
             type: 'supplier',
             subtitle: `P.IVA: ${company.vatNumber || 'N/A'} • Codice Fiscale: ${company.fiscalCode || 'N/A'}`,
             status: company.status
