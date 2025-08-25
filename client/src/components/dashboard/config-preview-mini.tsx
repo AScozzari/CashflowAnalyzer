@@ -144,11 +144,11 @@ export function ConfigPreviewMini() {
       id: 'whatsapp',
       name: 'WhatsApp',
       icon: <MessageSquare className="w-4 h-4" />,
-      status: whatsappChats.length > 0 ? 'configured' : 'not_configured',
+      status: whatsappStats?.total > 0 ? 'configured' : 'not_configured',
       currentUsage: whatsappStats?.total || 0,
       monthlyLimit: 10000,
       usagePercentage: Math.round(((whatsappStats?.total || 0) / 10000) * 100),
-      lastUsed: getLastUsed(whatsappChats, 'whatsapp'),
+      lastUsed: whatsappStats?.total > 0 ? 'Nessuna attività' : 'Mai utilizzato',
       messagesThisMonth: whatsappStats?.total || 0,
       cost: calculateCost(whatsappStats?.total || 0, 0.005) // 0.5 centesimi per messaggio
     },
@@ -156,11 +156,11 @@ export function ConfigPreviewMini() {
       id: 'email',
       name: 'Email',
       icon: <Mail className="w-4 h-4" />,
-      status: emailStats?.total > 0 ? 'configured' : 'not_configured',
+      status: emailStats?.sent > 0 ? 'configured' : 'not_configured', // ✅ Controlla sent
       currentUsage: emailStats?.sent || 0, // ✅ Usa sent invece di total
       monthlyLimit: 50000,
       usagePercentage: Math.round(((emailStats?.sent || 0) / 50000) * 100),
-      lastUsed: emailStats?.total > 0 ? 'Oggi' : 'Mai utilizzato',
+      lastUsed: emailStats?.sent > 0 ? 'Oggi' : 'Mai utilizzato', // ✅ Controlla sent
       messagesThisMonth: emailStats?.sent || 0, // ✅ Usa sent
       cost: calculateCost(emailStats?.sent || 0, 0.004) // ✅ Calcola su sent
     },
@@ -168,13 +168,13 @@ export function ConfigPreviewMini() {
       id: 'sms',
       name: 'SMS',
       icon: <Phone className="w-4 h-4" />,
-      status: smsStats ? 'configured' : 'not_configured',
-      currentUsage: smsStats?.total || 0,
+      status: smsStats?.sent > 0 ? 'configured' : 'not_configured',
+      currentUsage: smsStats?.sent || 0, // ✅ Usa sent per SMS
       monthlyLimit: 1000,
-      usagePercentage: Math.round(((smsStats?.total || 0) / 1000) * 100),
-      lastUsed: smsStats?.total > 0 ? 'Oggi' : 'Mai utilizzato',
-      messagesThisMonth: smsStats?.total || 0,
-      cost: calculateCost(smsStats?.total || 0, 0.045) // 4.5 centesimi per SMS
+      usagePercentage: Math.round(((smsStats?.sent || 0) / 1000) * 100),
+      lastUsed: smsStats?.sent > 0 ? 'Oggi' : 'Mai utilizzato',
+      messagesThisMonth: smsStats?.sent || 0, // ✅ Usa sent
+      cost: calculateCost(smsStats?.sent || 0, 0.045) // ✅ 4.5 centesimi per SMS
     },
     {
       id: 'telegram',
