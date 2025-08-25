@@ -837,9 +837,18 @@ export const whatsappTemplates = pgTable('whatsapp_templates', {
   description: text('description'),
   qualityScore: text('quality_score'), // 'HIGH' | 'MEDIUM' | 'LOW'
   
-  // Tracking
+  // Provider-Specific IDs
   providerTemplateId: text('provider_template_id'), // ID from Twilio/LinkMobility
   metaTemplateId: text('meta_template_id'), // ID from Meta WhatsApp
+  
+  // Twilio Specific Fields
+  contentSid: text('content_sid'), // 🔥 Twilio: SID dopo approvazione (per invio)
+  approvalRequestId: text('approval_request_id'), // 🔥 Twilio: ID richiesta approvazione
+  
+  // Meta Business Manager Fields  
+  wabaTemplateId: text('waba_template_id'), // 🔥 Meta: WABA template ID
+  
+  // Tracking
   lastApprovalRequest: timestamp('last_approval_request'),
   
   createdAt: timestamp('created_at').defaultNow().notNull(),
