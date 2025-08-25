@@ -1121,6 +1121,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // === WHATSAPP SETTINGS ENDPOINTS ===
+  
+  // Get WhatsApp settings
+  app.get("/api/whatsapp/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getWhatsappSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('[WHATSAPP] Error fetching WhatsApp settings:', error);
+      res.status(500).json({ error: 'Failed to fetch WhatsApp settings' });
+    }
+  }));
+  
+  // Create WhatsApp settings
+  app.post("/api/whatsapp/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const newSettings = await storage.createWhatsappSettings(req.body);
+      res.json(newSettings);
+    } catch (error) {
+      console.error('[WHATSAPP] Error creating WhatsApp settings:', error);
+      res.status(500).json({ error: 'Failed to create WhatsApp settings' });
+    }
+  }));
+  
+  // Update WhatsApp settings
+  app.put("/api/whatsapp/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getWhatsappSettings();
+      if (settings.length === 0) {
+        // Se non esistono impostazioni, creane una nuova
+        const newSettings = await storage.createWhatsappSettings(req.body);
+        res.json(newSettings);
+      } else {
+        // Altrimenti aggiorna la prima impostazione esistente
+        const updatedSettings = await storage.updateWhatsappSettings(settings[0].id, req.body);
+        res.json(updatedSettings);
+      }
+    } catch (error) {
+      console.error('[WHATSAPP] Error updating WhatsApp settings:', error);
+      res.status(500).json({ error: 'Failed to update WhatsApp settings' });
+    }
+  }));
+
   // Dashboard endpoint - cashflow per tutti i movimenti del mese corrente (grafici)
   app.get("/api/analytics/cashflow", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
