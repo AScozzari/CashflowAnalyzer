@@ -130,15 +130,9 @@ export default function Communications() {
       today: emailStats?.todayEmails || 0
     },
     whatsapp: {
-      total: whatsappChats.length || 0,
-      unread: whatsappChats.filter(chat => chat.unreadCount && chat.unreadCount > 0).length || 0,
-      today: whatsappChats.filter(chat => {
-        // Conteggio basato su se la chat è stata attiva oggi
-        if (chat.lastSeen && (chat.lastSeen === 'Online' || chat.lastSeen.includes('min fa') || chat.lastSeen.includes('ora fa'))) {
-          return true;
-        }
-        return false;
-      }).length || 0 // Nessun fallback fake - solo dati reali
+      total: whatsappStats?.total || 0, // USA STATISTICHE API REALI
+      unread: whatsappStats?.unread || 0, // USA STATISTICHE API REALI
+      today: whatsappStats?.today || 0 // USA STATISTICHE API REALI
     },
     sms: {
       total: smsStats?.totalSms || 0,
@@ -146,17 +140,9 @@ export default function Communications() {
       today: smsStats?.todaySms || 0
     },
     telegram: {
-      total: telegramChats.length || 0,
-      unread: telegramChats.filter(chat => chat.messageCount && chat.messageCount > 0).length || 0,
-      today: telegramChats.filter(chat => {
-        // Conteggio basato su attività recente
-        if (chat.lastMessageAt) {
-          const lastMessage = new Date(chat.lastMessageAt);
-          const today = new Date();
-          return lastMessage.toDateString() === today.toDateString();
-        }
-        return false;
-      }).length || 0 // Nessun fallback fake - solo dati reali
+      total: telegramStats?.total || 0, // USA STATISTICHE API REALI
+      unread: telegramStats?.unread || 0, // USA STATISTICHE API REALI  
+      today: telegramStats?.today || 0 // USA STATISTICHE API REALI
     }
   };
 
