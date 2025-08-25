@@ -1127,7 +1127,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/whatsapp/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const settings = await storage.getWhatsappSettings();
-      res.json(settings);
+      
+      // 🔥 FIX: Mappa da snake_case (DB) a camelCase (Frontend)
+      const mappedSettings = settings.map(setting => ({
+        id: setting.id,
+        provider: setting.provider,
+        isActive: setting.is_active,
+        businessName: setting.business_name || '',
+        businessDescription: setting.business_description || '',
+        phoneNumber: setting.phone_number || '',
+        accountSid: setting.account_sid || '',
+        authToken: setting.auth_token || '',
+        apiKey: setting.api_key || '',
+        webhookUrl: setting.webhook_url || '',
+        isBusinessVerified: setting.business_verification_status === 'verified',
+        isPhoneVerified: setting.is_number_verified || false,
+        isApiConnected: setting.is_api_connected || false,
+        lastTestAt: setting.last_test_at || '',
+        createdAt: setting.created_at,
+        updatedAt: setting.updated_at
+      }));
+      
+      res.json(mappedSettings);
     } catch (error) {
       console.error('[WHATSAPP] Error fetching WhatsApp settings:', error);
       res.status(500).json({ error: 'Failed to fetch WhatsApp settings' });
@@ -1137,8 +1158,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create WhatsApp settings
   app.post("/api/whatsapp/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const newSettings = await storage.createWhatsappSettings(req.body);
-      res.json(newSettings);
+      // 🔥 FIX: Mappa da camelCase (Frontend) a snake_case (DB)
+      const dbData = {
+        provider: req.body.provider,
+        is_active: req.body.isActive,
+        business_name: req.body.businessName,
+        business_description: req.body.businessDescription,
+        phone_number: req.body.phoneNumber,
+        account_sid: req.body.accountSid,
+        auth_token: req.body.authToken,
+        api_key: req.body.apiKey,
+        webhook_url: req.body.webhookUrl
+      };
+      
+      const newSettings = await storage.createWhatsappSettings(dbData);
+      
+      // Mappa indietro per il response
+      const response = {
+        id: newSettings.id,
+        provider: newSettings.provider,
+        isActive: newSettings.is_active,
+        businessName: newSettings.business_name,
+        businessDescription: newSettings.business_description,
+        phoneNumber: newSettings.phone_number,
+        accountSid: newSettings.account_sid,
+        authToken: newSettings.auth_token,
+        apiKey: newSettings.api_key,
+        webhookUrl: newSettings.webhook_url,
+        createdAt: newSettings.created_at,
+        updatedAt: newSettings.updated_at
+      };
+      
+      res.json(response);
     } catch (error) {
       console.error('[WHATSAPP] Error creating WhatsApp settings:', error);
       res.status(500).json({ error: 'Failed to create WhatsApp settings' });
@@ -1148,16 +1199,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update WhatsApp settings
   app.put("/api/whatsapp/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
+      // 🔥 FIX: Mappa da camelCase (Frontend) a snake_case (DB)
+      const dbData = {
+        provider: req.body.provider,
+        is_active: req.body.isActive,
+        business_name: req.body.businessName,
+        business_description: req.body.businessDescription,
+        phone_number: req.body.phoneNumber,
+        account_sid: req.body.accountSid,
+        auth_token: req.body.authToken,
+        api_key: req.body.apiKey,
+        webhook_url: req.body.webhookUrl
+      };
+      
       const settings = await storage.getWhatsappSettings();
+      let updatedSettings;
+      
       if (settings.length === 0) {
         // Se non esistono impostazioni, creane una nuova
-        const newSettings = await storage.createWhatsappSettings(req.body);
-        res.json(newSettings);
+        updatedSettings = await storage.createWhatsappSettings(dbData);
       } else {
         // Altrimenti aggiorna la prima impostazione esistente
-        const updatedSettings = await storage.updateWhatsappSettings(settings[0].id, req.body);
-        res.json(updatedSettings);
+        updatedSettings = await storage.updateWhatsappSettings(settings[0].id, dbData);
       }
+      
+      // Mappa indietro per il response
+      const response = {
+        id: updatedSettings.id,
+        provider: updatedSettings.provider,
+        isActive: updatedSettings.is_active,
+        businessName: updatedSettings.business_name,
+        businessDescription: updatedSettings.business_description,
+        phoneNumber: updatedSettings.phone_number,
+        accountSid: updatedSettings.account_sid,
+        authToken: updatedSettings.auth_token,
+        apiKey: updatedSettings.api_key,
+        webhookUrl: updatedSettings.webhook_url,
+        createdAt: updatedSettings.created_at,
+        updatedAt: updatedSettings.updated_at
+      };
+      
+      res.json(response);
     } catch (error) {
       console.error('[WHATSAPP] Error updating WhatsApp settings:', error);
       res.status(500).json({ error: 'Failed to update WhatsApp settings' });
