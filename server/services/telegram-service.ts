@@ -116,27 +116,101 @@ export class TelegramService {
     return await response.json();
   }
 
-  // Polling method as backup for webhooks
+  // Polling method with auto-recovery and health monitoring
   private lastUpdateId: number = 0;
   private pollingInterval: NodeJS.Timeout | null = null;
+  private watchdogInterval: NodeJS.Timeout | null = null;
+  private lastPollTime: number = 0;
+  private pollingIntervalMs: number = 10000;
+  private consecutiveErrors: number = 0;
+  private maxRetries: number = 3;
+  private isPollingActive: boolean = false;
 
-  async startPolling(intervalMs: number = 15000): Promise<void> {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-    }
-
-    console.log('[TELEGRAM SERVICE] 🔄 Avvio polling ogni', intervalMs, 'ms');
+  async startPolling(intervalMs: number = 10000): Promise<void> {
+    this.pollingIntervalMs = intervalMs;
     
+    // Stop existing polling
+    this.stopPolling();
+
+    console.log('[TELEGRAM SERVICE] 🔄 Avvio polling robusto ogni', intervalMs, 'ms');
+    
+    // Reset error counter
+    this.consecutiveErrors = 0;
+    this.isPollingActive = true;
+    
+    // Start main polling loop with error handling
     this.pollingInterval = setInterval(async () => {
-      try {
-        await this.pollUpdates();
-      } catch (error) {
-        console.error('[TELEGRAM SERVICE] ❌ Errore durante polling:', error);
-      }
+      await this.robustPollUpdates();
     }, intervalMs);
 
+    // Start watchdog that monitors polling health
+    this.startWatchdog();
+
     // Initial poll
-    await this.pollUpdates();
+    await this.robustPollUpdates();
+  }
+
+  private async robustPollUpdates(): Promise<void> {
+    try {
+      this.lastPollTime = Date.now();
+      await this.pollUpdates();
+      
+      // Reset error counter on success
+      this.consecutiveErrors = 0;
+      
+    } catch (error) {
+      this.consecutiveErrors++;
+      console.error(`[TELEGRAM SERVICE] ❌ Errore polling (tentativo ${this.consecutiveErrors}/${this.maxRetries}):`, error);
+      
+      // If too many consecutive errors, try to restart
+      if (this.consecutiveErrors >= this.maxRetries) {
+        console.log('[TELEGRAM SERVICE] 🔄 Troppi errori, riavvio polling...');
+        await this.restartPolling();
+      }
+    }
+  }
+
+  private startWatchdog(): void {
+    // Stop existing watchdog
+    if (this.watchdogInterval) {
+      clearInterval(this.watchdogInterval);
+    }
+
+    // Check every 30 seconds if polling is healthy
+    this.watchdogInterval = setInterval(() => {
+      const timeSinceLastPoll = Date.now() - this.lastPollTime;
+      const expectedInterval = this.pollingIntervalMs * 2; // Allow some buffer
+      
+      if (timeSinceLastPoll > expectedInterval && this.isPollingActive) {
+        console.log('[TELEGRAM WATCHDOG] ⚠️ Polling sembra inattivo, riavvio...');
+        this.restartPolling();
+      }
+    }, 30000); // Check every 30 seconds
+  }
+
+  private async restartPolling(): Promise<void> {
+    try {
+      console.log('[TELEGRAM SERVICE] 🔄 Riavvio polling automatico...');
+      
+      // Stop current polling
+      this.stopPolling();
+      
+      // Wait a bit before restarting
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Restart with same interval
+      await this.startPolling(this.pollingIntervalMs);
+      
+      console.log('[TELEGRAM SERVICE] ✅ Polling riavviato con successo');
+      
+    } catch (error) {
+      console.error('[TELEGRAM SERVICE] ❌ Errore durante riavvio polling:', error);
+      
+      // Try again in 10 seconds
+      setTimeout(() => {
+        this.restartPolling();
+      }, 10000);
+    }
   }
 
   async pollUpdates(): Promise<void> {
@@ -169,11 +243,33 @@ export class TelegramService {
   }
 
   stopPolling(): void {
+    this.isPollingActive = false;
+    
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval);
       this.pollingInterval = null;
-      console.log('[TELEGRAM SERVICE] ⏹️ Polling fermato');
     }
+    
+    if (this.watchdogInterval) {
+      clearInterval(this.watchdogInterval);
+      this.watchdogInterval = null;
+    }
+    
+    console.log('[TELEGRAM SERVICE] ⏹️ Polling e watchdog fermati');
+  }
+
+  getPollingStatus(): {
+    isActive: boolean;
+    lastPollTime: number;
+    consecutiveErrors: number;
+    intervalMs: number;
+  } {
+    return {
+      isActive: this.isPollingActive,
+      lastPollTime: this.lastPollTime,
+      consecutiveErrors: this.consecutiveErrors,
+      intervalMs: this.pollingIntervalMs
+    };
   }
 
   async setWebhook(url: string, secret?: string): Promise<any> {

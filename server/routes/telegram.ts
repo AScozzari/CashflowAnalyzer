@@ -34,9 +34,9 @@ export function setupTelegramRoutes(app: Express): void {
           aiSystemPrompt: config.aiSystemPrompt || undefined
         });
 
-        // Start polling to receive messages
-        await telegramService.startPolling(15000);
-        console.log('[TELEGRAM STARTUP] ✅ Telegram service auto-initialized with polling');
+        // Start robust polling to receive messages
+        await telegramService.startPolling(10000);
+        console.log('[TELEGRAM STARTUP] ✅ Telegram service auto-initialized with robust polling');
       } else {
         console.log('[TELEGRAM STARTUP] No active Telegram settings found, skipping auto-initialization');
       }
@@ -83,7 +83,7 @@ export function setupTelegramRoutes(app: Express): void {
         aiSystemPrompt: config.aiSystemPrompt || undefined
       });
 
-      // Start polling manually
+      // Start robust polling manually
       await telegramService.startPolling(10000); // Every 10 seconds
       
       res.json({ 
@@ -94,7 +94,26 @@ export function setupTelegramRoutes(app: Express): void {
       });
     } catch (error) {
       console.error('❌ [MANUAL POLLING] Error:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  // GET POLLING STATUS - Monitor polling health
+  app.get('/api/telegram/polling-status', async (req, res) => {
+    try {
+      const status = telegramService.getPollingStatus();
+      const isHealthy = status.isActive && (Date.now() - status.lastPollTime) < (status.intervalMs * 3);
+      
+      res.json({
+        ...status,
+        isHealthy,
+        timeSinceLastPoll: Date.now() - status.lastPollTime,
+        botInitialized: telegramService.isInitialized(),
+        botUsername: telegramService.getBotUsername()
+      });
+    } catch (error) {
+      console.error('❌ [POLLING STATUS] Error:', error);
+      res.status(500).json({ error: (error as Error).message });
     }
   });
   
