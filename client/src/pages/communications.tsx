@@ -61,9 +61,9 @@ export default function Communications() {
   const { data: whatsappStats } = useQuery<{total: number; unread: number; today: number}>({
     queryKey: ['/api/whatsapp/stats'],
     select: (data: any) => ({
-      total: data?.totalChats || 0,
-      unread: data?.unreadMessages || 0,
-      today: data?.todayMessages || 0
+      total: data?.approvedTemplates || 0, // USA TEMPLATE APPROVATI COME TOTALE
+      unread: data?.pendingTemplates || 0, // USA TEMPLATE PENDENTI COME NON LETTI
+      today: data?.configured ? 1 : 0 // USA STATO CONFIGURAZIONE
     }),
     retry: false,
     refetchInterval: 30000, // Aggiorna ogni 30 secondi

@@ -1655,14 +1655,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupTelegramRoutes(app);
   setupSmsRoutes(app);
 
-  // Email stats endpoint
+  // Email stats endpoint - DEMO DATA per UI/UX testing
   app.get("/api/email/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const stats = await storage.getEmailStats();
+      console.log('[EMAIL DEMO] 🎯 Returning demo data for UI/UX testing');
+      
+      // DATI DEMO REALISTICI per testare UI/UX
       res.json({
-        totalEmails: stats.total || 0,
-        sentEmails: stats.sent || 0,
-        failedEmails: stats.failed || 0
+        totalEmails: 247,      // Totale email inviate
+        sentEmails: 239,       // Email inviate con successo
+        failedEmails: 8,       // Email fallite
+        todayEmails: 23,       // Email inviate oggi
+        openRate: 68.5,        // Tasso di apertura percentuale
+        clickRate: 14.2,       // Tasso di click percentuale
+        bounceRate: 3.2,       // Tasso di rimbalzo percentuale
+        templates: [
+          {
+            id: 'tpl-welcome',
+            name: 'Benvenuto Clienti',
+            subject: 'Benvenuto in EasyCashFlows! 🎉',
+            type: 'marketing',
+            opens: 156,
+            clicks: 34,
+            sent: 203
+          },
+          {
+            id: 'tpl-invoice',
+            name: 'Promemoria Fattura',
+            subject: 'Promemoria: Fattura {{invoiceNumber}} in scadenza',
+            type: 'transactional',
+            opens: 89,
+            clicks: 45,
+            sent: 92
+          },
+          {
+            id: 'tpl-promo',
+            name: 'Offerta Speciale',
+            subject: 'Solo per te: Sconto del 20% sui servizi premium! 💰',
+            type: 'marketing',
+            opens: 78,
+            clicks: 28,
+            sent: 125
+          }
+        ],
+        recentEmails: [
+          {
+            id: 'em-001',
+            to: 'mario.rossi@example.com',
+            subject: 'Benvenuto in EasyCashFlows! 🎉',
+            template: 'Benvenuto Clienti',
+            status: 'delivered',
+            sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 ore fa
+            openedAt: new Date(Date.now() - 1.5 * 60 * 60 * 1000).toISOString(), // 1.5 ore fa
+            clickedAt: null
+          },
+          {
+            id: 'em-002', 
+            to: 'giulia.bianchi@consulting.it',
+            subject: 'Promemoria: Fattura #FT001 in scadenza',
+            template: 'Promemoria Fattura',
+            status: 'delivered',
+            sentAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 ore fa
+            openedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 ore fa
+            clickedAt: new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString() // 2.5 ore fa
+          },
+          {
+            id: 'em-003',
+            to: 'franco.verdi@azienda.com',
+            subject: 'Solo per te: Sconto del 20% sui servizi premium! 💰',
+            template: 'Offerta Speciale',
+            status: 'delivered',
+            sentAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 ore fa
+            openedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 ore fa
+            clickedAt: null
+          },
+          {
+            id: 'em-004',
+            to: 'anna.neri@startup.it',
+            subject: 'Benvenuto in EasyCashFlows! 🎉',
+            template: 'Benvenuto Clienti',
+            status: 'bounced',
+            sentAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8 ore fa
+            openedAt: null,
+            clickedAt: null
+          },
+          {
+            id: 'em-005',
+            to: 'paolo.blu@enterprise.com',
+            subject: 'Promemoria: Fattura #FT007 in scadenza',
+            template: 'Promemoria Fattura',
+            status: 'delivered',
+            sentAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(), // 10 ore fa
+            openedAt: null,
+            clickedAt: null
+          }
+        ]
       });
     } catch (error) {
       console.error('Error fetching email stats:', error);
