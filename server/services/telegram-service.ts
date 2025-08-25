@@ -612,17 +612,15 @@ Nel frattempo puoi:
       console.log(`[TELEGRAM SERVICE] 💾 Salvando messaggio nel database...`);
       try {
         await storage.createTelegramMessage({
-          telegramChatId: chatId,
-          messageId: message.message_id,
-          fromId: message.from.id,
-          fromUsername: message.from.username || null,
-          fromFirstName: message.from.first_name,
-          fromLastName: message.from.last_name || null,
-          messageText: message.text || null,
+          chatId: existingChat?.id || chatId, // Use internal UUID if available
+          telegramMessageId: message.message_id,
+          content: message.text || 'Contenuto non disponibile',
+          direction: 'incoming',
+          fromUser: message.from.username || `${message.from.first_name} ${message.from.last_name || ''}`.trim(),
           messageType: message.text ? 'text' : 'other',
-          timestamp: new Date(message.date * 1000), // Convert Unix timestamp
-          isBot: message.from.is_bot || false,
-          isRead: false
+          isAiGenerated: false,
+          delivered: true,
+          readStatus: 'unread'
         });
         console.log(`[TELEGRAM SERVICE] ✅ Messaggio salvato: ${message.text?.substring(0, 50)}...`);
       } catch (msgError) {

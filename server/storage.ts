@@ -298,6 +298,10 @@ export interface IStorage {
   updateTelegramChat(id: string, chat: Partial<InsertTelegramChat>): Promise<TelegramChat>;
   deleteTelegramChat(id: string): Promise<void>;
 
+  // Telegram Messages
+  getTelegramMessages(): Promise<TelegramMessage[]>;
+  createTelegramMessage(message: InsertTelegramMessage): Promise<TelegramMessage>;
+
   // SMS Settings
   getSmsSettings(): Promise<SmsSettings | undefined>;
   createSmsSettings(settings: InsertSmsSettings): Promise<SmsSettings>;
@@ -3275,6 +3279,16 @@ async getMovements(filters: {
     } catch (error) {
       console.error('Error getting Telegram messages:', error);
       throw new Error('Failed to fetch Telegram messages');
+    }
+  }
+
+  async createTelegramMessage(message: InsertTelegramMessage): Promise<TelegramMessage> {
+    try {
+      const [newMessage] = await db.insert(telegramMessages).values(message).returning();
+      return newMessage;
+    } catch (error) {
+      console.error('Error creating Telegram message:', error);
+      throw new Error('Failed to create Telegram message');
     }
   }
 
