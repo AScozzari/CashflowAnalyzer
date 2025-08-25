@@ -57,7 +57,7 @@ export default function Communications() {
     }
   }, []);
 
-  // 🔥 DATI REALI - Fetch delle statistiche WhatsApp
+  // 🔥 DATI REALI - Fetch delle statistiche WhatsApp (AGGIORNAMENTO AUTOMATICO)
   const { data: whatsappStats } = useQuery<{total: number; unread: number; today: number}>({
     queryKey: ['/api/whatsapp/stats'],
     select: (data: any) => ({
@@ -66,16 +66,22 @@ export default function Communications() {
       today: data?.todayMessages || 0
     }),
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0, // I dati sono sempre stantii = sempre ricarica
   });
 
   const { data: whatsappChats = [] } = useQuery<any[]>({
     queryKey: ['/api/whatsapp/chats'],
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0,
   });
 
   const { data: telegramChats = [] } = useQuery<any[]>({
     queryKey: ['/api/telegram/chats'],
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0,
   });
 
   const { data: telegramStats } = useQuery<{total: number; unread: number; today: number}>({
@@ -86,6 +92,8 @@ export default function Communications() {
       today: data?.todayMessages || 0
     }),
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0,
   });
 
   // Query per Email stats (usa l'API che abbiamo già implementato)
@@ -97,6 +105,8 @@ export default function Communications() {
       todayEmails: data?.sent || 0
     }),
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0,
   });
 
   // Query per SMS stats (usa l'API che abbiamo già implementato)
@@ -108,6 +118,8 @@ export default function Communications() {
       todaySms: data?.sentSms || 0
     }),
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0,
   });
 
   // STATISTICHE REALI - Tutte caricate da API
