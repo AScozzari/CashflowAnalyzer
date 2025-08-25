@@ -131,6 +131,7 @@ export interface IStorage {
 
   // Suppliers
   getSuppliers(): Promise<Supplier[]>;
+  getSupplier(id: string): Promise<Supplier | undefined>;
   getSupplierByVatNumber(vatNumber: string): Promise<Supplier | undefined>;
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
   updateSupplier(id: string, supplier: Partial<InsertSupplier>): Promise<Supplier>;
@@ -1571,6 +1572,16 @@ async getMovements(filters: {
     } catch (error) {
       console.error('Error fetching suppliers:', error);
       throw new Error('Failed to fetch suppliers');
+    }
+  }
+
+  async getSupplier(id: string): Promise<Supplier | undefined> {
+    try {
+      const [supplier] = await db.select().from(suppliers).where(eq(suppliers.id, id));
+      return supplier || undefined;
+    } catch (error) {
+      console.error('Error fetching supplier:', error);
+      throw new Error('Failed to fetch supplier');
     }
   }
 
