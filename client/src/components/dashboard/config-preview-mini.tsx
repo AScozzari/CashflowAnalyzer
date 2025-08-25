@@ -45,9 +45,9 @@ export function ConfigPreviewMini() {
   const { data: whatsappStats } = useQuery<{total: number; unread: number; today: number}>({
     queryKey: ['/api/whatsapp/stats'],
     select: (data: any) => ({
-      total: data?.totalChats || 0,
-      unread: data?.unreadMessages || 0,
-      today: data?.todayMessages || 0
+      total: data?.approvedTemplates || 0, // ✅ Fix: usa approvedTemplates
+      unread: data?.pendingTemplates || 0,
+      today: 0 // WhatsApp non è configurato
     }),
     retry: false,
     refetchInterval: 30000, // Aggiorna ogni 30 secondi
@@ -81,13 +81,14 @@ export function ConfigPreviewMini() {
     staleTime: 0,
   });
 
-  // 🔥 DATI REALI - Fetch delle statistiche Email (AGGIORNAMENTO AUTOMATICO)
-  const { data: emailStats } = useQuery<{total: number; sent: number; failed: number}>({
+  // 🔥 DATI REALI - Fetch delle statistiche Email (DATI DEMO + AGGIORNAMENTO AUTOMATICO)
+  const { data: emailStats } = useQuery<{total: number; sent: number; failed: number; today: number}>({
     queryKey: ['/api/email/stats'],
     select: (data: any) => ({
       total: data?.totalEmails || 0,
       sent: data?.sentEmails || 0,
-      failed: data?.failedEmails || 0
+      failed: data?.failedEmails || 0,
+      today: data?.todayEmails || 0 // ✅ Aggiungo dati giornalieri
     }),
     retry: false,
     refetchInterval: 30000, // Aggiorna ogni 30 secondi
@@ -155,13 +156,13 @@ export function ConfigPreviewMini() {
       id: 'email',
       name: 'Email',
       icon: <Mail className="w-4 h-4" />,
-      status: emailStats ? 'configured' : 'not_configured',
-      currentUsage: emailStats?.total || 0,
+      status: emailStats?.total > 0 ? 'configured' : 'not_configured',
+      currentUsage: emailStats?.sent || 0, // ✅ Usa sent invece di total
       monthlyLimit: 50000,
-      usagePercentage: Math.round(((emailStats?.total || 0) / 50000) * 100),
+      usagePercentage: Math.round(((emailStats?.sent || 0) / 50000) * 100),
       lastUsed: emailStats?.total > 0 ? 'Oggi' : 'Mai utilizzato',
-      messagesThisMonth: emailStats?.total || 0,
-      cost: calculateCost(emailStats?.total || 0, 0.004) // 0.4 centesimi per email
+      messagesThisMonth: emailStats?.sent || 0, // ✅ Usa sent
+      cost: calculateCost(emailStats?.sent || 0, 0.004) // ✅ Calcola su sent
     },
     {
       id: 'sms',
@@ -237,7 +238,7 @@ export function ConfigPreviewMini() {
             <BarChart3 className="w-5 h-5 text-blue-600" />
             <CardTitle className="text-lg font-bold text-blue-900 dark:text-blue-100">📊 Utilizzo Canali</CardTitle>
           </div>
-          <Link href="/settings">
+          <Link href="/settings?tab=channels">
             <Button variant="outline" size="sm" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Configura
