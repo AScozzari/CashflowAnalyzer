@@ -108,8 +108,17 @@ export function WhatsAppInterfaceImproved() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: ({ content, to }: { content: string; to: string }) =>
-      apiRequest('/api/whatsapp/send', 'POST', { content, to }),
+    mutationFn: ({ content, to, templateName, templateLanguage }: { content: string; to: string; templateName?: string; templateLanguage?: string }) =>
+      apiRequest('/api/whatsapp/send', 'POST', {
+        to,
+        type: templateName ? 'template' : 'text',
+        content: templateName ? {
+          templateName,
+          templateLanguage: templateLanguage || 'it'
+        } : {
+          body: content
+        }
+      }),
     onSuccess: () => {
       setMessageInput("");
       refetchMessages();
@@ -147,10 +156,10 @@ export function WhatsAppInterfaceImproved() {
   const sendMessage = async () => {
     const phoneNumber = selectedContact?.phone || newPhoneNumber;
     
-    if (!messageInput.trim()) {
+    if (!messageInput.trim() && !selectedTemplate) {
       toast({
         title: "Errore",
-        description: "Inserisci un messaggio",
+        description: "Inserisci un messaggio o seleziona un template",
         variant: "destructive"
       });
       return;
@@ -179,8 +188,15 @@ export function WhatsAppInterfaceImproved() {
 
     await sendMessageMutation.mutateAsync({
       content: messageInput,
-      to: formattedPhone
+      to: formattedPhone,
+      templateName: selectedTemplate?.name,
+      templateLanguage: 'it'
     });
+    
+    // Clear template selection after sending
+    if (selectedTemplate) {
+      setSelectedTemplate(null);
+    }
   };
 
   // Start new message with phone number
@@ -651,7 +667,7 @@ export function WhatsAppInterfaceImproved() {
                 
                 <Button 
                   onClick={sendMessage}
-                  disabled={!messageInput.trim() || sendMessageMutation.isPending}
+                  disabled={(!messageInput.trim() && !selectedTemplate) || sendMessageMutation.isPending}
                   className="bg-green-600 hover:bg-green-700 text-white"
                   data-testid="send-message"
                 >
