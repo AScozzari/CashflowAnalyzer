@@ -126,7 +126,7 @@ export default function Communications() {
           return true;
         }
         return false;
-      }).length || Math.floor(whatsappChats.length / 3) // Fallback: ~1/3 delle chat attive oggi
+      }).length || 0 // Nessun fallback fake - solo dati reali
     },
     sms: {
       total: smsStats?.totalSms || 0,
@@ -144,7 +144,7 @@ export default function Communications() {
           return lastMessage.toDateString() === today.toDateString();
         }
         return false;
-      }).length || Math.floor(telegramChats.length / 2) // Fallback: ~1/2 delle chat attive oggi
+      }).length || 0 // Nessun fallback fake - solo dati reali
     }
   };
 
