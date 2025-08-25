@@ -50,6 +50,53 @@ export function setupTelegramRoutes(app: Express): void {
     console.log('🔧 [TELEGRAM TEST] Test route called');
     res.json({ message: 'Telegram routes loaded successfully' });
   });
+
+  // MANUAL POLLING START TEST
+  app.post('/api/telegram/start-polling-manual', async (req, res) => {
+    try {
+      console.log('🚀 [MANUAL POLLING] Starting manual polling test...');
+      
+      const settings = await storage.getTelegramSettings();
+      if (settings.length === 0) {
+        return res.status(400).json({ error: 'No Telegram settings found' });
+      }
+      
+      const config = settings[0];
+      if (!config.isActive) {
+        return res.status(400).json({ error: 'Telegram is not active' });
+      }
+
+      // Force re-initialize the service
+      await telegramService.initialize({
+        botToken: config.botToken,
+        botUsername: config.botUsername,
+        webhookUrl: config.webhookUrl || undefined,
+        webhookSecret: config.webhookSecret || undefined,
+        allowedUpdates: config.allowedUpdates as string[],
+        enableBusinessHours: config.enableBusinessHours || false,
+        businessHoursStart: config.businessHoursStart || '09:00',
+        businessHoursEnd: config.businessHoursEnd || '18:00',
+        businessDays: config.businessDays as string[],
+        enableAutoReply: config.enableAutoReply || false,
+        enableAiResponses: config.enableAiResponses || false,
+        aiModel: config.aiModel || 'gpt-4o',
+        aiSystemPrompt: config.aiSystemPrompt || undefined
+      });
+
+      // Start polling manually
+      await telegramService.startPolling(10000); // Every 10 seconds
+      
+      res.json({ 
+        success: true, 
+        message: 'Polling started manually',
+        initialized: telegramService.isInitialized(),
+        botUsername: telegramService.getBotUsername()
+      });
+    } catch (error) {
+      console.error('❌ [MANUAL POLLING] Error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   
   // Get Telegram conversations
   app.get('/api/telegram/conversations', async (req, res) => {
