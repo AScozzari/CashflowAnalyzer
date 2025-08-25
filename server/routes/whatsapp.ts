@@ -185,6 +185,134 @@ export function setupWhatsAppRoutes(app: Express): void {
     }
   });
 
+  // Import templates from Twilio Content API
+  app.post('/api/whatsapp/templates/import', async (req, res) => {
+    try {
+      const settingsList = await storage.getWhatsappSettings();
+      const settings = settingsList.length > 0 ? settingsList[0] : null;
+      
+      if (!settings || settings.provider !== 'twilio' || !settings.accountSid || !settings.authToken) {
+        res.status(400).json({ 
+          error: 'Twilio settings not configured or provider is not Twilio'
+        });
+        return;
+      }
+
+      const auth = Buffer.from(`${settings.accountSid}:${settings.authToken}`).toString('base64');
+      
+      // Fetch templates from Twilio Content API
+      const response = await fetch('https://content.twilio.com/v1/ContentAndApprovals', {
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Twilio API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const importedTemplates = [];
+
+      for (const twilioTemplate of data.contents || []) {
+        try {
+          // Extract content based on template type
+          let bodyContent = '';
+          let headerContent = null;
+          let buttons = [];
+
+          if (twilioTemplate.types?.['twilio/text']) {
+            bodyContent = twilioTemplate.types['twilio/text'].body;
+          } else if (twilioTemplate.types?.['twilio/call-to-action']) {
+            bodyContent = twilioTemplate.types['twilio/call-to-action'].body;
+            const actions = twilioTemplate.types['twilio/call-to-action'].actions || [];
+            buttons = actions.map(action => ({
+              type: 'URL',
+              text: action.title,
+              url: action.url
+            }));
+          } else if (twilioTemplate.types?.['twilio/quick-reply']) {
+            bodyContent = twilioTemplate.types['twilio/quick-reply'].body;
+            const actions = twilioTemplate.types['twilio/quick-reply'].actions || [];
+            buttons = actions.map(action => ({
+              type: 'QUICK_REPLY',
+              text: action.title
+            }));
+          } else if (twilioTemplate.types?.['twilio/media']) {
+            bodyContent = twilioTemplate.types['twilio/media'].body;
+            const media = twilioTemplate.types['twilio/media'].media;
+            if (media && media.length > 0) {
+              headerContent = {
+                type: 'IMAGE',
+                content: media[0]
+              };
+            }
+          } else if (twilioTemplate.types?.['twilio/list-picker']) {
+            bodyContent = twilioTemplate.types['twilio/list-picker'].body;
+            const items = twilioTemplate.types['twilio/list-picker'].items || [];
+            buttons = items.map(item => ({
+              type: 'QUICK_REPLY',
+              text: item.item
+            }));
+          }
+
+          // Map Twilio template to our schema
+          const templateData = {
+            name: twilioTemplate.friendly_name?.replace(/[^a-z0-9_]/g, '_').toLowerCase() || twilioTemplate.sid,
+            provider: 'twilio' as const,
+            category: 'UTILITY' as const,
+            language: twilioTemplate.language || 'it',
+            status: 'PENDING' as const,
+            
+            body: {
+              content: bodyContent || 'Template content not available'
+            },
+            
+            header: headerContent,
+            buttons: buttons.length > 0 ? buttons : undefined,
+
+            // Provider-specific IDs
+            providerTemplateId: twilioTemplate.sid,
+            description: `Imported from Twilio: ${twilioTemplate.friendly_name}`,
+            tags: ['imported', 'twilio']
+          };
+
+          // Check if template already exists
+          const existingTemplates = await storage.getWhatsappTemplates();
+          const exists = existingTemplates.find(t => 
+            t.providerTemplateId === twilioTemplate.sid || t.name === templateData.name
+          );
+
+          if (!exists) {
+            const created = await storage.createWhatsappTemplate(templateData);
+            importedTemplates.push(created);
+          } else {
+            console.log(`Template ${templateData.name} already exists, skipping...`);
+          }
+          
+        } catch (templateError) {
+          console.error(`Error processing template ${twilioTemplate.sid}:`, templateError);
+          continue;
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Successfully imported ${importedTemplates.length} templates from Twilio`,
+        imported: importedTemplates,
+        totalFound: data.contents?.length || 0
+      });
+
+    } catch (error) {
+      console.error('Error importing templates from Twilio:', error);
+      res.status(500).json({ 
+        error: 'Failed to import templates from Twilio',
+        details: error.message 
+      });
+    }
+  });
+
   // Check template status with provider
   app.get('/api/whatsapp/templates/:name/status', async (req, res) => {
     try {
