@@ -3105,12 +3105,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Search suppliers 
       const suppliersData = await storage.getSuppliers();
       suppliersData.forEach(supplier => {
-        if (supplier.name.toLowerCase().includes(searchTerm) ||
-            supplier.vatNumber?.toLowerCase().includes(searchTerm) ||
-            supplier.email?.toLowerCase().includes(searchTerm)) {
+        if ((supplier.name?.toLowerCase().includes(searchTerm)) ||
+            (supplier.vatNumber?.toLowerCase().includes(searchTerm)) ||
+            (supplier.email?.toLowerCase().includes(searchTerm))) {
           results.push({
             id: supplier.id,
-            name: supplier.name,
+            name: supplier.name || 'Nome non disponibile',
             type: 'supplier',
             subtitle: `${supplier.email || 'Nessuna email'} • P.IVA: ${supplier.vatNumber || 'N/A'}`,
             status: supplier.isActive ? 'Attivo' : 'Inattivo'
@@ -3121,12 +3121,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Search customers
       const customersData = await storage.getCustomers();
       customersData.forEach(customer => {
-        if (customer.name.toLowerCase().includes(searchTerm) ||
-            customer.email?.toLowerCase().includes(searchTerm) ||
-            customer.phone?.toLowerCase().includes(searchTerm)) {
+        if ((customer.name?.toLowerCase().includes(searchTerm)) ||
+            (customer.email?.toLowerCase().includes(searchTerm)) ||
+            (customer.phone?.toLowerCase().includes(searchTerm))) {
           results.push({
             id: customer.id,
-            name: customer.name,
+            name: customer.name || 'Nome non disponibile',
             type: 'customer',
             subtitle: `${customer.email || 'Nessuna email'} • Tel: ${customer.phone || 'N/A'}`,
             status: customer.isActive ? 'Attivo' : 'Inattivo'
@@ -3137,12 +3137,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Search resources
       const resourcesData = await storage.getResources();
       resourcesData.forEach(resource => {
-        if (resource.name.toLowerCase().includes(searchTerm) ||
-            resource.email?.toLowerCase().includes(searchTerm) ||
-            resource.role?.toLowerCase().includes(searchTerm)) {
+        if ((resource.name?.toLowerCase().includes(searchTerm)) ||
+            (resource.email?.toLowerCase().includes(searchTerm)) ||
+            (resource.role?.toLowerCase().includes(searchTerm))) {
           results.push({
             id: resource.id,
-            name: resource.name,
+            name: resource.name || 'Nome non disponibile',
             type: 'resource',
             subtitle: `${resource.email || 'Nessuna email'} • Ruolo: ${resource.role || 'N/A'}`,
             status: resource.isActive ? 'Attivo' : 'Inattivo'
