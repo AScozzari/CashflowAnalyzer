@@ -41,7 +41,7 @@ interface SystemMetrics {
 }
 
 export function ConfigPreviewMini() {
-  // 🔥 DATI REALI - Fetch delle statistiche WhatsApp
+  // 🔥 DATI REALI - Fetch delle statistiche WhatsApp (AGGIORNAMENTO AUTOMATICO)
   const { data: whatsappStats } = useQuery<{total: number; unread: number; today: number}>({
     queryKey: ['/api/whatsapp/stats'],
     select: (data: any) => ({
@@ -50,14 +50,18 @@ export function ConfigPreviewMini() {
       today: data?.todayMessages || 0
     }),
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0, // Sempre aggiorna
   });
 
   const { data: whatsappChats = [] } = useQuery<any[]>({
     queryKey: ['/api/whatsapp/chats'],
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0,
   });
 
-  // 🔥 DATI REALI - Fetch delle statistiche Telegram
+  // 🔥 DATI REALI - Fetch delle statistiche Telegram (AGGIORNAMENTO AUTOMATICO)
   const { data: telegramStats } = useQuery<{total: number; unread: number; today: number}>({
     queryKey: ['/api/telegram/stats'],
     select: (data: any) => ({
@@ -66,14 +70,18 @@ export function ConfigPreviewMini() {
       today: data?.todayMessages || 0
     }),
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0,
   });
 
   const { data: telegramChats = [] } = useQuery<any[]>({
     queryKey: ['/api/telegram/chats'],
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0,
   });
 
-  // 🔥 DATI REALI - Fetch delle statistiche Email
+  // 🔥 DATI REALI - Fetch delle statistiche Email (AGGIORNAMENTO AUTOMATICO)
   const { data: emailStats } = useQuery<{total: number; sent: number; failed: number}>({
     queryKey: ['/api/email/stats'],
     select: (data: any) => ({
@@ -82,9 +90,11 @@ export function ConfigPreviewMini() {
       failed: data?.failedEmails || 0
     }),
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0,
   });
 
-  // 🔥 DATI REALI - Fetch delle statistiche SMS
+  // 🔥 DATI REALI - Fetch delle statistiche SMS (AGGIORNAMENTO AUTOMATICO)
   const { data: smsStats } = useQuery<{total: number; sent: number; failed: number}>({
     queryKey: ['/api/sms/stats'],
     select: (data: any) => ({
@@ -93,6 +103,8 @@ export function ConfigPreviewMini() {
       failed: data?.failedSms || 0
     }),
     retry: false,
+    refetchInterval: 30000, // Aggiorna ogni 30 secondi
+    staleTime: 0,
   });
 
   // Helper function to calculate last used
