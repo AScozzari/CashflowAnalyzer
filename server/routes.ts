@@ -359,7 +359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/resources", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/resources", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertResourceSchema.parse(req.body);
       const resource = await storage.createResource(validatedData);

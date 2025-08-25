@@ -51,7 +51,8 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
       zipCode: resource?.zipCode || "",
       city: resource?.city || "",
       country: resource?.country || "Italia",
-      companyId: resource?.companyId || "",
+      // 🎯 Eredita la prima ragione sociale se non è una modifica
+      companyId: resource?.companyId || (companies.length > 0 ? companies[0].id : ""),
       officeIds: resource?.officeIds || [],
       role: (resource?.role as "admin" | "finance" | "user") || "user",
       avatar: resource?.avatar || "",
@@ -61,6 +62,15 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
   });
 
   const selectedCompanyId = form.watch("companyId");
+  const [selectedCompanyIdState, setSelectedCompanyId] = useState<string>(selectedCompanyId);
+
+  // 🎯 Aggiorna automaticamente company quando sono disponibili le companies
+  useEffect(() => {
+    if (!resource && companies.length > 0 && !form.getValues("companyId")) {
+      form.setValue("companyId", companies[0].id);
+      setSelectedCompanyId(companies[0].id);
+    }
+  }, [companies, resource, form]);
 
   // Fetch offices filtered by selected company
   const { data: offices = [] } = useQuery<Office[]>({
@@ -464,9 +474,7 @@ function ResourceForm({ resource, onClose }: ResourceFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="user">User - Visualizzazione movimenti assegnati</SelectItem>
-                    <SelectItem value="finance">Finance - Gestione movimenti e analytics</SelectItem>
-                    <SelectItem value="admin">Admin - Accesso completo al sistema</SelectItem>
+                    <SelectItem value="user">User - Risorsa aziendale standard</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
