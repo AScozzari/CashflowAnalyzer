@@ -547,18 +547,17 @@ Nel frattempo puoi:
       // Create notification for each recipient
       for (const userId of notificationRecipients) {
         console.log(`[TELEGRAM NOTIFICATION] Creando notifica per utente ${userId}...`);
-        // TODO: Re-enable notification service once the new structure is implemented
-        // await notificationService.createCommunicationNotification({
-        //   userId,
-        //   type: 'new_telegram',
-        //   category: 'telegram',
-        //   from: senderUsername,
-        //   to: 'EasyCashFlows Bot',
-        //   originalContent: text,
-        //   channelProvider: 'telegram',
-        //   messageId: `telegram_${message.message_id}_${chatId}`,
-        //   priority: 'normal'
-        // });
+        
+        await storage.createNotification({
+          userId,
+          type: 'new_telegram',
+          category: 'telegram',
+          title: `Nuovo messaggio Telegram`,
+          message: `${senderUsername}: ${text.length > 60 ? text.substring(0, 60) + '...' : text}`,
+          actionUrl: `/communications?tab=telegram&chat=${chatId}`,
+          isRead: false
+        });
+        
         console.log(`[TELEGRAM NOTIFICATION] ✅ Notifica creata per utente ${userId}`);
       }
 
