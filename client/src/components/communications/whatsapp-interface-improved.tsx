@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ContactSearchEnhanced } from "./contact-search-enhanced";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   MessageSquare, 
   Send, 
@@ -85,6 +86,9 @@ export function WhatsAppInterfaceImproved() {
   const [autoResponseEnabled, setAutoResponseEnabled] = useState(false);
   const [showMessageAnalysis, setShowMessageAnalysis] = useState(false);
   const [showContactPanel, setShowContactPanel] = useState(true);
+  const [showNewMessage, setShowNewMessage] = useState(false);
+  const [newPhoneNumber, setNewPhoneNumber] = useState("");
+  const [newContactName, setNewContactName] = useState("");
   const { toast } = useToast();
 
   // Fetch real data
@@ -141,25 +145,150 @@ export function WhatsAppInterfaceImproved() {
 
   // Send message function
   const sendMessage = async () => {
-    if (!messageInput.trim() || !selectedContact?.phone) {
+    const phoneNumber = selectedContact?.phone || newPhoneNumber;
+    
+    if (!messageInput.trim()) {
       toast({
         title: "Errore",
-        description: "Inserisci un messaggio e seleziona un contatto",
+        description: "Inserisci un messaggio",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!phoneNumber) {
+      toast({
+        title: "Errore", 
+        description: "Seleziona un contatto o inserisci un numero di telefono",
         variant: "destructive"
       });
       return;
     }
 
+    // Format phone number if needed
+    let formattedPhone = phoneNumber;
+    if (!formattedPhone.startsWith('+')) {
+      if (formattedPhone.startsWith('39')) {
+        formattedPhone = '+' + formattedPhone;
+      } else if (formattedPhone.startsWith('3')) {
+        formattedPhone = '+39' + formattedPhone;
+      } else {
+        formattedPhone = '+39' + formattedPhone;
+      }
+    }
+
     await sendMessageMutation.mutateAsync({
       content: messageInput,
-      to: selectedContact.phone
+      to: formattedPhone
     });
   };
 
+  // Start new message with phone number
+  const startNewMessage = () => {
+    setShowNewMessage(true);
+    setSelectedContact(null);
+    setNewPhoneNumber("");
+    setNewContactName("");
+  };
+
+  // Create temporary contact for new message
+  const createTemporaryContact = () => {
+    if (!newPhoneNumber.trim()) {
+      toast({
+        title: "Errore",
+        description: "Inserisci un numero di telefono valido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const tempContact: WhatsAppContact = {
+      id: `temp_${Date.now()}`,
+      name: newContactName || `Nuovo Contatto`,
+      phone: newPhoneNumber,
+      lastMessage: '',
+      lastSeen: 'Mai',
+      unreadCount: 0,
+      online: false,
+      type: 'customer'
+    };
+    
+    setSelectedContact(tempContact);
+    setShowNewMessage(false);
+  };
+
   return (
-    <div className="grid grid-cols-12 gap-6 h-[800px]">
-      {/* Contact Search and Chat List */}
-      <div className="col-span-4">
+    <>
+      {/* New Message Dialog */}
+      <Dialog open={showNewMessage} onOpenChange={setShowNewMessage}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-green-600" />
+              Nuovo Messaggio WhatsApp
+            </DialogTitle>
+            <DialogDescription>
+              Inserisci il numero di telefono per iniziare una nuova conversazione
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="phone-number" className="text-sm font-medium">
+                Numero di Telefono *
+              </Label>
+              <Input
+                id="phone-number"
+                type="tel"
+                placeholder="+39 329 762 6144"
+                value={newPhoneNumber}
+                onChange={(e) => setNewPhoneNumber(e.target.value)}
+                className="mt-1"
+                data-testid="input-new-phone-number"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Formato internazionale (es. +39 329 762 6144)
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="contact-name" className="text-sm font-medium">
+                Nome Contatto (opzionale)
+              </Label>
+              <Input
+                id="contact-name"
+                placeholder="Nome del contatto..."
+                value={newContactName}
+                onChange={(e) => setNewContactName(e.target.value)}
+                className="mt-1"
+                data-testid="input-new-contact-name"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowNewMessage(false)}
+              data-testid="button-cancel-new-message"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={createTemporaryContact}
+              className="bg-green-600 hover:bg-green-700 text-white"
+              data-testid="button-start-new-message"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Inizia Conversazione
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="grid grid-cols-12 gap-6 h-[800px]">
+        {/* Contact Search and Chat List */}
+        <div className="col-span-4">
         <Card className="h-full">
           <CardHeader className="border-b pb-3">
             <div className="flex items-center justify-between">
@@ -190,15 +319,27 @@ export function WhatsAppInterfaceImproved() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium">Cerca Contatti</span>
+                    <span className="text-sm font-medium">Contatti</span>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setShowContactPanel(!showContactPanel)}
-                  >
-                    {showContactPanel ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={startNewMessage}
+                      className="text-green-600 border-green-600 hover:bg-green-50"
+                      data-testid="button-new-message"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Nuovo
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setShowContactPanel(!showContactPanel)}
+                    >
+                      {showContactPanel ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
                 
                 {showContactPanel && (
@@ -288,8 +429,8 @@ export function WhatsAppInterfaceImproved() {
               )}
             </ScrollArea>
 
-            {/* Selected Contact Info */}
-            {selectedContact && (
+            {/* Selected Contact Info OR Manual Phone Input */}
+            {selectedContact ? (
               <div className="p-3 border-t bg-green-50 dark:bg-green-950/20">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
@@ -305,10 +446,46 @@ export function WhatsAppInterfaceImproved() {
                       <div className="text-xs text-muted-foreground truncate">{selectedContact.company}</div>
                     )}
                   </div>
-                  <Badge variant="outline" className="text-xs">
-                    {selectedContact.type === 'resource' ? 'Risorsa' : 
-                     selectedContact.type === 'customer' ? 'Cliente' : 'Fornitore'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {selectedContact.type === 'resource' ? 'Risorsa' : 
+                       selectedContact.type === 'customer' ? 'Cliente' : 
+                       selectedContact.type === 'supplier' ? 'Fornitore' : 'Temp'}
+                    </Badge>
+                    {selectedContact.id.startsWith('temp_') && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedContact(null);
+                          setShowNewMessage(true);
+                          setNewPhoneNumber(selectedContact.phone);
+                          setNewContactName(selectedContact.name);
+                        }}
+                        className="text-xs p-1 h-6"
+                        data-testid="button-edit-temp-contact"
+                      >
+                        Modifica
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 border-t bg-muted/10">
+                <div className="text-sm text-muted-foreground text-center">
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>Nessun contatto selezionato</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={startNewMessage}
+                    className="mt-2"
+                    data-testid="button-quick-new-message"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Nuovo Messaggio
+                  </Button>
                 </div>
               </div>
             )}
@@ -487,12 +664,26 @@ export function WhatsAppInterfaceImproved() {
           <Card className="h-full flex items-center justify-center">
             <div className="text-center text-muted-foreground">
               <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">Seleziona un contatto</h3>
-              <p>Scegli un contatto per iniziare la conversazione WhatsApp</p>
+              <h3 className="text-lg font-medium mb-2">Inizia conversazione</h3>
+              <p className="mb-4">Scegli un contatto o scrivi a un nuovo numero</p>
+              <div className="space-y-2">
+                <Button 
+                  onClick={startNewMessage}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  data-testid="button-start-new-conversation"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuovo Messaggio
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  oppure seleziona una chat esistente
+                </p>
+              </div>
             </div>
           </Card>
         )}
       </div>
     </div>
+    </>
   );
 }
