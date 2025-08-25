@@ -1094,7 +1094,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // WhatsApp connection test endpoint
   app.get("/api/whatsapp/test-connection", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      const settings = await storage.getWhatsAppSettings();
+      const settingsArray = await storage.getWhatsappSettings();
+      const settings = settingsArray.length > 0 ? settingsArray[0] : null;
       
       if (!settings || !settings.accountSid || !settings.authToken) {
         return res.json({
