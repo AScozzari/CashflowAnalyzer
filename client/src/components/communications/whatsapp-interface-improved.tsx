@@ -205,8 +205,9 @@ export function WhatsAppInterfaceImproved() {
                   <div className="space-y-3">
                     <ContactSearchEnhanced 
                       onContactSelect={handleContactSelect}
-                      placeholder="Cerca contatti WhatsApp..."
+                      placeholder="Cerca contatti o inserisci nuovo numero (+39...)"
                       filterByType={['resource', 'customer', 'supplier']}
+                      allowNewContacts={true}
                     />
                   </div>
                 )}

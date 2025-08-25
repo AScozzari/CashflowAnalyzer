@@ -40,6 +40,7 @@ interface ContactSearchProps {
   multiSelect?: boolean;
   placeholder?: string;
   filterByType?: ('resource' | 'customer' | 'supplier')[];
+  allowNewContacts?: boolean; // 🔥 Permetti numeri non registrati
 }
 
 export function ContactSearchEnhanced({
@@ -47,7 +48,8 @@ export function ContactSearchEnhanced({
   selectedContacts = [],
   multiSelect = false,
   placeholder = "Cerca tra risorse, clienti e fornitori...",
-  filterByType
+  filterByType,
+  allowNewContacts = false // 🔥 Default false per compatibilità
 }: ContactSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -254,6 +256,30 @@ export function ContactSearchEnhanced({
           data-testid="contact-search-input"
           autoComplete="off"
         />
+        
+        {/* 🔥 Pulsante per numeri non registrati */}
+        {allowNewContacts && searchQuery && filteredContacts.length === 0 && searchQuery.match(/^\+?\d{10,15}$/) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute right-8 top-1/2 transform -translate-y-1/2 text-green-600 hover:text-green-700"
+            onClick={() => {
+              const newContact: Contact = {
+                id: `new-${Date.now()}`,
+                name: searchQuery,
+                type: 'customer', // Default nuovo contatto
+                phone: searchQuery.startsWith('+') ? searchQuery : '+' + searchQuery,
+                status: 'active'
+              };
+              onContactSelect(newContact);
+              setSearchQuery("");
+              setIsExpanded(false);
+            }}
+            title="Aggiungi nuovo numero"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        )}
         {(searchQuery || isExpanded) && (
           <Button
             variant="ghost"

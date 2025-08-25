@@ -78,13 +78,20 @@ export class WhatsAppService {
     if (!this.settings) return null;
 
     if (this.settings.provider === 'twilio') {
-      return {
+      const config: TwilioConfig = {
         accountSid: this.settings.accountSid!,
         authToken: this.settings.authToken!,
         apiVersion: '2010-04-01', // 🔥 FIX: Versione API Twilio corretta
-        baseUrl: 'https://api.twilio.com',
-        messagingServiceSid: (this.settings as any).messagingServiceSid
-      } as TwilioConfig;
+        baseUrl: 'https://api.twilio.com'
+      };
+      
+      // Aggiungi MessagingServiceSid solo se effettivamente configurato
+      const messagingServiceSid = (this.settings as any).messaging_service_sid || (this.settings as any).messagingServiceSid;
+      if (messagingServiceSid && messagingServiceSid !== null && messagingServiceSid !== 'undefined') {
+        config.messagingServiceSid = messagingServiceSid;
+      }
+      
+      return config;
     }
 
     if (this.settings.provider === 'linkmobility') {
@@ -138,25 +145,35 @@ export class WhatsAppService {
         To: `whatsapp:${message.to}`,
         From: `whatsapp:${this.settings!.whatsappNumber}`,
         ContentSid: message.content.templateName, // Template SID from Twilio Console
-        ContentVariables: JSON.stringify(message.content.templateVariables || {}),
-        MessagingServiceSid: config.messagingServiceSid
+        ContentVariables: JSON.stringify(message.content.templateVariables || {})
       };
+      // Aggiungi MessagingServiceSid solo se configurato
+      if (config.messagingServiceSid) {
+        requestBody.MessagingServiceSid = config.messagingServiceSid;
+      }
     } else if (message.type === 'media') {
       requestBody = {
         To: `whatsapp:${message.to}`,
         From: `whatsapp:${this.settings!.whatsappNumber}`,
         MediaUrl: message.content.mediaUrl,
-        Body: message.content.body || '',
-        MessagingServiceSid: config.messagingServiceSid
+        Body: message.content.body || ''
       };
+      // Aggiungi MessagingServiceSid solo se configurato
+      if (config.messagingServiceSid) {
+        requestBody.MessagingServiceSid = config.messagingServiceSid;
+      }
     } else {
-      // Text message
+      // Text message (MessagingServiceSid opzionale per messaggi semplici)
       requestBody = {
         To: `whatsapp:${message.to}`,
         From: `whatsapp:${this.settings!.whatsappNumber}`,
-        Body: message.content.body,
-        MessagingServiceSid: config.messagingServiceSid
+        Body: message.content.body
       };
+      
+      // Aggiungi MessagingServiceSid solo se configurato
+      if (config.messagingServiceSid) {
+        requestBody.MessagingServiceSid = config.messagingServiceSid;
+      }
     }
 
     const response = await fetch(`${config.baseUrl}/${config.apiVersion}/Accounts/${config.accountSid}/Messages.json`, {

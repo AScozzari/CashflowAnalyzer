@@ -378,8 +378,9 @@ export function WhatsAppInterface() {
                   </DialogHeader>
                   <ContactSearchEnhanced
                     onContactSelect={handleContactSelect}
-                    placeholder="Cerca contatti con numero di telefono..."
+                    placeholder="Cerca contatti o inserisci nuovo numero (+39...)"
                     filterByType={['resource', 'customer', 'supplier']}
+                    allowNewContacts={true}
                   />
                 </DialogContent>
               </Dialog>
