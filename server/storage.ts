@@ -4837,24 +4837,77 @@ async getMovements(filters: {
 
   // === COMMUNICATION STATS IMPLEMENTATION ===
 
-  async getEmailStats(): Promise<{ total: number; sent: number; failed: number }> {
+  // 🔥 EMAIL STATS REALI DAL DATABASE - Sostituisce i dati demo
+  async getEmailStatistics(): Promise<{
+    totalEmails: number;
+    sentEmails: number;
+    failedEmails: number;
+    todayEmails: number;
+  }> {
     try {
-      // Count from email logs/notifications or system configs
-      const emailNotifications = await db.select()
+      const today = new Date();
+      const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+      
+      // Conta tutte le notifiche email dal database
+      const totalResult = await db
+        .select({ count: sql<number>`COUNT(*)` })
         .from(notifications)
         .where(eq(notifications.category, 'email'));
       
-      const total = emailNotifications.length;
-      // For now, assume all emails are sent successfully
-      // In a real implementation, you'd track actual send statuses
-      const sent = total;
-      const failed = 0;
+      // Conta le notifiche email lette (considerate "inviate con successo")
+      const sentResult = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(notifications)
+        .where(and(
+          eq(notifications.category, 'email'),
+          eq(notifications.isRead, true)
+        ));
       
-      return { total, sent, failed };
+      // Conta le notifiche email non lette (considerate "fallite/in sospeso")
+      const failedResult = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(notifications)
+        .where(and(
+          eq(notifications.category, 'email'),
+          eq(notifications.isRead, false)
+        ));
+      
+      // Conta le notifiche email create oggi
+      const todayResult = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(notifications)
+        .where(and(
+          eq(notifications.category, 'email'),
+          gte(notifications.createdAt, startOfToday)
+        ));
+      
+      const totalEmails = Number(totalResult[0]?.count) || 0;
+      const sentEmails = Number(sentResult[0]?.count) || 0;
+      const failedEmails = Number(failedResult[0]?.count) || 0;
+      const todayEmails = Number(todayResult[0]?.count) || 0;
+      
+      console.log('[EMAIL STATS] ✅ Dati reali dal database:', { totalEmails, sentEmails, failedEmails, todayEmails });
+      
+      return {
+        totalEmails,
+        sentEmails,
+        failedEmails,
+        todayEmails
+      };
     } catch (error) {
       console.error('Error fetching email stats:', error);
-      return { total: 0, sent: 0, failed: 0 };
+      throw new Error('Failed to fetch email statistics');
     }
+  }
+
+  // Legacy method for compatibility
+  async getEmailStats(): Promise<{ total: number; sent: number; failed: number }> {
+    const stats = await this.getEmailStatistics();
+    return {
+      total: stats.totalEmails,
+      sent: stats.sentEmails,
+      failed: stats.failedEmails
+    };
   }
 
   async getSmsStats(): Promise<{ total: number; sent: number; failed: number }> {
