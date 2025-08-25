@@ -561,14 +561,20 @@ export const insertResourceSchema = createInsertSchema(resources).omit({
   id: true,
   createdAt: true,
 }).extend({
-  firstName: z.string(),
-  lastName: z.string(), 
-  taxCode: z.string(),
-  companyId: z.string(),
-  email: z.string().email().optional(),
+  firstName: z.string().min(1, "Nome richiesto"),
+  lastName: z.string().min(1, "Cognome richiesto"), 
+  taxCode: z.string().min(1, "Codice fiscale richiesto"),
+  companyId: z.string().min(1, "Azienda richiesta"),
+  email: z.string().email("Email non valida").optional(),
   phone: z.string().optional(),
   mobile: z.string().optional(),
-  role: z.enum(['user']).default('user'), // Solo ruolo user per dipendenti
+  address: z.string().optional(),
+  zipCode: z.string().optional(),
+  city: z.string().optional(),
+  country: z.string().optional().default('Italia'),
+  role: z.enum(['admin', 'finance', 'user']).default('user'), // Tutti i ruoli supportati
+  notes: z.string().optional(),
+  isActive: z.boolean().default(true),
 });
 
 export const insertIbanSchema = createInsertSchema(ibans).omit({
