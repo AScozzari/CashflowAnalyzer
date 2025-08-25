@@ -108,8 +108,8 @@ export function WhatsAppInterfaceImproved() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: ({ content, to, templateName, templateLanguage }: { content: string; to: string; templateName?: string; templateLanguage?: string }) =>
-      apiRequest('/api/whatsapp/send', 'POST', {
+    mutationFn: async ({ content, to, templateName, templateLanguage }: { content: string; to: string; templateName?: string; templateLanguage?: string }) => {
+      const response = await apiRequest('POST', '/api/whatsapp/send', {
         to,
         type: templateName ? 'template' : 'text',
         content: templateName ? {
@@ -118,7 +118,9 @@ export function WhatsAppInterfaceImproved() {
         } : {
           body: content
         }
-      }),
+      });
+      return response.json();
+    },
     onSuccess: () => {
       setMessageInput("");
       refetchMessages();
