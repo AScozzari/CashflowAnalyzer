@@ -109,19 +109,30 @@ export function WhatsAppInterfaceImproved() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async ({ content, to, templateName, templateLanguage }: { content: string; to: string; templateName?: string; templateLanguage?: string }) => {
-      const response = await apiRequest('POST', '/api/whatsapp/send', {
-        to,
-        type: templateName ? 'template' : 'text',
-        content: templateName ? {
-          templateName,
-          templateLanguage: templateLanguage || 'it'
-        } : {
-          body: content
-        }
-      });
-      return response.json();
+      console.log('🚀 Sending WhatsApp message:', { content, to, templateName });
+      
+      try {
+        const response = await apiRequest('POST', '/api/whatsapp/send', {
+          to,
+          type: templateName ? 'template' : 'text',
+          content: templateName ? {
+            templateName,
+            templateLanguage: templateLanguage || 'it'
+          } : {
+            body: content
+          }
+        });
+        
+        const result = await response.json();
+        console.log('📨 API Response:', result);
+        return result;
+      } catch (error) {
+        console.error('💥 API Request failed:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      console.log('✅ WhatsApp send success:', data);
       setMessageInput("");
       refetchMessages();
       toast({
@@ -130,6 +141,7 @@ export function WhatsAppInterfaceImproved() {
       });
     },
     onError: (error: any) => {
+      console.error('❌ WhatsApp send error:', error);
       toast({
         title: "Errore invio messaggio",
         description: error.message || "Impossibile inviare il messaggio",
