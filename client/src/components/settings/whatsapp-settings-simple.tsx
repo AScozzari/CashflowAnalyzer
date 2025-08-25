@@ -62,11 +62,16 @@ export function WhatsAppSettingsSimple() {
     }
   });
 
-  // Update form when settings load
+  // Update form when settings load - 🔥 FIX: Gestisci array vuoto dall'API
   useEffect(() => {
-    if (settings) {
+    if (settings && Array.isArray(settings) && settings.length > 0) {
+      // Se settings è un array con elementi, prendi il primo
+      setFormData(settings[0]);
+    } else if (settings && !Array.isArray(settings)) {
+      // Se settings è un oggetto diretto
       setFormData(settings);
     }
+    // Se settings è null, undefined o array vuoto, mantieni formData di default
   }, [settings]);
 
   // Save settings mutation
@@ -145,7 +150,8 @@ export function WhatsAppSettingsSimple() {
     }
   };
 
-  const currentProvider = providerConfig[formData.provider];
+  // 🔥 FIX: Assicura che currentProvider sia sempre definito
+  const currentProvider = providerConfig[formData.provider] || providerConfig.twilio;
 
   return (
     <div className="space-y-6">
