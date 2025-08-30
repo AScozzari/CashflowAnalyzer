@@ -80,8 +80,14 @@ export function analyzeInvoiceForMovement(
     // Fattura emessa → sempre entrata (anche se negativa per note credito)
     movementType = 'income';
   } else {
-    // Fattura ricevuta → sempre uscita
+    // Fattura ricevuta → sempre uscita (spesa)
     movementType = 'expense';
+  }
+  
+  // LOGICA SPECIALE: Per fatture ricevute, l'importo è sempre negativo nel movimento
+  if (invoice.direction === 'incoming') {
+    // Per fatture ricevute (incoming), il movimento è sempre expense con importo positivo
+    // ma rappresenta un'uscita di denaro (spesa verso fornitore)
   }
   
   // Genera note automatiche

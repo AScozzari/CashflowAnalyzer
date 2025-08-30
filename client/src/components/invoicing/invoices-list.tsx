@@ -429,8 +429,12 @@ export function InvoicesList() {
                         </div>
                         
                         <div className="text-right">
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
-                            €{parseFloat(invoice.totalAmount).toLocaleString('it-IT')}
+                          <p className={`text-xl font-bold ${
+                            (invoice.direction || 'outgoing') === 'outgoing' 
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            {(invoice.direction || 'outgoing') === 'outgoing' ? '+' : '-'}€{parseFloat(invoice.totalAmount).toLocaleString('it-IT')}
                           </p>
                           <div className="flex items-center space-x-2 mt-1">
                             {getStatusBadge(invoice.status)}
