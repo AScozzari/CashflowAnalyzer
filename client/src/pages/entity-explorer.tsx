@@ -81,23 +81,29 @@ export default function EntityExplorer() {
     }
 
     setIsSearching(true);
+    console.log('[ENTITY SEARCH] Starting search for:', query);
     
     try {
       // Real API call to search entities
       const response = await fetch('/api/search/entities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({ query })
       });
       
+      console.log('[ENTITY SEARCH] Response status:', response.status);
+      
       if (response.ok) {
         const results = await response.json();
+        console.log('[ENTITY SEARCH] Results received:', results);
         setSearchResults(results || []);
       } else {
+        console.error('[ENTITY SEARCH] API error:', response.status, response.statusText);
         setSearchResults([]);
       }
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('[ENTITY SEARCH] Network error:', error);
       setSearchResults([]);
     } finally {
       setIsSearching(false);
