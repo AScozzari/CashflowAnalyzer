@@ -442,7 +442,15 @@ export function InvoiceCreation() {
                                   <SelectContent>
                                     {vatCodes?.map((vat: any) => (
                                       <SelectItem key={vat.id} value={vat.id}>
-                                        {vat.percentage}%
+                                        <div className="flex items-center justify-between w-full">
+                                          <span className="font-medium">{vat.code}</span>
+                                          <span className="text-sm text-muted-foreground ml-2">
+                                            {vat.natura ? 
+                                              `${vat.description} (${vat.natura})` : 
+                                              `IVA ${vat.percentage}%`
+                                            }
+                                          </span>
+                                        </div>
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
