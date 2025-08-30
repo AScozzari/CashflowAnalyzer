@@ -289,7 +289,7 @@ export function InvoiceCreation() {
                             <SelectContent>
                               {customers?.map((customer: any) => (
                                 <SelectItem key={customer.id} value={customer.id}>
-                                  {customer.businessName || customer.firstName + ' ' + customer.lastName}
+                                  {customer.name || `${customer.firstName} ${customer.lastName}`.trim()}
                                 </SelectItem>
                               ))}
                             </SelectContent>
