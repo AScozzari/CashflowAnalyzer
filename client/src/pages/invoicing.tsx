@@ -59,7 +59,7 @@ export default function Invoicing() {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-5 bg-white dark:bg-gray-800 border shadow-sm">
+          <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-gray-800 border shadow-sm">
             <TabsTrigger 
               value="dashboard" 
               className="flex items-center space-x-2 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20"
@@ -92,14 +92,6 @@ export default function Invoicing() {
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Config</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="analytics" 
-              className="hidden lg:flex items-center space-x-2 data-[state=active]:bg-indigo-50 dark:data-[state=active]:bg-indigo-900/20"
-              data-testid="analytics-tab"
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span>Analytics</span>
-            </TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
@@ -123,32 +115,6 @@ export default function Invoicing() {
           </TabsContent>
 
           {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <BarChart3 className="h-5 w-5 text-indigo-500" />
-                  <span>Analytics Avanzate</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg p-8 max-w-md mx-auto">
-                    <BarChart3 className="h-12 w-12 text-indigo-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Analytics Fatturazione
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 mb-4">
-                      Analisi dettagliate dei ricavi, trend mensili, performance clienti e previsioni cash flow
-                    </p>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Sezione in sviluppo - verrà implementata nelle prossime versioni
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </main>
 
