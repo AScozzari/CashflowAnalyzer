@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { AvatarInitials } from '@/components/ui/avatar-initials';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { 
   Search, 
   User, 
@@ -72,6 +73,10 @@ export default function EntityExplorer() {
   const [selectedEntity, setSelectedEntity] = useState<EntitySearchResult | null>(null);
   const [searchResults, setSearchResults] = useState<EntitySearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const [showEntityModal, setShowEntityModal] = useState(false);
 
   // Real search function using API
   const performSearch = async (query: string) => {
@@ -97,7 +102,19 @@ export default function EntityExplorer() {
       if (response.ok) {
         const results = await response.json();
         console.log('[ENTITY SEARCH] Results received:', results);
-        setSearchResults(results || []);
+        
+        // Apply client-side filters
+        let filteredResults = results || [];
+        
+        if (typeFilter !== 'all') {
+          filteredResults = filteredResults.filter(r => r.type === typeFilter);
+        }
+        
+        if (statusFilter !== 'all') {
+          filteredResults = filteredResults.filter(r => r.status === statusFilter);
+        }
+        
+        setSearchResults(filteredResults);
       } else {
         console.error('[ENTITY SEARCH] API error:', response.status, response.statusText);
         setSearchResults([]);
@@ -183,11 +200,68 @@ export default function EntityExplorer() {
                 size="lg"
                 className="px-6"
                 disabled={isSearching}
+                onClick={() => setShowFilters(!showFilters)}
               >
                 <Filter className="w-4 h-4 mr-2" />
                 Filtri
               </Button>
             </div>
+
+            {/* Filters Panel */}
+            {showFilters && (
+              <div className="mt-4 p-4 bg-muted/30 rounded-lg border">
+                <h4 className="text-sm font-medium mb-3">Filtri di ricerca</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">Tipo Entità</label>
+                    <Select value={typeFilter} onValueChange={(value) => {
+                      setTypeFilter(value);
+                      if (searchQuery) performSearch(searchQuery);
+                    }}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Tutti i tipi" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tutti i tipi</SelectItem>
+                        <SelectItem value="customer">Clienti</SelectItem>
+                        <SelectItem value="supplier">Fornitori</SelectItem>
+                        <SelectItem value="resource">Risorse</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">Stato</label>
+                    <Select value={statusFilter} onValueChange={(value) => {
+                      setStatusFilter(value);
+                      if (searchQuery) performSearch(searchQuery);
+                    }}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Tutti gli stati" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tutti gli stati</SelectItem>
+                        <SelectItem value="Attivo">Attivo</SelectItem>
+                        <SelectItem value="Inattivo">Inattivo</SelectItem>
+                        <SelectItem value="Sospeso">Sospeso</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setTypeFilter('all');
+                      setStatusFilter('all');
+                      if (searchQuery) performSearch(searchQuery);
+                    }}
+                  >
+                    Cancella Filtri
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Search Results */}
             {searchResults.length > 0 && (
@@ -219,7 +293,17 @@ export default function EntityExplorer() {
                         </div>
                         <p className="text-sm text-muted-foreground">{result.subtitle}</p>
                       </div>
-                      <Eye className="w-4 h-4 text-muted-foreground" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedEntity(result);
+                          setShowEntityModal(true);
+                        }}
+                      >
+                        <Eye className="w-4 h-4 text-muted-foreground" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -536,6 +620,292 @@ export default function EntityExplorer() {
             </CardContent>
           </Card>
         )}
+
+        {/* Entity Details Modal */}
+        <Dialog open={showEntityModal} onOpenChange={setShowEntityModal}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  {selectedEntity && getEntityIcon(selectedEntity.type)}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">{selectedEntity?.name}</h2>
+                  <Badge className="mt-1">
+                    {selectedEntity && getEntityTypeLabel(selectedEntity.type)}
+                  </Badge>
+                </div>
+              </DialogTitle>
+              <DialogDescription>
+                Story telling completo dell'entità con anagrafica, movimenti e comunicazioni
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Modal Content - Use the same entity details logic */}
+            {selectedEntity && (
+              <div className="mt-6">
+                {entityLoading || !entityDetails ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-4 text-muted-foreground">Caricamento dettagli entità...</p>
+                  </div>
+                ) : entityDetails ? (
+                  <>
+                    {/* Entity Overview in Modal */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-primary">{entityDetails.stats.totalMovements}</div>
+                        <div className="text-sm text-muted-foreground">Movimenti</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">{formatCurrency(entityDetails.stats.totalAmount)}</div>
+                        <div className="text-sm text-muted-foreground">Valore Totale</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">{formatCurrency(entityDetails.stats.averageAmount)}</div>
+                        <div className="text-sm text-muted-foreground">Media</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-medium">
+                          {format(new Date(entityDetails.stats.lastActivity), 'dd/MM/yyyy', { locale: it })}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Ultima Attività</div>
+                      </div>
+                    </div>
+
+                    {/* Detailed Tabs in Modal */}
+                    <Tabs defaultValue="info" className="space-y-4">
+                      <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="info">
+                          <User className="w-4 h-4 mr-2" />
+                          Anagrafica
+                        </TabsTrigger>
+                        <TabsTrigger value="movements">
+                          <Activity className="w-4 h-4 mr-2" />
+                          Movimenti
+                        </TabsTrigger>
+                        <TabsTrigger value="communications">
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Comunicazioni
+                        </TabsTrigger>
+                        <TabsTrigger value="stats">
+                          <TrendingUp className="w-4 h-4 mr-2" />
+                          Analytics
+                        </TabsTrigger>
+                      </TabsList>
+
+                      {/* Anagrafica Tab */}
+                      <TabsContent value="info">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                              <User className="w-5 h-5" />
+                              <span>Informazioni Anagrafiche</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Nome/Ragione Sociale</label>
+                                  <p className="text-lg font-semibold">
+                                    {(entityDetails.entity as any).name || 
+                                     `${(entityDetails.entity as any).firstName || ''} ${(entityDetails.entity as any).lastName || ''}`.trim()}
+                                  </p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Email</label>
+                                  <p>{entityDetails.entity.email || 'Non specificata'}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Telefono</label>
+                                  <p>{(entityDetails.entity as any).phone || (entityDetails.entity as any).mobile || 'Non specificato'}</p>
+                                </div>
+                              </div>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Indirizzo</label>
+                                  <p>{entityDetails.entity.address || 'Non specificato'}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">P.IVA</label>
+                                  <p>{(entityDetails.entity as any).vatNumber || (entityDetails.entity as any).taxCode || 'Non specificata'}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Data Creazione</label>
+                                  <p>{format(new Date(entityDetails.entity.createdAt), 'dd/MM/yyyy', { locale: it })}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+
+                      {/* Movements Tab (stesso contenuto del componente esistente) */}
+                      <TabsContent value="movements">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                              <Activity className="w-5 h-5" />
+                              <span>Storico Movimenti ({entityDetails.movements.length})</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
+                              {entityDetails.movements.map((movement) => (
+                                <div key={movement.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                                  <div className="flex items-center space-x-4">
+                                    <div className={`p-2 rounded-lg ${
+                                      movement.type === 'income' 
+                                        ? 'bg-green-100 text-green-600' 
+                                        : 'bg-red-100 text-red-600'
+                                    }`}>
+                                      {movement.type === 'income' ? (
+                                        <ArrowUpRight className="w-4 h-4" />
+                                      ) : (
+                                        <ArrowDownLeft className="w-4 h-4" />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <div className="font-semibold">{movement.reason?.name || 'Movimento'}</div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {format(new Date(movement.flowDate), 'dd/MM/yyyy', { locale: it })}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className={`font-semibold ${
+                                      movement.type === 'income' ? 'text-green-600' : 'text-red-600'
+                                    }`}>
+                                      {movement.type === 'income' ? '+' : '-'}{formatCurrency(parseFloat(movement.amount))}
+                                    </div>
+                                    <Badge variant="outline" className="text-xs">
+                                      {movement.status?.name}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+
+                      {/* Communications Tab */}
+                      <TabsContent value="communications">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                          {/* WhatsApp */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center space-x-2 text-green-600">
+                                <MessageSquare className="w-5 h-5" />
+                                <span>WhatsApp</span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-3 max-h-48 overflow-y-auto">
+                                {entityDetails.communications.whatsapp.length > 0 ? (
+                                  entityDetails.communications.whatsapp.map((msg: any) => (
+                                    <div key={msg.id} className={`p-3 rounded-lg ${
+                                      msg.direction === 'outbound' 
+                                        ? 'bg-green-100 text-green-800 ml-4' 
+                                        : 'bg-gray-100 text-gray-800 mr-4'
+                                    }`}>
+                                      <div className="text-sm">{msg.message}</div>
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {format(new Date(msg.date), 'dd/MM HH:mm', { locale: it })}
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <p className="text-sm text-muted-foreground text-center py-4">Nessun messaggio WhatsApp</p>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Email */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center space-x-2 text-blue-600">
+                                <Mail className="w-5 h-5" />
+                                <span>Email</span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-3 max-h-48 overflow-y-auto">
+                                {entityDetails.communications.email.length > 0 ? (
+                                  entityDetails.communications.email.map((email: any) => (
+                                    <div key={email.id} className="p-3 border rounded-lg">
+                                      <div className="font-medium text-sm">{email.subject}</div>
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {format(new Date(email.date), 'dd/MM/yyyy HH:mm', { locale: it })}
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <p className="text-sm text-muted-foreground text-center py-4">Nessuna email</p>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* SMS */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center space-x-2 text-purple-600">
+                                <Send className="w-5 h-5" />
+                                <span>SMS</span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-center py-8">
+                                <Send className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                <p className="text-sm text-muted-foreground">Nessun SMS inviato</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </TabsContent>
+
+                      {/* Analytics Tab */}
+                      <TabsContent value="stats">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                              <TrendingUp className="w-5 h-5" />
+                              <span>Analytics & Insights</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="text-center p-4 bg-green-50 rounded-lg">
+                                <TrendingUp className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                                <div className="text-2xl font-bold text-green-600">{entityDetails.stats.totalMovements}</div>
+                                <div className="text-sm text-muted-foreground">Movimenti Totali</div>
+                              </div>
+                              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                                <Euro className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                                <div className="text-xl font-bold text-blue-600">{formatCurrency(entityDetails.stats.averageAmount)}</div>
+                                <div className="text-sm text-muted-foreground">Valore Medio</div>
+                              </div>
+                              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                                <Calendar className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                                <div className="text-lg font-bold text-purple-600">
+                                  {format(new Date(entityDetails.stats.lastActivity), 'dd/MM/yyyy', { locale: it })}
+                                </div>
+                                <div className="text-sm text-muted-foreground">Ultima Attività</div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+                    </Tabs>
+                  </>
+                ) : null}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
