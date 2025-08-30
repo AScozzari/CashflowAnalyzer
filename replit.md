@@ -81,6 +81,22 @@ Preferred communication style: Simple, everyday language.
 - **Communication Platforms**: Twilio, LinkMobility (WhatsApp), Skebby (SMS), Facebook Messenger.
 - **AI**: OpenAI.
 
+## Twilio Messaging API Integration Details
+- **Base URL**: `https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json`
+- **Authentication**: Basic Auth using Account SID and Auth Token
+- **WhatsApp Format**: All WhatsApp numbers use `whatsapp:` prefix (e.g., `whatsapp:+15558675310`)
+- **Template Messages**: Use `ContentSid` parameter for approved WhatsApp templates
+- **Message Status**: Real-time tracking through webhooks (queued → sending → sent → delivered)
+- **Content API**: Separate endpoint `https://content.twilio.com/v1/Content` for template management
+- **Template Approval**: All WhatsApp templates must be approved by Meta before use
+- **Variables**: Dynamic content replacement using `ContentVariables` JSON object
+- **Media Support**: MMS, images, documents through `MediaUrl` parameter
+- **Delivery Receipts**: Optional webhook notifications for message status updates
+- **Error Handling**: Comprehensive error codes and messages for debugging
+- **Rate Limiting**: Built-in protection against API abuse
+- **Messaging Services**: Advanced features like sender pools and link shortening (SID format: `MG[32chars]`)
+- **Rich Content**: Support for interactive buttons, quick replies, and cards through Content API
+
 ## Skebby SMS API Integration Details
 - **Base URL**: `https://api.skebby.it/API/v1.0/REST/`
 - **Authentication**: Two-step process using username/password → user_key + session_key
