@@ -108,20 +108,27 @@ export function WhatsAppInterfaceImproved() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ content, to, templateName, templateLanguage }: { content: string; to: string; templateName?: string; templateLanguage?: string }) => {
-      console.log('🚀 Sending WhatsApp message:', { content, to, templateName });
+    mutationFn: async ({ messageText, to, template }: { messageText?: string; to: string; template?: WhatsAppTemplate }) => {
+      console.log('🚀 Sending WhatsApp message:', { messageText, to, template: template?.name });
       
       try {
-        const response = await apiRequest('POST', '/api/whatsapp/send', {
+        const requestData = template ? {
           to,
-          type: templateName ? 'template' : 'text',
-          content: templateName ? {
-            templateName,
-            templateLanguage: templateLanguage || 'it'
-          } : {
-            body: content
+          type: 'template' as const,
+          content: {
+            templateName: template.name,
+            templateLanguage: 'it'
           }
-        });
+        } : {
+          to,
+          type: 'text' as const,
+          content: {
+            body: messageText || ''
+          }
+        };
+
+        console.log('📤 Request data:', requestData);
+        const response = await apiRequest('POST', '/api/whatsapp/send', requestData);
         
         const result = await response.json();
         console.log('📨 API Response:', result);
@@ -201,10 +208,9 @@ export function WhatsAppInterfaceImproved() {
     }
 
     await sendMessageMutation.mutateAsync({
-      content: messageInput,
+      messageText: messageInput,
       to: formattedPhone,
-      templateName: selectedTemplate?.name,
-      templateLanguage: 'it'
+      template: selectedTemplate
     });
     
     // Clear template selection after sending
