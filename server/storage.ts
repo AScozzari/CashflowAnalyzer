@@ -76,6 +76,12 @@ import {
 import crypto from 'crypto';
 import { db } from "./db";
 import { eq, desc, and, gte, lte, sql, count, or, isNull, isNotNull, inArray, ilike } from "drizzle-orm";
+import { 
+  analyzeInvoiceForMovement, 
+  createMovementDataFromInvoice, 
+  validateInvoiceForMovement,
+  type InvoiceMovementSyncOptions 
+} from '../shared/invoice-movement-sync';
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
@@ -463,6 +469,8 @@ export interface IStorage {
   getInvoiceById(id: string): Promise<any>;
   updateInvoice(id: string, invoice: any): Promise<any>;
   deleteInvoice(id: string): Promise<void>;
+  autoCreateMovementFromInvoice(invoiceId: string, options?: InvoiceMovementSyncOptions): Promise<Movement | null>;
+  getInvoiceTypeByCode(code: string): Promise<InvoiceType | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -5785,6 +5793,16 @@ async getMovements(filters: {
       }
       
       console.log('[STORAGE] Invoice created:', newInvoice.id);
+      
+      // Sincronizzazione automatica con movimenti
+      try {
+        await this.autoCreateMovementFromInvoice(newInvoice.id);
+        console.log('[STORAGE] Movimento automatico creato per fattura:', newInvoice.id);
+      } catch (error) {
+        console.error('[STORAGE] Errore creazione movimento automatico:', error);
+        // Non bloccare la creazione della fattura se fallisce il movimento
+      }
+      
       return newInvoice;
     } catch (error) {
       console.error('[STORAGE] Error creating invoice:', error);
@@ -5856,6 +5874,89 @@ async getMovements(filters: {
     } catch (error) {
       console.error('[STORAGE] Error deleting invoice:', error);
       throw new Error('Failed to delete invoice');
+    }
+  }
+
+  /**
+   * Crea automaticamente un movimento finanziario da una fattura
+   */
+  async autoCreateMovementFromInvoice(invoiceId: string, options: InvoiceMovementSyncOptions = {}): Promise<Movement | null> {
+    try {
+      console.log('[MOVEMENT SYNC] Creating automatic movement for invoice:', invoiceId);
+      
+      // Recupera fattura completa con tipo
+      const invoice = await this.getInvoiceById(invoiceId);
+      if (!invoice) {
+        throw new Error('Fattura non trovata');
+      }
+      
+      // Recupera tipo fattura (default TD01 se non specificato)
+      const invoiceType = await this.getInvoiceTypeByCode(invoice.documentType || 'TD01');
+      if (!invoiceType) {
+        console.log('[MOVEMENT SYNC] Tipo fattura non trovato, skip movimento');
+        return null;
+      }
+      
+      const invoiceWithType = { ...invoice, invoiceType };
+      
+      // Valida fattura per movimento
+      const validation = validateInvoiceForMovement(invoiceWithType);
+      if (!validation.isValid) {
+        console.log('[MOVEMENT SYNC] Fattura non valida per movimento:', validation.errors);
+        return null;
+      }
+      
+      // Analizza fattura per determinare mapping movimento
+      const mapping = analyzeInvoiceForMovement(invoiceWithType, invoice.lines);
+      
+      if (mapping.shouldSkipMovement) {
+        console.log('[MOVEMENT SYNC] Tipo fattura non genera movimento:', invoice.documentType);
+        return null;
+      }
+      
+      // Ottieni core e status di default per l'azienda
+      const defaultCore = await this.getCoresByCompany(invoice.companyId);
+      const defaultStatus = await this.getMovementStatuses();
+      const defaultReason = await this.getMovementReasons();
+      
+      if (!defaultCore.length || !defaultStatus.length || !defaultReason.length) {
+        console.log('[MOVEMENT SYNC] Configurazioni mancanti per movimento automatico');
+        return null;
+      }
+      
+      // Opzioni per il movimento
+      const syncOptions: InvoiceMovementSyncOptions = {
+        coreId: options.coreId || defaultCore[0].id,
+        statusId: options.statusId || defaultStatus.find(s => s.name === 'Confermato')?.id || defaultStatus[0].id,
+        reasonId: options.reasonId || defaultReason.find(r => r.name === 'Fatturazione attiva')?.id || defaultReason[0].id,
+        ...options
+      };
+      
+      // Crea dati movimento
+      const movementData = createMovementDataFromInvoice(invoiceWithType, mapping, syncOptions);
+      
+      // Crea movimento
+      const movement = await this.createMovement(movementData);
+      
+      console.log('[MOVEMENT SYNC] ✅ Movimento automatico creato:', movement.id, 'per fattura:', invoiceId);
+      return movement;
+      
+    } catch (error) {
+      console.error('[MOVEMENT SYNC] Errore creazione movimento automatico:', error);
+      throw error;
+    }
+  }
+
+  async getInvoiceTypeByCode(code: string): Promise<InvoiceType | undefined> {
+    try {
+      const [invoiceType] = await db
+        .select()
+        .from(invoiceTypes)
+        .where(eq(invoiceTypes.code, code));
+      return invoiceType;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching invoice type by code:', error);
+      return undefined;
     }
   }
 }

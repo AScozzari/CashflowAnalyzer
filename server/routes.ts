@@ -4136,6 +4136,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Sync Existing Invoices with Movements (One-time operation)
+  app.post('/api/invoicing/sync-existing-invoices', requireRole("admin"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[INVOICE SYNC] Starting sync of existing invoices with movements...');
+      
+      // Get all invoices without movements
+      const allInvoices = await storage.getInvoices({ limit: 100 });
+      const syncResults = [];
+      
+      for (const invoice of allInvoices.invoices) {
+        try {
+          console.log('[INVOICE SYNC] Processing invoice:', invoice.invoiceNumber);
+          const movement = await storage.autoCreateMovementFromInvoice(invoice.id);
+          
+          if (movement) {
+            syncResults.push({
+              invoiceId: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              movementId: movement.id,
+              amount: movement.amount,
+              status: 'success'
+            });
+          } else {
+            syncResults.push({
+              invoiceId: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              status: 'skipped',
+              reason: 'Invalid invoice or already has movement'
+            });
+          }
+        } catch (error) {
+          console.error('[INVOICE SYNC] Error processing invoice:', invoice.id, error);
+          syncResults.push({
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            status: 'error',
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+      
+      console.log('[INVOICE SYNC] Sync completed. Results:', syncResults.length);
+      res.json({
+        message: 'Invoice-movement sync completed',
+        processed: allInvoices.invoices.length,
+        results: syncResults
+      });
+      
+    } catch (error) {
+      console.error('[INVOICE SYNC] Error in bulk sync:', error);
+      res.status(500).json({ message: 'Failed to sync existing invoices' });
+    }
+  }));
+
   // Bulk Create Movements from Multiple Invoices
   app.post('/api/invoicing/bulk-create-movements', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {
