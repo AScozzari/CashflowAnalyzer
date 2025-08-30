@@ -78,9 +78,17 @@ export class WhatsAppService {
     if (!this.settings) return null;
 
     if (this.settings.provider === 'twilio') {
+      // Use environment variables if database credentials are empty
+      const accountSid = this.settings.accountSid || process.env.TWILIO_ACCOUNT_SID;
+      const authToken = this.settings.authToken || process.env.TWILIO_AUTH_TOKEN;
+      
+      if (!accountSid || !authToken) {
+        return null; // No credentials available
+      }
+      
       const config: TwilioConfig = {
-        accountSid: this.settings.accountSid!,
-        authToken: this.settings.authToken!,
+        accountSid,
+        authToken,
         apiVersion: '2010-04-01', // 🔥 FIX: Versione API Twilio corretta
         baseUrl: 'https://api.twilio.com'
       };
@@ -140,11 +148,26 @@ export class WhatsAppService {
     let requestBody: any;
     
     if (message.type === 'template') {
+      // Get template from database to find ContentSid
+      const templates = await this.storage.getWhatsappTemplates();
+      const template = templates.find(t => t.name === message.content.templateName);
+      
+      if (!template || !template.contentSid) {
+        return {
+          success: false,
+          error: `Template "${message.content.templateName}" not found or not approved`,
+          provider: 'twilio'
+        };
+      }
+      
+      // Get WhatsApp number (use configured number or fallback)
+      const whatsappNumber = this.settings!.whatsappNumber || '+15558237341'; // Twilio sandbox
+      
       // New Template API format (2024)
       requestBody = {
         To: `whatsapp:${message.to}`,
-        From: `whatsapp:${this.settings!.whatsappNumber}`,
-        ContentSid: message.content.templateName, // Template SID from Twilio Console
+        From: `whatsapp:${whatsappNumber}`,
+        ContentSid: template.contentSid, // Use actual ContentSid from database
         ContentVariables: JSON.stringify(message.content.templateVariables || {})
       };
       // Aggiungi MessagingServiceSid solo se configurato
