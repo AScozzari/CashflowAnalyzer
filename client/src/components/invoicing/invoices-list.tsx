@@ -60,12 +60,12 @@ export function InvoicesList() {
   const { toast } = useToast();
 
   // Fetch invoices from the backend
-  const { data: invoices, isLoading, refetch } = useQuery<Invoice[]>({
+  const { data: invoicesResponse, isLoading, refetch } = useQuery<{invoices: Invoice[], total: number}>({
     queryKey: ['/api/invoicing/invoices', { search: searchTerm, status: statusFilter, direction: directionFilter }],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const currentInvoices = invoices || [];
+  const currentInvoices = invoicesResponse?.invoices || [];
 
   // 🔥 MUTATION: Create Movement from Invoice
   const createMovementMutation = useMutation({
