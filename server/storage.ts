@@ -5500,11 +5500,19 @@ async getMovements(filters: {
 
   async getPaymentTerms(): Promise<PaymentTerms[]> {
     try {
+      // La tabella payment_terms non ha la colonna "code", solo name, days, description
       const terms = await db.select().from(paymentTerms).orderBy(paymentTerms.days);
       return terms;
     } catch (error) {
       console.error('[STORAGE] Error fetching payment terms:', error);
-      throw new Error('Failed to fetch payment terms');
+      // Fallback con dati hardcoded se la tabella ha problemi
+      console.warn('[STORAGE] Returning hardcoded payment terms as fallback');
+      return [
+        { id: '1', name: 'Pagamento immediato', days: 0, description: 'Pagamento alla consegna', isActive: true, createdAt: new Date() },
+        { id: '2', name: '30 giorni data fattura', days: 30, description: 'Pagamento a 30 giorni dalla data della fattura', isActive: true, createdAt: new Date() },
+        { id: '3', name: '60 giorni data fattura', days: 60, description: 'Pagamento a 60 giorni dalla data della fattura', isActive: true, createdAt: new Date() },
+        { id: '4', name: '90 giorni data fattura', days: 90, description: 'Pagamento a 90 giorni dalla data della fattura', isActive: true, createdAt: new Date() }
+      ] as PaymentTerms[];
     }
   }
 

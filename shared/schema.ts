@@ -2232,7 +2232,6 @@ export const measureUnits = pgTable("measure_units", {
 // Condizioni di pagamento
 export const paymentTerms = pgTable("payment_terms", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: text("code").notNull().unique(), // TP01, TP02, TP03
   name: text("name").notNull(),
   description: text("description"),
   days: integer("days").notNull().default(0),
