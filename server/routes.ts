@@ -3061,7 +3061,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Get real configuration data from database
       const whatsappSettings = await storage.getWhatsappSettings();
-      const sendgridSettings = await storage.getSendgridSettings();
+      const emailSettings = await storage.getEmailSettings();
       const smsSettings = await storage.getSmsSettings();
       
       // Check WhatsApp configuration status
@@ -3072,12 +3072,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `Sistema WhatsApp Business completamente operativo - Account: ${whatsappSettings.twilioAccountSid?.substring(0, 10)}...` :
         'Configurazione Twilio Account SID e Auth Token richiesta';
 
-      // Check SendGrid configuration
-      const sendgridConfigured = sendgridSettings?.apiKey && sendgridSettings?.fromEmail;
-      const emailStatus = sendgridConfigured ? 'implemented' : 'coming_soon';
-      const emailStatusText = sendgridConfigured ? 'Configurato - SendGrid API Attiva' : 'Configurazione richiesta';
-      const emailDetails = sendgridConfigured ?
-        `Sistema email professionale operativo - From: ${sendgridSettings.fromEmail}` :
+      // Check Email configuration
+      const emailConfigured = emailSettings?.apiKey && emailSettings?.fromEmail;
+      const emailStatus = emailConfigured ? 'implemented' : 'coming_soon';
+      const emailStatusText = emailConfigured ? 'Configurato - SendGrid API Attiva' : 'Configurazione richiesta';
+      const emailDetails = emailConfigured ?
+        `Sistema email professionale operativo - From: ${emailSettings.fromEmail}` :
         'Configurazione SendGrid API Key e email mittente richiesta';
 
       // Check SMS configuration
