@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle2, MessageSquare, Plus, Edit, Trash2, Phone, Smartphone, Shield, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle2, MessageSquare, Plus, Edit, Trash2, Phone, Smartphone, Shield, RefreshCw, Send } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -100,6 +100,46 @@ export function WhatsAppTemplates() {
       toast({
         title: "Errore sincronizzazione",
         description: error.message || "Impossibile sincronizzare con Twilio",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Test template sending mutation
+  const testTemplateMutation = useMutation({
+    mutationFn: (templateName: string) => 
+      apiRequest('/api/whatsapp/send', 'POST', {
+        to: '+393297626144',
+        type: 'template',
+        content: {
+          templateName: templateName,
+          templateLanguage: 'it',
+          templateVariables: {}
+        },
+        metadata: {
+          priority: 'high',
+          trackingId: 'test-template-manager'
+        }
+      }),
+    onSuccess: (result: any) => {
+      if (result.success) {
+        toast({
+          title: "Template inviato!",
+          description: `Message ID: ${result.messageId}`,
+          duration: 5000,
+        });
+      } else {
+        toast({
+          title: "Invio fallito",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore invio template",
+        description: error.message || "Impossibile inviare il template",
         variant: "destructive",
       });
     },
@@ -257,6 +297,11 @@ export function WhatsAppTemplates() {
                       <CardTitle className="text-base">{template.name}</CardTitle>
                       <CardDescription>
                         Provider: {template.provider} | Lingua: {template.language}
+                        {template.contentSid && (
+                          <div className="text-xs text-blue-600 mt-1">
+                            ContentSid: {template.contentSid}
+                          </div>
+                        )}
                       </CardDescription>
                     </div>
                   </div>
@@ -264,6 +309,18 @@ export function WhatsAppTemplates() {
                     {getCategoryBadge(template.category)}
                     {template.status && getStatusBadge(template.status)}
                     <div className="flex gap-1">
+                      {template.status === 'APPROVED' && template.contentSid && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => testTemplateMutation.mutate(template.name)}
+                          disabled={testTemplateMutation.isPending}
+                          data-testid={`button-test-${template.id}`}
+                          className="text-green-600 border-green-200 hover:bg-green-50"
+                        >
+                          <Send className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"

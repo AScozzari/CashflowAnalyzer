@@ -24,6 +24,8 @@ interface WhatsAppSettings {
   authToken?: string;
   apiKey?: string;
   webhookUrl?: string;
+  whatsappBusinessAccountId?: string;
+  metaBusinessManagerId?: string;
   isBusinessVerified?: boolean;
   isPhoneVerified?: boolean;
   isApiConnected?: boolean;
@@ -42,7 +44,9 @@ export function WhatsAppSettingsSimple() {
     accountSid: '',
     authToken: '',
     apiKey: '',
-    webhookUrl: ''
+    webhookUrl: '',
+    whatsappBusinessAccountId: '',
+    metaBusinessManagerId: ''
   });
   const [showSetupGuide, setShowSetupGuide] = useState(false);
 
@@ -121,12 +125,56 @@ export function WhatsAppSettingsSimple() {
     }
   });
 
+  // Test template sending mutation
+  const testTemplateMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: formData.phoneNumber || '+393297626144',
+          type: 'template',
+          content: {
+            templateName: 'testwap',
+            templateLanguage: 'it',
+            templateVariables: {}
+          },
+          metadata: {
+            priority: 'high',
+            trackingId: 'test-from-frontend'
+          }
+        })
+      });
+      if (!response.ok) throw new Error('Template test failed');
+      return response.json();
+    },
+    onSuccess: (result) => {
+      if (result.success) {
+        toast({ 
+          title: "Template inviato!", 
+          description: `Message ID: ${result.messageId}`,
+          duration: 5000
+        });
+      } else {
+        toast({ 
+          title: "Invio fallito", 
+          description: result.error,
+          variant: "destructive"
+        });
+      }
+    }
+  });
+
   const handleSave = () => {
     saveSettingsMutation.mutate(formData);
   };
 
   const handleTestConnection = () => {
     testConnectionMutation.mutate();
+  };
+
+  const handleTestTemplate = () => {
+    testTemplateMutation.mutate();
   };
 
   if (isLoading) {
@@ -321,6 +369,24 @@ export function WhatsAppSettingsSimple() {
                       onChange={(e) => setFormData(prev => ({ ...prev, authToken: e.target.value }))}
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="whatsappBusinessAccountId">WhatsApp Business Account ID</Label>
+                    <Input
+                      id="whatsappBusinessAccountId"
+                      placeholder="771402795269176"
+                      value={formData.whatsappBusinessAccountId || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, whatsappBusinessAccountId: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="metaBusinessManagerId">Meta Business Manager ID</Label>
+                    <Input
+                      id="metaBusinessManagerId"
+                      placeholder="725525006356669"
+                      value={formData.metaBusinessManagerId || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, metaBusinessManagerId: e.target.value }))}
+                    />
+                  </div>
                 </>
               ) : (
                 <div>
@@ -401,6 +467,15 @@ export function WhatsAppSettingsSimple() {
                 disabled={testConnectionMutation.isPending || !formData.isActive}
               >
                 {testConnectionMutation.isPending ? "Testing..." : "Test Connessione"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleTestTemplate}
+                disabled={testTemplateMutation.isPending || !formData.isActive}
+                className="flex items-center gap-2"
+              >
+                <MessageSquare className="h-4 w-4" />
+                {testTemplateMutation.isPending ? "Inviando..." : "Test Template"}
               </Button>
             </div>
             <Button
