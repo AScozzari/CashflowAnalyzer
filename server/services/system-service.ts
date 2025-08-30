@@ -164,9 +164,16 @@ class SystemService {
   ];
 
   constructor() {
-    this.initializeConfigs();
-    this.initializeLogs();
-    this.createInitialLogs();
+    // Il costruttore non dovrebbe chiamare metodi asincroni
+    // L'inizializzazione viene fatta tramite init()
+  }
+
+  async init(): Promise<void> {
+    console.log('[SYSTEM SERVICE] Initializing configurations and logs...');
+    await this.initializeConfigs();
+    await this.initializeLogs();
+    await this.createInitialLogs();
+    console.log('[SYSTEM SERVICE] ✅ Initialization completed successfully');
   }
 
   private async initializeConfigs() {
