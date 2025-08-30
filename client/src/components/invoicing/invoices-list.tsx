@@ -18,9 +18,12 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  MoreHorizontal
+  MoreHorizontal,
+  ArrowRightLeft
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +56,8 @@ export function InvoicesList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [directionFilter, setDirectionFilter] = useState("all");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch invoices from the backend
   const { data: invoices, isLoading, refetch } = useQuery<Invoice[]>({
@@ -61,6 +66,76 @@ export function InvoicesList() {
   });
 
   const currentInvoices = invoices || [];
+
+  // 🔥 MUTATION: Create Movement from Invoice
+  const createMovementMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      return apiRequest(`/api/invoicing/invoices/${invoiceId}/create-movement`, {
+        method: 'POST',
+        body: {
+          // Options per il movimento
+          coreId: null, // Usa il default della compagnia
+          statusId: '1', // Status default
+          additionalNotes: 'Movimento creato automaticamente da fattura'
+        }
+      });
+    },
+    onSuccess: (data, invoiceId) => {
+      toast({
+        title: "Movimento Creato!",
+        description: `Movimento finanziario creato automaticamente dalla fattura. Importo: €${Math.abs(parseFloat(data.movement.amount)).toLocaleString('it-IT')}`,
+      });
+      // Refresh movements list if needed
+      queryClient.invalidateQueries({ queryKey: ['/api/movements'] });
+    },
+    onError: (error: any, invoiceId) => {
+      console.error('Errore creazione movimento:', error);
+      
+      // Gestisci errori specifici
+      if (error.message?.includes('already exists')) {
+        toast({
+          title: "Movimento già esistente",
+          description: "Questa fattura ha già un movimento associato.",
+          variant: "destructive",
+        });
+      } else if (error.message?.includes('cannot generate movement')) {
+        toast({
+          title: "Movimento non generabile",
+          description: "Questa tipologia di fattura non può generare movimenti automatici.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Errore",
+          description: "Impossibile creare il movimento. Riprova.",
+          variant: "destructive",
+        });
+      }
+    }
+  });
+
+  const handleCreateMovement = (invoice: Invoice) => {
+    // Verifica se la fattura può generare movimento
+    if (invoice.status === 'cancelled') {
+      toast({
+        title: "Fattura annullata",
+        description: "Le fatture annullate non possono generare movimenti.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (invoice.status === 'draft') {
+      toast({
+        title: "Fattura in bozza",
+        description: "Emetti prima la fattura per creare il movimento.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createMovementMutation.mutate(invoice.id);
+  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -292,6 +367,20 @@ export function InvoicesList() {
                               Invia
                             </DropdownMenuItem>
                           )}
+                          
+                          {/* 🔥 PULSANTE CRUCIALE: Crea Movimento da Fattura */}
+                          {(invoice.status === 'issued' || invoice.status === 'sent' || invoice.status === 'paid') && (
+                            <DropdownMenuItem 
+                              onClick={() => handleCreateMovement(invoice)}
+                              disabled={createMovementMutation.isPending}
+                              className="text-green-600 font-medium"
+                              data-testid={`create-movement-${invoice.id}`}
+                            >
+                              <ArrowRightLeft className="h-4 w-4 mr-2" />
+                              {createMovementMutation.isPending ? 'Creando...' : 'Crea Movimento'}
+                            </DropdownMenuItem>
+                          )}
+                          
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600">
                             <Trash2 className="h-4 w-4 mr-2" />

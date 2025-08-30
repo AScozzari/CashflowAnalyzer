@@ -3831,6 +3831,230 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // 🔥 ENDPOINT CRUCIALE: Create Movement from Invoice
+  app.post('/api/invoicing/invoices/:id/create-movement', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[INVOICE-MOVEMENT SYNC] Creating movement from invoice:', req.params.id);
+      const invoiceId = req.params.id;
+      const options = req.body; // { forceCreate?, coreId?, statusId?, reasonId?, additionalNotes? }
+      
+      // Import the sync service
+      const { 
+        analyzeInvoiceForMovement, 
+        createMovementDataFromInvoice, 
+        validateInvoiceForMovement,
+        isMovementLinkedToInvoice,
+        extractVatCodeFromInvoice
+      } = await import('@shared/invoice-movement-sync');
+      
+      // Get invoice with relations
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice) {
+        return res.status(404).json({ message: 'Invoice not found' });
+      }
+      
+      // Validate invoice can generate movement
+      const validation = validateInvoiceForMovement(invoice);
+      if (!validation.isValid) {
+        return res.status(400).json({ 
+          message: 'Invoice cannot generate movement',
+          errors: validation.errors
+        });
+      }
+      
+      // Check if movement already exists (unless forcing)
+      if (!options.forceCreate) {
+        const existingMovements = await storage.getMovements({});
+        const linkedMovement = existingMovements.find((mov: any) => 
+          isMovementLinkedToInvoice(mov, invoice)
+        );
+        
+        if (linkedMovement) {
+          return res.status(409).json({ 
+            message: 'Movement already exists for this invoice',
+            existingMovementId: linkedMovement.id,
+            hint: 'Use forceCreate: true to create anyway'
+          });
+        }
+      }
+      
+      // Analyze invoice for movement creation
+      const mapping = analyzeInvoiceForMovement(invoice);
+      
+      if (mapping.shouldSkipMovement) {
+        return res.status(400).json({
+          message: 'This invoice type should not generate movements',
+          invoiceType: invoice.invoiceType?.code,
+          reason: 'Auto-invoices are already accounted for'
+        });
+      }
+      
+      // Get invoice lines for VAT code extraction
+      const invoiceLines = invoice.lines || [];
+      const vatCodeId = extractVatCodeFromInvoice(invoiceLines);
+      
+      // Create movement data
+      const movementData = createMovementDataFromInvoice(invoice, mapping, {
+        ...options,
+        coreId: options.coreId || invoice.companyId, // Fallback to company if no core specified
+        statusId: options.statusId || '1', // Default status - should be configurable
+      });
+      
+      // Add VAT code if found
+      if (vatCodeId) {
+        movementData.vatCodeId = vatCodeId;
+      }
+      
+      // Create the movement
+      const createdMovement = await storage.createMovement(movementData);
+      
+      console.log('[INVOICE-MOVEMENT SYNC] Movement created successfully:', {
+        invoiceId: invoice.id,
+        movementId: createdMovement.id,
+        amount: movementData.amount,
+        type: movementData.type,
+        isNegativeAmount: mapping.isNegativeAmount
+      });
+      
+      res.status(201).json({
+        success: true,
+        movement: createdMovement,
+        analysis: {
+          mapping,
+          originalInvoiceAmount: invoice.totalAmount,
+          finalMovementAmount: movementData.amount,
+          invoiceType: invoice.invoiceType?.code,
+          direction: invoice.direction
+        }
+      });
+      
+    } catch (error) {
+      console.error('[INVOICE-MOVEMENT SYNC] Error creating movement from invoice:', error);
+      res.status(500).json({ 
+        message: 'Failed to create movement from invoice',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }));
+
+  // Bulk Create Movements from Multiple Invoices
+  app.post('/api/invoicing/bulk-create-movements', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[BULK INVOICE-MOVEMENT SYNC] Creating movements from multiple invoices');
+      const { invoiceIds, options = {} } = req.body;
+      
+      if (!Array.isArray(invoiceIds) || invoiceIds.length === 0) {
+        return res.status(400).json({ message: 'invoiceIds array is required' });
+      }
+      
+      const results = [];
+      const errors = [];
+      
+      // Import sync service
+      const { 
+        analyzeInvoiceForMovement, 
+        createMovementDataFromInvoice, 
+        validateInvoiceForMovement,
+        isMovementLinkedToInvoice,
+        extractVatCodeFromInvoice
+      } = await import('@shared/invoice-movement-sync');
+      
+      // Process each invoice
+      for (const invoiceId of invoiceIds) {
+        try {
+          const invoice = await storage.getInvoiceById(invoiceId);
+          if (!invoice) {
+            errors.push({ invoiceId, error: 'Invoice not found' });
+            continue;
+          }
+          
+          const validation = validateInvoiceForMovement(invoice);
+          if (!validation.isValid) {
+            errors.push({ invoiceId, error: 'Invalid invoice', details: validation.errors });
+            continue;
+          }
+          
+          const mapping = analyzeInvoiceForMovement(invoice);
+          if (mapping.shouldSkipMovement) {
+            results.push({ invoiceId, skipped: true, reason: 'Invoice type should not generate movements' });
+            continue;
+          }
+          
+          // Check existing movement
+          if (!options.forceCreate) {
+            const existingMovements = await storage.getMovements({});
+            const linkedMovement = existingMovements.find((mov: any) => 
+              isMovementLinkedToInvoice(mov, invoice)
+            );
+            
+            if (linkedMovement) {
+              results.push({ 
+                invoiceId, 
+                skipped: true, 
+                reason: 'Movement already exists',
+                existingMovementId: linkedMovement.id
+              });
+              continue;
+            }
+          }
+          
+          // Create movement
+          const invoiceLines = invoice.lines || [];
+          const vatCodeId = extractVatCodeFromInvoice(invoiceLines);
+          
+          const movementData = createMovementDataFromInvoice(invoice, mapping, {
+            ...options,
+            coreId: options.coreId || invoice.companyId,
+            statusId: options.statusId || '1',
+          });
+          
+          if (vatCodeId) {
+            movementData.vatCodeId = vatCodeId;
+          }
+          
+          const createdMovement = await storage.createMovement(movementData);
+          
+          results.push({
+            invoiceId,
+            success: true,
+            movementId: createdMovement.id,
+            amount: movementData.amount,
+            type: movementData.type
+          });
+          
+        } catch (error) {
+          errors.push({ 
+            invoiceId, 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          });
+        }
+      }
+      
+      console.log('[BULK INVOICE-MOVEMENT SYNC] Completed:', {
+        total: invoiceIds.length,
+        successful: results.filter(r => r.success).length,
+        skipped: results.filter(r => r.skipped).length,
+        errors: errors.length
+      });
+      
+      res.json({
+        success: true,
+        summary: {
+          total: invoiceIds.length,
+          successful: results.filter(r => r.success).length,
+          skipped: results.filter(r => r.skipped).length,
+          errors: errors.length
+        },
+        results,
+        errors
+      });
+      
+    } catch (error) {
+      console.error('[BULK INVOICE-MOVEMENT SYNC] Error:', error);
+      res.status(500).json({ message: 'Failed to process bulk movement creation' });
+    }
+  }));
+
   // Get Single Invoice
   app.get('/api/invoicing/invoices/:id', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
