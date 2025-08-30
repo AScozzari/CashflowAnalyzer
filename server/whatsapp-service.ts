@@ -25,8 +25,17 @@ export class TwilioWhatsAppService {
     variables: Record<string, string> = {}
   ): Promise<{ messageId: string; cost: string; status: string }> {
     try {
+      // Extract message body from template (handle JSON format)
+      let messageBody: string;
+      if (typeof template.body === 'string') {
+        messageBody = template.body;
+      } else if (template.body && typeof template.body === 'object' && 'content' in template.body) {
+        messageBody = (template.body as any).content;
+      } else {
+        throw new Error('Invalid template body format');
+      }
+      
       // Replace variables in template body
-      let messageBody = template.body;
       Object.entries(variables).forEach(([key, value]) => {
         messageBody = messageBody.replace(new RegExp(`{{${key}}}`, 'g'), value);
       });
@@ -45,8 +54,8 @@ export class TwilioWhatsAppService {
           From: `whatsapp:${this.phoneNumber}`,
           To: `whatsapp:${to}`,
           Body: messageBody,
-          // Use ContentSid for approved templates
-          ...(template.metaTemplateId && { ContentSid: template.metaTemplateId }),
+          // Use ContentSid only for approved templates with contentSid
+          ...(template.contentSid && { ContentSid: template.contentSid }),
         }),
       });
 
