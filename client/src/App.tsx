@@ -21,6 +21,7 @@ import { FiscalAIConsultant } from "@/pages/fiscal-ai-consultant";
 import DocumentAnalyzerPage from "@/pages/document-analyzer";
 import Communications from "@/pages/communications";
 import EntityExplorer from "@/pages/entity-explorer";
+import Invoicing from "@/pages/invoicing";
 import AuthPage from "@/pages/auth-page";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
@@ -197,6 +198,12 @@ function Router() {
       <ProtectedRoute path="/entity-explorer" component={() => (
         <AppLayout>
           <EntityExplorer />
+        </AppLayout>
+      )} />
+      
+      <ProtectedRoute path="/invoicing" component={() => (
+        <AppLayout>
+          <Invoicing />
         </AppLayout>
       )} />
       
