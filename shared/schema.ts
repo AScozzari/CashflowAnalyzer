@@ -2191,6 +2191,251 @@ export const insertRestorePointSchema = createInsertSchema(restorePoints);
 export const insertBackupAuditLogSchema = createInsertSchema(backupAuditLog);
 export const insertNotificationSettingsSchema = createInsertSchema(notificationSettings);
 
+// === FATTURAZIONE ELETTRONICA ITALIANA ===
+
+// Tipi documento per fatturazione elettronica
+export const invoiceTypes = pgTable("invoice_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(), // TD01, TD02, TD03, etc.
+  name: text("name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Codici IVA italiani
+export const vatCodes = pgTable("vat_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(), // 22, 10, 4, 0, etc.
+  percentage: decimal("percentage", { precision: 5, scale: 2 }).notNull(),
+  description: text("description").notNull(),
+  natura: text("natura"), // N1, N2, N3, etc. per esenzioni/esclusioni
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Unità di misura
+export const measureUnits = pgTable("measure_units", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(), // PZ, KG, MT, etc.
+  name: text("name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Condizioni di pagamento
+export const paymentTerms = pgTable("payment_terms", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(), // TP01, TP02, TP03
+  name: text("name").notNull(),
+  description: text("description"),
+  days: integer("days").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Modalità di pagamento
+export const paymentMethods = pgTable("payment_methods", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(), // MP01, MP02, MP05, etc.
+  name: text("name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Fatture elettroniche
+export const invoices = pgTable("invoices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Numerazione progressiva
+  number: text("number").notNull(),
+  year: integer("year").notNull(),
+  series: text("series").default(""),
+  
+  // Date
+  issueDate: date("issue_date").notNull(),
+  dueDate: date("due_date"),
+  
+  // Riferimenti
+  companyId: varchar("company_id").notNull(), // Ragione sociale emittente
+  customerId: varchar("customer_id"), // Cliente (se null = autofattura)
+  supplierId: varchar("supplier_id"), // Fornitore (per fatture passive)
+  
+  // Tipologia documento
+  invoiceTypeId: varchar("invoice_type_id").notNull(),
+  direction: text("direction").notNull(), // 'outgoing', 'incoming'
+  
+  // Importi
+  totalTaxableAmount: decimal("total_taxable_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  totalTaxAmount: decimal("total_tax_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  totalDiscount: decimal("total_discount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  
+  // Pagamento
+  paymentTermsId: varchar("payment_terms_id"),
+  paymentMethodId: varchar("payment_method_id"),
+  
+  // Riferimenti esterni
+  orderReference: text("order_reference"),
+  contractReference: text("contract_reference"),
+  
+  // Status FatturaPA
+  xmlGenerated: boolean("xml_generated").notNull().default(false),
+  xmlContent: text("xml_content"), // XML FatturaPA
+  sdiStatus: text("sdi_status").default("draft"), // draft, sent, accepted, rejected, error
+  sdiReference: text("sdi_reference"), // Identificativo SDI
+  sdiMessage: text("sdi_message"), // Messaggi dal SDI
+  sdiSentAt: timestamp("sdi_sent_at"),
+  sdiAcceptedAt: timestamp("sdi_accepted_at"),
+  
+  // Note
+  notes: text("notes"),
+  internalNotes: text("internal_notes"),
+  
+  // Stato
+  status: text("status").notNull().default("draft"), // draft, issued, paid, cancelled
+  isActive: boolean("is_active").notNull().default(true),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Righe fattura
+export const invoiceLines = pgTable("invoice_lines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id").notNull(),
+  lineNumber: integer("line_number").notNull(),
+  
+  // Descrizione articolo/servizio
+  description: text("description").notNull(),
+  productCode: text("product_code"),
+  
+  // Quantità e unità
+  quantity: decimal("quantity", { precision: 15, scale: 4 }).notNull().default("1.0000"),
+  measureUnitId: varchar("measure_unit_id"),
+  
+  // Prezzi
+  unitPrice: decimal("unit_price", { precision: 15, scale: 4 }).notNull().default("0.0000"),
+  totalPrice: decimal("total_price", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  
+  // Sconti
+  discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }).notNull().default("0.00"),
+  discountAmount: decimal("discount_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  
+  // IVA
+  vatCodeId: varchar("vat_code_id").notNull(),
+  taxableAmount: decimal("taxable_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  taxAmount: decimal("tax_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  
+  // Ritenute e altre imposte
+  withholdingTaxPercentage: decimal("withholding_tax_percentage", { precision: 5, scale: 2 }).notNull().default("0.00"),
+  withholdingTaxAmount: decimal("withholding_tax_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Riepiloghi IVA per fattura
+export const invoiceTaxSummary = pgTable("invoice_tax_summary", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id").notNull(),
+  vatCodeId: varchar("vat_code_id").notNull(),
+  
+  taxableAmount: decimal("taxable_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  taxAmount: decimal("tax_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Serie numerazioni
+export const invoiceNumberSeries = pgTable("invoice_number_series", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  series: text("series").notNull(),
+  year: integer("year").notNull(),
+  lastNumber: integer("last_number").notNull().default(0),
+  format: text("format").notNull().default("{series}{year}/{number}"), // es: "FAT2024/001"
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Relazioni per fatturazione
+export const invoiceRelations = relations(invoices, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [invoices.companyId],
+    references: [companies.id],
+  }),
+  customer: one(customers, {
+    fields: [invoices.customerId],
+    references: [customers.id],
+  }),
+  supplier: one(suppliers, {
+    fields: [invoices.supplierId],
+    references: [suppliers.id],
+  }),
+  invoiceType: one(invoiceTypes, {
+    fields: [invoices.invoiceTypeId],
+    references: [invoiceTypes.id],
+  }),
+  paymentTerms: one(paymentTerms, {
+    fields: [invoices.paymentTermsId],
+    references: [paymentTerms.id],
+  }),
+  paymentMethod: one(paymentMethods, {
+    fields: [invoices.paymentMethodId],
+    references: [paymentMethods.id],
+  }),
+  lines: many(invoiceLines),
+  taxSummary: many(invoiceTaxSummary),
+}));
+
+export const invoiceLineRelations = relations(invoiceLines, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceLines.invoiceId],
+    references: [invoices.id],
+  }),
+  measureUnit: one(measureUnits, {
+    fields: [invoiceLines.measureUnitId],
+    references: [measureUnits.id],
+  }),
+  vatCode: one(vatCodes, {
+    fields: [invoiceLines.vatCodeId],
+    references: [vatCodes.id],
+  }),
+}));
+
+// Tipi per TypeScript
+export type InvoiceType = typeof invoiceTypes.$inferSelect;
+export type InsertInvoiceType = typeof invoiceTypes.$inferInsert;
+export type VatCode = typeof vatCodes.$inferSelect;
+export type InsertVatCode = typeof vatCodes.$inferInsert;
+export type MeasureUnit = typeof measureUnits.$inferSelect;
+export type InsertMeasureUnit = typeof measureUnits.$inferInsert;
+export type PaymentTerms = typeof paymentTerms.$inferSelect;
+export type InsertPaymentTerms = typeof paymentTerms.$inferInsert;
+export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type InsertPaymentMethod = typeof paymentMethods.$inferInsert;
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = typeof invoices.$inferInsert;
+export type InvoiceLine = typeof invoiceLines.$inferSelect;
+export type InsertInvoiceLine = typeof invoiceLines.$inferInsert;
+export type InvoiceTaxSummary = typeof invoiceTaxSummary.$inferSelect;
+export type InsertInvoiceTaxSummary = typeof invoiceTaxSummary.$inferInsert;
+export type InvoiceNumberSeries = typeof invoiceNumberSeries.$inferSelect;
+export type InsertInvoiceNumberSeries = typeof invoiceNumberSeries.$inferInsert;
+
+// Schemi di validazione Zod
+export const insertInvoiceTypeSchema = createInsertSchema(invoiceTypes);
+export const insertVatCodeSchema = createInsertSchema(vatCodes);
+export const insertMeasureUnitSchema = createInsertSchema(measureUnits);
+export const insertPaymentTermsSchema = createInsertSchema(paymentTerms);
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods);
+export const insertInvoiceSchema = createInsertSchema(invoices);
+export const insertInvoiceLineSchema = createInsertSchema(invoiceLines);
+export const insertInvoiceTaxSummarySchema = createInsertSchema(invoiceTaxSummary);
+export const insertInvoiceNumberSeriesSchema = createInsertSchema(invoiceNumberSeries);
+
 // Re-export all specialized schemas
 export * from "./user-schema";
 export * from "./security-schema";

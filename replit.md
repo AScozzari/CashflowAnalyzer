@@ -81,6 +81,11 @@ Preferred communication style: Simple, everyday language.
 - **Communication Platforms**: Twilio, LinkMobility (WhatsApp), Skebby (SMS), Facebook Messenger.
 - **AI**: OpenAI.
 
+## Electronic Invoicing Providers
+- **Fatture in Cloud**: Complete API integration for invoice management, customer/supplier sync, and FatturaPA compliance (https://developers.fattureincloud.it/api-reference)
+- **ACube**: Government-certified electronic invoicing service with SDI integration and multi-company support (https://docs.acubeapi.com/documentation/gov-it/)
+- **Multi-Provider Architecture**: Dual provider system with automatic failover and load balancing for enterprise reliability
+
 ## Twilio Professional WhatsApp Business API Implementation (Complete)
 - **Base URL**: `https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json`
 - **Authentication**: Basic Auth using Account SID and Auth Token

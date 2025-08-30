@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Calendar, Pin, PinOff, ChevronLeft, Bot, MessageSquare, Search, Brain } from "lucide-react";
+import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Calendar, Pin, PinOff, ChevronLeft, Bot, MessageSquare, Search, Brain, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,11 @@ export default function Sidebar({ isCollapsed: externalCollapsed, onCollapsedCha
       { name: "AI Tools", href: "/ai-tools", icon: Brain },
       { name: "Comunicazioni", href: "/communications", icon: MessageSquare },
     ];
+
+    // Admin e Finance possono accedere alla fatturazione
+    if (user && (user.role === "admin" || user.role === "finance")) {
+      baseNavigation.push({ name: "Amministrazione", href: "/invoicing", icon: FileText });
+    }
 
     // Solo Admin può accedere alle impostazioni (finance no)
     if (user && user.role === "admin") {
