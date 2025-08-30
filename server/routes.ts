@@ -10,6 +10,7 @@ import {
   insertCompanySchema, insertCoreSchema, insertResourceSchema,
   insertIbanSchema, insertOfficeSchema, insertTagSchema,
   insertMovementStatusSchema, insertMovementReasonSchema, insertMovementSchema,
+  insertNeonSettingsSchema,
   insertNotificationSchema, insertSupplierSchema, insertCustomerSchema, insertEmailSettingsSchema,
   insertUserSchema, passwordResetSchema, resetPasswordSchema, insertSendgridTemplateSchema,
   insertWhatsappSettingsSchema, insertWhatsappTemplateSchema,
@@ -3396,6 +3397,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching entity details:', error);
       res.status(500).json({ message: "Failed to fetch entity details" });
+    }
+  }));
+
+  // === NEON SETTINGS ROUTES ===
+  
+  // Get Neon Settings
+  app.get('/api/neon/settings', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getNeonSettings();
+      if (!settings) {
+        return res.status(404).json({ message: 'Neon settings not found' });
+      }
+      
+      // Remove sensitive data before sending
+      const sanitizedSettings = {
+        ...settings,
+        apiKey: settings.apiKey ? '***MASKED***' : null
+      };
+      
+      res.json(sanitizedSettings);
+    } catch (error) {
+      console.error('[NEON API] Error fetching settings:', error);
+      res.status(500).json({ message: 'Failed to fetch Neon settings' });
+    }
+  }));
+
+  // Create/Update Neon Settings
+  app.post('/api/neon/settings', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const validatedData = insertNeonSettingsSchema.parse(req.body);
+      
+      const existingSettings = await storage.getNeonSettings();
+      
+      let result;
+      if (existingSettings) {
+        result = await storage.updateNeonSettings(existingSettings.id, validatedData);
+      } else {
+        result = await storage.createNeonSettings(validatedData);
+      }
+      
+      // Remove sensitive data before sending
+      const sanitizedResult = {
+        ...result,
+        apiKey: result.apiKey ? '***MASKED***' : null
+      };
+      
+      console.log('[NEON API] Settings saved successfully:', result.id);
+      res.json(sanitizedResult);
+    } catch (error) {
+      console.error('[NEON API] Error saving settings:', error);
+      res.status(500).json({ message: 'Failed to save Neon settings' });
+    }
+  }));
+
+  // Test Neon Connection
+  app.post('/api/neon/test-connection', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { apiKey } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: 'API Key is required' });
+      }
+      
+      const result = await storage.testNeonConnection(apiKey);
+      res.json(result);
+    } catch (error) {
+      console.error('[NEON API] Connection test failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to test connection' 
+      });
+    }
+  }));
+
+  // Get Neon Project Info
+  app.get('/api/neon/project-info', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getNeonSettings();
+      
+      if (!settings || !settings.apiKey) {
+        return res.status(404).json({ message: 'Neon API key not configured' });
+      }
+      
+      const response = await fetch(`https://console.neon.tech/api/v2/projects/${settings.projectId}`, {
+        headers: {
+          'Authorization': `Bearer ${settings.apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+      
+      const projectData = await response.json();
+      res.json(projectData);
+    } catch (error) {
+      console.error('[NEON API] Error fetching project info:', error);
+      res.status(500).json({ message: 'Failed to fetch project information' });
+    }
+  }));
+
+  // Get Database Schema
+  app.get('/api/neon/schema', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      // Get schema information from our local database
+      const tableStats = await storage.getDatabaseStats();
+      res.json(tableStats);
+    } catch (error) {
+      console.error('[NEON API] Error fetching schema:', error);
+      res.status(500).json({ message: 'Failed to fetch database schema' });
+    }
+  }));
+
+  // Sync Project Data
+  app.post('/api/neon/sync', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { neonService } = await import('./services/neon-service');
+      const result = await neonService.syncProjectData();
+      res.json(result);
+    } catch (error) {
+      console.error('[NEON API] Error syncing project data:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to sync project data' 
+      });
+    }
+  }));
+
+  // Get Branches
+  app.get('/api/neon/branches', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { neonService } = await import('./services/neon-service');
+      const branches = await neonService.getBranches();
+      res.json(branches);
+    } catch (error) {
+      console.error('[NEON API] Error fetching branches:', error);
+      res.status(500).json({ message: 'Failed to fetch branches' });
+    }
+  }));
+
+  // Get Databases
+  app.get('/api/neon/databases', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { neonService } = await import('./services/neon-service');
+      const databases = await neonService.getDatabases();
+      res.json(databases);
+    } catch (error) {
+      console.error('[NEON API] Error fetching databases:', error);
+      res.status(500).json({ message: 'Failed to fetch databases' });
+    }
+  }));
+
+  // Get Operations
+  app.get('/api/neon/operations', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { neonService } = await import('./services/neon-service');
+      const operations = await neonService.getOperations();
+      res.json(operations);
+    } catch (error) {
+      console.error('[NEON API] Error fetching operations:', error);
+      res.status(500).json({ message: 'Failed to fetch operations' });
+    }
+  }));
+
+  // Get Consumption Metrics
+  app.get('/api/neon/metrics', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { neonService } = await import('./services/neon-service');
+      const metrics = await neonService.getConsumptionMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error('[NEON API] Error fetching metrics:', error);
+      res.status(500).json({ message: 'Failed to fetch consumption metrics' });
+    }
+  }));
+
+  // Delete Neon Settings
+  app.delete('/api/neon/settings/:id', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteNeonSettings(id);
+      
+      console.log('[NEON API] Settings deleted:', id);
+      res.json({ message: 'Neon settings deleted successfully' });
+    } catch (error) {
+      console.error('[NEON API] Error deleting settings:', error);
+      res.status(500).json({ message: 'Failed to delete Neon settings' });
     }
   }));
 

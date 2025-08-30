@@ -2114,6 +2114,62 @@ export type InsertThemesSettings = typeof themesSettings.$inferInsert;
 export type NotificationSettings = typeof notificationSettings.$inferSelect;
 export type InsertNotificationSettings = typeof notificationSettings.$inferInsert;
 
+// === NEON DATABASE CONFIGURATION ===
+export const neonSettings = pgTable("neon_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // API Configuration
+  apiKey: text("api_key"), // Neon API Key (encrypted)
+  projectId: text("project_id"), // Neon Project ID
+  
+  // Project Information
+  projectName: text("project_name"),
+  region: text("region"),
+  branchName: text("branch_name").default("main"),
+  databaseName: text("database_name"),
+  
+  // Connection Details
+  hostEndpoint: text("host_endpoint"),
+  connectionPooling: boolean("connection_pooling").default(true),
+  
+  // Monitoring Settings
+  enableMetrics: boolean("enable_metrics").default(true),
+  enableAlerts: boolean("enable_alerts").default(false),
+  alertThresholds: jsonb("alert_thresholds").default({}),
+  
+  // Backup Configuration
+  autoBackup: boolean("auto_backup").default(false),
+  backupRetention: integer("backup_retention").default(7), // days
+  
+  // Advanced Settings
+  computeSettings: jsonb("compute_settings").default({}),
+  extensions: text("extensions").array().default([]),
+  
+  // Status & Metadata
+  isActive: boolean("is_active").default(true),
+  lastSync: timestamp("last_sync"),
+  syncStatus: text("sync_status").default("pending"), // 'pending', 'synced', 'error'
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Neon Settings Insert Schema
+export const insertNeonSettingsSchema = createInsertSchema(neonSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastSync: true
+}).extend({
+  apiKey: z.string().min(1, "API Key richiesta").optional(),
+  projectId: z.string().min(1, "Project ID richiesto").optional(),
+  projectName: z.string().max(100, "Nome progetto troppo lungo").optional(),
+  region: z.string().max(50, "Regione troppo lunga").optional()
+});
+
+export type NeonSettings = typeof neonSettings.$inferSelect;
+export type InsertNeonSettings = z.infer<typeof insertNeonSettingsSchema>;
+
 // === BACKUP SYSTEM TYPES ===
 export type BackupConfiguration = typeof backupConfigurations.$inferSelect;
 export type InsertBackupConfiguration = typeof backupConfigurations.$inferInsert;

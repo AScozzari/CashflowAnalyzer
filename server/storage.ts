@@ -7,7 +7,7 @@ import {
   documentAnalysis,
   fiscalAiConversations, fiscalAiMessages,
   databaseSettings, localizationSettings, documentsSettings, themesSettings,
-  backupConfigurations, backupJobs, restorePoints, backupAuditLog,
+  backupConfigurations, backupJobs, restorePoints, backupAuditLog, neonSettings,
   type Company, type InsertCompany,
   type Core, type InsertCore,
   type Resource, type InsertResource,
@@ -55,7 +55,8 @@ import {
   type LocalizationSettings, type InsertLocalizationSettings,
   type DocumentsSettings, type InsertDocumentsSettings,
   type ThemesSettings, type InsertThemesSettings,
-  notificationSettings, type NotificationSettings, type InsertNotificationSettings
+  notificationSettings, type NotificationSettings, type InsertNotificationSettings,
+  type NeonSettings, type InsertNeonSettings
 } from "@shared/schema";
 import { 
   BackupConfiguration, 
@@ -413,6 +414,13 @@ export interface IStorage {
   // Communication Stats
   getEmailStats(): Promise<{ total: number; sent: number; failed: number }>;
   getSmsStats(): Promise<{ total: number; sent: number; failed: number }>;
+
+  // Neon Settings
+  getNeonSettings(): Promise<NeonSettings | undefined>;
+  createNeonSettings(settings: InsertNeonSettings): Promise<NeonSettings>;
+  updateNeonSettings(id: string, settings: Partial<InsertNeonSettings>): Promise<NeonSettings>;
+  deleteNeonSettings(id: string): Promise<void>;
+  testNeonConnection(apiKey: string): Promise<{ success: boolean; message: string; data?: any }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -5113,6 +5121,121 @@ async getMovements(filters: {
     } catch (error) {
       console.error('Error fetching SMS stats:', error);
       return { total: 0, sent: 0, failed: 0 };
+    }
+  }
+
+  // === NEON SETTINGS MANAGEMENT ===
+
+  async getNeonSettings(): Promise<NeonSettings | undefined> {
+    try {
+      const [settings] = await db.select()
+        .from(neonSettings)
+        .where(eq(neonSettings.isActive, true))
+        .limit(1);
+      return settings;
+    } catch (error) {
+      console.error('[NEON] Error fetching settings:', error);
+      return undefined;
+    }
+  }
+
+  async createNeonSettings(settings: InsertNeonSettings): Promise<NeonSettings> {
+    try {
+      // Deactivate any existing settings first
+      await db.update(neonSettings)
+        .set({ isActive: false })
+        .where(eq(neonSettings.isActive, true));
+
+      // Create new settings
+      const [newSettings] = await db.insert(neonSettings)
+        .values({
+          ...settings,
+          isActive: true,
+          syncStatus: 'pending'
+        })
+        .returning();
+
+      console.log('[NEON] Settings created successfully:', newSettings.id);
+      return newSettings;
+    } catch (error) {
+      console.error('[NEON] Error creating settings:', error);
+      throw new Error('Failed to create Neon settings');
+    }
+  }
+
+  async updateNeonSettings(id: string, settings: Partial<InsertNeonSettings>): Promise<NeonSettings> {
+    try {
+      const [updatedSettings] = await db.update(neonSettings)
+        .set({
+          ...settings,
+          updatedAt: new Date()
+        })
+        .where(eq(neonSettings.id, id))
+        .returning();
+
+      if (!updatedSettings) {
+        throw new Error('Neon settings not found');
+      }
+
+      console.log('[NEON] Settings updated successfully:', id);
+      return updatedSettings;
+    } catch (error) {
+      console.error('[NEON] Error updating settings:', error);
+      throw new Error('Failed to update Neon settings');
+    }
+  }
+
+  async deleteNeonSettings(id: string): Promise<void> {
+    try {
+      const result = await db.delete(neonSettings)
+        .where(eq(neonSettings.id, id));
+
+      if (result.rowCount === 0) {
+        throw new Error('Neon settings not found');
+      }
+
+      console.log('[NEON] Settings deleted successfully:', id);
+    } catch (error) {
+      console.error('[NEON] Error deleting settings:', error);
+      throw new Error('Failed to delete Neon settings');
+    }
+  }
+
+  async testNeonConnection(apiKey: string): Promise<{ success: boolean; message: string; data?: any }> {
+    try {
+      // Test connection to Neon API
+      const response = await fetch('https://console.neon.tech/api/v2/projects', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: `API Error: ${response.status} ${response.statusText}`
+        };
+      }
+
+      const data = await response.json();
+      
+      return {
+        success: true,
+        message: 'Connection successful',
+        data: {
+          projectsCount: data.projects?.length || 0,
+          projects: data.projects?.slice(0, 3) || [] // First 3 projects for preview
+        }
+      };
+    } catch (error) {
+      console.error('[NEON] Connection test failed:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Connection failed'
+      };
     }
   }
 }

@@ -22,11 +22,13 @@ import {
   Settings,
   BarChart3,
   Download,
-  Upload
+  Upload,
+  Cloud
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { NeonDBConfiguration } from './neon-db-configuration';
 
 interface DatabaseStats {
   connections: {
@@ -173,11 +175,15 @@ export default function DatabaseSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Panoramica</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="tables">Tabelle</TabsTrigger>
           <TabsTrigger value="config">Configurazione</TabsTrigger>
+          <TabsTrigger value="neon" className="flex items-center gap-2">
+            <Cloud className="h-4 w-4" />
+            <span>Configurazione NEON DB</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -499,6 +505,10 @@ export default function DatabaseSettings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="neon">
+          <NeonDBConfiguration />
         </TabsContent>
       </Tabs>
     </div>
