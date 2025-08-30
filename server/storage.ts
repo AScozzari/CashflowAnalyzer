@@ -1,5 +1,5 @@
 import {
-  companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens, sendgridTemplates, whatsappSettings, whatsappTemplates,
+  companies, cores, resources, ibans, offices, tags, movementStatuses, movementReasons, movements, users, notifications, suppliers, customers, emailSettings, passwordResetTokens, sendgridTemplates, whatsappSettings, whatsappTemplates, whatsappChats, whatsappMessages,
   telegramSettings, telegramTemplates, telegramChats, telegramMessages,
   smsSettings, smsTemplates, smsMessages, smsBlacklist, smsStatistics,
   aiSettings, aiChatHistory, aiDocumentJobs,
@@ -27,6 +27,8 @@ import {
   type SendgridTemplate, type InsertSendgridTemplate,
   type WhatsappSettings, type InsertWhatsappSettings,
   type WhatsappTemplate, type InsertWhatsappTemplate,
+  type WhatsappChat, type InsertWhatsappChat,
+  type WhatsappMessage, type InsertWhatsappMessage,
   type TelegramSettings, type InsertTelegramSettings,
   type TelegramTemplate, type InsertTelegramTemplate,
   type TelegramChat, type InsertTelegramChat,
@@ -277,6 +279,23 @@ export interface IStorage {
   updateWhatsappTemplate(id: string, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate | undefined>;
   updateWhatsappTemplateStatus(id: string, status: string): Promise<WhatsappTemplate | undefined>;
   deleteWhatsappTemplate(id: string): Promise<boolean>;
+
+  // WhatsApp Chats
+  getWhatsappChats(): Promise<WhatsappChat[]>;
+  getWhatsappChatById(id: string): Promise<WhatsappChat | null>;
+  getWhatsappChatByNumber(whatsappNumber: string): Promise<WhatsappChat | null>;
+  createWhatsappChat(chat: InsertWhatsappChat): Promise<WhatsappChat>;
+  updateWhatsappChat(id: string, chat: Partial<InsertWhatsappChat>): Promise<WhatsappChat | null>;
+  updateWhatsappChatLastMessage(whatsappNumber: string, messageText: string, messageId?: string): Promise<void>;
+  deleteWhatsappChat(id: string): Promise<boolean>;
+
+  // WhatsApp Messages
+  getWhatsappMessages(chatId: string, limit?: number): Promise<WhatsappMessage[]>;
+  getWhatsappMessageById(id: string): Promise<WhatsappMessage | null>;
+  createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage>;
+  updateWhatsappMessage(id: string, message: Partial<InsertWhatsappMessage>): Promise<WhatsappMessage | null>;
+  updateWhatsappMessageStatus(id: string, status: string): Promise<void>;
+  deleteWhatsappMessage(id: string): Promise<boolean>;
 
   // Telegram Settings
   getTelegramSettings(): Promise<TelegramSettings[]>;
@@ -3079,6 +3098,176 @@ async getMovements(filters: {
     } catch (error) {
       console.error('Error deleting WhatsApp template:', error);
       throw new Error('Failed to delete WhatsApp template');
+    }
+  }
+
+  // WhatsApp Chats methods
+  async getWhatsappChats(): Promise<WhatsappChat[]> {
+    try {
+      return await db.select().from(whatsappChats).orderBy(desc(whatsappChats.lastMessageAt));
+    } catch (error) {
+      console.error('Error fetching WhatsApp chats:', error);
+      throw new Error('Failed to fetch WhatsApp chats');
+    }
+  }
+
+  async getWhatsappChatById(id: string): Promise<WhatsappChat | null> {
+    try {
+      const result = await db.select().from(whatsappChats).where(eq(whatsappChats.id, id));
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error fetching WhatsApp chat:', error);
+      throw new Error('Failed to fetch WhatsApp chat');
+    }
+  }
+
+  async getWhatsappChatByNumber(whatsappNumber: string): Promise<WhatsappChat | null> {
+    try {
+      const result = await db.select().from(whatsappChats).where(eq(whatsappChats.whatsappNumber, whatsappNumber));
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error fetching WhatsApp chat by number:', error);
+      throw new Error('Failed to fetch WhatsApp chat by number');
+    }
+  }
+
+  async createWhatsappChat(chat: InsertWhatsappChat): Promise<WhatsappChat> {
+    try {
+      const result = await db.insert(whatsappChats).values(chat).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating WhatsApp chat:', error);
+      throw new Error('Failed to create WhatsApp chat');
+    }
+  }
+
+  async updateWhatsappChat(id: string, chat: Partial<InsertWhatsappChat>): Promise<WhatsappChat | null> {
+    try {
+      const result = await db
+        .update(whatsappChats)
+        .set({ ...chat, updatedAt: new Date() })
+        .where(eq(whatsappChats.id, id))
+        .returning();
+      
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error updating WhatsApp chat:', error);
+      throw new Error('Failed to update WhatsApp chat');
+    }
+  }
+
+  async updateWhatsappChatLastMessage(whatsappNumber: string, messageText: string, messageId?: string): Promise<void> {
+    try {
+      await db
+        .update(whatsappChats)
+        .set({ 
+          lastMessageText: messageText,
+          lastMessageId: messageId,
+          lastMessageAt: new Date(),
+          messageCount: sql`${whatsappChats.messageCount} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(whatsappChats.whatsappNumber, whatsappNumber));
+    } catch (error) {
+      console.error('Error updating WhatsApp chat last message:', error);
+      throw new Error('Failed to update WhatsApp chat last message');
+    }
+  }
+
+  async deleteWhatsappChat(id: string): Promise<boolean> {
+    try {
+      const result = await db.delete(whatsappChats).where(eq(whatsappChats.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting WhatsApp chat:', error);
+      throw new Error('Failed to delete WhatsApp chat');
+    }
+  }
+
+  // WhatsApp Messages methods
+  async getWhatsappMessages(chatId: string, limit: number = 50): Promise<WhatsappMessage[]> {
+    try {
+      return await db
+        .select()
+        .from(whatsappMessages)
+        .where(eq(whatsappMessages.chatId, chatId))
+        .orderBy(desc(whatsappMessages.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error('Error fetching WhatsApp messages:', error);
+      throw new Error('Failed to fetch WhatsApp messages');
+    }
+  }
+
+  async getWhatsappMessageById(id: string): Promise<WhatsappMessage | null> {
+    try {
+      const result = await db.select().from(whatsappMessages).where(eq(whatsappMessages.id, id));
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error fetching WhatsApp message:', error);
+      throw new Error('Failed to fetch WhatsApp message');
+    }
+  }
+
+  async createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage> {
+    try {
+      const result = await db.insert(whatsappMessages).values(message).returning();
+      
+      // Update the chat's last message info
+      if (result[0]) {
+        await this.updateWhatsappChatLastMessage(
+          message.direction === 'outbound' ? message.toNumber : message.fromNumber,
+          message.messageText || 'Media message',
+          result[0].id
+        );
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating WhatsApp message:', error);
+      throw new Error('Failed to create WhatsApp message');
+    }
+  }
+
+  async updateWhatsappMessage(id: string, message: Partial<InsertWhatsappMessage>): Promise<WhatsappMessage | null> {
+    try {
+      const result = await db
+        .update(whatsappMessages)
+        .set({ ...message, updatedAt: new Date() })
+        .where(eq(whatsappMessages.id, id))
+        .returning();
+      
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error updating WhatsApp message:', error);
+      throw new Error('Failed to update WhatsApp message');
+    }
+  }
+
+  async updateWhatsappMessageStatus(id: string, status: string): Promise<void> {
+    try {
+      await db
+        .update(whatsappMessages)
+        .set({ 
+          status,
+          updatedAt: new Date(),
+          ...(status === 'delivered' && { deliveredAt: new Date() }),
+          ...(status === 'read' && { readAt: new Date() })
+        })
+        .where(eq(whatsappMessages.id, id));
+    } catch (error) {
+      console.error('Error updating WhatsApp message status:', error);
+      throw new Error('Failed to update WhatsApp message status');
+    }
+  }
+
+  async deleteWhatsappMessage(id: string): Promise<boolean> {
+    try {
+      const result = await db.delete(whatsappMessages).where(eq(whatsappMessages.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting WhatsApp message:', error);
+      throw new Error('Failed to delete WhatsApp message');
     }
   }
 

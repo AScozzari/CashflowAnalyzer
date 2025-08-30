@@ -7,6 +7,30 @@ import { z } from 'zod';
 
 // Storage instance is imported
 
+// Helper functions for chat formatting
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMinutes < 1) return 'Ora';
+  if (diffMinutes < 60) return `${diffMinutes} min fa`;
+  if (diffHours < 24) return `${diffHours} ore fa`;
+  if (diffDays === 1) return 'Ieri';
+  if (diffDays < 7) return `${diffDays} giorni fa`;
+  return date.toLocaleDateString('it-IT');
+}
+
+function isOnline(lastMessageAt?: Date | null): boolean {
+  if (!lastMessageAt) return false;
+  const now = new Date();
+  const diffMs = now.getTime() - lastMessageAt.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+  return diffMinutes <= 5; // Consider online if last message within 5 minutes
+}
+
 export function setupWhatsAppRoutes(app: Express): void {
   
   // Initialize WhatsApp service
@@ -480,88 +504,39 @@ export function setupWhatsAppRoutes(app: Express): void {
   // Get WhatsApp chats/conversations
   app.get('/api/whatsapp/chats', async (req, res) => {
     try {
-      // Get all contacts with phone numbers from different entity types
-      const [resources, customers, suppliers] = await Promise.all([
-        storage.getResources(),
-        storage.getCustomers(), 
-        storage.getSuppliers()
-      ]);
+      console.log('[WHATSAPP CHATS] 🔍 Fetching real WhatsApp chats from database...');
+      
+      // Get real WhatsApp chats from database
+      const dbChats = await storage.getWhatsappChats();
+      console.log(`[WHATSAPP CHATS] ✅ Found ${dbChats.length} real chats in database`);
 
-      // Combine all contacts and filter those with phone numbers
-      const allContacts = [
-        ...resources.map((r: any) => ({ ...r, type: 'resource' })),
-        ...customers.map((c: any) => ({ ...c, type: 'customer' })),
-        ...suppliers.map((s: any) => ({ ...s, type: 'supplier' }))
-      ];
+      // Transform database chats to frontend format
+      const whatsappChats = dbChats.map(chat => {
+        // Calculate last seen time
+        const lastSeenTime = chat.lastMessageAt 
+          ? formatRelativeTime(chat.lastMessageAt)
+          : 'Mai';
 
-      // Add demo chats with interesting messages
-      let whatsappChats = allContacts
-        .filter(contact => contact.mobile || contact.phone)
-        .slice(0, 20) // Limit to 20 most recent chats for performance
-        .map((contact, index) => {
-          // Demo messages per rendere le chat più interessanti
-          const demoMessages = [
-            'Ciao! Quando possiamo organizzare la riunione? 📅',
-            'Perfetto, confermo la consegna per domani mattina ✅',
-            'Grazie per il preventivo, molto competitivo! 💰',
-            'Ho bisogno di chiarimenti sui pagamenti 🤔',
-            'Tutto ok per la fatturazione elettronica? 📄',
-            'Buongiorno! Come stai? Senti, per il progetto...',
-            'Ti mando la documentazione via email 📧',
-            'Quando ci sentiamo per definire i dettagli? 📞'
-          ];
-          
-          const demoTimes = ['5 min fa', '1 ora fa', '2 ore fa', 'Ieri', 'Online', '10 min fa', '30 min fa', '3 ore fa'];
-          const demoUnread = [0, 1, 2, 0, 3, 0, 1, 0];
-          const demoOnline = [false, true, false, true, false, true, false, false];
-          
-          return {
-            id: contact.id,
-            name: contact.name || `Contatto ${contact.type}`,
-            phone: contact.mobile || contact.phone,
-            avatar: null,
-            lastMessage: demoMessages[index % demoMessages.length],
-            lastSeen: demoTimes[index % demoTimes.length],
-            unreadCount: demoUnread[index % demoUnread.length],
-            online: demoOnline[index % demoOnline.length],
-            type: contact.type,
-            company: contact.company || null
-          };
-        });
+        return {
+          id: chat.id,
+          name: chat.contactName || 'Contatto Sconosciuto',
+          phone: chat.whatsappNumber,
+          avatar: null,
+          lastMessage: chat.lastMessageText || 'Nessun messaggio',
+          lastSeen: lastSeenTime,
+          unreadCount: chat.unreadCount || 0,
+          online: isOnline(chat.lastMessageAt), // Consider online if message in last 5 minutes
+          type: chat.contactType || 'unknown',
+          company: chat.contactCompany || null,
+          messageCount: chat.messageCount || 0,
+          isBlocked: chat.isBlocked || false
+        };
+      });
 
-      // If no WhatsApp chats, add demo data for testing
-      if (whatsappChats.length === 0) {
-        whatsappChats = [
-          {
-            id: 'demo-1',
-            name: 'Demo Cliente',
-            phone: '+39 123 456 7890',
-            avatar: null,
-            lastMessage: 'Chat demo per testing',
-            lastSeen: 'Online',
-            unreadCount: 2,
-            online: true,
-            type: 'customer',
-            company: 'Demo SRL'
-          },
-          {
-            id: 'demo-2',
-            name: 'Demo Fornitore',
-            phone: '+39 098 765 4321',
-            avatar: null,
-            lastMessage: 'Fornitore demo',
-            lastSeen: '5 min fa',
-            unreadCount: 0,
-            online: false,
-            type: 'supplier',
-            company: 'Demo Suppliers SpA'
-          }
-        ];
-      }
-
+      console.log(`[WHATSAPP CHATS] 📱 Returning ${whatsappChats.length} formatted chats`);
       res.json(whatsappChats);
     } catch (error) {
-      console.error('Error fetching WhatsApp chats:', error);
+      console.error('[WHATSAPP CHATS] ❌ Error fetching WhatsApp chats:', error);
       res.status(500).json({ error: 'Failed to fetch chats' });
     }
   });
@@ -570,13 +545,28 @@ export function setupWhatsAppRoutes(app: Express): void {
   app.get('/api/whatsapp/messages/:contactId', async (req, res) => {
     try {
       const contactId = req.params.contactId;
+      console.log(`[WHATSAPP MESSAGES] 🔍 Fetching messages for chat: ${contactId}`);
       
-      // For now, return empty messages array until we implement message storage
-      const messages: any[] = [];
+      // Get real messages from database
+      const dbMessages = await storage.getWhatsappMessages(contactId, 100);
+      console.log(`[WHATSAPP MESSAGES] ✅ Found ${dbMessages.length} messages in database`);
 
+      // Transform messages to frontend format
+      const messages = dbMessages.map(msg => ({
+        id: msg.id,
+        text: msg.messageText || 'Media message',
+        sender: msg.direction === 'outbound' ? 'me' : 'contact',
+        timestamp: msg.createdAt,
+        status: msg.status || 'unknown',
+        messageType: msg.messageType || 'text',
+        mediaUrl: msg.mediaUrl,
+        isTemplateMessage: msg.isTemplateMessage || false
+      }));
+
+      console.log(`[WHATSAPP MESSAGES] 📱 Returning ${messages.length} formatted messages`);
       res.json(messages);
     } catch (error) {
-      console.error('Error fetching WhatsApp messages:', error);
+      console.error('[WHATSAPP MESSAGES] ❌ Error fetching WhatsApp messages:', error);
       res.status(500).json({ error: 'Failed to fetch messages' });
     }
   });

@@ -973,6 +973,62 @@ export const insertWhatsappChatSchema = createInsertSchema(whatsappChats).omit({
 export type WhatsappChat = typeof whatsappChats.$inferSelect;
 export type InsertWhatsappChat = z.infer<typeof insertWhatsappChatSchema>;
 
+// WhatsApp Messages (per tracciare singoli messaggi)
+export const whatsappMessages = pgTable("whatsapp_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  chatId: varchar("chat_id").notNull().references(() => whatsappChats.id, { onDelete: 'cascade' }),
+  
+  // Message Details
+  messageId: text("message_id"), // Twilio SID o ID specifico provider
+  whatsappMessageId: text("whatsapp_message_id"), // ID messaggio WhatsApp ufficiale
+  direction: text("direction").notNull(), // 'inbound', 'outbound'
+  
+  // Content
+  messageType: text("message_type").default("text"), // text, image, audio, video, document, location
+  messageText: text("message_text"), // Testo del messaggio
+  mediaUrl: text("media_url"), // URL per media
+  mediaType: text("media_type"), // image/jpeg, audio/ogg, etc.
+  
+  // Status & Delivery
+  status: text("status").default("queued"), // queued, sending, sent, delivered, read, failed
+  errorCode: text("error_code"), // Codice errore se failed
+  errorMessage: text("error_message"), // Messaggio errore se failed
+  
+  // Sender/Recipient
+  fromNumber: text("from_number").notNull(), // Numero mittente
+  toNumber: text("to_number").notNull(), // Numero destinatario
+  
+  // Metadata
+  providerResponse: jsonb("provider_response"), // Risposta completa del provider
+  isTemplateMessage: boolean("is_template_message").default(false),
+  templateName: text("template_name"), // Nome template se template message
+  
+  // Timestamps
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  readAt: timestamp("read_at"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// WhatsApp Message Insert Schema
+export const insertWhatsappMessageSchema = createInsertSchema(whatsappMessages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+}).extend({
+  chatId: z.string().uuid("ID chat non valido"),
+  direction: z.enum(["inbound", "outbound"], { required_error: "Direzione richiesta" }),
+  messageType: z.enum(["text", "image", "audio", "video", "document", "location"]).default("text"),
+  fromNumber: z.string().regex(/^\+[1-9]\d{1,14}$/, "Formato numero non valido"),
+  toNumber: z.string().regex(/^\+[1-9]\d{1,14}$/, "Formato numero non valido"),
+  messageText: z.string().max(4096, "Messaggio troppo lungo").optional()
+});
+
+export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
+export type InsertWhatsappMessage = z.infer<typeof insertWhatsappMessageSchema>;
+
 // === TELEGRAM INTEGRATION ===
 
 // Telegram Bot Settings
