@@ -69,41 +69,33 @@ export function InvoicingSettings() {
   // Fetch current settings
   const { data: settings, refetch } = useQuery({
     queryKey: ['/api/invoicing/settings'],
-    onSuccess: (data) => {
-      if (data) {
-        form.reset(data);
-      }
-    },
   });
 
   // Fetch dropdown data
-  const { data: companies } = useQuery({
+  const { data: companies = [] } = useQuery({
     queryKey: ['/api/companies'],
   });
 
-  const { data: invoiceTypes } = useQuery({
+  const { data: invoiceTypes = [] } = useQuery({
     queryKey: ['/api/invoicing/types'],
   });
 
-  const { data: paymentTerms } = useQuery({
+  const { data: paymentTerms = [] } = useQuery({
     queryKey: ['/api/invoicing/payment-terms'],
   });
 
-  const { data: paymentMethods } = useQuery({
+  const { data: paymentMethods = [] } = useQuery({
     queryKey: ['/api/invoicing/payment-methods'],
   });
 
-  const { data: vatCodes } = useQuery({
+  const { data: vatCodes = [] } = useQuery({
     queryKey: ['/api/invoicing/vat-codes'],
   });
 
   // Mutation per salvare impostazioni
   const saveSettingsMutation = useMutation({
     mutationFn: (data: InvoicingSettingsData) => 
-      apiRequest('/invoicing/settings', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('/invoicing/settings', 'POST', data),
     onSuccess: () => {
       toast({
         title: "Impostazioni salvate",
