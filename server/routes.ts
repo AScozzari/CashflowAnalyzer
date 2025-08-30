@@ -4349,6 +4349,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // 🔥 NEW: Download Invoice PDF
+  app.get('/api/invoicing/invoices/:id/pdf', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const invoiceId = req.params.id;
+      console.log('[INVOICING API] Generating PDF for invoice:', invoiceId);
+      
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice) {
+        return res.status(404).json({ message: 'Invoice not found' });
+      }
+
+      // Generate PDF (placeholder implementation)
+      const pdfContent = `%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+
+4 0 obj
+<<
+/Length 44
+>>
+stream
+BT
+/F1 12 Tf
+50 750 Td
+(Fattura ${invoice.invoiceNumber}) Tj
+ET
+endstream
+endobj
+
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000205 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+298
+%%EOF`;
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Fattura_${invoice.invoiceNumber}.pdf"`);
+      res.send(Buffer.from(pdfContent));
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      res.status(500).json({ message: 'Failed to generate PDF' });
+    }
+  }));
+
+  // 🔥 NEW: Send Invoice
+  app.post('/api/invoicing/invoices/:id/send', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const invoiceId = req.params.id;
+      console.log('[INVOICING API] Sending invoice:', invoiceId);
+      
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice) {
+        return res.status(404).json({ message: 'Invoice not found' });
+      }
+
+      if (invoice.status !== 'draft') {
+        return res.status(400).json({ message: 'Only draft invoices can be sent' });
+      }
+
+      // Update invoice status to sent
+      const updatedInvoice = await storage.updateInvoice(invoiceId, {
+        status: 'sent',
+        sdiStatus: 'pending'
+      });
+
+      console.log('[INVOICING API] Invoice sent successfully:', invoiceId);
+      res.json(updatedInvoice);
+    } catch (error) {
+      console.error('Error sending invoice:', error);
+      res.status(500).json({ message: 'Failed to send invoice' });
+    }
+  }));
+
   // Resubmit Invoice to SDI
   app.post('/api/invoicing/invoices/:id/resubmit', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
     try {

@@ -236,6 +236,148 @@ export function InvoicesList() {
     });
   };
 
+  // 🔥 NEW ACTIONS: Implementazione azioni mancanti
+  const handleViewInvoice = (invoice: Invoice) => {
+    toast({
+      title: "Visualizza Fattura",
+      description: `Apertura dettagli fattura ${invoice.invoiceNumber}`,
+    });
+    // TODO: Implementare vista dettagliata
+  };
+
+  const handleDownloadPdf = async (invoice: Invoice) => {
+    try {
+      const response = await fetch(`/api/invoicing/invoices/${invoice.id}/pdf`);
+      if (!response.ok) throw new Error('Errore download PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Fattura_${invoice.invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "PDF Scaricato!",
+        description: `Fattura ${invoice.invoiceNumber} scaricata con successo.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Errore Download",
+        description: "Impossibile scaricare il PDF della fattura.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadXml = async (invoice: Invoice) => {
+    try {
+      if (!invoice.xmlContent) {
+        toast({
+          title: "XML non disponibile",
+          description: "Questa fattura non ha contenuto XML associato.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const blob = new Blob([invoice.xmlContent], { type: 'application/xml' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Fattura_${invoice.invoiceNumber}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "XML Scaricato!",
+        description: `XML fattura ${invoice.invoiceNumber} scaricato con successo.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Errore Download",
+        description: "Impossibile scaricare l'XML della fattura.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const sendInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      return apiRequest(`/api/invoicing/invoices/${invoiceId}/send`, {
+        method: 'POST'
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Fattura Inviata!",
+        description: "La fattura è stata inviata con successo al Sistema di Interscambio.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/invoicing/invoices'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore Invio",
+        description: error.message || "Impossibile inviare la fattura.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleSendInvoice = (invoice: Invoice) => {
+    if (invoice.status !== 'draft') {
+      toast({
+        title: "Fattura già inviata",
+        description: "Solo le fatture in bozza possono essere inviate.",
+        variant: "destructive",
+      });
+      return;
+    }
+    sendInvoiceMutation.mutate(invoice.id);
+  };
+
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      return apiRequest(`/api/invoicing/invoices/${invoiceId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Fattura Eliminata!",
+        description: "La fattura è stata eliminata con successo.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/invoicing/invoices'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore Eliminazione",
+        description: error.message || "Impossibile eliminare la fattura.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDeleteInvoice = (invoice: Invoice) => {
+    if (invoice.status === 'sent' || invoice.status === 'paid') {
+      toast({
+        title: "Eliminazione non permessa",
+        description: "Le fatture inviate o pagate non possono essere eliminate.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (confirm(`Sei sicuro di voler eliminare la fattura ${invoice.invoiceNumber}?`)) {
+      deleteInvoiceMutation.mutate(invoice.id);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       draft: { variant: "secondary" as const, label: "Bozza", icon: Edit },
@@ -402,16 +544,31 @@ export function InvoicesList() {
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredInvoices.map((invoice) => (
-                <div key={invoice.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div key={invoice.id} className={`p-6 transition-colors border-l-4 ${
+                  (invoice.direction || 'outgoing') === 'outgoing' 
+                    ? 'border-l-green-500 bg-green-50/30 hover:bg-green-50/50 dark:bg-green-900/10 dark:hover:bg-green-900/20' 
+                    : 'border-l-red-500 bg-red-50/30 hover:bg-red-50/50 dark:bg-red-900/10 dark:hover:bg-red-900/20'
+                }`}>
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-4">
                         <div className="flex-1">
                           <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                            <span>{invoice.invoiceNumber}</span>
-                            {(invoice.direction || 'outgoing') === 'incoming' && (
-                              <Badge variant="outline" className="text-xs">Entrata</Badge>
-                            )}
+                            <span className="flex items-center gap-2">
+                              {(invoice.direction || 'outgoing') === 'outgoing' ? (
+                                <FileText className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <Download className="h-4 w-4 text-red-600" />
+                              )}
+                              {invoice.invoiceNumber}
+                            </span>
+                            <Badge variant="outline" className={`text-xs ${
+                              (invoice.direction || 'outgoing') === 'outgoing' 
+                                ? 'border-green-500 text-green-700 bg-green-50' 
+                                : 'border-red-500 text-red-700 bg-red-50'
+                            }`}>
+                              {(invoice.direction || 'outgoing') === 'outgoing' ? 'EMESSA' : 'RICEVUTA'}
+                            </Badge>
                           </h4>
                           <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                             {invoice.customerName}
@@ -456,27 +613,31 @@ export function InvoicesList() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Azioni</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewInvoice(invoice)} data-testid={`view-invoice-${invoice.id}`}>
                             <Eye className="h-4 w-4 mr-2" />
                             Visualizza
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditInvoice(invoice)}>
+                          <DropdownMenuItem onClick={() => handleEditInvoice(invoice)} data-testid={`edit-invoice-${invoice.id}`}>
                             <Edit className="h-4 w-4 mr-2" />
                             Modifica
                           </DropdownMenuItem>
                           {/* 🔥 XML VIEWER */}
                           {invoice.xmlContent && (
-                            <DropdownMenuItem onClick={() => handleViewXml(invoice)}>
+                            <DropdownMenuItem onClick={() => handleViewXml(invoice)} data-testid={`view-xml-${invoice.id}`}>
                               <Code className="h-4 w-4 mr-2" />
                               Visualizza XML
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadPdf(invoice)} data-testid={`download-pdf-${invoice.id}`}>
                             <Download className="h-4 w-4 mr-2" />
                             Scarica PDF
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadXml(invoice)} data-testid={`download-xml-${invoice.id}`}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Scarica XML
+                          </DropdownMenuItem>
                           {invoice.status === 'draft' && (
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSendInvoice(invoice)} data-testid={`send-invoice-${invoice.id}`}>
                               <Send className="h-4 w-4 mr-2" />
                               Invia
                             </DropdownMenuItem>
@@ -509,7 +670,7 @@ export function InvoicesList() {
                           )}
                           
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem onClick={() => handleDeleteInvoice(invoice)} className="text-red-600" data-testid={`delete-invoice-${invoice.id}`}>
                             <Trash2 className="h-4 w-4 mr-2" />
                             Elimina
                           </DropdownMenuItem>
