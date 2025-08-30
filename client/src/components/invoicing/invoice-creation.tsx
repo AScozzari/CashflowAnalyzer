@@ -111,15 +111,18 @@ export function InvoiceCreation() {
   // Mutation per creare la fattura
   const createInvoiceMutation = useMutation({
     mutationFn: (data: InvoiceFormData) => 
-      apiRequest('/invoicing/invoices', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
+      apiRequest('/invoicing/invoices', 'POST', data),
+    onSuccess: (invoice: any) => {
       toast({
         title: "Fattura creata",
         description: "La fattura è stata creata con successo",
       });
+      
+      // Avvia la sincronizzazione con i provider esterni
+      if (invoice?.id) {
+        syncWithProvidersMutation.mutate(invoice.id);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/invoicing/invoices'] });
       form.reset();
     },
@@ -127,6 +130,27 @@ export function InvoiceCreation() {
       toast({
         title: "Errore",
         description: "Errore nella creazione della fattura",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation per sincronizzazione con provider esterni
+  const syncWithProvidersMutation = useMutation({
+    mutationFn: (invoiceId: string) => 
+      apiRequest(`/invoicing/invoices/${invoiceId}/sync-providers`, 'POST'),
+    onSuccess: (result: any) => {
+      if (result.providers?.length > 0) {
+        toast({
+          title: "Sincronizzazione provider",
+          description: `Fattura sincronizzata con ${result.providers.length} provider(s) esterni`,
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Avviso sincronizzazione",
+        description: "Fattura creata ma sincronizzazione provider non riuscita",
         variant: "destructive",
       });
     },

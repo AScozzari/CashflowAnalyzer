@@ -23,7 +23,12 @@ import {
   Shield,
   Link as LinkIcon,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  TestTube,
+  Code,
+  ExternalLink,
+  BookOpen,
+  Wrench
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -88,27 +93,24 @@ export function InvoicingProvidersSettings() {
   });
 
   // Fetch providers disponibili
-  const { data: availableProviders } = useQuery({
+  const { data: availableProviders = [] } = useQuery({
     queryKey: ['/api/invoicing/providers'],
   });
 
   // Fetch companies
-  const { data: companies } = useQuery({
+  const { data: companies = [] } = useQuery({
     queryKey: ['/api/companies'],
   });
 
   // Fetch configurazioni esistenti
-  const { data: configurations, refetch } = useQuery({
+  const { data: configurations = [], refetch } = useQuery({
     queryKey: ['/api/invoicing/provider-settings'],
   });
 
   // Mutation per salvare configurazione
   const saveConfigMutation = useMutation({
     mutationFn: (data: ProviderFormData) => 
-      apiRequest('/invoicing/provider-settings', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('/invoicing/provider-settings', 'POST', data),
     onSuccess: () => {
       toast({
         title: "Configurazione salvata",
@@ -130,10 +132,8 @@ export function InvoicingProvidersSettings() {
   // Mutation per test connessione
   const testConnectionMutation = useMutation({
     mutationFn: (configId: string) => 
-      apiRequest(`/invoicing/provider-settings/${configId}/test`, {
-        method: 'POST',
-      }),
-    onSuccess: (data) => {
+      apiRequest(`/invoicing/provider-settings/${configId}/test`, 'POST'),
+    onSuccess: (data: any) => {
       toast({
         title: "Test connessione",
         description: data.success ? "Connessione riuscita" : "Connessione fallita",
@@ -141,6 +141,29 @@ export function InvoicingProvidersSettings() {
       });
     },
   });
+
+  // Mutation per test sandbox
+  const testSandboxMutation = useMutation({
+    mutationFn: (data: { provider: string, testType: string }) => 
+      apiRequest(`/invoicing/sandbox/test`, 'POST', data),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Test Sandbox",
+        description: data.success ? "Test sandbox completato con successo" : "Test sandbox fallito",
+        variant: data.success ? "default" : "destructive",
+      });
+    },
+  });
+
+  // Handler per i test sandbox
+  const handleSandboxTest = (provider: string, testType: string) => {
+    testSandboxMutation.mutate({ provider, testType });
+  };
+
+  // Handler per aprire documentazione esterna
+  const openExternalLink = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const onSubmit = (data: ProviderFormData) => {
     saveConfigMutation.mutate(data);
@@ -224,11 +247,11 @@ export function InvoicingProvidersSettings() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {companies?.map((company: any) => (
+                                {Array.isArray(companies) ? companies.map((company: any) => (
                                   <SelectItem key={company.id} value={company.id}>
                                     {company.name}
                                   </SelectItem>
-                                ))}
+                                )) : null}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -249,14 +272,14 @@ export function InvoicingProvidersSettings() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {availableProviders?.map((provider: any) => (
+                                {Array.isArray(availableProviders) ? availableProviders.map((provider: any) => (
                                   <SelectItem key={provider.id} value={provider.id}>
                                     <div className="flex items-center space-x-2">
                                       {getProviderIcon(provider.type)}
                                       <span>{provider.name}</span>
                                     </div>
                                   </SelectItem>
-                                ))}
+                                )) : null}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -481,6 +504,127 @@ export function InvoicingProvidersSettings() {
         </CardContent>
       </Card>
 
+      {/* Testing Sandbox */}
+      <Card className="border-l-4 border-l-amber-500">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <TestTube className="h-5 w-5 text-amber-500" />
+            <span>Testing & Sandbox</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Fatture in Cloud Sandbox */}
+            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Cloud className="h-6 w-6 text-blue-500" />
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100">Fatture in Cloud - Sandbox</h4>
+                </div>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                  Testa l'integrazione con l'ambiente di sviluppo di Fatture in Cloud
+                </p>
+                <div className="space-y-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+                    onClick={() => openExternalLink('https://api-v2.fattureincloud.it/docs/')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Ambiente Sandbox
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+                    onClick={() => openExternalLink('https://developers.fattureincloud.it/api-reference')}
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Documentazione API
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ACube Sandbox */}
+            <Card className="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Receipt className="h-6 w-6 text-emerald-500" />
+                  <h4 className="font-semibold text-emerald-900 dark:text-emerald-100">ACube - Ambiente Test</h4>
+                </div>
+                <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-3">
+                  Testa l'integrazione con l'ambiente di test governativo ACube
+                </p>
+                <div className="space-y-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                    onClick={() => openExternalLink('https://docs.acubeapi.com/documentation/gov-it/')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Ambiente Test
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                    onClick={() => openExternalLink('https://docs.acubeapi.com/api-reference/')}
+                  >
+                    <Code className="h-4 w-4 mr-2" />
+                    API Reference
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center space-x-2 mb-2">
+              <Wrench className="h-5 w-5 text-amber-600" />
+              <h4 className="font-semibold text-amber-900 dark:text-amber-100">Test Completo Integrazione</h4>
+            </div>
+            <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
+              Verifica che la sincronizzazione tra il dashboard di creazione fatture e i provider esterni funzioni correttamente.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                onClick={() => handleSandboxTest('fattureincloud', 'create_invoice')}
+                disabled={testSandboxMutation.isPending}
+              >
+                <TestTube className="h-4 w-4 mr-2" />
+                Test Creazione Fattura
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                onClick={() => handleSandboxTest('acube', 'sync_test')}
+                disabled={testSandboxMutation.isPending}
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Test Sincronizzazione
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                onClick={() => handleSandboxTest('fattureincloud', 'sdi_status')}
+                disabled={testSandboxMutation.isPending}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Verifica Stato SDI
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Configurazioni Attive */}
       <Card>
         <CardHeader>
@@ -490,7 +634,7 @@ export function InvoicingProvidersSettings() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {configurations?.length > 0 ? (
+          {Array.isArray(configurations) && configurations.length > 0 ? (
             <div className="space-y-4">
               {configurations.map((config: any) => (
                 <Card key={config.id} className="border-l-4 border-l-emerald-500">
