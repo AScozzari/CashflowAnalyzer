@@ -36,7 +36,7 @@ export default function Sidebar({ isCollapsed: externalCollapsed, onCollapsedCha
 
     // Admin e Finance possono accedere alla fatturazione
     if (user && (user.role === "admin" || user.role === "finance")) {
-      baseNavigation.push({ name: "Amministrazione", href: "/invoicing", icon: FileText });
+      baseNavigation.push({ name: "Fatture", href: "/invoicing", icon: FileText });
     }
 
     // Solo Admin può accedere alle impostazioni (finance no)
