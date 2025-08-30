@@ -455,6 +455,7 @@ export interface IStorage {
   getInvoiceTypes(): Promise<InvoiceType[]>;
   getVatCodes(): Promise<VatCode[]>;
   getPaymentTerms(): Promise<PaymentTerms[]>;
+  getPaymentTermsById(id: string): Promise<PaymentTerms | undefined>;
   getPaymentMethods(): Promise<PaymentMethod[]>;
 
   // Invoicing Settings
@@ -5524,6 +5525,21 @@ async getMovements(filters: {
     }
   }
 
+  async getPaymentTermsById(id: string): Promise<PaymentTerms | undefined> {
+    try {
+      const [term] = await db
+        .select()
+        .from(paymentTerms)
+        .where(eq(paymentTerms.id, id));
+      
+      console.log('[STORAGE] Payment term fetched by ID:', id, term ? 'found' : 'not found');
+      return term;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching payment term by ID:', error);
+      return undefined;
+    }
+  }
+
   async getPaymentMethods(): Promise<PaymentMethod[]> {
     try {
       const methods = await db.select().from(paymentMethods).orderBy(paymentMethods.name);
@@ -5878,7 +5894,7 @@ async getMovements(filters: {
   }
 
   /**
-   * Crea automaticamente un movimento finanziario da una fattura
+   * Crea automaticamente un movimento finanziario da una fattura con logica avanzata
    */
   async autoCreateMovementFromInvoice(invoiceId: string, options: InvoiceMovementSyncOptions = {}): Promise<Movement | null> {
     try {
@@ -5914,31 +5930,48 @@ async getMovements(filters: {
         return null;
       }
       
-      // Ottieni core e status di default per l'azienda
-      const defaultCore = await this.getCoresByCompany(invoice.companyId);
-      const defaultStatus = await this.getMovementStatuses();
-      const defaultReason = await this.getMovementReasons();
+      // Ottieni dati di supporto per sincronizzazione avanzata
+      const [defaultCore, movementStatuses, movementReasons, paymentTermsData, companyIbans] = await Promise.all([
+        this.getCoresByCompany(invoice.companyId),
+        this.getMovementStatuses(),
+        this.getMovementReasons(),
+        invoice.paymentTermsId ? this.getPaymentTermsById(invoice.paymentTermsId) : null,
+        this.getIbansByCompany(invoice.companyId)
+      ]);
       
-      if (!defaultCore.length || !defaultStatus.length || !defaultReason.length) {
+      if (!defaultCore.length || !movementStatuses.length || !movementReasons.length) {
         console.log('[MOVEMENT SYNC] Configurazioni mancanti per movimento automatico');
         return null;
       }
       
-      // Opzioni per il movimento
-      const syncOptions: InvoiceMovementSyncOptions = {
+      // Calcola giorni termini di pagamento
+      const paymentTermsDays = paymentTermsData?.days || 0;
+      
+      // Opzioni avanzate per il movimento
+      const advancedSyncOptions = {
         coreId: options.coreId || defaultCore[0].id,
-        statusId: options.statusId || defaultStatus.find(s => s.name === 'Confermato')?.id || defaultStatus[0].id,
-        reasonId: options.reasonId || defaultReason.find(r => r.name === 'Fatturazione attiva')?.id || defaultReason[0].id,
+        reasonId: options.reasonId || movementReasons.find(r => r.name === 'Fatturazione attiva')?.id || movementReasons[0].id,
+        paymentTermsDays: paymentTermsDays,
+        companyIbans: companyIbans.map(iban => ({
+          id: iban.id,
+          bankName: iban.bankName,
+          isActive: iban.isActive
+        })),
+        statusMappings: movementStatuses.map(status => ({
+          id: status.id,
+          name: status.name
+        })),
         ...options
       };
       
-      // Crea dati movimento
-      const movementData = createMovementDataFromInvoice(invoiceWithType, mapping, syncOptions);
+      // Crea dati movimento con logica avanzata
+      const movementData = createMovementDataFromInvoice(invoiceWithType, mapping, advancedSyncOptions);
       
       // Crea movimento
       const movement = await this.createMovement(movementData);
       
-      console.log('[MOVEMENT SYNC] ✅ Movimento automatico creato:', movement.id, 'per fattura:', invoiceId);
+      const paymentInfo = paymentTermsDays > 0 ? ` (scadenza: ${paymentTermsDays} giorni)` : '';
+      console.log(`[MOVEMENT SYNC] ✅ Movimento automatico creato: ${movement.id} per fattura: ${invoiceId}${paymentInfo}`);
       return movement;
       
     } catch (error) {
