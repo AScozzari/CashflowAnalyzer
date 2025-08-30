@@ -75,7 +75,7 @@ import {
 } from "../shared/backup-schema";
 import crypto from 'crypto';
 import { db } from "./db";
-import { eq, desc, and, gte, lte, sql, count, or, isNull, isNotNull, inArray } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, count, or, isNull, isNotNull, inArray, ilike } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
@@ -454,6 +454,15 @@ export interface IStorage {
   // Invoicing Settings
   getInvoicingSettings(): Promise<any>;
   saveInvoicingSettings(settings: any): Promise<any>;
+
+  // Invoice Management
+  getInvoicingStats(): Promise<any>;
+  getRecentInvoices(limit?: number): Promise<any[]>;
+  getInvoices(filters?: any): Promise<{ invoices: any[]; total: number }>;
+  createInvoice(invoice: any): Promise<any>;
+  getInvoiceById(id: string): Promise<any>;
+  updateInvoice(id: string, invoice: any): Promise<any>;
+  deleteInvoice(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -5534,6 +5543,307 @@ async getMovements(filters: {
     } catch (error) {
       console.error('[STORAGE] Error saving invoicing settings:', error);
       throw new Error('Failed to save invoicing settings');
+    }
+  }
+
+  // =================== INVOICE MANAGEMENT ===================
+
+  async getInvoicingStats(): Promise<any> {
+    try {
+      console.log('[STORAGE] Calculating invoicing statistics...');
+      
+      // Get all invoices
+      const allInvoices = await db.select().from(invoices);
+      
+      // Calculate basic stats
+      const totalInvoices = allInvoices.length;
+      const totalRevenue = allInvoices
+        .filter(inv => inv.direction === 'outgoing')
+        .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0);
+      
+      const pendingInvoices = allInvoices.filter(inv => inv.status === 'issued').length;
+      const overdueInvoices = allInvoices.filter(inv => {
+        if (!inv.dueDate) return false;
+        return new Date(inv.dueDate) < new Date() && inv.status !== 'paid';
+      }).length;
+      
+      // Monthly stats (current month)
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentMonthInvoices = allInvoices.filter(inv => {
+        return new Date(inv.issueDate) >= firstDay;
+      });
+      
+      const monthlyRevenue = currentMonthInvoices
+        .filter(inv => inv.direction === 'outgoing')
+        .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0);
+      
+      const monthlyInvoices = currentMonthInvoices.length;
+      const averageInvoiceValue = totalInvoices > 0 ? totalRevenue / totalInvoices : 0;
+      
+      // Recent invoices for stats
+      const recentInvoices = allInvoices
+        .sort((a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime())
+        .slice(0, 5);
+      
+      const stats = {
+        totalInvoices,
+        totalRevenue,
+        pendingInvoices,
+        overdueInvoices,
+        monthlyRevenue,
+        monthlyInvoices,
+        averageInvoiceValue,
+        recentInvoices
+      };
+      
+      console.log('[STORAGE] Invoicing stats calculated:', stats);
+      return stats;
+    } catch (error) {
+      console.error('[STORAGE] Error calculating invoicing stats:', error);
+      throw new Error('Failed to calculate invoicing statistics');
+    }
+  }
+
+  async getRecentInvoices(limit: number = 10): Promise<any[]> {
+    try {
+      console.log('[STORAGE] Fetching recent invoices, limit:', limit);
+      
+      const recentInvoices = await db
+        .select({
+          id: invoices.id,
+          number: invoices.number,
+          issueDate: invoices.issueDate,
+          dueDate: invoices.dueDate,
+          customerName: invoices.customerName,
+          totalAmount: invoices.totalAmount,
+          status: invoices.status,
+          direction: invoices.direction,
+          sdiStatus: invoices.sdiStatus
+        })
+        .from(invoices)
+        .orderBy(desc(invoices.issueDate))
+        .limit(limit);
+      
+      console.log('[STORAGE] Recent invoices fetched:', recentInvoices.length);
+      return recentInvoices;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching recent invoices:', error);
+      throw new Error('Failed to fetch recent invoices');
+    }
+  }
+
+  async getInvoices(filters: any = {}): Promise<{ invoices: any[]; total: number }> {
+    try {
+      console.log('[STORAGE] Fetching invoices with filters:', filters);
+      
+      let query = db.select().from(invoices);
+      let conditions: any[] = [];
+      
+      // Apply filters
+      if (filters.search) {
+        conditions.push(
+          or(
+            ilike(invoices.number, `%${filters.search}%`),
+            ilike(invoices.customerName, `%${filters.search}%`)
+          )
+        );
+      }
+      
+      if (filters.status && filters.status !== 'all') {
+        conditions.push(eq(invoices.status, filters.status));
+      }
+      
+      if (filters.direction && filters.direction !== 'all') {
+        conditions.push(eq(invoices.direction, filters.direction));
+      }
+      
+      if (filters.startDate) {
+        conditions.push(gte(invoices.issueDate, filters.startDate));
+      }
+      
+      if (filters.endDate) {
+        conditions.push(lte(invoices.issueDate, filters.endDate));
+      }
+      
+      // Apply conditions
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      // Get total count
+      const totalQuery = db
+        .select({ count: count() })
+        .from(invoices);
+      
+      if (conditions.length > 0) {
+        totalQuery.where(and(...conditions));
+      }
+      
+      const [{ count: total }] = await totalQuery;
+      
+      // Apply pagination
+      const page = filters.page || 1;
+      const limit = filters.limit || 20;
+      const offset = (page - 1) * limit;
+      
+      const invoicesList = await query
+        .orderBy(desc(invoices.issueDate))
+        .limit(limit)
+        .offset(offset);
+      
+      console.log('[STORAGE] Invoices fetched:', invoicesList.length, 'total:', total);
+      return { invoices: invoicesList, total };
+    } catch (error) {
+      console.error('[STORAGE] Error fetching invoices:', error);
+      throw new Error('Failed to fetch invoices');
+    }
+  }
+
+  async createInvoice(invoiceData: any): Promise<any> {
+    try {
+      console.log('[STORAGE] Creating new invoice:', invoiceData);
+      
+      // Generate invoice number if not provided
+      if (!invoiceData.number) {
+        const year = new Date().getFullYear();
+        const lastInvoice = await db
+          .select({ number: invoices.number })
+          .from(invoices)
+          .where(ilike(invoices.number, `${year}%`))
+          .orderBy(desc(invoices.number))
+          .limit(1);
+        
+        let nextNumber = 1;
+        if (lastInvoice.length > 0) {
+          const lastNumber = lastInvoice[0].number;
+          const numberPart = lastNumber.split('/')[0];
+          nextNumber = parseInt(numberPart) + 1;
+        }
+        
+        invoiceData.number = `${nextNumber.toString().padStart(4, '0')}/${year}`;
+      }
+      
+      // Insert invoice
+      const [newInvoice] = await db
+        .insert(invoices)
+        .values({
+          id: crypto.randomUUID(),
+          companyId: invoiceData.companyId,
+          customerId: invoiceData.customerId,
+          invoiceTypeId: invoiceData.invoiceTypeId,
+          number: invoiceData.number,
+          issueDate: invoiceData.issueDate,
+          dueDate: invoiceData.dueDate,
+          customerName: invoiceData.customerName || 'Cliente',
+          customerAddress: invoiceData.customerAddress,
+          customerVatNumber: invoiceData.customerVatNumber,
+          customerTaxCode: invoiceData.customerTaxCode,
+          paymentTermsId: invoiceData.paymentTermsId,
+          paymentMethodId: invoiceData.paymentMethodId,
+          notes: invoiceData.notes,
+          subtotalAmount: invoiceData.subtotalAmount || '0',
+          vatAmount: invoiceData.vatAmount || '0',
+          totalAmount: invoiceData.totalAmount || '0',
+          status: invoiceData.status || 'draft',
+          direction: invoiceData.direction || 'outgoing',
+          sdiStatus: invoiceData.sdiStatus || 'pending',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      // Insert invoice lines if provided
+      if (invoiceData.lines && invoiceData.lines.length > 0) {
+        const lines = invoiceData.lines.map((line: any, index: number) => ({
+          id: crypto.randomUUID(),
+          invoiceId: newInvoice.id,
+          lineNumber: index + 1,
+          description: line.description,
+          quantity: line.quantity.toString(),
+          unitPrice: line.unitPrice.toString(),
+          vatCodeId: line.vatCodeId,
+          discountPercentage: line.discountPercentage?.toString() || '0',
+          lineTotal: ((line.quantity * line.unitPrice) * (1 - (line.discountPercentage || 0) / 100)).toString(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+        
+        await db.insert(invoiceLines).values(lines);
+      }
+      
+      console.log('[STORAGE] Invoice created:', newInvoice.id);
+      return newInvoice;
+    } catch (error) {
+      console.error('[STORAGE] Error creating invoice:', error);
+      throw new Error('Failed to create invoice');
+    }
+  }
+
+  async getInvoiceById(id: string): Promise<any> {
+    try {
+      console.log('[STORAGE] Fetching invoice by ID:', id);
+      
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, id));
+      
+      if (!invoice) {
+        return undefined;
+      }
+      
+      // Get invoice lines
+      const lines = await db
+        .select()
+        .from(invoiceLines)
+        .where(eq(invoiceLines.invoiceId, id))
+        .orderBy(invoiceLines.lineNumber);
+      
+      const result = { ...invoice, lines };
+      console.log('[STORAGE] Invoice fetched:', result.id);
+      return result;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching invoice by ID:', error);
+      throw new Error('Failed to fetch invoice');
+    }
+  }
+
+  async updateInvoice(id: string, invoiceData: any): Promise<any> {
+    try {
+      console.log('[STORAGE] Updating invoice:', id);
+      
+      const [updatedInvoice] = await db
+        .update(invoices)
+        .set({
+          ...invoiceData,
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, id))
+        .returning();
+      
+      console.log('[STORAGE] Invoice updated:', updatedInvoice.id);
+      return updatedInvoice;
+    } catch (error) {
+      console.error('[STORAGE] Error updating invoice:', error);
+      throw new Error('Failed to update invoice');
+    }
+  }
+
+  async deleteInvoice(id: string): Promise<void> {
+    try {
+      console.log('[STORAGE] Deleting invoice:', id);
+      
+      // Delete invoice lines first
+      await db.delete(invoiceLines).where(eq(invoiceLines.invoiceId, id));
+      
+      // Delete invoice
+      await db.delete(invoices).where(eq(invoices.id, id));
+      
+      console.log('[STORAGE] Invoice deleted:', id);
+    } catch (error) {
+      console.error('[STORAGE] Error deleting invoice:', error);
+      throw new Error('Failed to delete invoice');
     }
   }
 }

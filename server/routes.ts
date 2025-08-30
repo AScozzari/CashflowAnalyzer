@@ -3768,6 +3768,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Get Invoicing Statistics for Dashboard
+  app.get('/api/invoicing/stats', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[INVOICING API] Fetching invoicing statistics...');
+      const stats = await storage.getInvoicingStats();
+      console.log('[INVOICING API] Statistics fetched:', stats);
+      res.json(stats);
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching invoicing stats:', error);
+      res.status(500).json({ message: 'Failed to fetch invoicing statistics' });
+    }
+  }));
+
+  // Get Recent Invoices
+  app.get('/api/invoicing/recent', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[INVOICING API] Fetching recent invoices...');
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const invoices = await storage.getRecentInvoices(limit);
+      console.log('[INVOICING API] Recent invoices fetched:', invoices.length);
+      res.json(invoices);
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching recent invoices:', error);
+      res.status(500).json({ message: 'Failed to fetch recent invoices' });
+    }
+  }));
+
+  // Get All Invoices with Filters
+  app.get('/api/invoicing/invoices', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[INVOICING API] Fetching invoices with filters:', req.query);
+      const filters = {
+        search: req.query.search,
+        status: req.query.status !== 'all' ? req.query.status : undefined,
+        direction: req.query.direction !== 'all' ? req.query.direction : undefined,
+        startDate: req.query.startDate,
+        endDate: req.query.endDate,
+        page: req.query.page ? parseInt(req.query.page as string) : 1,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 20
+      };
+      
+      const result = await storage.getInvoices(filters);
+      console.log('[INVOICING API] Invoices fetched:', result.invoices.length, 'total:', result.total);
+      res.json(result);
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching invoices:', error);
+      res.status(500).json({ message: 'Failed to fetch invoices' });
+    }
+  }));
+
+  // Create New Invoice
+  app.post('/api/invoicing/invoices', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[INVOICING API] Creating new invoice:', req.body);
+      const invoice = await storage.createInvoice(req.body);
+      console.log('[INVOICING API] Invoice created:', invoice.id);
+      res.status(201).json(invoice);
+    } catch (error) {
+      console.error('[INVOICING API] Error creating invoice:', error);
+      res.status(500).json({ message: 'Failed to create invoice' });
+    }
+  }));
+
+  // Get Single Invoice
+  app.get('/api/invoicing/invoices/:id', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[INVOICING API] Fetching invoice:', req.params.id);
+      const invoice = await storage.getInvoiceById(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ message: 'Invoice not found' });
+      }
+      res.json(invoice);
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching invoice:', error);
+      res.status(500).json({ message: 'Failed to fetch invoice' });
+    }
+  }));
+
+  // Update Invoice
+  app.put('/api/invoicing/invoices/:id', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[INVOICING API] Updating invoice:', req.params.id);
+      const invoice = await storage.updateInvoice(req.params.id, req.body);
+      console.log('[INVOICING API] Invoice updated:', invoice.id);
+      res.json(invoice);
+    } catch (error) {
+      console.error('[INVOICING API] Error updating invoice:', error);
+      res.status(500).json({ message: 'Failed to update invoice' });
+    }
+  }));
+
+  // Delete Invoice
+  app.delete('/api/invoicing/invoices/:id', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[INVOICING API] Deleting invoice:', req.params.id);
+      await storage.deleteInvoice(req.params.id);
+      console.log('[INVOICING API] Invoice deleted:', req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[INVOICING API] Error deleting invoice:', error);
+      res.status(500).json({ message: 'Failed to delete invoice' });
+    }
+  }));
+
   // Create and return HTTP server
   const httpServer = createServer(app);
   return httpServer;
