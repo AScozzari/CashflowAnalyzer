@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Menu, X, Bot, MessageSquare, Brain, Search } from "lucide-react";
+import { BarChart3, Home, TrendingUp, Settings, RefreshCw, Menu, X, Bot, MessageSquare, Brain, Search, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,11 @@ export function MobileNavigation({ className }: MobileNavigationProps) {
       { name: "AI Tools", href: "/ai-tools", icon: Brain },
       { name: "Comunicazioni", href: "/communications", icon: MessageSquare },
     ];
+
+    // Admin e Finance possono accedere alle fatture
+    if (user && (user.role === "admin" || user.role === "finance")) {
+      baseNavigation.push({ name: "Fatture", href: "/invoicing", icon: FileText });
+    }
 
     // Solo Admin e Finance possono accedere alle impostazioni
     if (user && (user.role === "admin" || user.role === "finance")) {
@@ -144,6 +149,7 @@ export function BottomNavigation() {
     ];
 
     if (user && (user.role === "admin" || user.role === "finance")) {
+      baseNavigation.push({ name: "Fatture", href: "/invoicing", icon: FileText });
       baseNavigation.push({ name: "Settings", href: "/settings", icon: Settings });
     }
 
