@@ -5566,7 +5566,6 @@ async getMovements(filters: {
       // Calculate basic stats
       const totalInvoices = allInvoices.length;
       const totalRevenue = allInvoices
-        .filter(inv => inv.direction === 'outgoing')
         .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0);
       
       const pendingInvoices = allInvoices.filter(inv => inv.status === 'issued').length;
@@ -5583,7 +5582,6 @@ async getMovements(filters: {
       });
       
       const monthlyRevenue = currentMonthInvoices
-        .filter(inv => inv.direction === 'outgoing')
         .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0);
       
       const monthlyInvoices = currentMonthInvoices.length;
