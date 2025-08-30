@@ -181,9 +181,8 @@ export function ChannelSettingsCompact() {
             }`}
             onClick={() => {
               setSelectedChannel(channel.id);
-              if (channel.status === 'implemented') {
-                setOpenModal(channel.id);
-              }
+              // Permettiamo configurazione per tutti i canali
+              setOpenModal(channel.id);
             }}
           >
             <CardContent className="p-3 text-center space-y-2">
@@ -212,7 +211,7 @@ export function ChannelSettingsCompact() {
               </Badge>
               
               <div className="text-xs text-muted-foreground">
-                {channel.status === 'implemented' ? 'Click per configurare' : 'Prossimamente'}
+                Click per configurare
               </div>
             </CardContent>
           </Card>
