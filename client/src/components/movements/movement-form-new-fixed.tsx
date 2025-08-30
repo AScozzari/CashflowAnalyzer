@@ -42,6 +42,7 @@ import { apiRequest } from "@/lib/queryClient";
 import CompactXMLUploader from "./xml-invoice-uploader-compact";
 import { AiDocumentUpload } from "./ai-document-upload";
 import MovementRemindModal from "./movement-remind-modal";
+import { VatCalculator } from "./vat-calculator";
 import type { MovementWithRelations, Company, Core, Resource, Office, Iban, Tag, MovementStatus, MovementReason, Supplier, Customer } from "@shared/schema";
 
 // Schema del form con validazione
@@ -61,8 +62,10 @@ const movementFormSchema = z.object({
   statusId: z.string().min(1, "Stato richiesto"),
   tagId: z.string().optional(),
   amount: z.string().min(1, "Importo richiesto").refine(val => !isNaN(parseFloat(val)), "Importo non valido"),
+  vatCodeId: z.string().optional(),
   vatAmount: z.string().optional(),
   vatType: z.string().optional(),
+  netAmount: z.string().optional(),
   notes: z.string().optional(),
   documentNumber: z.string().optional(),
   fileName: z.string().optional(),
@@ -84,6 +87,14 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
   const [showRemindModal, setShowRemindModal] = useState(false);
   const [enableRemind, setEnableRemind] = useState(false);
   
+  // VAT calculation state
+  const [vatCalculationData, setVatCalculationData] = useState<{
+    imponibile: number;
+    imposta: number;
+    totale: number;
+    vatCodeId: string;
+  } | null>(null);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -94,8 +105,10 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
       flowDate: movement?.flowDate || new Date().toISOString().split('T')[0],
       type: movement?.type as "income" | "expense" || "income",
       amount: movement?.amount?.toString() || "",
+      vatCodeId: (movement as any)?.vatCodeId || "",
       vatAmount: movement?.vatAmount?.toString() || "",
       vatType: movement?.vatType || "",
+      netAmount: (movement as any)?.netAmount?.toString() || "",
       notes: movement?.notes || "",
       documentNumber: movement?.documentNumber || "",
       companyId: movement?.companyId || "",
@@ -185,30 +198,6 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
     reason.type === watchedType || reason.type === "both"
   );
 
-  // Auto-calculate VAT (IVA inclusa nell'importo totale)
-  useEffect(() => {
-    if (watchedAmount && watchedVatType) {
-      const totalAmount = parseFloat(watchedAmount);
-      let vatAmount = 0;
-      
-      // Calcolo IVA inclusa: IVA = (Totale * Aliquota) / (100 + Aliquota)
-      switch (watchedVatType) {
-        case "iva_22":
-          vatAmount = (totalAmount * 22) / 122;
-          break;
-        case "iva_10":
-          vatAmount = (totalAmount * 10) / 110;
-          break;
-        case "iva_4":
-          vatAmount = (totalAmount * 4) / 104;
-          break;
-        default:
-          vatAmount = 0;
-      }
-      
-      form.setValue("vatAmount", vatAmount.toFixed(2));
-    }
-  }, [watchedAmount, watchedVatType, form]);
 
   // Reset form when movement changes (for editing)
   useEffect(() => {
@@ -481,6 +470,30 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
         form.setValue("supplierId", supplier.id);
         form.setValue("entityType", "supplier");
       }
+    }
+  };
+
+  // Handle VAT calculation results
+  const handleVatCalculated = (calculation: {
+    imponibile: number;
+    imposta: number;
+    totale: number;
+    vatCodeId: string;
+  }) => {
+    setVatCalculationData(calculation);
+    
+    // Update form fields with calculated values
+    form.setValue("vatCodeId", calculation.vatCodeId);
+    form.setValue("vatAmount", calculation.imposta.toString());
+    form.setValue("netAmount", calculation.imponibile.toString());
+    
+    // Update amount field based on calculation type
+    // If user entered total amount, keep it as is
+    // If user entered net amount, update to total amount for consistency
+    const currentAmount = parseFloat(form.getValues("amount") || "0");
+    if (Math.abs(currentAmount - calculation.imponibile) < 0.01) {
+      // User entered net amount, update to total
+      form.setValue("amount", calculation.totale.toString());
     }
   };
 
@@ -967,8 +980,8 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                   />
                 </div>
 
-                {/* Amount, VAT */}
-                <div className="grid grid-cols-3 gap-4">
+                {/* Amount */}
+                <div className="grid grid-cols-1 gap-4">
                   <FormField
                     control={form.control}
                     name="amount"
@@ -982,26 +995,26 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                       </FormItem>
                     )}
                   />
+                </div>
+
+                {/* VAT Calculator Component */}
+                <div className="space-y-4">
+                  <VatCalculator 
+                    onCalculated={handleVatCalculated}
+                    initialAmount={watchedAmount ? parseFloat(watchedAmount) : undefined}
+                  />
+                </div>
+
+                {/* Hidden VAT fields for form submission */}
+                <div className="hidden">
                   <FormField
                     control={form.control}
-                    name="vatType"
+                    name="vatCodeId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tipo IVA</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona IVA" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="iva_22">22% (Standard)</SelectItem>
-                            <SelectItem value="iva_10">10% (Ridotta)</SelectItem>
-                            <SelectItem value="iva_4">4% (Super ridotta)</SelectItem>
-                            <SelectItem value="esente">0% (Esente)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
                       </FormItem>
                     )}
                   />
@@ -1010,11 +1023,20 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                     name="vatAmount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Importo IVA</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} readOnly />
+                          <Input {...field} />
                         </FormControl>
-                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="netAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
                       </FormItem>
                     )}
                   />

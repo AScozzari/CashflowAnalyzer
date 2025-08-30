@@ -3872,6 +3872,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // VAT Calculation API - Calculate VAT for movements and invoices
+  app.post('/api/vat/calculate', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { amount, vatCodeId, calculationType } = req.body;
+      
+      if (!amount || !vatCodeId || !calculationType) {
+        return res.status(400).json({ 
+          message: 'Missing required fields: amount, vatCodeId, calculationType' 
+        });
+      }
+
+      // Get VAT code from database
+      const vatCodes = await storage.getVatCodes();
+      const vatCode = vatCodes.find(code => code.id === vatCodeId);
+      
+      if (!vatCode) {
+        return res.status(404).json({ message: 'VAT code not found' });
+      }
+
+      // Import calculator functions dynamically
+      const { calcolaIvaFromImponibile, calcolaIvaFromTotale } = await import('../shared/iva-calculator');
+      
+      let calculation;
+      if (calculationType === 'from_imponibile') {
+        calculation = calcolaIvaFromImponibile(parseFloat(amount), vatCode);
+      } else if (calculationType === 'from_totale') {
+        calculation = calcolaIvaFromTotale(parseFloat(amount), vatCode);
+      } else {
+        return res.status(400).json({ message: 'Invalid calculationType. Use "from_imponibile" or "from_totale"' });
+      }
+
+      res.json({
+        success: true,
+        calculation,
+        vatCode: {
+          id: vatCode.id,
+          code: vatCode.code,
+          description: vatCode.description,
+          percentage: vatCode.percentage,
+          natura: vatCode.natura
+        }
+      });
+    } catch (error) {
+      console.error('[VAT API] Error calculating VAT:', error);
+      res.status(500).json({ message: 'Failed to calculate VAT' });
+    }
+  }));
+
   // Create and return HTTP server
   const httpServer = createServer(app);
   return httpServer;

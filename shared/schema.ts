@@ -277,7 +277,8 @@ export const movements = pgTable("movements", {
   xmlData: text("xml_data"), // Dati XML della fattura originale (se presente)
   invoiceNumber: text("invoice_number"), // Numero fattura estratto dall'XML
   vatAmount: decimal("vat_amount", { precision: 12, scale: 2 }), // Importo IVA estratto dall'XML
-  vatType: text("vat_type", { enum: ["iva_22", "iva_10", "iva_4", "iva_art_74", "esente"] }), // Tipo di IVA applicata
+  vatCodeId: varchar("vat_code_id"), // Riferimento al codice IVA dalla tabella vat_codes
+  vatType: text("vat_type"), // Tipo di IVA applicata (compatibilità retroattiva)
   netAmount: decimal("net_amount", { precision: 12, scale: 2 }), // Importo netto estratto dall'XML
   
   // Campi per verifica automatica con API bancarie
@@ -483,6 +484,10 @@ export const movementsRelations = relations(movements, ({ one, many }) => ({
   bankTransaction: one(bankTransactions, {
     fields: [movements.bankTransactionId],
     references: [bankTransactions.id],
+  }),
+  vatCode: one(vatCodes, {
+    fields: [movements.vatCodeId],
+    references: [vatCodes.id],
   }),
   // Calendar relations
   calendarEvents: many(calendarEvents),
@@ -2524,6 +2529,12 @@ export const companyProviderSettingsRelations = relations(companyProviderSetting
     fields: [companyProviderSettings.providerId],
     references: [invoiceProviders.id],
   }),
+}));
+
+// Relazioni per i codici IVA
+export const vatCodesRelations = relations(vatCodes, ({ many }) => ({
+  movements: many(movements),
+  invoiceLines: many(invoiceLines),
 }));
 
 // Tipi per TypeScript
