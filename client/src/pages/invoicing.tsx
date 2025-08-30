@@ -27,6 +27,7 @@ import { InvoiceCreation } from "@/components/invoicing/invoice-creation";
 import { InvoicesList } from "@/components/invoicing/invoices-list";
 import { InvoicingDashboard } from "@/components/invoicing/invoicing-dashboard";
 import { InvoicingSettings } from "@/components/invoicing/invoicing-settings";
+import { VatCodesDebug } from "@/components/invoicing/vat-codes-debug";
 
 export default function Invoicing() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -111,6 +112,7 @@ export default function Invoicing() {
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
+            <VatCodesDebug />
             <InvoicingSettings />
           </TabsContent>
 
