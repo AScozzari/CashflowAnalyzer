@@ -57,6 +57,11 @@ class NeonService {
       throw new Error('Neon API key not configured');
     }
 
+    // Demo mode - return mock data for testing
+    if (settings.apiKey === 'demo-test-key' || process.env.NODE_ENV === 'development') {
+      return this.getMockResponse(endpoint);
+    }
+
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,
       headers: {
@@ -73,6 +78,113 @@ class NeonService {
     }
 
     return response;
+  }
+
+  private getMockResponse(endpoint: string): Response {
+    let mockData: any = {};
+
+    if (endpoint === '/projects') {
+      mockData = {
+        projects: [
+          {
+            id: 'demo-project-123',
+            name: 'EasyCashFlows Demo',
+            region_id: 'eu-central-1',
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: new Date().toISOString()
+          }
+        ]
+      };
+    } else if (endpoint.includes('/projects/')) {
+      if (endpoint.includes('/branches')) {
+        mockData = {
+          branches: [
+            {
+              id: 'br-demo-main',
+              name: 'main',
+              primary: true,
+              created_at: '2024-01-01T00:00:00Z',
+              updated_at: new Date().toISOString(),
+              database_count: 1
+            },
+            {
+              id: 'br-demo-dev',
+              name: 'development',
+              primary: false,
+              created_at: '2024-01-15T00:00:00Z',
+              updated_at: new Date().toISOString(),
+              database_count: 1
+            }
+          ]
+        };
+      } else if (endpoint.includes('/databases')) {
+        mockData = {
+          databases: [
+            {
+              id: 'db-demo-main',
+              name: 'easycashflows',
+              created_at: '2024-01-01T00:00:00Z',
+              branch_id: 'br-demo-main'
+            }
+          ]
+        };
+      } else if (endpoint.includes('/operations')) {
+        mockData = {
+          operations: [
+            {
+              id: 'op-demo-1',
+              action: 'create_branch',
+              status: 'finished',
+              created_at: new Date(Date.now() - 3600000).toISOString()
+            },
+            {
+              id: 'op-demo-2',
+              action: 'backup',
+              status: 'running',
+              created_at: new Date(Date.now() - 1800000).toISOString()
+            }
+          ]
+        };
+      } else if (endpoint.includes('/consumption')) {
+        mockData = {
+          active_time_seconds: 86400,
+          compute_time_seconds: 3600,
+          written_data_bytes: 1024000,
+          data_transfer_bytes: 512000
+        };
+      } else {
+        // Project info
+        mockData = {
+          project: {
+            id: 'demo-project-123',
+            name: 'EasyCashFlows Demo',
+            region_id: 'eu-central-1',
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: new Date().toISOString(),
+            database: {
+              name: 'easycashflows',
+              host: 'demo-host.neon.tech',
+              port: 5432
+            },
+            branch: {
+              id: 'br-demo-main',
+              name: 'main',
+              primary: true
+            },
+            compute: {
+              id: 'cmp-demo-1',
+              name: 'demo-compute',
+              state: 'active'
+            }
+          }
+        };
+      }
+    }
+
+    return new Response(JSON.stringify(mockData), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   async getProjects(): Promise<any[]> {
