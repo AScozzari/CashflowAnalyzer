@@ -5620,17 +5620,15 @@ async getMovements(filters: {
       const recentInvoices = await db
         .select({
           id: invoices.id,
-          number: invoices.number,
-          issueDate: invoices.issueDate,
-          dueDate: invoices.dueDate,
+          invoiceNumber: invoices.invoiceNumber,
+          invoiceDate: invoices.invoiceDate,
           customerName: invoices.customerName,
           totalAmount: invoices.totalAmount,
           status: invoices.status,
-          direction: invoices.direction,
           sdiStatus: invoices.sdiStatus
         })
         .from(invoices)
-        .orderBy(desc(invoices.issueDate))
+        .orderBy(desc(invoices.invoiceDate))
         .limit(limit);
       
       console.log('[STORAGE] Recent invoices fetched:', recentInvoices.length);
@@ -5652,7 +5650,7 @@ async getMovements(filters: {
       if (filters.search) {
         conditions.push(
           or(
-            ilike(invoices.number, `%${filters.search}%`),
+            ilike(invoices.invoiceNumber, `%${filters.search}%`),
             ilike(invoices.customerName, `%${filters.search}%`)
           )
         );
@@ -5696,7 +5694,7 @@ async getMovements(filters: {
       const offset = (page - 1) * limit;
       
       const invoicesList = await query
-        .orderBy(desc(invoices.issueDate))
+        .orderBy(desc(invoices.invoiceDate))
         .limit(limit)
         .offset(offset);
       
@@ -5713,23 +5711,23 @@ async getMovements(filters: {
       console.log('[STORAGE] Creating new invoice:', invoiceData);
       
       // Generate invoice number if not provided
-      if (!invoiceData.number) {
+      if (!invoiceData.invoiceNumber) {
         const year = new Date().getFullYear();
         const lastInvoice = await db
-          .select({ number: invoices.number })
+          .select({ invoiceNumber: invoices.invoiceNumber })
           .from(invoices)
-          .where(ilike(invoices.number, `${year}%`))
-          .orderBy(desc(invoices.number))
+          .where(ilike(invoices.invoiceNumber, `${year}%`))
+          .orderBy(desc(invoices.invoiceNumber))
           .limit(1);
         
         let nextNumber = 1;
         if (lastInvoice.length > 0) {
-          const lastNumber = lastInvoice[0].number;
+          const lastNumber = lastInvoice[0].invoiceNumber;
           const numberPart = lastNumber.split('/')[0];
           nextNumber = parseInt(numberPart) + 1;
         }
         
-        invoiceData.number = `${nextNumber.toString().padStart(4, '0')}/${year}`;
+        invoiceData.invoiceNumber = `${nextNumber.toString().padStart(4, '0')}/${year}`;
       }
       
       // Insert invoice
@@ -5739,25 +5737,28 @@ async getMovements(filters: {
           id: crypto.randomUUID(),
           companyId: invoiceData.companyId,
           customerId: invoiceData.customerId,
-          invoiceTypeId: invoiceData.invoiceTypeId,
-          number: invoiceData.number,
-          issueDate: invoiceData.issueDate,
-          dueDate: invoiceData.dueDate,
+          invoiceNumber: invoiceData.invoiceNumber,
+          invoiceDate: invoiceData.issueDate,
+          documentType: 'TD01',
+          currency: 'EUR',
           customerName: invoiceData.customerName || 'Cliente',
-          customerAddress: invoiceData.customerAddress,
-          customerVatNumber: invoiceData.customerVatNumber,
-          customerTaxCode: invoiceData.customerTaxCode,
+          customerVat: invoiceData.customerVatNumber,
+          customerFiscalCode: invoiceData.customerFiscalCode,
+          customerAddress: invoiceData.customerAddress ? JSON.stringify(invoiceData.customerAddress) : null,
+          customerPec: invoiceData.customerPec,
+          customerSdiCode: invoiceData.customerSdiCode,
           paymentTermsId: invoiceData.paymentTermsId,
           paymentMethodId: invoiceData.paymentMethodId,
-          notes: invoiceData.notes,
-          subtotalAmount: invoiceData.subtotalAmount || '0',
+          subtotal: invoiceData.subtotalAmount || '0',
           vatAmount: invoiceData.vatAmount || '0',
           totalAmount: invoiceData.totalAmount || '0',
+          withholdingTax: '0',
           status: invoiceData.status || 'draft',
-          direction: invoiceData.direction || 'outgoing',
-          sdiStatus: invoiceData.sdiStatus || 'pending',
+          sdiStatus: invoiceData.sdiStatus || 'draft',
+          notes: invoiceData.notes,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          createdBy: 'admin'
         })
         .returning();
       
@@ -5767,14 +5768,19 @@ async getMovements(filters: {
           id: crypto.randomUUID(),
           invoiceId: newInvoice.id,
           lineNumber: index + 1,
+          productCode: line.productCode || null,
+          productName: line.productName || line.description,
           description: line.description,
+          unitOfMeasure: line.unitOfMeasure || 'pz',
           quantity: line.quantity.toString(),
           unitPrice: line.unitPrice.toString(),
-          vatCodeId: line.vatCodeId,
           discountPercentage: line.discountPercentage?.toString() || '0',
+          discountAmount: '0',
           lineTotal: ((line.quantity * line.unitPrice) * (1 - (line.discountPercentage || 0) / 100)).toString(),
-          createdAt: new Date(),
-          updatedAt: new Date()
+          vatCodeId: line.vatCodeId,
+          vatPercentage: '22',
+          vatAmount: (((line.quantity * line.unitPrice) * (1 - (line.discountPercentage || 0) / 100)) * 0.22).toString(),
+          createdAt: new Date()
         }));
         
         await db.insert(invoiceLines).values(lines);

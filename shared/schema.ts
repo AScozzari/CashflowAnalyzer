@@ -2249,93 +2249,89 @@ export const paymentMethods = pgTable("payment_methods", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Fatture elettroniche
+// Fatture elettroniche (schema allineato alla struttura DB esistente)
 export const invoices = pgTable("invoices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   
-  // Numerazione progressiva
-  number: text("number").notNull(),
-  year: integer("year").notNull(),
-  series: text("series").default(""),
+  // Provider integration
+  companyId: varchar("company_id").notNull(),
+  providerId: varchar("provider_id"),
+  externalId: varchar("external_id"),
   
-  // Date
-  issueDate: date("issue_date").notNull(),
-  dueDate: date("due_date"),
+  // Numerazione 
+  invoiceNumber: varchar("invoice_number").notNull(),
+  invoiceDate: date("invoice_date").notNull(),
+  documentType: varchar("document_type"),
+  currency: varchar("currency").default("EUR"),
   
-  // Riferimenti
-  companyId: varchar("company_id").notNull(), // Ragione sociale emittente
-  customerId: varchar("customer_id"), // Cliente (se null = autofattura)
-  supplierId: varchar("supplier_id"), // Fornitore (per fatture passive)
+  // Customer data
+  customerId: varchar("customer_id"),
+  customerName: varchar("customer_name"),
+  customerVat: varchar("customer_vat"),
+  customerFiscalCode: varchar("customer_fiscal_code"),
+  customerAddress: jsonb("customer_address"),
+  customerPec: varchar("customer_pec"),
+  customerSdiCode: varchar("customer_sdi_code"),
   
-  // Tipologia documento
-  invoiceTypeId: varchar("invoice_type_id").notNull(),
-  direction: text("direction").notNull(), // 'outgoing', 'incoming'
-  
-  // Importi
-  totalTaxableAmount: decimal("total_taxable_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
-  totalTaxAmount: decimal("total_tax_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
-  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
-  totalDiscount: decimal("total_discount", { precision: 15, scale: 2 }).notNull().default("0.00"),
-  
-  // Pagamento
+  // Payment
   paymentTermsId: varchar("payment_terms_id"),
   paymentMethodId: varchar("payment_method_id"),
+  paymentDate: date("payment_date"),
   
-  // Riferimenti esterni
-  orderReference: text("order_reference"),
-  contractReference: text("contract_reference"),
+  // Amounts
+  subtotal: decimal("subtotal", { precision: 15, scale: 2 }).default("0.00"),
+  vatAmount: decimal("vat_amount", { precision: 15, scale: 2 }).default("0.00"),
+  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).default("0.00"),
+  withholdingTax: decimal("withholding_tax", { precision: 15, scale: 2 }).default("0.00"),
   
-  // Status FatturaPA
-  xmlGenerated: boolean("xml_generated").notNull().default(false),
-  xmlContent: text("xml_content"), // XML FatturaPA
-  sdiStatus: text("sdi_status").default("draft"), // draft, sent, accepted, rejected, error
-  sdiReference: text("sdi_reference"), // Identificativo SDI
-  sdiMessage: text("sdi_message"), // Messaggi dal SDI
-  sdiSentAt: timestamp("sdi_sent_at"),
-  sdiAcceptedAt: timestamp("sdi_accepted_at"),
+  // Status
+  status: varchar("status").default("draft"),
+  sdiStatus: varchar("sdi_status").default("draft"),
+  sdiNumber: varchar("sdi_number"),
+  sdiDate: timestamp("sdi_date"),
   
-  // Note
+  // Files
+  xmlFilePath: varchar("xml_file_path"),
+  xmlContent: text("xml_content"),
+  digitalSignature: jsonb("digital_signature"),
+  
+  // Notes
   notes: text("notes"),
-  internalNotes: text("internal_notes"),
+  internalReference: varchar("internal_reference"),
   
-  // Stato
-  status: text("status").notNull().default("draft"), // draft, issued, paid, cancelled
-  isActive: boolean("is_active").notNull().default(true),
-  
+  // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by"),
 });
 
-// Righe fattura
+// Righe fattura (allineato al DB esistente)
 export const invoiceLines = pgTable("invoice_lines", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   invoiceId: varchar("invoice_id").notNull(),
   lineNumber: integer("line_number").notNull(),
   
-  // Descrizione articolo/servizio
+  // Prodotto/Servizio  
+  productCode: varchar("product_code"),
+  productName: varchar("product_name"),
   description: text("description").notNull(),
-  productCode: text("product_code"),
+  unitOfMeasure: varchar("unit_of_measure").default("pz"),
   
-  // Quantità e unità
+  // Quantità e prezzi
   quantity: decimal("quantity", { precision: 15, scale: 4 }).notNull().default("1.0000"),
-  measureUnitId: varchar("measure_unit_id"),
-  
-  // Prezzi
   unitPrice: decimal("unit_price", { precision: 15, scale: 4 }).notNull().default("0.0000"),
-  totalPrice: decimal("total_price", { precision: 15, scale: 2 }).notNull().default("0.00"),
   
   // Sconti
   discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }).notNull().default("0.00"),
   discountAmount: decimal("discount_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
   
+  // Totali riga
+  lineTotal: decimal("line_total", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  
   // IVA
   vatCodeId: varchar("vat_code_id").notNull(),
-  taxableAmount: decimal("taxable_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
-  taxAmount: decimal("tax_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
-  
-  // Ritenute e altre imposte
-  withholdingTaxPercentage: decimal("withholding_tax_percentage", { precision: 5, scale: 2 }).notNull().default("0.00"),
-  withholdingTaxAmount: decimal("withholding_tax_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
+  vatPercentage: decimal("vat_percentage", { precision: 5, scale: 2 }).notNull().default("0.00"),
+  vatAmount: decimal("vat_amount", { precision: 15, scale: 2 }).notNull().default("0.00"),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -2374,14 +2370,6 @@ export const invoiceRelations = relations(invoices, ({ one, many }) => ({
     fields: [invoices.customerId],
     references: [customers.id],
   }),
-  supplier: one(suppliers, {
-    fields: [invoices.supplierId],
-    references: [suppliers.id],
-  }),
-  invoiceType: one(invoiceTypes, {
-    fields: [invoices.invoiceTypeId],
-    references: [invoiceTypes.id],
-  }),
   paymentTerms: one(paymentTerms, {
     fields: [invoices.paymentTermsId],
     references: [paymentTerms.id],
@@ -2398,10 +2386,6 @@ export const invoiceLineRelations = relations(invoiceLines, ({ one }) => ({
   invoice: one(invoices, {
     fields: [invoiceLines.invoiceId],
     references: [invoices.id],
-  }),
-  measureUnit: one(measureUnits, {
-    fields: [invoiceLines.measureUnitId],
-    references: [measureUnits.id],
   }),
   vatCode: one(vatCodes, {
     fields: [invoiceLines.vatCodeId],
