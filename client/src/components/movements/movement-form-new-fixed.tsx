@@ -697,12 +697,38 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value={watchedType === "income" ? "customer" : "supplier"}>
-                              <div className="flex items-center gap-2">
-                                {watchedType === "income" ? <User className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
-                                {watchedType === "income" ? "Cliente esterno" : "Fornitore esterno"}
-                              </div>
-                            </SelectItem>
+                            {watchedType === "income" && (
+                              <>
+                                <SelectItem value="customer">
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4" />
+                                    Cliente esterno
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="supplier">
+                                  <div className="flex items-center gap-2">
+                                    <Truck className="h-4 w-4" />
+                                    Fornitore (rimborso/storno)
+                                  </div>
+                                </SelectItem>
+                              </>
+                            )}
+                            {watchedType === "expense" && (
+                              <>
+                                <SelectItem value="supplier">
+                                  <div className="flex items-center gap-2">
+                                    <Truck className="h-4 w-4" />
+                                    Fornitore esterno
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="customer">
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4" />
+                                    Cliente (rimborso/storno)
+                                  </div>
+                                </SelectItem>
+                              </>
+                            )}
                             <SelectItem value="resource">
                               <div className="flex items-center gap-2">
                                 <Users className="h-4 w-4" />
@@ -717,7 +743,7 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                   />
 
                   {/* Secondo step: selezione specifica basata sul tipo */}
-                  {watchedEntityType === "customer" && watchedType === "income" && (
+                  {watchedEntityType === "customer" && (watchedType === "income" || watchedType === "expense") && (
                     <FormField
                       control={form.control}
                       name="customerId"
@@ -772,7 +798,7 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                     />
                   )}
 
-                  {watchedEntityType === "supplier" && watchedType === "expense" && (
+                  {watchedEntityType === "supplier" && (watchedType === "expense" || watchedType === "income") && (
                     <FormField
                       control={form.control}
                       name="supplierId"
