@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, RefreshCw, BarChart3, Settings, Bell, User, LogOut } from "lucide-react";
+import { Home, RefreshCw, BarChart3, Settings, Bell, User, LogOut, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -135,8 +135,18 @@ export function BottomNavigation() {
       },
     ];
 
-    // Add settings for admin and finance users
+    // Add invoicing for admin and finance users
     if (user && (user.role === "admin" || user.role === "finance")) {
+      baseItems.push({
+        name: "Fatture",
+        href: "/invoicing",
+        icon: FileText,
+        isActive: location === "/invoicing"
+      });
+    }
+
+    // Add settings for admin users only
+    if (user && user.role === "admin") {
       baseItems.push({
         name: "Settings",
         href: "/settings",

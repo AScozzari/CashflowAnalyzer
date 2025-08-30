@@ -201,11 +201,16 @@ function Router() {
         </AppLayout>
       )} />
       
-      <ProtectedRoute path="/invoicing" component={() => (
-        <AppLayout>
-          <Invoicing />
-        </AppLayout>
-      )} />
+      {/* Fatturazione accessibile solo ad Admin e Finance */}
+      <ProtectedRoute 
+        path="/invoicing" 
+        allowedRoles={["admin", "finance"]}
+        component={() => (
+          <AppLayout>
+            <Invoicing />
+          </AppLayout>
+        )}
+      />
       
       <ProtectedRoute path="/whatsapp-test" component={() => (
         <AppLayout>
@@ -213,10 +218,10 @@ function Router() {
         </AppLayout>
       )} />
       
-      {/* Settings accessibile solo ad Admin e Finance */}
+      {/* Settings accessibile solo ad Admin */}
       <ProtectedRoute 
         path="/settings" 
-        allowedRoles={["admin", "finance"]}
+        allowedRoles={["admin"]}
         component={() => (
           <AppLayout>
             <Settings />
