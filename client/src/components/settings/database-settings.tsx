@@ -182,7 +182,7 @@ export default function DatabaseSettings() {
           <TabsTrigger value="config">Configurazione</TabsTrigger>
           <TabsTrigger value="neon" className="flex items-center gap-2">
             <Cloud className="h-4 w-4" />
-            <span>Configurazione NEON DB</span>
+            <span>Neon DB</span>
           </TabsTrigger>
         </TabsList>
 

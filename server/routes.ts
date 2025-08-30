@@ -3502,9 +3502,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Database Schema
   app.get('/api/neon/schema', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      // Get schema information from our local database
-      const tableStats = await storage.getDatabaseStats();
-      res.json(tableStats);
+      // Get schema information from our local database using system service
+      const { systemService } = await import('./services/system-service');
+      const databaseStats = await systemService.getDatabaseStatistics();
+      res.json(databaseStats);
     } catch (error) {
       console.error('[NEON API] Error fetching schema:', error);
       res.status(500).json({ message: 'Failed to fetch database schema' });
