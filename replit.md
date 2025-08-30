@@ -82,9 +82,16 @@ Preferred communication style: Simple, everyday language.
 - **AI**: OpenAI.
 
 ## Electronic Invoicing Providers
-- **Fatture in Cloud**: Complete API integration for invoice management, customer/supplier sync, and FatturaPA compliance (https://developers.fattureincloud.it/api-reference)
-- **ACube**: Government-certified electronic invoicing service with SDI integration and multi-company support (https://docs.acubeapi.com/documentation/gov-it/)
+- **Fatture in Cloud**: Complete API integration for invoice management, customer/supplier sync, and FatturaPA compliance
+  - API Documentation: https://developers.fattureincloud.it/api-reference#auth
+  - OAuth 2.0 authentication with multi-company support
+  - Full invoice lifecycle management with automatic SDI submission
+- **ACube**: Government-certified electronic invoicing service with SDI integration and multi-company support
+  - API Documentation: https://docs.acubeapi.com/documentation/gov-it/
+  - AgID certified service for government compliance
+  - Direct SDI integration with digital conservation
 - **Multi-Provider Architecture**: Dual provider system with automatic failover and load balancing for enterprise reliability
+- **Multi-Ragione Sociale**: Complete support for multiple company entities with independent provider configurations
 
 ## Twilio Professional WhatsApp Business API Implementation (Complete)
 - **Base URL**: `https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json`
