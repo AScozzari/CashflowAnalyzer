@@ -624,7 +624,7 @@ export function GeneralSettings() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {logs?.map((log: LogEntry) => (
+                  {Array.isArray(logs) && logs.map((log: LogEntry) => (
                     <div key={log.id} className="flex items-start gap-3 p-3 border rounded-lg text-sm">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         {getLevelIcon(log.level)}
@@ -649,7 +649,7 @@ export function GeneralSettings() {
                       </div>
                     </div>
                   ))}
-                  {(!logs || logs.length === 0) && (
+                  {(!Array.isArray(logs) || logs.length === 0) && (
                     <div className="text-center py-8">
                       <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">Nessun log disponibile</p>
