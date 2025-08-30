@@ -75,7 +75,7 @@ export function InvoicesList() {
 
   // Fetch invoices from the backend
   const { data: invoicesResponse, isLoading, refetch } = useQuery<{invoices: Invoice[], total: number}>({
-    queryKey: ['/api/invoicing/invoices', { search: searchTerm, status: statusFilter, direction: directionFilter }],
+    queryKey: ['/api/invoicing/invoices'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
@@ -242,6 +242,7 @@ export function InvoicesList() {
       issued: { variant: "default" as const, label: "Emessa", icon: FileText },
       sent: { variant: "default" as const, label: "Inviata", icon: Send },
       paid: { variant: "default" as const, label: "Pagata", icon: CheckCircle },
+      received: { variant: "default" as const, label: "Ricevuta", icon: FileText },
       overdue: { variant: "destructive" as const, label: "Scaduta", icon: AlertCircle },
       cancelled: { variant: "secondary" as const, label: "Annullata", icon: Trash2 }
     };
@@ -351,6 +352,7 @@ export function InvoicesList() {
                 <SelectItem value="draft">Bozze</SelectItem>
                 <SelectItem value="issued">Emesse</SelectItem>
                 <SelectItem value="sent">Inviate</SelectItem>
+                <SelectItem value="received">Ricevute</SelectItem>
                 <SelectItem value="paid">Pagate</SelectItem>
                 <SelectItem value="overdue">Scadute</SelectItem>
                 <SelectItem value="cancelled">Annullate</SelectItem>
@@ -494,7 +496,7 @@ export function InvoicesList() {
                           )}
                           
                           {/* 🔥 PULSANTE CRUCIALE: Crea Movimento da Fattura */}
-                          {(invoice.status === 'issued' || invoice.status === 'sent' || invoice.status === 'paid') && (
+                          {(invoice.status === 'issued' || invoice.status === 'sent' || invoice.status === 'paid' || invoice.status === 'received') && (
                             <DropdownMenuItem 
                               onClick={() => handleCreateMovement(invoice)}
                               disabled={createMovementMutation.isPending}

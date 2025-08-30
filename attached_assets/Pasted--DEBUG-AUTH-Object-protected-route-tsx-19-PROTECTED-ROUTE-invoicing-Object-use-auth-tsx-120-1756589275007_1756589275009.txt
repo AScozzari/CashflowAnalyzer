@@ -1,0 +1,113 @@
+🔍 DEBUG AUTH: Object
+protected-route.tsx:19 🛡️ PROTECTED ROUTE /invoicing: Object
+use-auth.tsx:120 🔍 DEBUG AUTH: Object
+protected-route.tsx:19 🛡️ PROTECTED ROUTE /invoicing: Object
+api/invoicing/invoices/[object%20Object]:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+api/invoicing/invoices/[object%20Object]:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+api/invoicing/invoices/[object%20Object]:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+hook.js:608 [REPLIT FETCH] Max retries raggiunto per: /api/invoicing/invoices/[object Object] Error: HTTP 404
+    at window.fetch (App.tsx:58:41)
+    at async queryClient.ts:32:17
+overrideMethod @ hook.js:608Understand this error
+App.tsx:56  GET https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/invoicing/invoices/[object%20Object] 404 (Not Found)
+window.fetch @ App.tsx:56
+(anonymous) @ queryClient.ts:32
+fetchFn @ @tanstack_react-query.js?v=23eb3c96:840
+run @ @tanstack_react-query.js?v=23eb3c96:494
+start @ @tanstack_react-query.js?v=23eb3c96:536
+fetch @ @tanstack_react-query.js?v=23eb3c96:926
+executeFetch_fn @ @tanstack_react-query.js?v=23eb3c96:2211
+onSubscribe @ @tanstack_react-query.js?v=23eb3c96:1898
+subscribe @ @tanstack_react-query.js?v=23eb3c96:24
+(anonymous) @ @tanstack_react-query.js?v=23eb3c96:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=23eb3c96:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=23eb3c96:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=23eb3c96:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=23eb3c96:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=23eb3c96:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=23eb3c96:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=23eb3c96:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=23eb3c96:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=23eb3c96:19416
+commitRoot @ chunk-RPCDYKBN.js?v=23eb3c96:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=23eb3c96:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=23eb3c96:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=23eb3c96:18627Understand this error
+App.tsx:56  GET https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/invoicing/invoices/[object%20Object] 404 (Not Found)
+window.fetch @ App.tsx:56
+await in window.fetch
+(anonymous) @ queryClient.ts:32
+fetchFn @ @tanstack_react-query.js?v=23eb3c96:840
+run @ @tanstack_react-query.js?v=23eb3c96:494
+start @ @tanstack_react-query.js?v=23eb3c96:536
+fetch @ @tanstack_react-query.js?v=23eb3c96:926
+executeFetch_fn @ @tanstack_react-query.js?v=23eb3c96:2211
+onSubscribe @ @tanstack_react-query.js?v=23eb3c96:1898
+subscribe @ @tanstack_react-query.js?v=23eb3c96:24
+(anonymous) @ @tanstack_react-query.js?v=23eb3c96:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=23eb3c96:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=23eb3c96:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=23eb3c96:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=23eb3c96:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=23eb3c96:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=23eb3c96:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=23eb3c96:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=23eb3c96:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=23eb3c96:19416
+commitRoot @ chunk-RPCDYKBN.js?v=23eb3c96:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=23eb3c96:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=23eb3c96:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=23eb3c96:18627Understand this error
+App.tsx:56  GET https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/api/invoicing/invoices/[object%20Object] 404 (Not Found)
+window.fetch @ App.tsx:56
+await in window.fetch
+(anonymous) @ queryClient.ts:32
+fetchFn @ @tanstack_react-query.js?v=23eb3c96:840
+run @ @tanstack_react-query.js?v=23eb3c96:494
+start @ @tanstack_react-query.js?v=23eb3c96:536
+fetch @ @tanstack_react-query.js?v=23eb3c96:926
+executeFetch_fn @ @tanstack_react-query.js?v=23eb3c96:2211
+onSubscribe @ @tanstack_react-query.js?v=23eb3c96:1898
+subscribe @ @tanstack_react-query.js?v=23eb3c96:24
+(anonymous) @ @tanstack_react-query.js?v=23eb3c96:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=23eb3c96:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=23eb3c96:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=23eb3c96:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=23eb3c96:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=23eb3c96:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=23eb3c96:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=23eb3c96:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=23eb3c96:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=23eb3c96:19416
+commitRoot @ chunk-RPCDYKBN.js?v=23eb3c96:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=23eb3c96:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=23eb3c96:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=23eb3c96:18627Understand this error
+App.tsx:61 [REPLIT FETCH] Max retries raggiunto per: /api/invoicing/invoices/[object Object] Error: HTTP 404
+    at window.fetch (App.tsx:58:41)
+    at async queryClient.ts:32:17
+overrideMethod @ hook.js:608
+window.fetch @ App.tsx:61
+await in window.fetch
+(anonymous) @ queryClient.ts:32
+fetchFn @ @tanstack_react-query.js?v=23eb3c96:840
+run @ @tanstack_react-query.js?v=23eb3c96:494
+start @ @tanstack_react-query.js?v=23eb3c96:536
+fetch @ @tanstack_react-query.js?v=23eb3c96:926
+executeFetch_fn @ @tanstack_react-query.js?v=23eb3c96:2211
+onSubscribe @ @tanstack_react-query.js?v=23eb3c96:1898
+subscribe @ @tanstack_react-query.js?v=23eb3c96:24
+(anonymous) @ @tanstack_react-query.js?v=23eb3c96:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=23eb3c96:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=23eb3c96:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=23eb3c96:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=23eb3c96:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=23eb3c96:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=23eb3c96:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=23eb3c96:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=23eb3c96:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=23eb3c96:19416
+commitRoot @ chunk-RPCDYKBN.js?v=23eb3c96:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=23eb3c96:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=23eb3c96:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=23eb3c96:18627Understand this error
