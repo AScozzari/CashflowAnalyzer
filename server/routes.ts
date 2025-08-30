@@ -14,7 +14,8 @@ import {
   insertNotificationSchema, insertSupplierSchema, insertCustomerSchema, insertEmailSettingsSchema,
   insertUserSchema, passwordResetSchema, resetPasswordSchema, insertSendgridTemplateSchema,
   insertWhatsappSettingsSchema, insertWhatsappTemplateSchema,
-  insertSmsSettingsSchema, insertSmsTemplateSchema, insertSmsMessageSchema
+  insertSmsSettingsSchema, insertSmsTemplateSchema, insertSmsMessageSchema,
+  insertCompanyProviderSettingsSchema, insertInvoiceProviderLogSchema
 } from "@shared/schema";
 import { emailService } from './email-service';
 import { SendGridTemplateService } from './sendgrid-templates';
@@ -3586,6 +3587,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('[NEON API] Error deleting settings:', error);
       res.status(500).json({ message: 'Failed to delete Neon settings' });
+    }
+  }));
+
+  // =================== INVOICE PROVIDERS API ===================
+  
+  // Get Available Invoice Providers
+  app.get('/api/invoicing/providers', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const providers = await storage.getInvoiceProviders();
+      res.json(providers);
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching providers:', error);
+      res.status(500).json({ message: 'Failed to fetch invoice providers' });
+    }
+  }));
+
+  // Get Provider Settings for Companies
+  app.get('/api/invoicing/provider-settings', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getCompanyProviderSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching provider settings:', error);
+      res.status(500).json({ message: 'Failed to fetch provider settings' });
+    }
+  }));
+
+  // Create Provider Configuration
+  app.post('/api/invoicing/provider-settings', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const validated = insertCompanyProviderSettingsSchema.parse(req.body);
+      const setting = await storage.createCompanyProviderSettings(validated);
+      
+      console.log('[INVOICING API] Provider setting created:', setting.id);
+      res.status(201).json(setting);
+    } catch (error) {
+      console.error('[INVOICING API] Error creating provider setting:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: 'Validation error', 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: 'Failed to create provider setting' });
+    }
+  }));
+
+  // Test Provider Connection
+  app.post('/api/invoicing/provider-settings/:id/test', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { id } = req.params;
+      const settings = await storage.getCompanyProviderSettings(id);
+      
+      if (!settings) {
+        return res.status(404).json({ message: 'Provider settings not found' });
+      }
+
+      // Test connection based on provider type
+      let testResult = { success: false, message: 'Connection test not implemented' };
+      
+      if (settings.provider?.type === 'fattureincloud') {
+        // Test Fatture in Cloud connection
+        try {
+          const response = await fetch('https://api-v2.fattureincloud.it/c/1234/info/user', {
+            headers: {
+              'Authorization': `Bearer ${settings.apiKey}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            testResult = { success: true, message: 'Connessione Fatture in Cloud riuscita' };
+          } else {
+            testResult = { success: false, message: 'Credenziali Fatture in Cloud non valide' };
+          }
+        } catch (error) {
+          testResult = { success: false, message: 'Errore di connessione Fatture in Cloud' };
+        }
+      } else if (settings.provider?.type === 'acube') {
+        // Test ACube connection
+        try {
+          const response = await fetch('https://api.acubeapi.com/v1/ping', {
+            headers: {
+              'X-API-Key': settings.apiKey || '',
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            testResult = { success: true, message: 'Connessione ACube riuscita' };
+          } else {
+            testResult = { success: false, message: 'Credenziali ACube non valide' };
+          }
+        } catch (error) {
+          testResult = { success: false, message: 'Errore di connessione ACube' };
+        }
+      }
+
+      // Log test result
+      await storage.createInvoiceProviderLog({
+        providerId: settings.providerId,
+        companyId: settings.companyId,
+        operation: 'connection_test',
+        status: testResult.success ? 'success' : 'error',
+        responseData: testResult,
+        duration: 0
+      });
+
+      res.json(testResult);
+    } catch (error) {
+      console.error('[INVOICING API] Error testing connection:', error);
+      res.status(500).json({ message: 'Failed to test provider connection' });
+    }
+  }));
+
+  // Get Invoice Types
+  app.get('/api/invoicing/types', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const types = await storage.getInvoiceTypes();
+      res.json(types);
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching invoice types:', error);
+      res.status(500).json({ message: 'Failed to fetch invoice types' });
+    }
+  }));
+
+  // Get Payment Terms
+  app.get('/api/invoicing/payment-terms', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const terms = await storage.getPaymentTerms();
+      res.json(terms);
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching payment terms:', error);
+      res.status(500).json({ message: 'Failed to fetch payment terms' });
+    }
+  }));
+
+  // Get Payment Methods
+  app.get('/api/invoicing/payment-methods', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const methods = await storage.getPaymentMethods();
+      res.json(methods);
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching payment methods:', error);
+      res.status(500).json({ message: 'Failed to fetch payment methods' });
+    }
+  }));
+
+  // Get VAT Codes
+  app.get('/api/invoicing/vat-codes', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const vatCodes = await storage.getVatCodes();
+      res.json(vatCodes);
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching VAT codes:', error);
+      res.status(500).json({ message: 'Failed to fetch VAT codes' });
+    }
+  }));
+
+  // Get Invoicing Settings
+  app.get('/api/invoicing/settings', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getInvoicingSettings();
+      res.json(settings || {});
+    } catch (error) {
+      console.error('[INVOICING API] Error fetching invoicing settings:', error);
+      res.status(500).json({ message: 'Failed to fetch invoicing settings' });
+    }
+  }));
+
+  // Save Invoicing Settings
+  app.post('/api/invoicing/settings', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.saveInvoicingSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error('[INVOICING API] Error saving invoicing settings:', error);
+      res.status(500).json({ message: 'Failed to save invoicing settings' });
     }
   }));
 

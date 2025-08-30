@@ -56,7 +56,12 @@ import {
   type DocumentsSettings, type InsertDocumentsSettings,
   type ThemesSettings, type InsertThemesSettings,
   notificationSettings, type NotificationSettings, type InsertNotificationSettings,
-  type NeonSettings, type InsertNeonSettings
+  type NeonSettings, type InsertNeonSettings,
+  invoiceProviders, companyProviderSettings, invoiceProviderLogs, invoiceTypes, vatCodes, paymentTerms, paymentMethods, invoices, invoiceLines,
+  type InvoiceProvider, type InsertInvoiceProvider,
+  type CompanyProviderSettings, type InsertCompanyProviderSettings,
+  type InvoiceProviderLog, type InsertInvoiceProviderLog,
+  type InvoiceType, type VatCode, type PaymentTerms, type PaymentMethod
 } from "@shared/schema";
 import { 
   BackupConfiguration, 
@@ -421,6 +426,34 @@ export interface IStorage {
   updateNeonSettings(id: string, settings: Partial<InsertNeonSettings>): Promise<NeonSettings>;
   deleteNeonSettings(id: string): Promise<void>;
   testNeonConnection(apiKey: string): Promise<{ success: boolean; message: string; data?: any }>;
+
+  // Invoice Providers
+  getInvoiceProviders(): Promise<InvoiceProvider[]>;
+  getInvoiceProvider(id: string): Promise<InvoiceProvider | undefined>;
+  createInvoiceProvider(provider: InsertInvoiceProvider): Promise<InvoiceProvider>;
+  updateInvoiceProvider(id: string, provider: Partial<InsertInvoiceProvider>): Promise<InvoiceProvider>;
+  deleteInvoiceProvider(id: string): Promise<void>;
+
+  // Company Provider Settings
+  getCompanyProviderSettings(id?: string): Promise<CompanyProviderSettings[]>;
+  getCompanyProviderSettingsById(id: string): Promise<CompanyProviderSettings | undefined>;
+  createCompanyProviderSettings(settings: InsertCompanyProviderSettings): Promise<CompanyProviderSettings>;
+  updateCompanyProviderSettings(id: string, settings: Partial<InsertCompanyProviderSettings>): Promise<CompanyProviderSettings>;
+  deleteCompanyProviderSettings(id: string): Promise<void>;
+
+  // Invoice Provider Logs
+  getInvoiceProviderLogs(providerId?: string, limit?: number): Promise<InvoiceProviderLog[]>;
+  createInvoiceProviderLog(log: InsertInvoiceProviderLog): Promise<InvoiceProviderLog>;
+
+  // Invoice Types and Related Data
+  getInvoiceTypes(): Promise<InvoiceType[]>;
+  getVatCodes(): Promise<VatCode[]>;
+  getPaymentTerms(): Promise<PaymentTerms[]>;
+  getPaymentMethods(): Promise<PaymentMethod[]>;
+
+  // Invoicing Settings
+  getInvoicingSettings(): Promise<any>;
+  saveInvoicingSettings(settings: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -5245,6 +5278,262 @@ async getMovements(filters: {
         success: false,
         message: error instanceof Error ? error.message : 'Connection failed'
       };
+    }
+  }
+
+  // =================== INVOICE PROVIDERS ===================
+
+  async getInvoiceProviders(): Promise<InvoiceProvider[]> {
+    try {
+      const providers = await db.select().from(invoiceProviders).orderBy(invoiceProviders.name);
+      return providers;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching invoice providers:', error);
+      throw new Error('Failed to fetch invoice providers');
+    }
+  }
+
+  async getInvoiceProvider(id: string): Promise<InvoiceProvider | undefined> {
+    try {
+      const [provider] = await db.select().from(invoiceProviders).where(eq(invoiceProviders.id, id));
+      return provider;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching invoice provider:', error);
+      throw new Error('Failed to fetch invoice provider');
+    }
+  }
+
+  async createInvoiceProvider(provider: InsertInvoiceProvider): Promise<InvoiceProvider> {
+    try {
+      const [newProvider] = await db.insert(invoiceProviders).values(provider).returning();
+      console.log('[STORAGE] Invoice provider created:', newProvider.id);
+      return newProvider;
+    } catch (error) {
+      console.error('[STORAGE] Error creating invoice provider:', error);
+      throw new Error('Failed to create invoice provider');
+    }
+  }
+
+  async updateInvoiceProvider(id: string, provider: Partial<InsertInvoiceProvider>): Promise<InvoiceProvider> {
+    try {
+      const [updatedProvider] = await db.update(invoiceProviders)
+        .set({ ...provider, updatedAt: new Date() })
+        .where(eq(invoiceProviders.id, id))
+        .returning();
+      
+      if (!updatedProvider) {
+        throw new Error('Invoice provider not found');
+      }
+      
+      console.log('[STORAGE] Invoice provider updated:', id);
+      return updatedProvider;
+    } catch (error) {
+      console.error('[STORAGE] Error updating invoice provider:', error);
+      throw new Error('Failed to update invoice provider');
+    }
+  }
+
+  async deleteInvoiceProvider(id: string): Promise<void> {
+    try {
+      const result = await db.delete(invoiceProviders).where(eq(invoiceProviders.id, id));
+      if (result.rowCount === 0) {
+        throw new Error('Invoice provider not found');
+      }
+      console.log('[STORAGE] Invoice provider deleted:', id);
+    } catch (error) {
+      console.error('[STORAGE] Error deleting invoice provider:', error);
+      throw new Error('Failed to delete invoice provider');
+    }
+  }
+
+  // =================== COMPANY PROVIDER SETTINGS ===================
+
+  async getCompanyProviderSettings(id?: string): Promise<CompanyProviderSettings[]> {
+    try {
+      let query = db.select({
+        id: companyProviderSettings.id,
+        companyId: companyProviderSettings.companyId,
+        providerId: companyProviderSettings.providerId,
+        apiKey: companyProviderSettings.apiKey,
+        apiSecret: companyProviderSettings.apiSecret,
+        clientId: companyProviderSettings.clientId,
+        accessToken: companyProviderSettings.accessToken,
+        refreshToken: companyProviderSettings.refreshToken,
+        tokenExpiresAt: companyProviderSettings.tokenExpiresAt,
+        companyIdExternal: companyProviderSettings.companyIdExternal,
+        settings: companyProviderSettings.settings,
+        lastSync: companyProviderSettings.lastSync,
+        syncStatus: companyProviderSettings.syncStatus,
+        syncErrors: companyProviderSettings.syncErrors,
+        isActive: companyProviderSettings.isActive,
+        createdAt: companyProviderSettings.createdAt,
+        updatedAt: companyProviderSettings.updatedAt,
+        company: companies,
+        provider: invoiceProviders
+      }).from(companyProviderSettings)
+        .leftJoin(companies, eq(companyProviderSettings.companyId, companies.id))
+        .leftJoin(invoiceProviders, eq(companyProviderSettings.providerId, invoiceProviders.id));
+
+      if (id) {
+        query = query.where(eq(companyProviderSettings.id, id));
+      }
+
+      const results = await query.orderBy(companyProviderSettings.createdAt);
+      return results as any[];
+    } catch (error) {
+      console.error('[STORAGE] Error fetching company provider settings:', error);
+      throw new Error('Failed to fetch company provider settings');
+    }
+  }
+
+  async getCompanyProviderSettingsById(id: string): Promise<CompanyProviderSettings | undefined> {
+    try {
+      const [settings] = await this.getCompanyProviderSettings(id);
+      return settings;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching company provider settings by ID:', error);
+      throw new Error('Failed to fetch company provider settings');
+    }
+  }
+
+  async createCompanyProviderSettings(settings: InsertCompanyProviderSettings): Promise<CompanyProviderSettings> {
+    try {
+      const [newSettings] = await db.insert(companyProviderSettings).values(settings).returning();
+      console.log('[STORAGE] Company provider settings created:', newSettings.id);
+      return newSettings;
+    } catch (error) {
+      console.error('[STORAGE] Error creating company provider settings:', error);
+      throw new Error('Failed to create company provider settings');
+    }
+  }
+
+  async updateCompanyProviderSettings(id: string, settings: Partial<InsertCompanyProviderSettings>): Promise<CompanyProviderSettings> {
+    try {
+      const [updatedSettings] = await db.update(companyProviderSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(companyProviderSettings.id, id))
+        .returning();
+      
+      if (!updatedSettings) {
+        throw new Error('Company provider settings not found');
+      }
+      
+      console.log('[STORAGE] Company provider settings updated:', id);
+      return updatedSettings;
+    } catch (error) {
+      console.error('[STORAGE] Error updating company provider settings:', error);
+      throw new Error('Failed to update company provider settings');
+    }
+  }
+
+  async deleteCompanyProviderSettings(id: string): Promise<void> {
+    try {
+      const result = await db.delete(companyProviderSettings).where(eq(companyProviderSettings.id, id));
+      if (result.rowCount === 0) {
+        throw new Error('Company provider settings not found');
+      }
+      console.log('[STORAGE] Company provider settings deleted:', id);
+    } catch (error) {
+      console.error('[STORAGE] Error deleting company provider settings:', error);
+      throw new Error('Failed to delete company provider settings');
+    }
+  }
+
+  // =================== INVOICE PROVIDER LOGS ===================
+
+  async getInvoiceProviderLogs(providerId?: string, limit: number = 100): Promise<InvoiceProviderLog[]> {
+    try {
+      let query = db.select().from(invoiceProviderLogs);
+      
+      if (providerId) {
+        query = query.where(eq(invoiceProviderLogs.providerId, providerId));
+      }
+      
+      const logs = await query.orderBy(desc(invoiceProviderLogs.createdAt)).limit(limit);
+      return logs;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching invoice provider logs:', error);
+      throw new Error('Failed to fetch invoice provider logs');
+    }
+  }
+
+  async createInvoiceProviderLog(log: InsertInvoiceProviderLog): Promise<InvoiceProviderLog> {
+    try {
+      const [newLog] = await db.insert(invoiceProviderLogs).values(log).returning();
+      return newLog;
+    } catch (error) {
+      console.error('[STORAGE] Error creating invoice provider log:', error);
+      throw new Error('Failed to create invoice provider log');
+    }
+  }
+
+  // =================== INVOICE TYPES AND RELATED DATA ===================
+
+  async getInvoiceTypes(): Promise<InvoiceType[]> {
+    try {
+      const types = await db.select().from(invoiceTypes).orderBy(invoiceTypes.code);
+      return types;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching invoice types:', error);
+      throw new Error('Failed to fetch invoice types');
+    }
+  }
+
+  async getVatCodes(): Promise<VatCode[]> {
+    try {
+      const codes = await db.select().from(vatCodes).orderBy(vatCodes.percentage);
+      return codes;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching VAT codes:', error);
+      throw new Error('Failed to fetch VAT codes');
+    }
+  }
+
+  async getPaymentTerms(): Promise<PaymentTerms[]> {
+    try {
+      const terms = await db.select().from(paymentTerms).orderBy(paymentTerms.days);
+      return terms;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching payment terms:', error);
+      throw new Error('Failed to fetch payment terms');
+    }
+  }
+
+  async getPaymentMethods(): Promise<PaymentMethod[]> {
+    try {
+      const methods = await db.select().from(paymentMethods).orderBy(paymentMethods.name);
+      return methods;
+    } catch (error) {
+      console.error('[STORAGE] Error fetching payment methods:', error);
+      throw new Error('Failed to fetch payment methods');
+    }
+  }
+
+  // =================== INVOICING SETTINGS ===================
+
+  async getInvoicingSettings(): Promise<any> {
+    try {
+      // For now, return empty settings. In a real implementation, this would be stored in database
+      return {
+        autoNumbering: true,
+        autoSendToSDI: false,
+        enableNotifications: true,
+        requireNotes: false
+      };
+    } catch (error) {
+      console.error('[STORAGE] Error fetching invoicing settings:', error);
+      throw new Error('Failed to fetch invoicing settings');
+    }
+  }
+
+  async saveInvoicingSettings(settings: any): Promise<any> {
+    try {
+      // For now, just return the settings. In a real implementation, this would be stored in database
+      console.log('[STORAGE] Invoicing settings saved:', settings);
+      return settings;
+    } catch (error) {
+      console.error('[STORAGE] Error saving invoicing settings:', error);
+      throw new Error('Failed to save invoicing settings');
     }
   }
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Database, Bell, Globe, Palette, FileText, Settings2, Users2, Lock, Calendar } from "lucide-react";
+import { Shield, Database, Bell, Globe, Palette, FileText, Settings2, Users2, Lock, Calendar, Receipt } from "lucide-react";
 import SystemUsersManagement from "./system-users-management";
 import { SecuritySettings } from "./security-settings";
 import { BackupSettings } from "./backup-settings-fixed";
@@ -11,6 +11,7 @@ import DatabaseSettings from "./database-settings";
 import NotificationsSettings from "./notifications-settings";
 import ThemesSettings from "./themes-settings";
 import DocumentsSettings from "./documents-settings";
+import { InvoicingProvidersSettings } from "./invoicing-providers-settings";
 
 export default function SystemConfigHorizontal() {
   const [activeTab, setActiveTab] = useState("general");
@@ -19,6 +20,7 @@ export default function SystemConfigHorizontal() {
     { id: "security", label: "Sicurezza", icon: Shield, color: "bg-red-500" },
     { id: "calendar", label: "Calendario", icon: Calendar, color: "bg-blue-500" },
     { id: "database", label: "Database", icon: Database, color: "bg-green-500" },
+    { id: "invoicing", label: "Fatture", icon: Receipt, color: "bg-emerald-500" },
     { id: "notifications", label: "Notifiche", icon: Bell, color: "bg-yellow-500" },
     { id: "localization", label: "Localizzazione", icon: Globe, color: "bg-purple-500" },
     { id: "themes", label: "Temi & UI", icon: Palette, color: "bg-pink-500" },
@@ -107,6 +109,7 @@ export default function SystemConfigHorizontal() {
               {activeTab === "security" && <SecuritySettings />}
               {activeTab === "calendar" && <CalendarIntegrations />}
               {activeTab === "database" && <DatabaseSettings />}
+              {activeTab === "invoicing" && <InvoicingProvidersSettings />}
               {activeTab === "notifications" && <NotificationsSettings />}
               {activeTab === "localization" && <LocalizationSettings />}
               {activeTab === "themes" && <ThemesSettings />}

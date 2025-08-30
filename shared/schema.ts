@@ -2425,6 +2425,115 @@ export type InsertInvoiceTaxSummary = typeof invoiceTaxSummary.$inferInsert;
 export type InvoiceNumberSeries = typeof invoiceNumberSeries.$inferSelect;
 export type InsertInvoiceNumberSeries = typeof invoiceNumberSeries.$inferInsert;
 
+// Provider di fatturazione elettronica
+export const invoiceProviders = pgTable("invoice_providers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Informazioni provider
+  name: text("name").notNull(), // "Fatture in Cloud", "ACube"
+  type: text("type").notNull(), // "fattureincloud", "acube"
+  description: text("description"),
+  
+  // Configurazione API
+  apiUrl: text("api_url").notNull(),
+  apiVersion: text("api_version").default("v1"),
+  
+  // Stato e attivazione
+  isActive: boolean("is_active").notNull().default(false),
+  isPrimary: boolean("is_primary").notNull().default(false), // Provider principale
+  
+  // Configurazioni specifiche
+  settings: jsonb("settings").default({}), // Configurazioni specifiche del provider
+  
+  // Rate limiting e monitoring
+  requestsPerMinute: integer("requests_per_minute").default(60),
+  maxRetries: integer("max_retries").default(3),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Configurazioni per ragione sociale e provider
+export const companyProviderSettings = pgTable("company_provider_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Riferimenti
+  companyId: varchar("company_id").notNull(),
+  providerId: varchar("provider_id").notNull(),
+  
+  // Credenziali e configurazione
+  apiKey: text("api_key"), // Encrypted
+  apiSecret: text("api_secret"), // Encrypted
+  clientId: text("client_id"),
+  accessToken: text("access_token"), // OAuth token
+  refreshToken: text("refresh_token"), // OAuth refresh
+  tokenExpiresAt: timestamp("token_expires_at"),
+  
+  // Configurazioni specifiche per ragione sociale
+  companyIdExternal: text("company_id_external"), // ID azienda nel provider esterno
+  settings: jsonb("settings").default({}),
+  
+  // Sincronizzazione
+  lastSync: timestamp("last_sync"),
+  syncStatus: text("sync_status").default("pending"), // pending, synced, error
+  syncErrors: jsonb("sync_errors").default([]),
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(false),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Log delle sincronizzazioni e operazioni
+export const invoiceProviderLogs = pgTable("invoice_provider_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Riferimenti
+  providerId: varchar("provider_id").notNull(),
+  companyId: varchar("company_id"),
+  invoiceId: varchar("invoice_id"),
+  
+  // Operazione
+  operation: text("operation").notNull(), // "sync", "send", "status_check", etc.
+  status: text("status").notNull(), // "success", "error", "pending"
+  
+  // Dati dell'operazione
+  requestData: jsonb("request_data"),
+  responseData: jsonb("response_data"),
+  errorMessage: text("error_message"),
+  
+  // Timing
+  duration: integer("duration"), // in milliseconds
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Relazioni per i provider
+export const invoiceProviderRelations = relations(invoiceProviders, ({ many }) => ({
+  companySettings: many(companyProviderSettings),
+  logs: many(invoiceProviderLogs),
+}));
+
+export const companyProviderSettingsRelations = relations(companyProviderSettings, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyProviderSettings.companyId],
+    references: [companies.id],
+  }),
+  provider: one(invoiceProviders, {
+    fields: [companyProviderSettings.providerId],
+    references: [invoiceProviders.id],
+  }),
+}));
+
+// Tipi per TypeScript
+export type InvoiceProvider = typeof invoiceProviders.$inferSelect;
+export type InsertInvoiceProvider = typeof invoiceProviders.$inferInsert;
+export type CompanyProviderSettings = typeof companyProviderSettings.$inferSelect;
+export type InsertCompanyProviderSettings = typeof companyProviderSettings.$inferInsert;
+export type InvoiceProviderLog = typeof invoiceProviderLogs.$inferSelect;
+export type InsertInvoiceProviderLog = typeof invoiceProviderLogs.$inferInsert;
+
 // Schemi di validazione Zod
 export const insertInvoiceTypeSchema = createInsertSchema(invoiceTypes);
 export const insertVatCodeSchema = createInsertSchema(vatCodes);
@@ -2435,6 +2544,8 @@ export const insertInvoiceSchema = createInsertSchema(invoices);
 export const insertInvoiceLineSchema = createInsertSchema(invoiceLines);
 export const insertInvoiceTaxSummarySchema = createInsertSchema(invoiceTaxSummary);
 export const insertInvoiceNumberSeriesSchema = createInsertSchema(invoiceNumberSeries);
+export const insertInvoiceProviderSchema = createInsertSchema(invoiceProviders);
+export const insertCompanyProviderSettingsSchema = createInsertSchema(companyProviderSettings);
 
 // Re-export all specialized schemas
 export * from "./user-schema";
