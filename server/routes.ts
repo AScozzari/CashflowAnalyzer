@@ -4295,6 +4295,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Resubmit Invoice to SDI
+  app.post('/api/invoicing/invoices/:id/resubmit', requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const invoiceId = req.params.id;
+      console.log('[INVOICING API] Resubmitting invoice to SDI:', invoiceId);
+      
+      // Get invoice
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice) {
+        return res.status(404).json({ message: 'Invoice not found' });
+      }
+      
+      // Check if resubmission is allowed
+      if (invoice.sdiStatus !== 'error' && invoice.sdiStatus !== 'rejected') {
+        return res.status(400).json({ 
+          message: 'Only invoices with error or rejected status can be resubmitted',
+          currentStatus: invoice.sdiStatus 
+        });
+      }
+      
+      // Reset SDI status to pending
+      const updatedInvoice = await storage.updateInvoice(invoiceId, {
+        sdiStatus: 'pending',
+        status: 'sent'
+      });
+      
+      // Simulate SDI submission (in real scenario, this would call external API)
+      console.log('[SDI SIMULATION] Resubmitting invoice to Sistema di Interscambio...');
+      
+      // For demo purposes, randomly set success or failure
+      const isSuccess = Math.random() > 0.3; // 70% success rate
+      
+      setTimeout(async () => {
+        try {
+          const finalStatus = isSuccess ? 'accepted' : 'error';
+          await storage.updateInvoice(invoiceId, {
+            sdiStatus: finalStatus
+          });
+          console.log(`[SDI SIMULATION] Invoice ${invoiceId} resubmission result: ${finalStatus}`);
+        } catch (error) {
+          console.error('[SDI SIMULATION] Error updating resubmission result:', error);
+        }
+      }, 2000); // Simulate 2 second processing time
+      
+      res.json({
+        success: true,
+        message: 'Invoice resubmitted to SDI',
+        invoiceId: invoiceId,
+        newStatus: 'pending'
+      });
+    } catch (error) {
+      console.error('[INVOICING API] Error resubmitting invoice:', error);
+      res.status(500).json({ message: 'Failed to resubmit invoice' });
+    }
+  }));
+
   // VAT Calculation API - Calculate VAT for movements and invoices
   app.post('/api/vat/calculate', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {

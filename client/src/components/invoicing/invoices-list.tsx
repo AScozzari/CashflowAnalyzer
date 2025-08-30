@@ -19,7 +19,10 @@ import {
   Clock,
   AlertCircle,
   MoreHorizontal,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Code,
+  RefreshCw,
+  X
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -32,6 +35,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -42,20 +48,28 @@ import {
 
 interface Invoice {
   id: string;
-  number: string;
-  issueDate: string;
+  invoiceNumber: string;
+  invoiceDate: string;
   dueDate?: string;
   customerName: string;
-  totalAmount: number;
+  totalAmount: string;
   status: 'draft' | 'issued' | 'sent' | 'paid' | 'overdue' | 'cancelled';
-  sdiStatus?: 'pending' | 'accepted' | 'rejected' | 'error';
-  direction: 'outgoing' | 'incoming';
+  sdiStatus?: 'pending' | 'accepted' | 'rejected' | 'error' | 'draft';
+  direction?: 'outgoing' | 'incoming';
+  xmlContent?: string;
+  notes?: string;
+  subtotal?: string;
+  vatAmount?: string;
 }
 
 export function InvoicesList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [directionFilter, setDirectionFilter] = useState("all");
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [showXmlModal, setShowXmlModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -137,6 +151,91 @@ export function InvoicesList() {
     createMovementMutation.mutate(invoice.id);
   };
 
+  // 🔥 MUTATION: Resubmit Invoice
+  const resubmitInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      return apiRequest(`/api/invoicing/invoices/${invoiceId}/resubmit`, {
+        method: 'POST'
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Fattura Reinviata!",
+        description: "La fattura è stata reinviata con successo al Sistema di Interscambio.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/invoicing/invoices'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore Reinvio",
+        description: error.message || "Impossibile reinviare la fattura.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // 🔥 MUTATION: Update Invoice
+  const updateInvoiceMutation = useMutation({
+    mutationFn: async ({ invoiceId, data }: { invoiceId: string; data: any }) => {
+      return apiRequest(`/api/invoicing/invoices/${invoiceId}`, {
+        method: 'PUT',
+        body: data
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Fattura Aggiornata!",
+        description: "Le modifiche sono state salvate con successo.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/invoicing/invoices'] });
+      setShowEditModal(false);
+      setEditingInvoice(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore Salvataggio",
+        description: error.message || "Impossibile salvare le modifiche.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleViewXml = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setShowXmlModal(true);
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setEditingInvoice({...invoice});
+    setShowEditModal(true);
+  };
+
+  const handleResubmitInvoice = (invoice: Invoice) => {
+    if (invoice.sdiStatus !== 'error' && invoice.sdiStatus !== 'rejected') {
+      toast({
+        title: "Reinvio non necessario",
+        description: "Solo le fatture in errore o rifiutate possono essere reinviate.",
+        variant: "destructive",
+      });
+      return;
+    }
+    resubmitInvoiceMutation.mutate(invoice.id);
+  };
+
+  const handleSaveEditedInvoice = () => {
+    if (!editingInvoice) return;
+    
+    updateInvoiceMutation.mutate({
+      invoiceId: editingInvoice.id,
+      data: {
+        customerName: editingInvoice.customerName,
+        totalAmount: editingInvoice.totalAmount,
+        notes: editingInvoice.notes,
+        // Altri campi modificabili
+      }
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       draft: { variant: "secondary" as const, label: "Bozza", icon: Edit },
@@ -162,29 +261,31 @@ export function InvoicesList() {
     if (!sdiStatus) return null;
 
     const statusConfig = {
-      pending: { variant: "secondary" as const, label: "In Attesa" },
-      accepted: { variant: "default" as const, label: "Accettata" },
-      rejected: { variant: "destructive" as const, label: "Rifiutata" },
-      error: { variant: "destructive" as const, label: "Errore" }
+      draft: { variant: "secondary" as const, label: "Bozza", color: "bg-gray-500" },
+      pending: { variant: "secondary" as const, label: "In Attesa", color: "bg-yellow-500" },
+      accepted: { variant: "default" as const, label: "Accettata", color: "bg-green-500" },
+      rejected: { variant: "destructive" as const, label: "Rifiutata", color: "bg-red-500" },
+      error: { variant: "destructive" as const, label: "Errore", color: "bg-red-600" }
     };
 
     const config = statusConfig[sdiStatus as keyof typeof statusConfig];
     if (!config) return null;
 
     return (
-      <Badge variant={config.variant} className="text-xs">
-        {config.label}
+      <Badge variant={config.variant} className="text-xs flex items-center space-x-1">
+        <div className={`w-2 h-2 rounded-full ${config.color}`}></div>
+        <span>{config.label}</span>
       </Badge>
     );
   };
 
   const filteredInvoices = currentInvoices.filter(invoice => {
     const matchesSearch = 
-      invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
-    const matchesDirection = directionFilter === "all" || invoice.direction === directionFilter;
+    const matchesDirection = directionFilter === "all" || (invoice.direction || 'outgoing') === directionFilter;
 
     return matchesSearch && matchesStatus && matchesDirection;
   });
@@ -305,8 +406,8 @@ export function InvoicesList() {
                       <div className="flex items-center space-x-4">
                         <div className="flex-1">
                           <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                            <span>{invoice.number}</span>
-                            {invoice.direction === 'incoming' && (
+                            <span>{invoice.invoiceNumber}</span>
+                            {(invoice.direction || 'outgoing') === 'incoming' && (
                               <Badge variant="outline" className="text-xs">Entrata</Badge>
                             )}
                           </h4>
@@ -316,7 +417,7 @@ export function InvoicesList() {
                           <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
                             <span className="flex items-center">
                               <Calendar className="h-4 w-4 mr-1" />
-                              {new Date(invoice.issueDate).toLocaleDateString('it-IT')}
+                              {new Date(invoice.invoiceDate).toLocaleDateString('it-IT')}
                             </span>
                             {invoice.dueDate && (
                               <span className="flex items-center">
@@ -329,7 +430,7 @@ export function InvoicesList() {
                         
                         <div className="text-right">
                           <p className="text-xl font-bold text-gray-900 dark:text-white">
-                            €{invoice.totalAmount.toLocaleString('it-IT')}
+                            €{parseFloat(invoice.totalAmount).toLocaleString('it-IT')}
                           </p>
                           <div className="flex items-center space-x-2 mt-1">
                             {getStatusBadge(invoice.status)}
@@ -353,10 +454,17 @@ export function InvoicesList() {
                             <Eye className="h-4 w-4 mr-2" />
                             Visualizza
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditInvoice(invoice)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Modifica
                           </DropdownMenuItem>
+                          {/* 🔥 XML VIEWER */}
+                          {invoice.xmlContent && (
+                            <DropdownMenuItem onClick={() => handleViewXml(invoice)}>
+                              <Code className="h-4 w-4 mr-2" />
+                              Visualizza XML
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem>
                             <Download className="h-4 w-4 mr-2" />
                             Scarica PDF
@@ -365,6 +473,19 @@ export function InvoicesList() {
                             <DropdownMenuItem>
                               <Send className="h-4 w-4 mr-2" />
                               Invia
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {/* 🔥 REINVIO per fatture in errore */}
+                          {(invoice.sdiStatus === 'error' || invoice.sdiStatus === 'rejected') && (
+                            <DropdownMenuItem 
+                              onClick={() => handleResubmitInvoice(invoice)}
+                              disabled={resubmitInvoiceMutation.isPending}
+                              className="text-orange-600 font-medium"
+                              data-testid={`resubmit-invoice-${invoice.id}`}
+                            >
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              {resubmitInvoiceMutation.isPending ? 'Reinviando...' : 'Reinvia'}
                             </DropdownMenuItem>
                           )}
                           
@@ -396,6 +517,140 @@ export function InvoicesList() {
           )}
         </CardContent>
       </Card>
+
+      {/* 🔥 XML VIEWER MODAL */}
+      <Dialog open={showXmlModal} onOpenChange={setShowXmlModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Code className="w-5 h-5" />
+              <span>XML FatturaPA - {selectedInvoice?.invoiceNumber}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Contenuto XML della fattura elettronica per il Sistema di Interscambio
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] w-full">
+            <pre className="text-sm bg-muted p-4 rounded-lg overflow-x-auto">
+              <code>{selectedInvoice?.xmlContent || 'Nessun contenuto XML disponibile'}</code>
+            </pre>
+          </ScrollArea>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setShowXmlModal(false)}>
+              <X className="w-4 h-4 mr-2" />
+              Chiudi
+            </Button>
+            <Button onClick={() => {
+              navigator.clipboard.writeText(selectedInvoice?.xmlContent || '');
+              toast({ title: "XML copiato negli appunti!" });
+            }}>
+              <Download className="w-4 h-4 mr-2" />
+              Copia XML
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 🔥 INVOICE EDITOR MODAL */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Edit className="w-5 h-5" />
+              <span>Modifica Fattura - {editingInvoice?.invoiceNumber}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Modifica i dati della fattura prima del reinvio al Sistema di Interscambio
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingInvoice && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Cliente</label>
+                <Input 
+                  value={editingInvoice.customerName}
+                  onChange={(e) => setEditingInvoice({
+                    ...editingInvoice,
+                    customerName: e.target.value
+                  })}
+                  placeholder="Nome cliente"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Subtotale</label>
+                  <Input 
+                    type="number"
+                    step="0.01"
+                    value={editingInvoice.subtotal || ''}
+                    onChange={(e) => {
+                      const subtotal = parseFloat(e.target.value || '0');
+                      const vatAmount = subtotal * 0.22; // 22% IVA
+                      const total = subtotal + vatAmount;
+                      setEditingInvoice({
+                        ...editingInvoice,
+                        subtotal: subtotal.toString(),
+                        vatAmount: vatAmount.toString(),
+                        totalAmount: total.toString()
+                      });
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Totale</label>
+                  <Input 
+                    value={`€${parseFloat(editingInvoice.totalAmount).toLocaleString('it-IT')}`}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Note</label>
+                <Textarea 
+                  value={editingInvoice.notes || ''}
+                  onChange={(e) => setEditingInvoice({
+                    ...editingInvoice,
+                    notes: e.target.value
+                  })}
+                  placeholder="Note aggiuntive..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => {
+              setShowEditModal(false);
+              setEditingInvoice(null);
+            }}>
+              <X className="w-4 h-4 mr-2" />
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleSaveEditedInvoice}
+              disabled={updateInvoiceMutation.isPending}
+            >
+              {updateInvoiceMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Salva Modifiche
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
