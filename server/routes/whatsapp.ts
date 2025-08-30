@@ -580,4 +580,208 @@ export function setupWhatsAppRoutes(app: Express): void {
       res.status(500).json({ error: 'Failed to fetch messages' });
     }
   });
+
+  // ===== ADVANCED TWILIO API ENDPOINTS =====
+
+  // Get message analytics
+  app.get('/api/whatsapp/analytics/:period?', async (req, res) => {
+    try {
+      await whatsappService.initialize();
+      const period = req.params.period as '24h' | '7d' | '30d' || '24h';
+      const analytics = await whatsappService.getMessageAnalytics(period);
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error fetching WhatsApp analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  });
+
+  // Fetch specific message by SID
+  app.get('/api/whatsapp/messages/:messageSid', async (req, res) => {
+    try {
+      await whatsappService.initialize();
+      const message = await whatsappService.fetchMessage(req.params.messageSid);
+      res.json(message);
+    } catch (error) {
+      console.error('Error fetching message:', error);
+      res.status(500).json({ error: 'Failed to fetch message' });
+    }
+  });
+
+  // List all messages with filters
+  app.get('/api/whatsapp/messages', async (req, res) => {
+    try {
+      await whatsappService.initialize();
+      const filters = {
+        to: req.query.to as string,
+        from: req.query.from as string,
+        dateSent: req.query.dateSent as string,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined
+      };
+      const messages = await whatsappService.listMessages(filters);
+      res.json(messages);
+    } catch (error) {
+      console.error('Error listing messages:', error);
+      res.status(500).json({ error: 'Failed to list messages' });
+    }
+  });
+
+  // Schedule message
+  app.post('/api/whatsapp/schedule', async (req, res) => {
+    try {
+      const messageSchema = z.object({
+        to: z.string().regex(/^\+[1-9]\d{1,14}$/, 'Invalid phone number format'),
+        scheduleTime: z.string().transform(str => new Date(str)),
+        type: z.enum(['text', 'template', 'media', 'location', 'contacts', 'interactive']),
+        content: z.object({
+          body: z.string().optional(),
+          templateName: z.string().optional(),
+          templateLanguage: z.string().default('it'),
+          templateVariables: z.record(z.string()).optional(),
+          mediaUrl: z.string().url().optional(),
+          mediaType: z.enum(['image', 'document', 'audio', 'video']).optional(),
+          latitude: z.number().optional(),
+          longitude: z.number().optional(),
+          address: z.string().optional(),
+          name: z.string().optional()
+        })
+      });
+
+      const message = messageSchema.parse(req.body);
+      
+      await whatsappService.initialize();
+      const result = await whatsappService.scheduleMessage(message as any);
+      
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Invalid message format', details: error.errors });
+      } else {
+        console.error('WhatsApp schedule error:', error);
+        res.status(500).json({ 
+          success: false, 
+          error: 'Failed to schedule message' 
+        });
+      }
+    }
+  });
+
+  // ===== CONTENT API ENDPOINTS =====
+
+  // Create Content API template
+  app.post('/api/whatsapp/content/templates', async (req, res) => {
+    try {
+      await whatsappService.initialize();
+      const template = await whatsappService.createContentTemplate(req.body);
+      res.json(template);
+    } catch (error) {
+      console.error('Error creating Content API template:', error);
+      res.status(500).json({ error: 'Failed to create template' });
+    }
+  });
+
+  // Get Content API template
+  app.get('/api/whatsapp/content/templates/:contentSid', async (req, res) => {
+    try {
+      await whatsappService.initialize();
+      const template = await whatsappService.getContentTemplate(req.params.contentSid);
+      res.json(template);
+    } catch (error) {
+      console.error('Error fetching Content API template:', error);
+      res.status(500).json({ error: 'Failed to fetch template' });
+    }
+  });
+
+  // List Content API templates
+  app.get('/api/whatsapp/content/templates', async (req, res) => {
+    try {
+      await whatsappService.initialize();
+      const templates = await whatsappService.listContentTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error('Error listing Content API templates:', error);
+      res.status(500).json({ error: 'Failed to list templates' });
+    }
+  });
+
+  // Submit template for approval
+  app.post('/api/whatsapp/content/templates/:contentSid/approve', async (req, res) => {
+    try {
+      await whatsappService.initialize();
+      const result = await whatsappService.submitForApproval(req.params.contentSid);
+      res.json(result);
+    } catch (error) {
+      console.error('Error submitting template for approval:', error);
+      res.status(500).json({ error: 'Failed to submit for approval' });
+    }
+  });
+
+  // ===== MESSAGING SERVICES ENDPOINTS =====
+
+  // Create Messaging Service
+  app.post('/api/whatsapp/messaging-services', async (req, res) => {
+    try {
+      await whatsappService.initialize();
+      const service = await whatsappService.createMessagingService(req.body);
+      res.json(service);
+    } catch (error) {
+      console.error('Error creating Messaging Service:', error);
+      res.status(500).json({ error: 'Failed to create messaging service' });
+    }
+  });
+
+  // Add phone number to Messaging Service
+  app.post('/api/whatsapp/messaging-services/:serviceSid/phone-numbers', async (req, res) => {
+    try {
+      const { phoneNumberSid } = req.body;
+      if (!phoneNumberSid) {
+        res.status(400).json({ error: 'phoneNumberSid is required' });
+        return;
+      }
+
+      await whatsappService.initialize();
+      const result = await whatsappService.addPhoneNumberToService(
+        req.params.serviceSid, 
+        phoneNumberSid
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error adding phone number to service:', error);
+      res.status(500).json({ error: 'Failed to add phone number to service' });
+    }
+  });
+
+  // ===== WEBHOOK ENDPOINTS =====
+
+  // Webhook for incoming WhatsApp messages
+  app.post('/api/whatsapp/webhook', async (req, res) => {
+    try {
+      console.log('📨 WhatsApp webhook received:', JSON.stringify(req.body, null, 2));
+      
+      // Process the webhook
+      const { Body, From, To, MessageSid, MessageStatus, SmsSid } = req.body;
+      
+      if (MessageStatus) {
+        // Status update webhook
+        console.log(`📊 Message ${MessageSid || SmsSid} status: ${MessageStatus}`);
+      } else if (Body && From) {
+        // Incoming message webhook
+        console.log(`📩 Incoming message from ${From}: ${Body}`);
+      }
+
+      // Always respond with 200 to acknowledge receipt
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error('❌ Webhook processing error:', error);
+      res.status(500).send('Internal Server Error');
+    }
+  });
+
+  // Webhook verification endpoint
+  app.get('/api/whatsapp/webhook', (req, res) => {
+    console.log('🔍 WhatsApp webhook verification request:', req.query);
+    res.status(200).send('Webhook endpoint verified');
+  });
 }
+
+export default setupWhatsAppRoutes;

@@ -25,6 +25,7 @@ import AuthPage from "@/pages/auth-page";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
+import AdvancedWhatsAppTest from '@/components/test/advanced-whatsapp-test';
 
 // REPLIT CRITICAL FIXES - TypeScript-safe version
 if (typeof window !== 'undefined') {
@@ -199,6 +200,11 @@ function Router() {
         </AppLayout>
       )} />
       
+      <ProtectedRoute path="/whatsapp-test" component={() => (
+        <AppLayout>
+          <AdvancedWhatsAppTest />
+        </AppLayout>
+      )} />
       
       {/* Settings accessibile solo ad Admin e Finance */}
       <ProtectedRoute 
