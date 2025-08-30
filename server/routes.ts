@@ -3056,36 +3056,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // === CHANNEL STATUS ENDPOINT ===
   
-  // Get real channel status based on configuration
+  // Get real channel status based on actual configuration
   app.get("/api/channels/status", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
+      // Get real configuration data from database
+      const whatsappSettings = await storage.getWhatsappSettings();
+      const sendgridSettings = await storage.getSendgridSettings();
+      const smsSettings = await storage.getSmsSettings();
+      
+      // Check WhatsApp configuration status
+      const whatsappConfigured = whatsappSettings?.twilioAccountSid && whatsappSettings?.twilioAuthToken;
+      const whatsappStatus = whatsappConfigured ? 'implemented' : 'coming_soon';
+      const whatsappStatusText = whatsappConfigured ? 'Configurato - Twilio API Attiva' : 'Configurazione richiesta';
+      const whatsappDetails = whatsappConfigured ? 
+        `Sistema WhatsApp Business completamente operativo - Account: ${whatsappSettings.twilioAccountSid?.substring(0, 10)}...` :
+        'Configurazione Twilio Account SID e Auth Token richiesta';
+
+      // Check SendGrid configuration
+      const sendgridConfigured = sendgridSettings?.apiKey && sendgridSettings?.fromEmail;
+      const emailStatus = sendgridConfigured ? 'implemented' : 'coming_soon';
+      const emailStatusText = sendgridConfigured ? 'Configurato - SendGrid API Attiva' : 'Configurazione richiesta';
+      const emailDetails = sendgridConfigured ?
+        `Sistema email professionale operativo - From: ${sendgridSettings.fromEmail}` :
+        'Configurazione SendGrid API Key e email mittente richiesta';
+
+      // Check SMS configuration
+      const smsConfigured = smsSettings?.username && smsSettings?.password;
+      const smsStatus = smsConfigured ? 'implemented' : 'coming_soon';
+      const smsStatusText = smsConfigured ? 'Configurato - Skebby API Attiva' : 'Configurazione richiesta';
+      const smsDetails = smsConfigured ?
+        `Sistema SMS italiano operativo - Account: ${smsSettings.username}` :
+        'Configurazione Skebby username e password richiesta';
+
       const channels = [
         {
           id: 'whatsapp',
-          status: 'implemented',
-          statusText: 'Implementato',
-          details: 'Sistema completo con template dinamici e variabili avanzate',
-          features: ['Template dinamici', 'Variabili automatiche', 'Webhook integrati', 'API Business']
+          status: whatsappStatus,
+          statusText: whatsappStatusText,
+          details: whatsappDetails,
+          features: ['Template approvati da Meta', 'Messaggi Business API', 'Webhook integrati', 'Analytics avanzate']
         },
         {
           id: 'email',
-          status: 'implemented', 
-          statusText: 'Implementato',
-          details: 'Sistema email professionale con template personalizzabili',
+          status: emailStatus,
+          statusText: emailStatusText,
+          details: emailDetails,
           features: ['SendGrid API', 'Template HTML', 'Invio massivo', 'Tracking aperture']
         },
         {
           id: 'sms',
-          status: 'implemented',
-          statusText: 'Implementato', 
-          details: 'Sistema SMS italiano GDPR-compliant con Skebby',
+          status: smsStatus,
+          statusText: smsStatusText,
+          details: smsDetails,
           features: ['Skebby API', 'SMS Italia', 'Delivery status', 'Template brevi']
         },
         {
           id: 'telegram',
           status: 'implemented',
-          statusText: 'Implementato',
-          details: 'Sistema completo Telegram Bot con webhook e AI integrato',
+          statusText: 'Sempre Configurato',
+          details: 'Sistema Telegram Bot completamente operativo con AI integrato',
           features: ['Bot API gratuita', 'Messaggi istantanei', 'Comandi interattivi', 'AI Assistant', 'Webhook system']
         }
       ];

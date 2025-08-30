@@ -57,13 +57,13 @@ export default function Communications() {
     }
   }, []);
 
-  // 🔥 DATI REALI - Fetch delle statistiche WhatsApp (AGGIORNAMENTO AUTOMATICO)
+  // 🔥 DATI REALI - Fetch delle statistiche WhatsApp dalle analytics reali
   const { data: whatsappStats } = useQuery<{total: number; unread: number; today: number}>({
     queryKey: ['/api/whatsapp/stats'],
     select: (data: any) => ({
-      total: data?.approvedTemplates || 0, // USA TEMPLATE APPROVATI COME TOTALE
-      unread: data?.pendingTemplates || 0, // USA TEMPLATE PENDENTI COME NON LETTI
-      today: data?.configured ? 1 : 0 // USA STATO CONFIGURAZIONE
+      total: data?.totalChats || 0, // Numero totale di chat attive
+      unread: whatsappChats.filter((chat: any) => chat.unreadCount > 0).length, // Chat con messaggi non letti
+      today: data?.todayMessages || 0 // Messaggi di oggi
     }),
     retry: false,
     refetchInterval: 30000, // Aggiorna ogni 30 secondi
