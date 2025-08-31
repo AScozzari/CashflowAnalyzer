@@ -724,52 +724,37 @@ export default function DashboardProfessional() {
     queryKey: ["/api/analytics/stats"],
   });
 
-  // Fetch movements data with proper typing
-  const { data: movementsData, isLoading: movementsLoading } = useQuery<{
-    data: MovementWithRelations[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-    };
-  }>({
-    queryKey: ["/api/movements"],
+  // Fetch movements data with proper typing - use /recent endpoint for current month data
+  const { data: movementsData, isLoading: movementsLoading } = useQuery<MovementWithRelations[]>({
+    queryKey: ["/api/movements/recent"],
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
 
-  // Process movements for display - filter by current month with safety checks
+  // Process movements for display - data is already filtered by current month from /recent endpoint
   const movements = useMemo(() => {
-    // Safety check: ensure movementsData exists and has proper structure
-    if (!movementsData || typeof movementsData !== 'object') {
-      return [];
-    }
-    
-    // Safety check: ensure data property exists and is an array
-    if (!movementsData.data || !Array.isArray(movementsData.data)) {
+    // Safety check: ensure movementsData exists and is an array
+    if (!movementsData || !Array.isArray(movementsData)) {
       return [];
     }
     
     try {
-      // Filter movements to show only current month with error handling
-      const currentMonthMovements = movementsData.data.filter((movement: MovementWithRelations) => {
-        if (!movement || !movement.flowDate) return false;
-        
-        try {
-          const movementDate = new Date(movement.flowDate);
-          // Validate date is valid
-          if (isNaN(movementDate.getTime())) return false;
-          
-          return movementDate.getMonth() === currentMonth && movementDate.getFullYear() === currentYear;
-        } catch (error) {
-          console.warn('Error processing movement date:', error);
-          return false;
-        }
-      });
+      // Data is already filtered to current month by the /recent endpoint
+      // Sort by date (most recent first) for better UX
+      const sortedMovements = movementsData
+        .filter((movement: MovementWithRelations) => movement && movement.flowDate)
+        .sort((a: MovementWithRelations, b: MovementWithRelations) => {
+          try {
+            return new Date(b.flowDate).getTime() - new Date(a.flowDate).getTime();
+          } catch (error) {
+            console.warn('Error sorting movements by date:', error);
+            return 0;
+          }
+        });
       
-      return currentMonthMovements; // Show ALL current month movements
+      return sortedMovements;
     } catch (error) {
-      console.error('Error filtering movements:', error);
+      console.error('Error processing movements:', error);
       return [];
     }
   }, [movementsData, currentMonth, currentYear]);
