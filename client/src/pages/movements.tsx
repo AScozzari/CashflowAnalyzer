@@ -57,8 +57,8 @@ export default function Movements() {
   }, [filters, currentPage, pageSize]);
 
   // Stato per gestire se i filtri sono stati applicati
-  const [filtersApplied, setFiltersApplied] = useState(false);
-  const [appliedFilters, setAppliedFilters] = useState<MovementFilters>({});
+  const [filtersApplied, setFiltersApplied] = useState(true); // Inizia con filtri applicati
+  const [appliedFilters, setAppliedFilters] = useState<MovementFilters>({}); // Filtri vuoti = tutti i movimenti
 
   const { data: movementsResponse, isLoading, refetch } = useQuery<{
     data: MovementWithRelations[];
@@ -89,9 +89,9 @@ export default function Movements() {
       
       return [`/api/movements/filtered?${params.toString()}`];
     }, [appliedFilters, currentPage, pageSize]),
-    enabled: filtersApplied, // Abilita solo dopo aver applicato i filtri
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    enabled: true, // Sempre abilitato - carica automaticamente i dati
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const movements = Array.isArray(movementsResponse?.data) ? movementsResponse.data : [];
@@ -119,8 +119,8 @@ export default function Movements() {
 
   const handleResetFilters = useCallback(() => {
     setFilters({});
-    setAppliedFilters({});
-    setFiltersApplied(false); // Disabilita la query fino al prossimo apply
+    setAppliedFilters({}); // Filtri vuoti = tutti i movimenti
+    setFiltersApplied(true); // Mantieni abilitato per mostrare tutti i movimenti
     setCurrentPage(1);
     console.log("[MOVEMENTS] Resetting filters");
     toast({
