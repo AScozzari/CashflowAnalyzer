@@ -721,12 +721,26 @@ export default function DashboardProfessional() {
   
   // Get current month and year for filtering
   const currentDate = new Date();
-  const currentMonth = currentDate.getMonth();
+  const currentMonth = currentDate.getMonth(); // 0-11 (agosto = 7)
   const currentYear = currentDate.getFullYear();
+  
+  // DEBUG: Log per verificare i calcoli delle date
+  console.log('📅 DATE DEBUG:', {
+    currentDate: currentDate.toISOString(),
+    currentMonth: currentMonth, // 0-11
+    humanMonth: currentMonth + 1, // 1-12 
+    currentYear
+  });
   
   // Prepare current month date range for analytics
   const currentMonthStart = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
   const currentMonthEnd = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+  
+  console.log('📅 RANGE DEBUG:', {
+    currentMonthStart,
+    currentMonthEnd,
+    monthName: new Date(currentYear, currentMonth, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
+  });
   
   // Fetch analytics data for CURRENT MONTH ONLY
   const { data: statsData, isLoading: statsLoading, error: statsError } = useQuery({
