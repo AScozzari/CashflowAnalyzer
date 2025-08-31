@@ -933,6 +933,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Dashboard endpoint - TUTTI i movimenti del mese corrente per grafici
+  // MUST be BEFORE /api/movements/:id to avoid route conflicts
+  app.get("/api/movements/recent", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const user = req.user;
+      console.log(`[DASHBOARD] User requesting recent movements:`, { userId: user.id, role: user.role });
+      
+      // Calcola il primo e ultimo giorno del mese corrente
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      
+      const filters: any = {
+        startDate: startOfMonth.toISOString().split('T')[0],
+        endDate: endOfMonth.toISOString().split('T')[0]
+      };
+      
+      console.log(`[DASHBOARD] Filters applied:`, filters);
+      
+      // User con role 'user' vedono solo i loro movimenti
+      if (user.role === 'user' && user.resourceId) {
+        filters.resourceId = user.resourceId;
+        console.log(`[DASHBOARD] User-specific filter applied:`, { resourceId: user.resourceId });
+      }
+      
+      const movements = await storage.getMovements(filters);
+      console.log(`[DASHBOARD] Raw movements from storage:`, movements.length);
+      
+      // Ordina per data più recente - TUTTI i movimenti del mese corrente
+      const currentMonthMovements = movements
+        .sort((a, b) => new Date(b.flowDate).getTime() - new Date(a.flowDate).getTime());
+      
+      console.log(`[DASHBOARD] Found ${currentMonthMovements.length} movements for current month`);
+      
+      res.json(currentMonthMovements);
+    } catch (error) {
+      console.error('[DASHBOARD] Error fetching recent movements:', error);
+      res.status(500).json({ message: "Failed to fetch recent movements" });
+    }
+  }));
+
   app.get("/api/movements/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
       // Skip stats route - it should be handled by specific endpoint above
@@ -1375,40 +1416,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  // Dashboard endpoint - TUTTI i movimenti del mese corrente per grafici
-  app.get("/api/movements/recent", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
-    try {
-      const user = req.user;
-      
-      // Calcola il primo e ultimo giorno del mese corrente
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-      
-      const filters: any = {
-        startDate: startOfMonth.toISOString().split('T')[0],
-        endDate: endOfMonth.toISOString().split('T')[0]
-      };
-      
-      // User con role 'user' vedono solo i loro movimenti
-      if (user.role === 'user' && user.resourceId) {
-        filters.resourceId = user.resourceId;
-      }
-      
-      const movements = await storage.getMovements(filters);
-      
-      // Ordina per data più recente - TUTTI i movimenti del mese corrente
-      const currentMonthMovements = movements
-        .sort((a, b) => new Date(b.flowDate).getTime() - new Date(a.flowDate).getTime());
-      
-      console.log(`[DASHBOARD] Found ${currentMonthMovements.length} movements for current month`);
-      
-      res.json(currentMonthMovements);
-    } catch (error) {
-      console.error('Error fetching recent movements:', error);
-      res.status(500).json({ message: "Failed to fetch recent movements" });
-    }
-  }));
 
   // ==================== BANKING APIs ====================
   
