@@ -39,7 +39,7 @@ export default function Invoicing() {
       </Button>
       <Button 
         size="sm" 
-        className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white shadow-lg"
+        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
         onClick={() => setActiveTab("new-invoice")}
         data-testid="new-invoice-button"
       >
@@ -62,7 +62,7 @@ export default function Invoicing() {
           <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-gray-800 border shadow-sm">
             <TabsTrigger 
               value="dashboard" 
-              className="flex items-center space-x-2 data-[state=active]:bg-purple-50 dark:data-[state=active]:bg-purple-900/20"
+              className="flex items-center space-x-2 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20"
               data-testid="dashboard-tab"
             >
               <BarChart3 className="h-4 w-4" />
@@ -70,7 +70,7 @@ export default function Invoicing() {
             </TabsTrigger>
             <TabsTrigger 
               value="invoices" 
-              className="flex items-center space-x-2 data-[state=active]:bg-violet-50 dark:data-[state=active]:bg-violet-900/20"
+              className="flex items-center space-x-2 data-[state=active]:bg-green-50 dark:data-[state=active]:bg-green-900/20"
               data-testid="invoices-tab"
             >
               <FileText className="h-4 w-4" />
@@ -86,7 +86,7 @@ export default function Invoicing() {
             </TabsTrigger>
             <TabsTrigger 
               value="settings" 
-              className="flex items-center space-x-2 data-[state=active]:bg-purple-50 dark:data-[state=active]:bg-purple-900/20"
+              className="flex items-center space-x-2 data-[state=active]:bg-orange-50 dark:data-[state=active]:bg-orange-900/20"
               data-testid="settings-tab"
             >
               <Settings className="h-4 w-4" />
