@@ -495,6 +495,30 @@ export function setupCalendarIntegrationRoutes(app: Express): void {
     }
   }));
 
+  // ==================== PROVIDER STATUS ====================
+
+  // Get provider configuration status
+  app.get('/api/calendar/providers/status', requireAuth, (req: any, res: any) => {
+    try {
+      const googleConfigured = googleCalendarService.isConfigured();
+      const outlookConfigured = outlookCalendarService.isConfigured();
+
+      res.json({
+        google: {
+          configured: googleConfigured,
+          message: googleConfigured ? 'Google Calendar pronto per l\'autenticazione' : 'Credenziali Google Calendar non configurate'
+        },
+        outlook: {
+          configured: outlookConfigured,
+          message: outlookConfigured ? 'Microsoft Outlook pronto per l\'autenticazione' : 'Credenziali Microsoft Calendar non configurate'
+        }
+      });
+    } catch (error) {
+      console.error('[CALENDAR PROVIDERS] Error checking status:', error);
+      res.status(500).json({ error: 'Failed to check provider status' });
+    }
+  });
+
   console.log('✅ Calendar Integration API routes setup complete');
 }
 

@@ -23,10 +23,15 @@ export class OutlookCalendarService {
   private graphClient: Client | null = null;
 
   constructor() {
-    this.clientId = process.env.MICROSOFT_CLIENT_ID || '';
-    this.clientSecret = process.env.MICROSOFT_CLIENT_SECRET || '';
+    this.clientId = process.env.MICROSOFT_CALENDAR_CLIENT_ID || '';
+    this.clientSecret = process.env.MICROSOFT_CALENDAR_CLIENT_SECRET || '';
     this.redirectUri = process.env.MICROSOFT_REDIRECT_URI || 
       `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/api/auth/outlook/calendar/callback`;
+  }
+
+  // Verifica se il servizio è configurato con le credenziali OAuth
+  isConfigured(): boolean {
+    return !!(this.clientId && this.clientSecret);
   }
 
   // Genera URL di autorizzazione OAuth Microsoft

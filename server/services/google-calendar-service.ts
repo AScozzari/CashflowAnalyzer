@@ -16,6 +16,13 @@ export class GoogleCalendarService {
     this.calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });
   }
 
+  // Verifica se il servizio è configurato con le credenziali OAuth
+  isConfigured(): boolean {
+    const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CALENDAR_CLIENT_SECRET;
+    return !!(clientId && clientSecret);
+  }
+
   // Genera URL di autorizzazione OAuth
   generateAuthUrl(): string {
     const scopes = [

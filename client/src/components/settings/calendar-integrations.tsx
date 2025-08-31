@@ -19,7 +19,8 @@ import {
   Globe,
   Save,
   TestTube,
-  Loader2
+  Loader2,
+  Copy
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -58,6 +59,16 @@ export default function CalendarIntegrations() {
   });
   
   const { toast } = useToast();
+
+  // Copy URI function
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "URI Copiato!",
+      description: "L'URI di redirect è stato copiato negli appunti",
+      duration: 2000
+    });
+  };
   const queryClient = useQueryClient();
 
   // Fetch existing integrations
@@ -65,6 +76,15 @@ export default function CalendarIntegrations() {
     queryKey: ['/api/calendar/integrations'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/calendar/integrations');
+      return response.json();
+    }
+  });
+
+  // Fetch provider configuration status
+  const { data: providersStatus = {} } = useQuery({
+    queryKey: ['/api/calendar/providers/status'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/calendar/providers/status');
       return response.json();
     }
   });
@@ -364,14 +384,30 @@ export default function CalendarIntegrations() {
             </CardHeader>
             
             <CardContent className="space-y-2">
+              {/* Status Badge */}
+              <div className="flex items-center gap-2 mb-2">
+                {providersStatus.google?.configured ? (
+                  <>
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-600 font-medium">Configurato</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm text-orange-600 font-medium">Non configurato</span>
+                  </>
+                )}
+              </div>
+              
               <Button 
                 onClick={() => handleConnect('google')}
-                disabled={integrations.some(i => i.provider === 'google')}
+                disabled={integrations.some(i => i.provider === 'google') || !providersStatus.google?.configured}
                 className="w-full"
                 data-testid="button-connect-google"
               >
                 <Link className="h-4 w-4 mr-2" />
-                {integrations.some(i => i.provider === 'google') ? 'Già Collegato' : 'Collega Google'}
+                {integrations.some(i => i.provider === 'google') ? 'Già Collegato' : 
+                 !providersStatus.google?.configured ? 'Configura Prima OAuth' : 'Collega Google'}
               </Button>
               <Button 
                 variant="outline"
@@ -380,7 +416,7 @@ export default function CalendarIntegrations() {
                 data-testid="button-configure-google"
               >
                 <Settings className="h-4 w-4 mr-2" />
-                Configura OAuth
+                {providersStatus.google?.configured ? 'Riconfigura OAuth' : 'Configura OAuth'}
               </Button>
             </CardContent>
           </Card>
@@ -400,14 +436,30 @@ export default function CalendarIntegrations() {
             </CardHeader>
             
             <CardContent className="space-y-2">
+              {/* Status Badge */}
+              <div className="flex items-center gap-2 mb-2">
+                {providersStatus.outlook?.configured ? (
+                  <>
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-600 font-medium">Configurato</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm text-orange-600 font-medium">Non configurato</span>
+                  </>
+                )}
+              </div>
+              
               <Button 
                 onClick={() => handleConnect('outlook')}
-                disabled={integrations.some(i => i.provider === 'outlook')}
+                disabled={integrations.some(i => i.provider === 'outlook') || !providersStatus.outlook?.configured}
                 className="w-full"
                 data-testid="button-connect-outlook"
               >
                 <Link className="h-4 w-4 mr-2" />
-                {integrations.some(i => i.provider === 'outlook') ? 'Già Collegato' : 'Collega Outlook'}
+                {integrations.some(i => i.provider === 'outlook') ? 'Già Collegato' : 
+                 !providersStatus.outlook?.configured ? 'Configura Prima OAuth' : 'Collega Outlook'}
               </Button>
               <Button 
                 variant="outline"
@@ -416,7 +468,7 @@ export default function CalendarIntegrations() {
                 data-testid="button-configure-outlook"
               >
                 <Settings className="h-4 w-4 mr-2" />
-                Configura OAuth
+                {providersStatus.outlook?.configured ? 'Riconfigura OAuth' : 'Configura OAuth'}
               </Button>
             </CardContent>
           </Card>
@@ -505,14 +557,25 @@ export default function CalendarIntegrations() {
                 </div>
                 <div>
                   <Label htmlFor="google-redirect-uri">Redirect URI</Label>
-                  <Input
-                    id="google-redirect-uri"
-                    type="text"
-                    value={googleConfig.redirectUri}
-                    disabled
-                    className="bg-gray-50"
-                    data-testid="input-google-redirect-uri"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="google-redirect-uri"
+                      type="text"
+                      value={googleConfig.redirectUri}
+                      disabled
+                      className="bg-gray-50 flex-1"
+                      data-testid="input-google-redirect-uri"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(googleConfig.redirectUri)}
+                      data-testid="button-copy-google-uri"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <p className="text-xs text-gray-500 mt-1">
                     Copia questo URL nelle impostazioni OAuth della tua app Google
                   </p>
@@ -546,14 +609,25 @@ export default function CalendarIntegrations() {
                 </div>
                 <div>
                   <Label htmlFor="outlook-redirect-uri">Redirect URI</Label>
-                  <Input
-                    id="outlook-redirect-uri"
-                    type="text"
-                    value={outlookConfig.redirectUri}
-                    disabled
-                    className="bg-gray-50"
-                    data-testid="input-outlook-redirect-uri"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="outlook-redirect-uri"
+                      type="text"
+                      value={outlookConfig.redirectUri}
+                      disabled
+                      className="bg-gray-50 flex-1"
+                      data-testid="input-outlook-redirect-uri"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(outlookConfig.redirectUri)}
+                      data-testid="button-copy-outlook-uri"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <p className="text-xs text-gray-500 mt-1">
                     Copia questo URL nelle impostazioni dell'app Azure
                   </p>
