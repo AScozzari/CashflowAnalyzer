@@ -38,6 +38,7 @@ export function NotificationsBell() {
       case 'whatsapp': return 'bg-green-500 hover:bg-green-600'; 
       case 'email': return 'bg-blue-500 hover:bg-blue-600';
       case 'messenger': return 'bg-indigo-500 hover:bg-indigo-600';
+      case 'invoicing': return 'bg-cyan-500 hover:bg-cyan-600'; // Acquamarina per fatture
       default: return 'bg-gray-500 hover:bg-gray-600';
     }
   };
@@ -51,6 +52,7 @@ export function NotificationsBell() {
       case 'whatsapp': return '#22c55e'; // green-500
       case 'email': return '#3b82f6'; // blue-500
       case 'messenger': return '#6366f1'; // indigo-500
+      case 'invoicing': return '#06b6d4'; // cyan-500 - acquamarina
       default: return '#6b7280'; // gray-500
     }
   };
@@ -206,6 +208,7 @@ export function NotificationsBell() {
       case 'whatsapp': return 'WhatsApp';
       case 'email': return 'Email';
       case 'messenger': return 'Messenger';
+      case 'invoicing': return 'Fatturazione';
       default: return 'Altro';
     }
   };

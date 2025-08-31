@@ -117,6 +117,65 @@ async function createMovementNotifications(movementId: string, type: 'new_moveme
   }
 }
 
+// Helper function to create invoice notifications for admin and finance roles
+async function createInvoiceNotifications(invoiceId: string, type: 'invoice_issued' | 'invoice_received' | 'invoice_validated' | 'invoice_rejected', createdByUserId?: string) {
+  try {
+    const { storage } = await import('./storage');
+    const users = await storage.getUsers();
+    
+    for (const user of users) {
+      // Skip notification for the user who created/updated the invoice
+      if (user.id === createdByUserId) continue;
+      
+      let shouldNotify = false;
+      let title = '';
+      let message = '';
+      
+      // Only notify admin and finance roles for invoicing
+      if (user.role === 'admin' || user.role === 'finance') {
+        shouldNotify = true;
+        
+        switch (type) {
+          case 'invoice_issued':
+            title = 'Fattura emessa';
+            message = `Nuova fattura elettronica emessa tramite provider`;
+            break;
+          case 'invoice_received':
+            title = 'Fattura ricevuta';
+            message = `Nuova fattura elettronica ricevuta`;
+            break;
+          case 'invoice_validated':
+            title = 'Fattura validata';
+            message = `Fattura elettronica validata da Sistema di Interscambio`;
+            break;
+          case 'invoice_rejected':
+            title = 'Fattura rifiutata';
+            message = `Fattura elettronica rifiutata - richiede intervento`;
+            break;
+        }
+      }
+      
+      if (shouldNotify) {
+        const notificationData = {
+          userId: user.id,
+          type,
+          category: 'invoicing' as const,
+          title,
+          message,
+          priority: type === 'invoice_rejected' ? 'high' as const : 'medium' as const,
+          actionUrl: `/invoicing?view=${invoiceId}`,
+          isRead: false
+        };
+        
+        await storage.createNotification(notificationData);
+      }
+    }
+  } catch (error) {
+    console.error('Error creating invoice notifications:', error);
+    // Don't throw error to avoid breaking the main invoice operation
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // ==================== MULTI-CHANNEL WEBHOOK SYSTEM ====================
@@ -3930,6 +3989,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[INVOICING API] Creating new invoice:', req.body);
       const invoice = await storage.createInvoice(req.body);
       console.log('[INVOICING API] Invoice created:', invoice.id);
+      
+      // Create notifications for new invoice
+      await createInvoiceNotifications(invoice.id, invoice.direction === 'outgoing' ? 'invoice_issued' : 'invoice_received', req.user.id);
+      
       res.status(201).json(invoice);
     } catch (error) {
       console.error('[INVOICING API] Error creating invoice:', error);
@@ -4329,6 +4392,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[INVOICING API] Updating invoice:', req.params.id);
       const invoice = await storage.updateInvoice(req.params.id, req.body);
       console.log('[INVOICING API] Invoice updated:', invoice.id);
+      
+      // Create notifications for updated invoice based on status
+      if (req.body.sdiStatus === 'accepted') {
+        await createInvoiceNotifications(invoice.id, 'invoice_validated', req.user.id);
+      } else if (req.body.sdiStatus === 'rejected' || req.body.sdiStatus === 'error') {
+        await createInvoiceNotifications(invoice.id, 'invoice_rejected', req.user.id);
+      }
+      
       res.json(invoice);
     } catch (error) {
       console.error('[INVOICING API] Error updating invoice:', error);
@@ -4444,6 +4515,9 @@ startxref
         status: 'sent',
         sdiStatus: 'pending'
       });
+
+      // Create notification for sent invoice
+      await createInvoiceNotifications(invoiceId, 'invoice_issued', req.user.id);
 
       console.log('[INVOICING API] Invoice sent successfully:', invoiceId);
       res.json(updatedInvoice);
