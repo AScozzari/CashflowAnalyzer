@@ -1194,20 +1194,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mappedSettings = settings.map(setting => ({
         id: setting.id,
         provider: setting.provider,
-        isActive: setting.is_active,
-        businessName: setting.business_name || '',
-        businessDescription: setting.business_description || '',
-        phoneNumber: setting.phone_number || '',
-        accountSid: setting.account_sid || '',
-        authToken: setting.auth_token || '',
-        apiKey: setting.api_key || '',
-        webhookUrl: setting.webhook_url || '',
-        isBusinessVerified: setting.business_verification_status === 'verified',
-        isPhoneVerified: setting.is_number_verified || false,
-        isApiConnected: setting.is_api_connected || false,
-        lastTestAt: setting.last_test_at || '',
-        createdAt: setting.created_at,
-        updatedAt: setting.updated_at
+        isActive: setting.isActive,
+        businessName: setting.businessDisplayName || '',
+        businessDescription: setting.businessAbout || '',
+        phoneNumber: setting.whatsappNumber || '',
+        accountSid: setting.accountSid || '',
+        authToken: setting.authToken || '',
+        apiKey: setting.apiKey || '',
+        webhookUrl: setting.webhookUrl || '',
+        isBusinessVerified: setting.businessVerificationStatus === 'approved',
+        isPhoneVerified: setting.isNumberVerified || false,
+        isApiConnected: setting.isApiConnected || false,
+        lastTestAt: setting.lastTestAt || '',
+        createdAt: setting.createdAt,
+        updatedAt: setting.updatedAt
       }));
       
       res.json(mappedSettings);
@@ -1220,35 +1220,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create WhatsApp settings
   app.post("/api/whatsapp/settings", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      // 🔥 FIX: Mappa da camelCase (Frontend) a snake_case (DB)
+      // ✅ FIXED: Mappa correttamente al schema DB
       const dbData = {
-        provider: req.body.provider,
-        is_active: req.body.isActive,
-        business_name: req.body.businessName,
-        business_description: req.body.businessDescription,
-        phone_number: req.body.phoneNumber,
-        account_sid: req.body.accountSid,
-        auth_token: req.body.authToken,
-        api_key: req.body.apiKey,
-        webhook_url: req.body.webhookUrl
+        provider: req.body.provider || 'twilio',
+        isActive: req.body.isActive || false,
+        businessDisplayName: req.body.businessName || '',
+        businessAbout: req.body.businessDescription || '',
+        whatsappNumber: req.body.phoneNumber || '',
+        accountSid: req.body.accountSid || '',
+        authToken: req.body.authToken || '',
+        apiKey: req.body.apiKey || '',
+        webhookUrl: req.body.webhookUrl || '',
+        businessVerificationStatus: 'pending',
+        templateApprovalStatus: 'none'
       };
       
       const newSettings = await storage.createWhatsappSettings(dbData);
       
-      // Mappa indietro per il response
+      // ✅ FIXED: Response mapping corretto
       const response = {
         id: newSettings.id,
         provider: newSettings.provider,
-        isActive: newSettings.is_active,
-        businessName: newSettings.business_name,
-        businessDescription: newSettings.business_description,
-        phoneNumber: newSettings.phone_number,
-        accountSid: newSettings.account_sid,
-        authToken: newSettings.auth_token,
-        apiKey: newSettings.api_key,
-        webhookUrl: newSettings.webhook_url,
-        createdAt: newSettings.created_at,
-        updatedAt: newSettings.updated_at
+        isActive: newSettings.isActive,
+        businessName: newSettings.businessDisplayName,
+        businessDescription: newSettings.businessAbout,
+        phoneNumber: newSettings.whatsappNumber,
+        accountSid: newSettings.accountSid,
+        authToken: newSettings.authToken,
+        apiKey: newSettings.apiKey,
+        webhookUrl: newSettings.webhookUrl,
+        createdAt: newSettings.createdAt,
+        updatedAt: newSettings.updatedAt
       };
       
       res.json(response);
