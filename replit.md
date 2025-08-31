@@ -139,6 +139,47 @@ Preferred communication style: Simple, everyday language.
 - **Response Format**: JSON with `result: "OK"` for success
 - **Integration Pattern**: Login → Get credentials → Send SMS with auth headers
 
+## SendGrid Email API Integration Details
+- **Base URL**: `https://api.sendgrid.com/v3/`
+- **Authentication**: API Key only (username/password deprecated Q4 2020)
+- **API Key Format**: 69 characters long, stored as Bearer token
+- **Security Requirements**: 
+  - Two-Factor Authentication (2FA) mandatory for all accounts
+  - Environment variable storage required for API keys
+  - Domain authentication required for production use
+- **Core Endpoints**:
+  - Send Email: `POST /mail/send`
+  - Templates: `GET /templates`
+  - Template Versions: `GET /templates/{template_id}/versions`
+- **Authentication Methods**:
+  - Bearer Token (Recommended): `Authorization: Bearer YOUR_API_KEY`
+  - Basic Auth: Username: `apikey`, Password: `YOUR_API_KEY`
+- **Template System**:
+  - Dynamic Templates with Handlebars syntax `{{variable_name}}`
+  - Template ID Format: `d-uuid` (64 characters)
+  - Template Status: Must be marked "Active" to enable sending
+  - Multiple Recipients: Individual dynamic data per recipient
+- **Advanced Features**:
+  - Transactional templates with dynamic content
+  - Bulk email sending with personalization
+  - Email tracking and analytics
+  - Sender verification and domain authentication
+  - Rate limiting protection (202 success, 429 rate limit)
+  - Real-time delivery status tracking
+  - Custom sender names and reply-to addresses
+- **Error Handling**: 
+  - 202: Email accepted for delivery
+  - 400: Bad request (validation errors)
+  - 401: Unauthorized (invalid API key)
+  - 403: Forbidden (sender not verified)
+  - 429: Too many requests (rate limited)
+- **Integration Libraries**: 
+  - Node.js: `@sendgrid/mail`
+  - Python: `sendgrid`
+  - Official SDKs available for major languages
+- **Template Variables**: Support for complex data structures, loops, conditionals
+- **Production Checklist**: API key in env var, domain auth, template active, error handling, rate limiting
+
 # Product Catalog & Pricing System
 
 ## Product Management Features
