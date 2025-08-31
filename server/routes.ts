@@ -942,6 +942,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calcola il primo e ultimo giorno del mese corrente
       const now = new Date();
+      console.log(`[DASHBOARD] Server date:`, now.toISOString());
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       
@@ -950,6 +951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endDate: endOfMonth.toISOString().split('T')[0]
       };
       
+      console.log(`[DASHBOARD] Current month: ${now.getMonth() + 1}/${now.getFullYear()}`);
       console.log(`[DASHBOARD] Filters applied:`, filters);
       
       // User con role 'user' vedono solo i loro movimenti
