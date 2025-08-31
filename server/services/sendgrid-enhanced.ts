@@ -69,16 +69,19 @@ export class SendGridEnhancedService {
 
   async initialize(): Promise<void> {
     try {
+      // Primary: Use direct environment variable, Fallback: Database settings
+      const sendgridApiKey = process.env.SENDGRID_API_KEY;
       const emailSettings = await storage.getEmailSettings();
-      if (!emailSettings?.sendgridApiKey) {
-        throw new Error('SendGrid API key not configured');
+      
+      if (!sendgridApiKey && !emailSettings?.sendgridApiKey) {
+        throw new Error('SendGrid API key not configured - set SENDGRID_API_KEY environment variable or configure in database');
       }
 
       this.config = {
-        apiKey: emailSettings.sendgridApiKey,
-        fromEmail: emailSettings.fromEmail,
-        fromName: emailSettings.fromName,
-        replyTo: emailSettings.replyToEmail || undefined,
+        apiKey: sendgridApiKey || emailSettings.sendgridApiKey,
+        fromEmail: emailSettings?.fromEmail || process.env.SENDGRID_FROM_EMAIL || 'noreply@easycashflows.com',
+        fromName: emailSettings?.fromName || process.env.SENDGRID_FROM_NAME || 'EasyCashFlows',
+        replyTo: emailSettings?.replyToEmail || process.env.SENDGRID_REPLY_TO || undefined,
         trackingSettings: {
           clickTracking: true,
           openTracking: true,
@@ -113,6 +116,16 @@ export class SendGridEnhancedService {
   private isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  }
+
+  private getBaseUrl(): string {
+    // Dynamic URL detection for production/development
+    if (process.env.NODE_ENV === 'production') {
+      return process.env.FRONTEND_URL || process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : 'https://easycashflows.replit.app';
+    }
+    return process.env.FRONTEND_URL || 'http://localhost:5000';
   }
 
   private async rateLimitCheck(key: string = 'default'): Promise<void> {
@@ -281,7 +294,7 @@ export class SendGridEnhancedService {
     
     return await this.sendTemplateEmail(
       {
-        templateId: templateId || 'password_reset_2024',
+        templateId: templateId || process.env.SENDGRID_PASSWORD_RESET_TEMPLATE || 'd-48f8c6a4a8bc4e5a85d6f7a9b3c2d1e0',
         category: 'authentication',
         tags: ['password-reset', 'security'],
         customArgs: { flow: 'password_reset' }
@@ -293,9 +306,10 @@ export class SendGridEnhancedService {
           reset_url: resetUrl,
           reset_token: resetToken,
           expiry_minutes: 60,
-          timestamp: new Date().toISOString(),
-          support_email: process.env.SUPPORT_EMAIL || 'support@easycashflows.com',
-          company_name: 'EasyCashFlows'
+          timestamp: new Date().toLocaleString('it-IT'),
+          support_email: process.env.SENDGRID_SUPPORT_EMAIL || 'support@easycashflows.com',
+          company_name: process.env.SENDGRID_COMPANY_NAME || 'EasyCashFlows',
+          current_year: new Date().getFullYear()
         },
         categories: ['authentication'],
         customArgs: { user_action: 'password_reset_request' }
@@ -311,7 +325,7 @@ export class SendGridEnhancedService {
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     return await this.sendTemplateEmail(
       {
-        templateId: templateId || 'welcome_2024',
+        templateId: templateId || process.env.SENDGRID_WELCOME_TEMPLATE || 'd-1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p',
         category: 'onboarding',
         tags: ['welcome', 'onboarding'],
         customArgs: { flow: 'user_onboarding' }
@@ -321,10 +335,11 @@ export class SendGridEnhancedService {
         dynamicTemplateData: {
           user_name: userName,
           first_name: firstName,
-          dashboard_url: `${process.env.FRONTEND_URL || 'https://easycashflows.replit.app'}/dashboard`,
-          getting_started_url: `${process.env.FRONTEND_URL || 'https://easycashflows.replit.app'}/getting-started`,
-          support_email: process.env.SUPPORT_EMAIL || 'support@easycashflows.com',
-          company_name: 'EasyCashFlows',
+          dashboard_url: `${this.getBaseUrl()}/dashboard`,
+          getting_started_url: `${this.getBaseUrl()}/getting-started`,
+          support_email: process.env.SENDGRID_SUPPORT_EMAIL || 'support@easycashflows.com',
+          company_name: process.env.SENDGRID_COMPANY_NAME || 'EasyCashFlows',
+          login_url: `${this.getBaseUrl()}/login`,
           current_year: new Date().getFullYear()
         },
         categories: ['onboarding'],
@@ -347,7 +362,7 @@ export class SendGridEnhancedService {
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     return await this.sendTemplateEmail(
       {
-        templateId: templateId || 'financial_alert_2024',
+        templateId: templateId || process.env.SENDGRID_FINANCIAL_ALERT_TEMPLATE || 'd-9i8h7g6f5e4d3c2b1a0z9y8x7w6v5u4t',
         category: 'alerts',
         tags: ['financial-alert', alertType],
         customArgs: { 
@@ -366,9 +381,10 @@ export class SendGridEnhancedService {
           due_date: alertData.dueDate,
           priority: alertData.priority,
           priority_color: this.getPriorityColor(alertData.priority),
-          dashboard_url: `${process.env.FRONTEND_URL || 'https://easycashflows.replit.app'}/dashboard`,
+          dashboard_url: `${this.getBaseUrl()}/dashboard`,
           timestamp: new Date().toLocaleString('it-IT'),
-          company_name: 'EasyCashFlows'
+          company_name: process.env.SENDGRID_COMPANY_NAME || 'EasyCashFlows',
+          support_email: process.env.SENDGRID_SUPPORT_EMAIL || 'support@easycashflows.com'
         },
         categories: ['alerts', alertType],
         customArgs: { 

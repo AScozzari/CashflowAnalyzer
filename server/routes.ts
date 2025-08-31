@@ -18,7 +18,7 @@ import {
   insertCompanyProviderSettingsSchema, insertInvoiceProviderLogSchema
 } from "@shared/schema";
 import { emailService } from './email-service';
-import { SendGridTemplateService } from './sendgrid-templates';
+// SendGrid Templates management via enhanced service
 import { sendGridService } from './services/sendgrid-enhanced';
 import { setupAuth } from "./auth";
 import { loginLimiter, apiLimiter, securityLogger, securityHeaders, sanitizeInput, sessionSecurity } from "./security-middleware";
@@ -1843,6 +1843,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupWhatsAppRoutes(app);
   setupTelegramRoutes(app);
   setupSmsRoutes(app);
+
+  // ==================== SENDGRID TEMPLATES API ====================
+  
+  // Get all SendGrid templates
+  app.get("/api/sendgrid/templates", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const templates = await storage.getSendgridTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error('[SENDGRID] Error fetching templates:', error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  }));
+
+  // Get SendGrid template by ID
+  app.get("/api/sendgrid/templates/:id", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const template = await storage.getSendgridTemplateById(req.params.id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error('[SENDGRID] Error fetching template:', error);
+      res.status(500).json({ message: "Failed to fetch template" });
+    }
+  }));
+
+  // Create new SendGrid template
+  app.post("/api/sendgrid/templates", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const validatedData = insertSendgridTemplateSchema.parse(req.body);
+      const template = await storage.createSendgridTemplate(validatedData);
+      
+      console.log(`[SENDGRID] ✅ Template created: ${template.name} (${template.category})`);
+      res.status(201).json(template);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid data", 
+          errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+        });
+      }
+      console.error('[SENDGRID] Error creating template:', error);
+      res.status(500).json({ message: "Failed to create template" });
+    }
+  }));
+
+  // Update SendGrid template
+  app.put("/api/sendgrid/templates/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const validatedData = insertSendgridTemplateSchema.partial().parse(req.body);
+      const template = await storage.updateSendgridTemplate(req.params.id, validatedData);
+      
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      
+      console.log(`[SENDGRID] ✅ Template updated: ${template.name}`);
+      res.json(template);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid data", 
+          errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+        });
+      }
+      console.error('[SENDGRID] Error updating template:', error);
+      res.status(500).json({ message: "Failed to update template" });
+    }
+  }));
+
+  // Delete SendGrid template
+  app.delete("/api/sendgrid/templates/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const success = await storage.deleteSendgridTemplate(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      
+      console.log(`[SENDGRID] ✅ Template deleted: ${req.params.id}`);
+      res.status(204).send();
+    } catch (error) {
+      console.error('[SENDGRID] Error deleting template:', error);
+      res.status(500).json({ message: "Failed to delete template" });
+    }
+  }));
+
+  // Test SendGrid template
+  app.post("/api/sendgrid/templates/test", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { templateId, testEmail } = req.body;
+      
+      if (!templateId || !testEmail) {
+        return res.status(400).json({ message: "Template ID and test email are required" });
+      }
+      
+      // Initialize and test SendGrid service
+      await sendGridService.initialize();
+      const result = await sendGridService.validateTemplate(templateId);
+      
+      if (result.valid) {
+        console.log(`[SENDGRID] ✅ Template test successful: ${templateId}`);
+        res.json({ success: true, message: "Template test successful" });
+      } else {
+        console.log(`[SENDGRID] ❌ Template test failed: ${templateId} - ${result.error}`);
+        res.status(400).json({ success: false, message: result.error || "Template test failed" });
+      }
+    } catch (error: any) {
+      console.error('[SENDGRID] Error testing template:', error);
+      res.status(500).json({ success: false, message: error.message || "Failed to test template" });
+    }
+  }));
+
+  // Get templates by category
+  app.get("/api/sendgrid/templates/category/:category", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const templates = await storage.getSendgridTemplateByCategory(req.params.category);
+      res.json(templates);
+    } catch (error) {
+      console.error('[SENDGRID] Error fetching templates by category:', error);
+      res.status(500).json({ message: "Failed to fetch templates by category" });
+    }
+  }));
 
   // Email stats endpoint - DATI REALI DAL DATABASE
   app.get("/api/email/stats", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
