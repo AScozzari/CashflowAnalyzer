@@ -720,15 +720,33 @@ export default function DashboardProfessional() {
   const currentYear = currentDate.getFullYear();
   
   // Fetch analytics data
-  const { data: statsData, isLoading: statsLoading } = useQuery({
+  const { data: statsData, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ["/api/analytics/stats"],
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
+  // Debug logging per vedere cosa succede
+  console.log('🔍 DASHBOARD DEBUG:', { 
+    statsData, 
+    statsLoading, 
+    statsError: statsError?.message 
   });
 
   // Fetch movements data with proper typing - use /recent endpoint for current month data
-  const { data: movementsData, isLoading: movementsLoading } = useQuery<MovementWithRelations[]>({
+  const { data: movementsData, isLoading: movementsLoading, error: movementsError } = useQuery<MovementWithRelations[]>({
     queryKey: ["/api/movements/recent"],
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
+  // Debug logging per vedere cosa succede
+  console.log('🔍 MOVEMENTS DEBUG:', { 
+    movementsData: Array.isArray(movementsData) ? `${movementsData.length} items` : movementsData, 
+    movementsLoading, 
+    movementsError: movementsError?.message 
   });
 
   // Process movements for display - data is already filtered by current month from /recent endpoint
