@@ -2140,7 +2140,7 @@ export const neonSettings = pgTable("neon_settings", {
   // Monitoring Settings
   enableMetrics: boolean("enable_metrics").default(true),
   enableAlerts: boolean("enable_alerts").default(false),
-  alertThresholds: jsonb("alert_thresholds").default({}),
+  alertThresholds: jsonb("alert_thresholds").default(sql`'{}'::jsonb`),
   
   // Backup Configuration
   autoBackup: boolean("auto_backup").default(false),
