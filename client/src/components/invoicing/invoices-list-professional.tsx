@@ -74,7 +74,7 @@ export function InvoicesListProfessional() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [directionFilter, setDirectionFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -415,52 +415,55 @@ export function InvoicesListProfessional() {
           </CardContent>
         </Card>
       ) : (
-        <div className={viewMode === 'grid' 
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
-          : "space-y-4"
-        }>
+        <div className="space-y-1">
           {filteredAndSortedInvoices.map((invoice) => (
             <Card 
               key={invoice.id} 
-              className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${
-                (invoice.direction || 'outgoing') === 'outgoing' 
-                  ? 'border-l-green-500 hover:border-l-green-600' 
-                  : 'border-l-red-500 hover:border-l-red-600'
-              } ${viewMode === 'list' ? 'hover:bg-gray-50 dark:hover:bg-gray-800/50' : ''}`}
+              className="group hover:shadow-sm transition-all duration-200 border hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
-              <CardContent className={viewMode === 'grid' ? "p-6" : "p-4"}>
-                <div className={`flex ${viewMode === 'grid' ? 'flex-col space-y-4' : 'items-center justify-between'}`}>
-                  <div className={`${viewMode === 'grid' ? 'space-y-3' : 'flex-1 min-w-0'}`}>
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {(invoice.direction || 'outgoing') === 'outgoing' ? (
-                          <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                            <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          </div>
-                        ) : (
-                          <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                            <Download className="h-4 w-4 text-red-600 dark:text-red-400" />
-                          </div>
-                        )}
-                        <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-white">
-                            {invoice.invoiceNumber}
-                          </h3>
-                          <Badge variant="outline" className={`text-xs ${
-                            (invoice.direction || 'outgoing') === 'outgoing' 
-                              ? 'border-green-500 text-green-700 bg-green-50 dark:bg-green-900/20' 
-                              : 'border-red-500 text-red-700 bg-red-50 dark:bg-red-900/20'
-                          }`}>
-                            {(invoice.direction || 'outgoing') === 'outgoing' ? 'EMESSA' : 'RICEVUTA'}
-                          </Badge>
-                        </div>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0 flex items-center space-x-4">
+                    {/* Numero e Tipo */}
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                        <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                       </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {invoice.invoiceNumber}
+                        </h3>
+                        <Badge variant="outline" className="text-xs text-gray-600 border-gray-300">
+                          {(invoice.direction || 'outgoing') === 'outgoing' ? 'EMESSA' : 'RICEVUTA'}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Cliente */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-white truncate">
+                        {invoice.customerName}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(invoice.invoiceDate).toLocaleDateString('it-IT')}
+                      </p>
+                    </div>
+
+                    {/* Importo */}
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">
+                        €{parseFloat(invoice.totalAmount).toLocaleString('it-IT')}
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        {getStatusBadge(invoice.status)}
+                        {getSdiStatusBadge(invoice.sdiStatus)}
+                      </div>
+                    </div>
                       
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -496,41 +499,6 @@ export function InvoicesListProfessional() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-
-                    {/* Customer & Date */}
-                    <div className={viewMode === 'grid' ? 'space-y-2' : 'space-y-1'}>
-                      <p className="text-gray-900 dark:text-white font-medium">
-                        {invoice.customerName}
-                      </p>
-                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-4">
-                        <span className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {new Date(invoice.invoiceDate).toLocaleDateString('it-IT')}
-                        </span>
-                        {invoice.dueDate && (
-                          <span className="flex items-center">
-                            <Clock className="h-4 w-4 mr-1" />
-                            Scad. {new Date(invoice.dueDate).toLocaleDateString('it-IT')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Amount & Status */}
-                    <div className={`flex ${viewMode === 'grid' ? 'flex-col space-y-2' : 'items-center space-x-4'}`}>
-                      <p className={`text-2xl font-bold ${
-                        (invoice.direction || 'outgoing') === 'outgoing' 
-                          ? 'text-green-600 dark:text-green-400' 
-                          : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        {(invoice.direction || 'outgoing') === 'outgoing' ? '+' : '-'}€{parseFloat(invoice.totalAmount).toLocaleString('it-IT')}
-                      </p>
-                      <div className="flex items-center space-x-2">
-                        {getStatusBadge(invoice.status)}
-                        {getSdiStatusBadge(invoice.sdiStatus)}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
