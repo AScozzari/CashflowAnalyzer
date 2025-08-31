@@ -8,6 +8,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotifications, useUnreadNotificationsCount, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification } from "@/hooks/use-notifications";
@@ -36,6 +42,19 @@ export function NotificationsBell() {
     }
   };
 
+  // Function to get category CSS color (for segments)
+  const getCategoryCssColor = (category: string): string => {
+    switch (category) {
+      case 'telegram': return '#8b5cf6'; // purple-500
+      case 'sms': return '#ef4444'; // red-500
+      case 'movements': return '#eab308'; // yellow-500
+      case 'whatsapp': return '#22c55e'; // green-500
+      case 'email': return '#3b82f6'; // blue-500
+      case 'messenger': return '#6366f1'; // indigo-500
+      default: return '#6b7280'; // gray-500
+    }
+  };
+
   // Get unread notifications by category
   const unreadByCategory = notifications
     .filter(n => !n.isRead)
@@ -45,10 +64,45 @@ export function NotificationsBell() {
       return acc;
     }, {});
   
-  // Get primary category (most notifications) - Fixed default to match schema
-  const primaryCategory = Object.keys(unreadByCategory).reduce((a, b) => 
-    unreadByCategory[a] > unreadByCategory[b] ? a : b, 'movements'
-  );
+  // Get active categories with notifications
+  const activeCategories = Object.keys(unreadByCategory).filter(cat => unreadByCategory[cat] > 0);
+  
+  // Create segments for multi-color badge
+  const createSegments = () => {
+    if (activeCategories.length === 0) return [];
+    if (activeCategories.length === 1) {
+      return [{
+        category: activeCategories[0],
+        color: getCategoryCssColor(activeCategories[0]),
+        startAngle: 0,
+        endAngle: 360,
+        count: unreadByCategory[activeCategories[0]]
+      }];
+    }
+
+    const totalNotifications = Object.values(unreadByCategory).reduce((sum: number, count) => sum + count, 0);
+    let currentAngle = 0;
+    
+    return activeCategories.map(category => {
+      const count = unreadByCategory[category];
+      const percentage = count / totalNotifications;
+      const angleSize = percentage * 360;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angleSize;
+      
+      currentAngle += angleSize;
+      
+      return {
+        category,
+        color: getCategoryCssColor(category),
+        startAngle,
+        endAngle,
+        count
+      };
+    });
+  };
+
+  const segments = createSegments();
   const markAsReadMutation = useMarkNotificationAsRead();
   const markAllAsReadMutation = useMarkAllNotificationsAsRead();
   const deleteNotificationMutation = useDeleteNotification();
@@ -143,20 +197,99 @@ export function NotificationsBell() {
     setIsOpen(false);
   };
 
+  // Function to get category label in Italian
+  const getCategoryLabel = (category: string): string => {
+    switch (category) {
+      case 'telegram': return 'Telegram';
+      case 'sms': return 'SMS';
+      case 'movements': return 'Movimenti';
+      case 'whatsapp': return 'WhatsApp';
+      case 'email': return 'Email';
+      case 'messenger': return 'Messenger';
+      default: return 'Altro';
+    }
+  };
+
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <Badge 
-              className={`absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs text-white ${getCategoryColor(primaryCategory)}`}
-            >
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
+    <TooltipProvider>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger asChild>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5">
+                    {segments.length === 1 ? (
+                      // Badge singolo per una sola categoria
+                      <Badge 
+                        className={`h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs text-white ${getCategoryColor(segments[0].category)}`}
+                      >
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </Badge>
+                    ) : (
+                      // Badge multi-segmento per categorie multiple
+                      <div className="relative w-5 h-5 rounded-full overflow-hidden border border-white shadow-sm">
+                        {segments.map((segment, index) => {
+                          const startAngle = (segment.startAngle - 90) * (Math.PI / 180); // -90 per iniziare dall'alto
+                          const endAngle = (segment.endAngle - 90) * (Math.PI / 180);
+                          
+                          // Calcola le coordinate per il path SVG
+                          const radius = 10; // metà della larghezza (20px / 2)
+                          const largeArcFlag = segment.endAngle - segment.startAngle > 180 ? 1 : 0;
+                          
+                          const x1 = radius + radius * Math.cos(startAngle);
+                          const y1 = radius + radius * Math.sin(startAngle);
+                          const x2 = radius + radius * Math.cos(endAngle);
+                          const y2 = radius + radius * Math.sin(endAngle);
+                          
+                          const pathData = `M ${radius} ${radius} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+                          
+                          return (
+                            <svg
+                              key={index}
+                              className="absolute inset-0 w-full h-full"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                d={pathData}
+                                fill={segment.color}
+                                className="opacity-90"
+                              />
+                            </svg>
+                          );
+                        })}
+                        
+                        {/* Numero al centro */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-xs font-bold text-white drop-shadow-sm">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Button>
+            </TooltipTrigger>
+            {unreadCount > 0 && (
+              <TooltipContent side="bottom" className="p-2">
+                <div className="space-y-1">
+                  <div className="text-sm font-semibold">Notifiche non lette: {unreadCount}</div>
+                  {Object.entries(unreadByCategory).map(([category, count]) => (
+                    <div key={category} className="flex items-center space-x-2 text-xs">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: getCategoryCssColor(category) }}
+                      />
+                      <span>{getCategoryLabel(category)}: {count}</span>
+                    </div>
+                  ))}
+                </div>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </DropdownMenuTrigger>
       
       <DropdownMenuContent align="end" className="w-80">
         <div className="flex items-center justify-between p-2">
@@ -248,5 +381,6 @@ export function NotificationsBell() {
         </ScrollArea>
       </DropdownMenuContent>
     </DropdownMenu>
+    </TooltipProvider>
   );
 }
