@@ -89,20 +89,21 @@ export default function Movements() {
       
       return [`/api/movements/filtered?${params.toString()}`];
     }, [appliedFilters, currentPage, pageSize]),
-    enabled: true, // Sempre abilitato - mostra tutti i movimenti di default
+    enabled: filtersApplied, // Abilita solo dopo aver applicato i filtri
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 
   const movements = Array.isArray(movementsResponse?.data) ? movementsResponse.data : [];
 
-  // Applica filtri automaticamente all'avvio
+  // Auto-reset quando i filtri cambiano dopo che sono stati applicati
   useEffect(() => {
-    if (!filtersApplied) {
-      setFiltersApplied(true); // Applica filtri vuoti di default per mostrare tutti i movimenti
-      setAppliedFilters({});
+    if (filtersApplied && JSON.stringify(filters) !== JSON.stringify(appliedFilters)) {
+      // Se i filtri correnti sono diversi da quelli applicati, reset automatico
+      setFiltersApplied(false);
+      console.log("[MOVEMENTS] Filters changed after apply - auto reset");
     }
-  }, [filtersApplied]);
+  }, [filters, appliedFilters, filtersApplied]);
 
   // Gestione filtri
   const handleFiltersChange = useCallback((newFilters: MovementFilters) => {
