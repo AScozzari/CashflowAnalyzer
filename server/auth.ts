@@ -43,8 +43,8 @@ export function setupAuth(app: Express) {
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // Default 24 hours (updated dynamically)
       httpOnly: true,
-      secure: true, // Enable for HTTPS Replit domains
-      sameSite: 'none', // Required for iframe cross-site cookies in Replit
+      secure: false, // Disabled for Replit development
+      sameSite: 'lax', // Allow cross-site cookies for Replit
     },
   };
 
