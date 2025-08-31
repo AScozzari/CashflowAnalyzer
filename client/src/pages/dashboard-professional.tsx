@@ -724,9 +724,14 @@ export default function DashboardProfessional() {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
   
-  // Fetch analytics data
+  // Prepare current month date range for analytics
+  const currentMonthStart = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+  const currentMonthEnd = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+  
+  // Fetch analytics data for CURRENT MONTH ONLY
   const { data: statsData, isLoading: statsLoading, error: statsError } = useQuery({
-    queryKey: ["/api/analytics/stats"],
+    queryKey: ["/api/analytics/stats", currentMonthStart, currentMonthEnd],
+    queryFn: () => fetch(`/api/analytics/stats?startDate=${currentMonthStart}&endDate=${currentMonthEnd}`, { credentials: 'include' }).then(res => res.json()),
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
