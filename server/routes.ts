@@ -3813,10 +3813,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Database Schema
   app.get('/api/neon/schema', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
-      // Get schema information from our local database using system service
-      const { systemService } = await import('./services/system-service');
-      const databaseStats = await systemService.getDatabaseStatistics();
-      res.json(databaseStats);
+      // Get schema information from our local database
+      const { db } = await import('./db');
+      
+      // Query information_schema to get table information
+      const tablesQuery = `
+        SELECT 
+          table_name,
+          table_schema,
+          table_type
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+        ORDER BY table_name
+      `;
+      
+      const columnsQuery = `
+        SELECT 
+          table_name,
+          column_name,
+          data_type,
+          is_nullable,
+          column_default
+        FROM information_schema.columns 
+        WHERE table_schema = 'public'
+        ORDER BY table_name, ordinal_position
+      `;
+      
+      const [tablesResult, columnsResult] = await Promise.all([
+        db.execute(tablesQuery),
+        db.execute(columnsQuery)
+      ]);
+      
+      // Group columns by table
+      const tableColumns: Record<string, any[]> = {};
+      columnsResult.rows.forEach((col: any) => {
+        if (!tableColumns[col.table_name]) {
+          tableColumns[col.table_name] = [];
+        }
+        tableColumns[col.table_name].push({
+          name: col.column_name,
+          type: col.data_type,
+          nullable: col.is_nullable === 'YES',
+          default: col.column_default
+        });
+      });
+      
+      // Format response
+      const schema = {
+        database: 'neondb',
+        tables: tablesResult.rows.map((table: any) => ({
+          name: table.table_name,
+          type: table.table_type,
+          columns: tableColumns[table.table_name] || []
+        })),
+        totalTables: tablesResult.rows.length,
+        totalColumns: columnsResult.rows.length,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      res.json(schema);
     } catch (error) {
       console.error('[NEON API] Error fetching schema:', error);
       res.status(500).json({ message: 'Failed to fetch database schema' });
