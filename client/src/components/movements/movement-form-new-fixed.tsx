@@ -154,15 +154,17 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
   const createCalendarReminderMutation = useMutation({
     mutationFn: async ({ eventData, reminderData }: { eventData: any; reminderData: any }) => {
       // Create calendar event first
-      const eventResponse = await apiRequest('/calendar/events', {
+      const eventResponse = await fetch('/api/calendar/events', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(eventData),
-      });
+      }).then(res => res.json());
 
       // Create reminder for the event
       if (reminderData) {
-        await apiRequest('/calendar/reminders', {
-          method: 'POST', 
+        await fetch('/api/calendar/reminders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...reminderData,
             eventId: eventResponse.id,
@@ -1026,7 +1028,7 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                 {/* VAT Calculator Component */}
                 <div className="space-y-4">
                   <VatCalculator 
-                    onCalculated={handleVatCalculated}
+                    onVatCalculated={handleVatCalculated}
                     initialAmount={watchedAmount ? parseFloat(watchedAmount) : undefined}
                   />
                 </div>
@@ -1114,7 +1116,6 @@ export default function MovementFormNew({ movement, onClose, isOpen }: MovementF
                     </label>
                     <CompactXMLUploader 
                       onDataParsed={handleXMLDataParsed}
-                      className="w-full"
                     />
                   </div>
                 )}

@@ -46,6 +46,7 @@ Preferred communication style: Simple, everyday language.
 - **Multi-Channel Webhook System**: Complete webhook system for all communication channels (WhatsApp, SMS, Email, Messenger) with unified AI handling and business hours logic.
 - **Professional Notification System**: Enhanced categorized notification bell system with multi-channel support (Movements, WhatsApp, SMS, Email, Messenger) with actionable URLs and priority levels.
 - **Product Catalog Management**: Complete system for managing product listings, pricing, and inventory with support for Italian business requirements.
+- **Bidirectional Invoice-Movement Sync**: Complete intelligent synchronization system between FatturaPA invoices and financial movements with automatic mapping, negative amounts handling, payment terms calculation, and status tracking.
 
 ## Design Patterns
 - **Component Composition**: Reusable UI components.
