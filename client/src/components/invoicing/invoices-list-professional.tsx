@@ -12,21 +12,13 @@ import {
   Send, 
   Trash2,
   Plus,
-  Calendar,
-  Euro,
   FileText,
   CheckCircle,
   Clock,
   AlertCircle,
-  MoreHorizontal,
-  ArrowRightLeft,
+  MoreVertical,
   Code,
-  RefreshCw,
-  X,
-  Grid3X3,
-  List,
-  SortAsc,
-  SortDesc
+  RefreshCw
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -74,7 +66,6 @@ export function InvoicesListProfessional() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [directionFilter, setDirectionFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -367,7 +358,7 @@ export function InvoicesListProfessional() {
           <div className="flex items-center space-x-2">
             <div className="flex bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md">
               <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('grid')}
                 className="rounded-r-none"
@@ -375,7 +366,7 @@ export function InvoicesListProfessional() {
                 <Grid3X3 className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                variant="default"
                 size="sm"
                 onClick={() => setViewMode('list')}
                 className="rounded-l-none border-l"
