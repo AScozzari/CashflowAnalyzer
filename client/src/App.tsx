@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { useDynamicFavicon } from "@/hooks/use-dynamic-favicon";
 import Sidebar from "@/components/layout/sidebar";
 import { BottomNavigation } from "@/components/mobile/mobile-navigation";
 import Dashboard from "@/pages/dashboard-professional";
@@ -103,6 +104,9 @@ if (typeof window !== 'undefined') {
 // Layout wrapper component
 function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  
+  // Apply dynamic branding (favicon, title)
+  useDynamicFavicon();
   
   return (
     <div className="flex min-h-screen bg-background transition-colors">

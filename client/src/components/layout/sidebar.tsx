@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from '@tanstack/react-query';
 
 interface SidebarProps {
   isCollapsed?: boolean;
@@ -18,6 +19,18 @@ export default function Sidebar({ isCollapsed: externalCollapsed, onCollapsedCha
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Fetch theme settings for branding
+  const { data: themeSettings } = useQuery({
+    queryKey: ['/api/themes/settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/themes/settings');
+      if (!response.ok) throw new Error('Failed to fetch theme settings');
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!user, // Only fetch when user is authenticated
+  });
 
   // Use external state if provided, otherwise use internal state
   const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
@@ -89,11 +102,21 @@ export default function Sidebar({ isCollapsed: externalCollapsed, onCollapsedCha
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0">
             <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <BarChart3 className="text-sidebar-primary-foreground text-lg" />
+              {themeSettings?.logoUrl ? (
+                <img 
+                  src={themeSettings.logoUrl} 
+                  alt="Logo" 
+                  className="w-8 h-8 object-contain rounded"
+                />
+              ) : (
+                <BarChart3 className="text-sidebar-primary-foreground text-lg" />
+              )}
             </div>
             <div className={`transition-all duration-300 ${shouldShowText ? 'opacity-100' : 'opacity-0'}`} 
                  style={{ display: shouldShowText ? 'block' : 'none' }}>
-              <h1 className="text-xl font-bold text-sidebar-foreground">CashFlow</h1>
+              <h1 className="text-xl font-bold text-sidebar-foreground">
+                {themeSettings?.companyName || 'EasyCashFlows'}
+              </h1>
               <p className="text-sm text-sidebar-foreground/60">Management System</p>
             </div>
           </div>

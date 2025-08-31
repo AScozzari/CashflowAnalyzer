@@ -3394,6 +3394,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Upload theme assets (logo/favicon)
+  app.post("/api/themes/upload", requireAuth, upload.single('file'), handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      console.log('[THEMES] File upload request received');
+      
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const { type } = req.body; // 'logo' or 'favicon'
+      
+      if (!type || !['logo', 'favicon'].includes(type)) {
+        return res.status(400).json({ error: 'Invalid type. Must be logo or favicon' });
+      }
+
+      // For now, we'll create a data URL from the uploaded file
+      // In production, you'd upload to cloud storage (Google Cloud Storage is already configured)
+      const fileBuffer = req.file.buffer;
+      const base64Data = fileBuffer.toString('base64');
+      const mimeType = req.file.mimetype;
+      const dataUrl = `data:${mimeType};base64,${base64Data}`;
+
+      console.log(`[THEMES] ${type} uploaded successfully, size: ${fileBuffer.length} bytes`);
+      
+      res.json({ 
+        url: dataUrl,
+        type: type,
+        filename: req.file.originalname,
+        size: fileBuffer.length
+      });
+    } catch (error) {
+      console.error('[THEMES] Error uploading file:', error);
+      res.status(500).json({ error: 'Failed to upload file' });
+    }
+  }));
+
+  // Export theme settings
+  app.get("/api/themes/export", requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const settings = await storage.getThemesSettings();
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename="easycashflows-theme.json"');
+      res.json(settings);
+    } catch (error) {
+      console.error('[THEMES] Error exporting theme:', error);
+      res.status(500).json({ error: 'Failed to export theme' });
+    }
+  }));
+
   // === USER MANAGEMENT ENDPOINTS ===
   
   // Get all users (Admin only)
