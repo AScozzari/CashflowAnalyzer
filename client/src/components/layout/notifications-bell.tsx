@@ -8,12 +8,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotifications, useUnreadNotificationsCount, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification } from "@/hooks/use-notifications";
@@ -214,100 +208,98 @@ export function NotificationsBell() {
   };
 
   return (
-    <TooltipProvider>
-      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5">
-                    {segments.length === 1 ? (
-                      // Badge singolo per una sola categoria
-                      <Badge 
-                        className={`h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs text-white ${getCategoryColor(segments[0].category)}`}
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative" data-testid="notifications-bell">
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <div className="absolute -top-1 -right-1 w-5 h-5">
+              {segments.length === 1 ? (
+                // Badge singolo per una sola categoria
+                <Badge 
+                  className={`h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs text-white ${getCategoryColor(segments[0].category)}`}
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Badge>
+              ) : (
+                // Badge multi-segmento per categorie multiple
+                <div className="relative w-5 h-5 rounded-full overflow-hidden border border-white shadow-sm">
+                  {segments.map((segment, index) => {
+                    const startAngle = (segment.startAngle - 90) * (Math.PI / 180); // -90 per iniziare dall'alto
+                    const endAngle = (segment.endAngle - 90) * (Math.PI / 180);
+                    
+                    // Calcola le coordinate per il path SVG
+                    const radius = 10; // metà della larghezza (20px / 2)
+                    const largeArcFlag = segment.endAngle - segment.startAngle > 180 ? 1 : 0;
+                    
+                    const x1 = radius + radius * Math.cos(startAngle);
+                    const y1 = radius + radius * Math.sin(startAngle);
+                    const x2 = radius + radius * Math.cos(endAngle);
+                    const y2 = radius + radius * Math.sin(endAngle);
+                    
+                    const pathData = `M ${radius} ${radius} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+                    
+                    return (
+                      <svg
+                        key={index}
+                        className="absolute inset-0 w-full h-full"
+                        viewBox="0 0 20 20"
                       >
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </Badge>
-                    ) : (
-                      // Badge multi-segmento per categorie multiple
-                      <div className="relative w-5 h-5 rounded-full overflow-hidden border border-white shadow-sm">
-                        {segments.map((segment, index) => {
-                          const startAngle = (segment.startAngle - 90) * (Math.PI / 180); // -90 per iniziare dall'alto
-                          const endAngle = (segment.endAngle - 90) * (Math.PI / 180);
-                          
-                          // Calcola le coordinate per il path SVG
-                          const radius = 10; // metà della larghezza (20px / 2)
-                          const largeArcFlag = segment.endAngle - segment.startAngle > 180 ? 1 : 0;
-                          
-                          const x1 = radius + radius * Math.cos(startAngle);
-                          const y1 = radius + radius * Math.sin(startAngle);
-                          const x2 = radius + radius * Math.cos(endAngle);
-                          const y2 = radius + radius * Math.sin(endAngle);
-                          
-                          const pathData = `M ${radius} ${radius} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-                          
-                          return (
-                            <svg
-                              key={index}
-                              className="absolute inset-0 w-full h-full"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                d={pathData}
-                                fill={segment.color}
-                                className="opacity-90"
-                              />
-                            </svg>
-                          );
-                        })}
-                        
-                        {/* Numero al centro */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xs font-bold text-white drop-shadow-sm">
-                            {unreadCount > 99 ? '99+' : unreadCount}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                        <path
+                          d={pathData}
+                          fill={segment.color}
+                          className="opacity-90"
+                        />
+                      </svg>
+                    );
+                  })}
+                  
+                  {/* Numero al centro */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-bold text-white drop-shadow-sm">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
                   </div>
-                )}
-              </Button>
-            </TooltipTrigger>
-            {unreadCount > 0 && (
-              <TooltipContent side="bottom" className="p-2">
-                <div className="space-y-1">
-                  <div className="text-sm font-semibold">Notifiche non lette: {unreadCount}</div>
-                  {Object.entries(unreadByCategory).map(([category, count]) => (
-                    <div key={category} className="flex items-center space-x-2 text-xs">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: getCategoryCssColor(category) }}
-                      />
-                      <span>{getCategoryLabel(category)}: {count}</span>
-                    </div>
-                  ))}
                 </div>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </DropdownMenuTrigger>
+              )}
+            </div>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
       
       <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between p-2">
-          <h3 className="font-semibold">Notifiche</h3>
-          {notifications.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleMarkAllAsRead}
-              disabled={markAllAsReadMutation.isPending}
-              className="text-xs"
-            >
-              <CheckCheck className="h-3 w-3 mr-1" />
-              Segna tutte lette
-            </Button>
+        <div className="p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Notifiche</h3>
+            {notifications.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                disabled={markAllAsReadMutation.isPending}
+                className="text-xs"
+              >
+                <CheckCheck className="h-3 w-3 mr-1" />
+                Segna tutte lette
+              </Button>
+            )}
+          </div>
+          
+          {unreadCount > 0 && (
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <div className="font-medium">Non lette: {unreadCount}</div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(unreadByCategory).map(([category, count]) => (
+                  <div key={category} className="flex items-center space-x-1">
+                    <div 
+                      className="w-2 h-2 rounded-full" 
+                      style={{ backgroundColor: getCategoryCssColor(category) }}
+                    />
+                    <span>{getCategoryLabel(category)}: {count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
         
@@ -384,6 +376,5 @@ export function NotificationsBell() {
         </ScrollArea>
       </DropdownMenuContent>
     </DropdownMenu>
-    </TooltipProvider>
   );
 }
