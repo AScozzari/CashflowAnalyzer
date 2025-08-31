@@ -39,7 +39,7 @@ export default function Invoicing() {
       </Button>
       <Button 
         size="sm" 
-        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+        className="bg-primary hover:bg-blue-700"
         onClick={() => setActiveTab("new-invoice")}
         data-testid="new-invoice-button"
       >
