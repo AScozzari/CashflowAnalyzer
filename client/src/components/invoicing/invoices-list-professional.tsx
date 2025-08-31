@@ -129,7 +129,7 @@ export function InvoicesListProfessional() {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       draft: { variant: "secondary" as const, label: "Bozza", className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200" },
-      issued: { variant: "default" as const, label: "Emessa", className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
+      issued: { variant: "default" as const, label: "Emessa", className: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" },
       sent: { variant: "default" as const, label: "Inviata", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
       paid: { variant: "default" as const, label: "Pagata", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
       overdue: { variant: "destructive" as const, label: "Scaduta", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },
@@ -238,7 +238,7 @@ export function InvoicesListProfessional() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-blue-200/50 dark:border-blue-800/50">
+        <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl p-6 border border-purple-200/50 dark:border-purple-800/50">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-4"></div>
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-96"></div>
@@ -264,11 +264,11 @@ export function InvoicesListProfessional() {
   return (
     <div className="space-y-6">
       {/* 🔥 NUOVO HEADER PROFESSIONALE */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-blue-200/50 dark:border-blue-800/50">
+      <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl p-6 border border-purple-200/50 dark:border-purple-800/50">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-              <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg">
+              <div className="p-3 bg-gradient-to-r from-purple-600 to-violet-600 rounded-xl shadow-lg">
                 <FileText className="h-8 w-8 text-white" />
               </div>
               Gestione Fatture Elettroniche
@@ -285,7 +285,7 @@ export function InvoicesListProfessional() {
               size="sm" 
               variant="outline" 
               onClick={() => refetch()}
-              className="hover:bg-blue-50 dark:hover:bg-blue-900/20 bg-white dark:bg-gray-800 border-2"
+              className="hover:bg-purple-50 dark:hover:bg-purple-900/20 bg-white dark:bg-gray-800 border-2"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Aggiorna
@@ -303,7 +303,7 @@ export function InvoicesListProfessional() {
                 placeholder="Cerca fatture..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500"
+                className="pl-10 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:border-purple-500 focus:ring-purple-500"
                 data-testid="search-invoices"
               />
             </div>
@@ -380,7 +380,7 @@ export function InvoicesListProfessional() {
                 : "Inizia creando la tua prima fattura elettronica"
               }
             </p>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
+            <Button className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white shadow-lg">
               <Plus className="h-4 w-4 mr-2" />
               Nuova Fattura
             </Button>
