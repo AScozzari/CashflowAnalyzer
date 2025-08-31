@@ -1,0 +1,36 @@
+Dettagli errore (sviluppo)
+ReferenceError: Grid3X3 is not defined
+    at InvoicesListProfessional (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/components/invoicing/invoices-list-professional.tsx:59:39)
+    at div
+    at https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-AXMZZQ2X.js?v=23eb3c96:42:13
+    at Presence (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LUE5KDWX.js?v=23eb3c96:24:11)
+    at https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=23eb3c96:176:13
+    at _c5 (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/components/ui/tabs.tsx:72:12)
+    at div
+    at https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-AXMZZQ2X.js?v=23eb3c96:42:13
+    at Provider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=23eb3c96:38:15)
+    at https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=23eb3c96:54:7
+    at main
+    at div
+    at Invoicing (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/pages/invoicing.tsx:36:37)
+    at main
+    at div
+    at AppLayout (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/App.tsx:110:22)
+    at component
+    at Route (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=23eb3c96:191:16)
+    at ProtectedRoute (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=23eb3c96:247:17)
+    at Router
+    at ErrorBoundary (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/components/ui/error-boundary.tsx:10:5)
+    at Provider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=23eb3c96:38:15)
+    at TooltipProvider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=23eb3c96:64:5)
+    at AuthProvider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/hooks/use-auth.tsx:26:32)
+    at ErrorBoundary (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/components/ui/error-boundary.tsx:10:5)
+    at div
+    at ThemeProvider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/lib/theme-provider.tsx:25:3)
+    at ErrorBoundary (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/components/ui/error-boundary.tsx:10:5)
+    at QueryClientProvider (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=23eb3c96:2805:3)
+    at ErrorBoundary (https://3cccf94e-2616-47c3-b64a-c2e21fd67b75-00-2zwko4zrx4amo.spock.replit.dev/src/components/ui/error-boundary.tsx:10:5)
+    at App
+Riprova
+Ricarica Pagina

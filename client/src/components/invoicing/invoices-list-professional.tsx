@@ -354,27 +354,8 @@ export function InvoicesListProfessional() {
             </SelectContent>
           </Select>
 
-          {/* View Mode & Actions */}
+          {/* Actions */}
           <div className="flex items-center space-x-2">
-            <div className="flex bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="rounded-r-none"
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="rounded-l-none border-l"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-            
             <Button variant="outline" size="sm" className="bg-white dark:bg-gray-900">
               <Download className="h-4 w-4 mr-1" />
               Esporta
