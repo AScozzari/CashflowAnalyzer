@@ -24,7 +24,7 @@ import {
   Eye
 } from "lucide-react";
 import { InvoiceCreation } from "@/components/invoicing/invoice-creation";
-import { InvoicesList } from "@/components/invoicing/invoices-list";
+import { InvoicesListProfessional } from "@/components/invoicing/invoices-list-professional";
 import { InvoicingDashboard } from "@/components/invoicing/invoicing-dashboard";
 import { InvoicingSettings } from "@/components/invoicing/invoicing-settings";
 
@@ -101,7 +101,7 @@ export default function Invoicing() {
 
           {/* Invoices List Tab */}
           <TabsContent value="invoices" className="space-y-6">
-            <InvoicesList />
+            <InvoicesListProfessional />
           </TabsContent>
 
           {/* New Invoice Tab */}

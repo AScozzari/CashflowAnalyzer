@@ -70,6 +70,8 @@ export function InvoicesList() {
   const [showXmlModal, setShowXmlModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
