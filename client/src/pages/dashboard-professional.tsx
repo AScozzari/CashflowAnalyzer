@@ -90,7 +90,12 @@ function DashboardChart({ title, subtitle, movements, isLoading, type }: {
           }
         }, {} as Record<string, any>);
         
-        return Object.values(groupedByDate).slice(-7); // Last 7 days
+        // Restituisce tutti i giorni del mese corrente (non solo ultimi 7)
+        return Object.values(groupedByDate).sort((a: any, b: any) => {
+          const dateA = new Date(a.date.split('/').reverse().join('-'));
+          const dateB = new Date(b.date.split('/').reverse().join('-'));
+          return dateA.getTime() - dateB.getTime();
+        });
       } else {
         // Group by status for pie chart with error handling
         const statusCount = movements.reduce((acc, movement) => {
@@ -884,7 +889,7 @@ export default function DashboardProfessional() {
           {/* Cash Flow Chart */}
           <DashboardChart
             title="Andamento Cash Flow"
-            subtitle="Entrate e uscite degli ultimi 30 giorni"
+            subtitle="Entrate e uscite del mese corrente"
             movements={movements}
             isLoading={movementsLoading}
             type="cashflow"
