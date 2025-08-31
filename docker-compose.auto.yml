@@ -1,0 +1,129 @@
+# 🚀 EasyCashFlows - SUPER AUTOMATED Docker Compose
+# One-command deployment with auto-setup!
+
+version: '3.8'
+
+services:
+  # Main application with FULL automation
+  easycashflows:
+    build:
+      context: .
+      dockerfile: Dockerfile.auto
+    image: easycashflows:auto
+    container_name: easycashflows-auto
+    restart: unless-stopped
+    
+    ports:
+      - "${HOST_PORT:-5000}:5000"
+    
+    environment:
+      # Auto-configuration
+      - NODE_ENV=production
+      - PORT=5000
+      - AUTO_MIGRATE=true
+      - SKIP_DEMO=${SKIP_DEMO:-false}
+      
+      # Database (REQUIRED - edit .env file)
+      - DATABASE_URL=${DATABASE_URL}
+      
+      # Optional services (auto-disabled if not set)
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      
+      # Auto-generated secrets
+      - SESSION_SECRET=${SESSION_SECRET:-auto-generated-in-container}
+    
+    volumes:
+      # Persistent data
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+      - ./uploads:/app/uploads
+      
+      # Configuration
+      - ./.env:/app/.env:ro
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/auth/user"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    
+    labels:
+      - "com.easycashflows.service=main"
+      - "com.easycashflows.version=auto"
+      - "com.easycashflows.mode=automated"
+
+  # Optional: PostgreSQL database (if you don't use Neon)
+  postgres:
+    image: postgres:15-alpine
+    container_name: easycashflows-db
+    restart: unless-stopped
+    
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-easycashflows}
+      - POSTGRES_USER=${POSTGRES_USER:-easycashflows}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme123}
+    
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    
+    profiles:
+      - local-db
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-easycashflows} -d ${POSTGRES_DB:-easycashflows}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+    labels:
+      - "com.easycashflows.service=database"
+
+  # Optional: Nginx reverse proxy with SSL
+  nginx:
+    image: nginx:alpine
+    container_name: easycashflows-proxy
+    restart: unless-stopped
+    
+    ports:
+      - "80:80"
+      - "443:443"
+    
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    
+    depends_on:
+      easycashflows:
+        condition: service_healthy
+    
+    profiles:
+      - proxy
+    
+    labels:
+      - "com.easycashflows.service=proxy"
+
+volumes:
+  postgres-data:
+    driver: local
+    labels:
+      - "com.easycashflows.volume=database"
+  
+  nginx-logs:
+    driver: local
+    labels:
+      - "com.easycashflows.volume=nginx-logs"
+
+networks:
+  default:
+    name: easycashflows-auto
+    labels:
+      - "com.easycashflows.network=main"

@@ -1,0 +1,213 @@
+# 🚀 EasyCashFlows - SUPER AUTOMATED Docker Image
+# Setup completamente automatico - basta un comando!
+
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+COPY vite.config.ts ./
+COPY drizzle.config.ts ./
+
+# Install ALL dependencies (dev + prod for build)
+RUN npm ci
+
+# Copy source code
+COPY client/ ./client/
+COPY server/ ./server/
+COPY shared/ ./shared/
+COPY scripts/ ./scripts/
+
+# Build frontend and backend
+RUN npm run build
+
+# Production stage - FULLY AUTOMATED
+FROM node:20-alpine AS production
+
+# Install system dependencies + useful tools
+RUN apk add --no-cache \
+    curl \
+    bash \
+    postgresql-client \
+    openssl \
+    jq \
+    nano \
+    htop
+
+WORKDIR /app
+
+# Copy built application
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/drizzle.config.ts ./
+
+# Create directories for logs and data
+RUN mkdir -p /app/logs /app/backups /app/uploads /app/data
+
+# Create the ULTIMATE startup script
+COPY <<'EOF' /app/auto-start.sh
+#!/bin/bash
+set -e
+
+echo "🚀 EasyCashFlows SUPER AUTO-DEPLOYMENT Starting..."
+echo "==============================================="
+
+# Create .env if not exists with smart defaults
+if [ ! -f /app/.env ]; then
+    echo "📝 Creating auto .env file..."
+    cat > /app/.env << 'ENVEOF'
+# Auto-generated .env - Edit as needed
+NODE_ENV=production
+PORT=5000
+AUTO_MIGRATE=true
+SKIP_DEMO=false
+
+# Database - REQUIRED (add your Neon URL here)
+DATABASE_URL=${DATABASE_URL:-postgresql://user:pass@localhost:5432/easycashflows}
+
+# Optional services (uncomment and configure as needed)
+# SENDGRID_API_KEY=SG.your-key-here
+# TWILIO_ACCOUNT_SID=AC.your-sid-here  
+# TWILIO_AUTH_TOKEN=your-token-here
+
+# Auto-generated session secret
+SESSION_SECRET=${SESSION_SECRET:-$(openssl rand -base64 32)}
+ENVEOF
+    echo "✅ .env file created with defaults"
+else
+    echo "✅ .env file already exists"
+fi
+
+# Load environment variables
+source /app/.env
+
+# Database connectivity check with auto-retry
+echo "🔍 Checking database connectivity..."
+DB_RETRIES=0
+MAX_RETRIES=10
+
+check_database() {
+    if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "postgresql://user:pass@localhost:5432/easycashflows" ]; then
+        echo "❌ DATABASE_URL not configured!"
+        echo "🔧 Please set DATABASE_URL environment variable or edit /app/.env"
+        echo ""
+        echo "📖 Quick setup options:"
+        echo "1. Neon (free): https://neon.tech - Get connection string"
+        echo "2. Local PostgreSQL: docker run postgres"
+        echo "3. Cloud provider: AWS RDS, Google Cloud SQL, etc."
+        echo ""
+        echo "🔗 Set DATABASE_URL like:"
+        echo "   DATABASE_URL='postgresql://user:pass@host:5432/dbname'"
+        return 1
+    fi
+    
+    # Test connection
+    node -e "
+        const { Pool } = require('pg');
+        const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+        pool.query('SELECT NOW()')
+            .then(() => { console.log('✅ Database connected!'); process.exit(0); })
+            .catch(err => { console.log('❌ DB Error:', err.message); process.exit(1); });
+    " 2>/dev/null
+}
+
+while [ $DB_RETRIES -lt $MAX_RETRIES ]; do
+    if check_database; then
+        break
+    fi
+    
+    DB_RETRIES=$((DB_RETRIES + 1))
+    if [ $DB_RETRIES -lt $MAX_RETRIES ]; then
+        echo "⏳ Database not ready, retrying in 5s... ($DB_RETRIES/$MAX_RETRIES)"
+        sleep 5
+    else
+        echo "❌ Database connection failed after $MAX_RETRIES attempts"
+        echo "🔧 Please check your DATABASE_URL and database status"
+        exit 1
+    fi
+done
+
+# Auto-deploy database schema
+echo "🗄️ Auto-deploying database schema..."
+if command -v tsx >/dev/null 2>&1; then
+    tsx scripts/deploy-db-safe.ts || {
+        echo "⚠️  Safe deployment failed, trying force push..."
+        npm run db:push --force
+    }
+else
+    echo "📦 Installing tsx for deployment..."
+    npm install -g tsx
+    tsx scripts/deploy-db-safe.ts
+fi
+
+# Start the application
+echo "🚀 Starting EasyCashFlows application..."
+echo "==============================================="
+echo "🌐 App will be available at: http://localhost:$PORT"
+echo "👤 Default login: admin / admin123" 
+echo "📚 Documentation: /app/DOCUMENTAZIONE_*.md"
+echo "==============================================="
+
+exec node dist/server.js
+EOF
+
+# Create quick setup script for host
+COPY <<'EOF' /app/quick-setup.sh
+#!/bin/bash
+echo "🚀 EasyCashFlows Quick Setup"
+echo "==========================="
+
+# Create data directory on host
+mkdir -p ./data ./logs ./backups
+
+# Create or update .env
+if [ ! -f .env ]; then
+    echo "📝 Creating .env file..."
+    cat > .env << 'ENVEOF'
+# EasyCashFlows Configuration
+DATABASE_URL=postgresql://your-neon-connection-string-here
+SENDGRID_API_KEY=your-sendgrid-key-optional
+TWILIO_ACCOUNT_SID=your-twilio-sid-optional
+TWILIO_AUTH_TOKEN=your-twilio-token-optional
+ENVEOF
+    echo "✅ .env created! Edit it with your database URL"
+    echo "📖 Get free database at: https://neon.tech"
+else
+    echo "✅ .env already exists"
+fi
+
+echo ""
+echo "🚀 Run with: docker run --env-file .env -p 5000:5000 -v \$(pwd)/data:/app/data easycashflows:auto"
+echo "📚 Or use docker-compose for full setup"
+EOF
+
+# Make scripts executable
+RUN chmod +x /app/auto-start.sh /app/quick-setup.sh
+
+# Create non-root user
+RUN addgroup -g 1001 -S easycashflows && \
+    adduser -S easycashflows -u 1001 -G easycashflows
+
+# Set permissions
+RUN chown -R easycashflows:easycashflows /app
+USER easycashflows
+
+# Health check with better error reporting
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+    CMD curl -f http://localhost:${PORT:-5000}/api/auth/user || (echo "Health check failed" && exit 1)
+
+# Expose port
+EXPOSE 5000
+
+# Set environment defaults
+ENV NODE_ENV=production
+ENV PORT=5000
+ENV AUTO_MIGRATE=true
+
+# Use the super automated startup script
+CMD ["/app/auto-start.sh"]
