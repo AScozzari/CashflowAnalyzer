@@ -92,12 +92,12 @@ export default function Header({ title, subtitle, action }: HeaderProps) {
             <Button 
               variant="ghost" 
               size="sm" 
-              className="p-2 hover:bg-violet-50 dark:hover:bg-violet-900/20 relative group" 
+              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 relative group" 
               data-testid="ai-chat-shortcut"
               title="Chat AI"
             >
-              <Bot className="h-5 w-5 text-violet-600 group-hover:text-violet-700" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span>
+              <Bot className="h-5 w-5 text-blue-600 group-hover:text-blue-700" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
               <span className="sr-only">Chat AI</span>
             </Button>
           </Link>
