@@ -1,0 +1,96 @@
+# 🐳 EasyCashFlows Docker Compose - Production Ready
+# Setup completo per deployment cliente con database Neon
+
+version: '3.8'
+
+services:
+  easycashflows:
+    build: .
+    container_name: easycashflows-app
+    restart: unless-stopped
+    
+    ports:
+      - "5000:5000"
+    
+    environment:
+      # Obbligatori - forniti dal cliente
+      - DATABASE_URL=${DATABASE_URL}
+      
+      # Configurazione applicazione
+      - NODE_ENV=production
+      - PORT=5000
+      
+      # Opzionali - Email (SendGrid)
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      
+      # Opzionali - SMS/WhatsApp (Twilio)
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      
+      # Deployment options
+      - SKIP_DEMO=${SKIP_DEMO:-false}
+      - AUTO_MIGRATE=${AUTO_MIGRATE:-true}
+    
+    volumes:
+      # Log persistence
+      - easycashflows-logs:/app/logs
+      
+      # Backup storage (optional)
+      - easycashflows-backups:/app/backups
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/auth/user"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    labels:
+      - "com.easycashflows.service=main"
+      - "com.easycashflows.version=1.0.0"
+
+  # Nginx reverse proxy (optional)
+  nginx:
+    image: nginx:alpine
+    container_name: easycashflows-proxy
+    restart: unless-stopped
+    
+    ports:
+      - "80:80"
+      - "443:443"
+    
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - easycashflows-nginx-logs:/var/log/nginx
+    
+    depends_on:
+      - easycashflows
+    
+    profiles:
+      - proxy
+    
+    labels:
+      - "com.easycashflows.service=proxy"
+
+volumes:
+  easycashflows-logs:
+    driver: local
+    labels:
+      - "com.easycashflows.volume=logs"
+  
+  easycashflows-backups:
+    driver: local
+    labels:
+      - "com.easycashflows.volume=backups"
+  
+  easycashflows-nginx-logs:
+    driver: local
+    labels:
+      - "com.easycashflows.volume=nginx-logs"
+
+networks:
+  default:
+    name: easycashflows-network
+    labels:
+      - "com.easycashflows.network=main"
