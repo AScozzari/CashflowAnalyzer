@@ -184,6 +184,40 @@ export function NeonDBConfiguration() {
     }
   });
 
+  // Auto-detect project info mutation
+  const autoDetectMutation = useMutation({
+    mutationFn: (apiKey: string) => apiRequest('/api/neon/auto-detect', { 
+      method: 'POST', 
+      body: { apiKey } 
+    }),
+    onSuccess: (data) => {
+      if (data.success && data.projectData) {
+        // Auto-fill form with detected data
+        setFormData(prev => ({
+          ...prev,
+          ...data.projectData
+        }));
+        toast({ 
+          title: 'Auto-detection completata', 
+          description: data.message 
+        });
+      } else {
+        toast({ 
+          title: 'Auto-detection fallita', 
+          description: data.message,
+          variant: 'destructive'
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: 'Errore auto-detection', 
+        description: error.message || 'Impossibile rilevare automaticamente le informazioni',
+        variant: 'destructive'
+      });
+    }
+  });
+
   // Sync project data mutation
   const syncProjectMutation = useMutation({
     mutationFn: () => apiRequest('/api/neon/sync', { method: 'POST' }),
@@ -293,6 +327,110 @@ export function NeonDBConfiguration() {
         )}
       </div>
 
+      {/* Step-by-step Setup Guide */}
+      {!settings?.apiKey && (
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
+              <Database className="h-5 w-5" />
+              <span>Guida Setup Neon DB - Facile e Veloce</span>
+            </CardTitle>
+            <CardDescription className="text-blue-600 dark:text-blue-400">
+              Segui questi semplici passaggi per configurare il tuo database Neon in pochi minuti
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Step 1 */}
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                  <h4 className="font-semibold text-blue-700 dark:text-blue-300">Crea Account Neon</h4>
+                </div>
+                <p className="text-sm text-blue-600 dark:text-blue-400 pl-8">
+                  Vai su <a href="https://neon.tech" target="_blank" rel="noopener" className="underline">neon.tech</a> e registrati gratuitamente. 
+                  Neon offre 3GB gratis per sempre.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                  <h4 className="font-semibold text-blue-700 dark:text-blue-300">Crea Progetto</h4>
+                </div>
+                <p className="text-sm text-blue-600 dark:text-blue-400 pl-8">
+                  Crea un nuovo progetto chiamato "EasyCashFlows" e scegli la regione più vicina a te (es: eu-central-1).
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                  <h4 className="font-semibold text-blue-700 dark:text-blue-300">Ottieni API Key</h4>
+                </div>
+                <p className="text-sm text-blue-600 dark:text-blue-400 pl-8">
+                  Nel dashboard, vai su "Account Settings" → "API Keys" e crea una nuova chiave. Copiala qui sotto.
+                </p>
+              </div>
+            </div>
+
+            {/* Detailed Instructions */}
+            <div className="border-t border-blue-200 dark:border-blue-800 pt-4">
+              <h5 className="font-semibold text-blue-700 dark:text-blue-300 mb-3">Istruzioni Dettagliate:</h5>
+              <div className="space-y-3 text-sm text-blue-600 dark:text-blue-400">
+                <div className="flex items-start space-x-2">
+                  <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 mt-0.5">A</div>
+                  <div>
+                    <p className="font-medium">Come ottenere l'API Key:</p>
+                    <p>Console Neon → Icona account (in alto a destra) → Account Settings → API Keys → "Create API Key" → Copia la chiave</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 mt-0.5">B</div>
+                  <div>
+                    <p className="font-medium">Come trovare Project ID:</p>
+                    <p>Console Neon → Seleziona il tuo progetto → L'ID è visibile nell'URL: neon.tech/app/projects/<strong>PROJECT_ID</strong></p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 mt-0.5">C</div>
+                  <div>
+                    <p className="font-medium">Auto-Detection:</p>
+                    <p>Una volta inserita l'API Key e il Project ID, il sistema rileverà automaticamente tutte le altre informazioni (nome, regione, branch, database).</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div className="border-t border-blue-200 dark:border-blue-800 pt-4">
+              <div className="flex items-center space-x-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => window.open('https://console.neon.tech', '_blank')}
+                  className="text-blue-600 border-blue-300 hover:bg-blue-100 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Apri Console Neon
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => window.open('https://neon.tech/docs/manage/api-keys', '_blank')}
+                  className="text-blue-600 border-blue-300 hover:bg-blue-100 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Guida API Keys
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue="configuration" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="configuration" className="flex items-center space-x-2">
@@ -361,6 +499,36 @@ export function NeonDBConfiguration() {
                 </div>
               </div>
 
+              {/* Auto-Detection Section */}
+              {formData.apiKey && !formData.projectId && (
+                <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="font-medium text-green-700 dark:text-green-300">API Key inserita con successo!</p>
+                          <p className="text-sm text-green-600 dark:text-green-400">Clicca "Rileva Automaticamente" per configurare tutto il resto</p>
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={() => autoDetectMutation.mutate(formData.apiKey)}
+                        disabled={autoDetectMutation.isPending || !formData.apiKey}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        data-testid="button-auto-detect"
+                      >
+                        {autoDetectMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                        )}
+                        Rileva Automaticamente
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="projectId">Project ID</Label>
@@ -371,6 +539,9 @@ export function NeonDBConfiguration() {
                     placeholder="neon-project-id"
                     data-testid="input-project-id"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Puoi trovarlo nell'URL della console: neon.tech/app/projects/<strong>PROJECT_ID</strong>
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="projectName">Nome Progetto</Label>
@@ -381,6 +552,9 @@ export function NeonDBConfiguration() {
                     placeholder="Nome del progetto"
                     data-testid="input-project-name"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Verrà rilevato automaticamente dopo il test della connessione
+                  </p>
                 </div>
               </div>
 
@@ -476,10 +650,28 @@ export function NeonDBConfiguration() {
                 )}
               </div>
 
+              {/* Configuration Status */}
+              {formData.apiKey && formData.projectId && formData.projectName && (
+                <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-green-700 dark:text-green-300">Configurazione Pronta!</p>
+                        <p className="text-sm text-green-600 dark:text-green-400">
+                          Progetto: {formData.projectName} ({formData.region}) - Clicca "Salva" per completare
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="flex space-x-2">
                 <Button 
                   onClick={handleSave}
-                  disabled={saveSettingsMutation.isPending}
+                  disabled={saveSettingsMutation.isPending || !formData.apiKey}
+                  className="flex-1"
                   data-testid="button-save-settings"
                 >
                   {saveSettingsMutation.isPending ? (
@@ -490,7 +682,7 @@ export function NeonDBConfiguration() {
                   <span className="ml-2">Salva Configurazione</span>
                 </Button>
                 
-                {settings && (
+                {settings?.apiKey && (
                   <Button 
                     variant="outline" 
                     onClick={() => syncProjectMutation.mutate()}

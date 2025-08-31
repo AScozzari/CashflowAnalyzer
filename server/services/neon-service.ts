@@ -342,6 +342,50 @@ class NeonService {
     }
   }
 
+  async autoDetectProjectInfo(apiKey: string): Promise<{ success: boolean; message: string; projectData?: any }> {
+    try {
+      // Test connection and get available projects
+      const response = await fetch(`${this.baseUrl}/projects`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        return { success: false, message: 'API Key non valida o non autorizzata' };
+      }
+
+      const data = await response.json();
+      const projects = data.projects || [];
+
+      if (projects.length === 0) {
+        return { success: false, message: 'Nessun progetto trovato con questa API Key' };
+      }
+
+      // Use the first project (or the most recently created)
+      const project = projects[0];
+      
+      return {
+        success: true,
+        message: `Trovati ${projects.length} progetti. Configurazione automatica completata.`,
+        projectData: {
+          projectId: project.id,
+          projectName: project.name,
+          region: project.region_id,
+          branchName: 'main',
+          databaseName: project.database?.name || 'neondb'
+        }
+      };
+    } catch (error) {
+      console.error('[NEON SERVICE] Error auto-detecting project:', error);
+      return { 
+        success: false, 
+        message: 'Errore nell\'auto-detection. Verifica la tua API Key.' 
+      };
+    }
+  }
+
   async syncProjectData(): Promise<{ success: boolean; message: string }> {
     try {
       const settings = await storage.getNeonSettings();

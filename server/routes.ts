@@ -3761,6 +3761,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Auto-detect Neon Project Info
+  app.post('/api/neon/auto-detect', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
+    try {
+      const { apiKey } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: 'API Key is required' });
+      }
+
+      const { neonService } = await import('./services/neon-service');
+      const result = await neonService.autoDetectProjectInfo(apiKey);
+      res.json(result);
+    } catch (error) {
+      console.error('[NEON API] Auto-detection failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to auto-detect project information' 
+      });
+    }
+  }));
+
   // Get Neon Project Info
   app.get('/api/neon/project-info', requireAuth, handleAsyncErrors(async (req: any, res: any) => {
     try {
