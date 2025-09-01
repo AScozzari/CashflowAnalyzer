@@ -876,48 +876,7 @@ export default function DashboardProfessional() {
           formatChange={formatChange}
         />
         
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Cash Flow Chart */}
-          <DashboardChart
-            title="Andamento Cash Flow"
-            subtitle="Entrate e uscite del mese corrente"
-            movements={movements}
-            isLoading={movementsLoading}
-            type="cashflow"
-          />
-          
-          {/* Status Distribution Chart */}
-          <DashboardChart
-            title="Distribuzione per Stato"
-            subtitle="Ripartizione movimenti per stato"
-            movements={movements}
-            isLoading={movementsLoading}
-            type="status"
-          />
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Recent Movements - Takes 2 columns on XL screens */}
-          <div className="xl:col-span-2">
-            <ProfessionalRecentMovements 
-              movements={movements} 
-              isLoading={movementsLoading} 
-            />
-          </div>
-          
-          {/* Quick Actions Sidebar */}
-          <div className="space-y-6">
-            <QuickActionsWidget onOpenNewMovement={() => setIsNewMovementModalOpen(true)} />
-            
-
-            {/* Configuration Preview Mini-Dashboard */}
-            <ConfigPreviewMini />
-          </div>
-        </div>
-
-        {/* Performance Card - Full Width Below Movements */}
+        {/* Performance Cards - Moved directly below Stats for better UX */}
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-4">
             <div className="flex items-center space-x-3">
@@ -964,6 +923,48 @@ export default function DashboardProfessional() {
             </div>
           </CardContent>
         </Card>
+        
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Cash Flow Chart */}
+          <DashboardChart
+            title="Andamento Cash Flow"
+            subtitle="Entrate e uscite del mese corrente"
+            movements={movements}
+            isLoading={movementsLoading}
+            type="cashflow"
+          />
+          
+          {/* Status Distribution Chart */}
+          <DashboardChart
+            title="Distribuzione per Stato"
+            subtitle="Ripartizione movimenti per stato"
+            movements={movements}
+            isLoading={movementsLoading}
+            type="status"
+          />
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Recent Movements - Takes 2 columns on XL screens */}
+          <div className="xl:col-span-2">
+            <ProfessionalRecentMovements 
+              movements={movements} 
+              isLoading={movementsLoading} 
+            />
+          </div>
+          
+          {/* Quick Actions Sidebar */}
+          <div className="space-y-6">
+            <QuickActionsWidget onOpenNewMovement={() => setIsNewMovementModalOpen(true)} />
+            
+
+            {/* Configuration Preview Mini-Dashboard */}
+            <ConfigPreviewMini />
+          </div>
+        </div>
+
       </div>
       
       {/* Modal per Nuovo Movimento */}

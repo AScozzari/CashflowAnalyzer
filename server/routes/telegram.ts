@@ -168,22 +168,31 @@ export function setupTelegramRoutes(app: Express): void {
       
       const botInfo = telegramService.isInitialized() ? await telegramService.getBotInfo() : null;
       
-      // IMPLEMENTAZIONE REALE: Calcola statistiche reali dal database
-      const messages = await storage.getTelegramMessages();
+      // IMPLEMENTAZIONE REALE: Calcola statistiche per MESE CORRENTE
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       
-      // Calcola messaggi non letti
-      const unreadMessages = messages.filter(msg => 
+      // Messaggi solo del mese corrente
+      const allMessages = await storage.getTelegramMessages();
+      const currentMonthMessages = allMessages.filter(msg => {
+        const msgDate = new Date(msg.createdAt);
+        return msgDate >= startOfMonth && msgDate <= endOfMonth;
+      });
+      
+      // Calcola messaggi non letti del mese corrente
+      const unreadMessages = currentMonthMessages.filter(msg => 
         msg.readStatus !== 'read' && msg.direction === 'inbound'
       ).length;
       
       // Calcola messaggi di oggi
       const today = new Date();
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const todayMessages = messages.filter(msg => 
+      const todayMessages = currentMonthMessages.filter(msg => 
         new Date(msg.createdAt) >= startOfDay
       ).length;
       
-      console.log(`[TELEGRAM STATS] Real stats: ${unreadMessages} unread, ${todayMessages} today`);
+      console.log(`[TELEGRAM STATS] Current month (${now.getMonth() + 1}/${now.getFullYear()}): ${currentMonthMessages.length} total, ${unreadMessages} unread, ${todayMessages} today`);
       
       res.json({
         configured: settings.length > 0,
@@ -191,13 +200,13 @@ export function setupTelegramRoutes(app: Express): void {
         username: botInfo?.username || settings[0]?.botUsername,
         webhook: botInfo && telegramService.isInitialized(),
         totalChats: chats.length,
-        unreadMessages, // REAL VALUE from database
-        todayMessages, // REAL VALUE from database
-        // Additional real metrics
-        totalMessages: messages.length,
-        outboundMessages: messages.filter(msg => msg.direction === 'outbound').length,
-        inboundMessages: messages.filter(msg => msg.direction === 'inbound').length,
-        aiGeneratedMessages: messages.filter(msg => msg.isAiGenerated).length
+        unreadMessages, // CURRENT MONTH ONLY
+        todayMessages, // TODAY ONLY
+        // Additional metrics for current month
+        totalMessages: currentMonthMessages.length, // CURRENT MONTH ONLY
+        outboundMessages: currentMonthMessages.filter(msg => msg.direction === 'outbound').length,
+        inboundMessages: currentMonthMessages.filter(msg => msg.direction === 'inbound').length,
+        aiGeneratedMessages: currentMonthMessages.filter(msg => msg.isAiGenerated).length
       });
     } catch (error) {
       console.error('Error fetching Telegram stats:', error);
@@ -649,23 +658,7 @@ export function setupTelegramRoutes(app: Express): void {
     }
   });
 
-  // Get bot stats
-  app.get('/api/telegram/stats', async (req, res) => {
-    try {
-      const stats = {
-        isInitialized: telegramService.isInitialized(),
-        botUsername: telegramService.getBotUsername(),
-        totalChats: (await storage.getTelegramChats()).length,
-        totalTemplates: (await storage.getTelegramTemplates()).length,
-        settings: telegramService.getSettings()
-      };
-      
-      res.json(stats);
-    } catch (error) {
-      console.error('Error fetching Telegram stats:', error);
-      res.status(500).json({ error: 'Failed to fetch stats' });
-    }
-  });
+  // (Endpoint duplicato rimosso - quello principale è sopra con filtro mese corrente)
 
   // Update Telegram chat (for archiving)
   app.put('/api/telegram/chats/:id', async (req, res) => {

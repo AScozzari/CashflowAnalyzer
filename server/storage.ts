@@ -5085,7 +5085,7 @@ async getMovements(filters: {
 
   // === COMMUNICATION STATS IMPLEMENTATION ===
 
-  // 🔥 EMAIL STATS REALI DAL DATABASE - Sostituisce i dati demo
+  // 🔥 EMAIL STATS REALI DAL DATABASE - Filtrate per mese corrente
   async getEmailStatistics(): Promise<{
     totalEmails: number;
     sentEmails: number;
@@ -5093,31 +5093,42 @@ async getMovements(filters: {
     todayEmails: number;
   }> {
     try {
+      const now = new Date();
       const today = new Date();
       const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       
-      // Conta tutte le notifiche email dal database
+      // Conta tutte le notifiche email dal database per MESE CORRENTE
       const totalResult = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(notifications)
-        .where(eq(notifications.category, 'email'));
+        .where(and(
+          eq(notifications.category, 'email'),
+          gte(notifications.createdAt, startOfMonth),
+          lte(notifications.createdAt, endOfMonth)
+        ));
       
-      // Conta le notifiche email lette (considerate "inviate con successo")
+      // Conta le notifiche email lette (considerate "inviate con successo") - MESE CORRENTE
       const sentResult = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(notifications)
         .where(and(
           eq(notifications.category, 'email'),
-          eq(notifications.isRead, true)
+          eq(notifications.isRead, true),
+          gte(notifications.createdAt, startOfMonth),
+          lte(notifications.createdAt, endOfMonth)
         ));
       
-      // Conta le notifiche email non lette (considerate "fallite/in sospeso")
+      // Conta le notifiche email non lette (considerate "fallite/in sospeso") - MESE CORRENTE
       const failedResult = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(notifications)
         .where(and(
           eq(notifications.category, 'email'),
-          eq(notifications.isRead, false)
+          eq(notifications.isRead, false),
+          gte(notifications.createdAt, startOfMonth),
+          lte(notifications.createdAt, endOfMonth)
         ));
       
       // Conta le notifiche email create oggi
@@ -5134,7 +5145,7 @@ async getMovements(filters: {
       const failedEmails = Number(failedResult[0]?.count) || 0;
       const todayEmails = Number(todayResult[0]?.count) || 0;
       
-      console.log('[EMAIL STATS] ✅ Dati reali dal database:', { totalEmails, sentEmails, failedEmails, todayEmails });
+      console.log(`[EMAIL STATS] ✅ Current month (${now.getMonth() + 1}/${now.getFullYear()}): ${totalEmails} total, ${sentEmails} sent, ${failedEmails} failed, ${todayEmails} today`);
       
       return {
         totalEmails,
@@ -5160,13 +5171,28 @@ async getMovements(filters: {
 
   async getSmsStats(): Promise<{ total: number; sent: number; failed: number }> {
     try {
-      // Count from SMS messages table
-      const smsMessages = await this.getSmsMessages(1000); // Get recent SMS
+      // Get current month date range
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       
-      const total = smsMessages.length;
+      // Count from SMS messages table for CURRENT MONTH only
+      const smsMessagesData = await db
+        .select()
+        .from(smsMessages)
+        .where(
+          and(
+            gte(smsMessages.createdAt, startOfMonth),
+            lte(smsMessages.createdAt, endOfMonth)
+          )
+        );
+      
+      const total = smsMessagesData.length;
       // Count by status if available, otherwise assume sent
-      const sent = smsMessages.filter(msg => msg.status === 'sent' || msg.status === 'delivered').length;
-      const failed = smsMessages.filter(msg => msg.status === 'failed').length;
+      const sent = smsMessagesData.filter(msg => msg.status === 'sent' || msg.status === 'delivered').length;
+      const failed = smsMessagesData.filter(msg => msg.status === 'failed').length;
+      
+      console.log(`[SMS STATS] Current month (${now.getMonth() + 1}/${now.getFullYear()}): ${total} total, ${sent} sent, ${failed} failed`);
       
       return { total, sent, failed };
     } catch (error) {
