@@ -31,6 +31,16 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     'manage_entities'
     // NO 'view_settings' - finance non vede impostazioni
   ],
+  cashflow: [
+    'create_movements',
+    'edit_movements',
+    'delete_movements', 
+    'view_all_movements',
+    'view_analytics',
+    'manage_entities'
+    // NO 'view_settings' - cashflow non vede impostazioni
+    // NO fatture - cashflow non può gestire fatture
+  ],
   user: [
     'view_analytics', // Solo i propri dati
     // NO create/edit/delete movements

@@ -304,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/companies", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/companies", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCompanySchema.parse(req.body);
       const company = await storage.createCompany(validatedData);
@@ -321,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.put("/api/companies/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/companies/:id", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCompanySchema.partial().parse(req.body);
       const company = await storage.updateCompany(req.params.id, validatedData);
@@ -362,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/cores", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/cores", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCoreSchema.parse(req.body);
       const core = await storage.createCore(validatedData);
@@ -379,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.put("/api/cores/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/cores/:id", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertCoreSchema.partial().parse(req.body);
       const core = await storage.updateCore(req.params.id, validatedData);
@@ -437,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.put("/api/resources/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/resources/:id", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertResourceSchema.partial().parse(req.body);
       const resource = await storage.updateResource(req.params.id, validatedData);
@@ -500,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/ibans", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/ibans", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       console.log('[IBAN SERVER] Dati ricevuti:', req.body);
       console.log('[IBAN SERVER] User:', req.user?.username, req.user?.role);
@@ -522,7 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.put("/api/ibans/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/ibans/:id", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertIbanSchema.partial().parse(req.body);
       const iban = await storage.updateIban(req.params.id, validatedData);
@@ -563,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/offices", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/offices", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertOfficeSchema.parse(req.body);
       const office = await storage.createOffice(validatedData);
@@ -580,7 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.put("/api/offices/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/offices/:id", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertOfficeSchema.partial().parse(req.body);
       const office = await storage.updateOffice(req.params.id, validatedData);
@@ -618,7 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/tags", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/tags", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertTagSchema.parse(req.body);
       const tag = await storage.createTag(validatedData);
@@ -635,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.put("/api/tags/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/tags/:id", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertTagSchema.partial().parse(req.body);
       const tag = await storage.updateTag(req.params.id, validatedData);
@@ -684,7 +684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/movement-reasons", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/movement-reasons", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementReasonSchema.parse(req.body);
       const reason = await storage.createMovementReason(validatedData);
@@ -701,7 +701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.put("/api/movement-reasons/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/movement-reasons/:id", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementReasonSchema.partial().parse(req.body);
       const reason = await storage.updateMovementReason(req.params.id, validatedData);
@@ -728,7 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/movement-statuses", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/movement-statuses", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementStatusSchema.parse(req.body);
       const status = await storage.createMovementStatus(validatedData);
@@ -745,7 +745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.put("/api/movement-statuses/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/movement-statuses/:id", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertMovementStatusSchema.partial().parse(req.body);
       const status = await storage.updateMovementStatus(req.params.id, validatedData);
@@ -1001,7 +1001,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.post("/api/movements", requireRole("admin", "finance"), upload.single('document'), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/movements", requireRole("admin", "finance", "cashflow"), upload.single('document'), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const movementData = {
         ...req.body,
@@ -1027,7 +1027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  app.put("/api/movements/:id", requireRole("admin", "finance"), upload.single('document'), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/movements/:id", requireRole("admin", "finance", "cashflow"), upload.single('document'), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const updateData = {
         ...req.body,
@@ -1881,7 +1881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Create new SendGrid template
-  app.post("/api/sendgrid/templates", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/sendgrid/templates", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertSendgridTemplateSchema.parse(req.body);
       const template = await storage.createSendgridTemplate(validatedData);
@@ -1901,7 +1901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Update SendGrid template
-  app.put("/api/sendgrid/templates/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.put("/api/sendgrid/templates/:id", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const validatedData = insertSendgridTemplateSchema.partial().parse(req.body);
       const template = await storage.updateSendgridTemplate(req.params.id, validatedData);
@@ -1925,7 +1925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Delete SendGrid template
-  app.delete("/api/sendgrid/templates/:id", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.delete("/api/sendgrid/templates/:id", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const success = await storage.deleteSendgridTemplate(req.params.id);
       
@@ -1942,7 +1942,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Test SendGrid template
-  app.post("/api/sendgrid/templates/test", requireRole("admin", "finance"), handleAsyncErrors(async (req: any, res: any) => {
+  app.post("/api/sendgrid/templates/test", requireRole("admin", "finance", "cashflow"), handleAsyncErrors(async (req: any, res: any) => {
     try {
       const { templateId, testEmail } = req.body;
       

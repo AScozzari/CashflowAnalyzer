@@ -47,7 +47,7 @@ export default function Sidebar({ isCollapsed: externalCollapsed, onCollapsedCha
       { name: "Comunicazioni", href: "/communications", icon: MessageSquare },
     ];
 
-    // Admin e Finance possono accedere alla fatturazione
+    // Admin e Finance possono accedere alla fatturazione (cashflow NO)
     if (user && (user.role === "admin" || user.role === "finance")) {
       baseNavigation.push({ name: "Fatture", href: "/invoicing", icon: FileText });
     }

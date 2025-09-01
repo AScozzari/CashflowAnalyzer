@@ -50,6 +50,7 @@ export const securityPolicySchema = z.object({
   twoFactorEnabled: z.boolean().default(false),
   twoFactorMandatoryForAdmin: z.boolean().default(false),
   twoFactorMandatoryForFinance: z.boolean().default(false),
+  twoFactorMandatoryForCashflow: z.boolean().default(false),
   
   // Rate Limiting
   loginAttemptsLimit: z.number().min(3).max(10).default(5),

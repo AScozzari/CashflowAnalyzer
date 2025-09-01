@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 // User role validation
-export const userRoleSchema = z.enum(['admin', 'finance', 'user']);
+export const userRoleSchema = z.enum(['admin', 'finance', 'cashflow', 'user']);
 
 // User status validation
 export const userStatusSchema = z.enum(['active', 'inactive', 'suspended']);

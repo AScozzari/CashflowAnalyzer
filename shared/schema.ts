@@ -39,7 +39,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
-  role: text("role").notNull().default('user'), // 'admin', 'finance', 'user'
+  role: text("role").notNull().default('user'), // 'admin', 'finance', 'cashflow', 'user'
   resourceId: varchar("resource_id"), // collegamento opzionale alla risorsa
   isFirstAccess: boolean("is_first_access").notNull().default(true),
   resetToken: text("reset_token"),
