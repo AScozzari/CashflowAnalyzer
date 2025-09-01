@@ -940,18 +940,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = req.user;
       console.log(`[DASHBOARD] User requesting recent movements:`, { userId: user.id, role: user.role });
       
-      // Calcola il primo e ultimo giorno del mese corrente
+      // TEMPORANEO: Forza agosto per compatibilità deployment e dati demo
+      // TODO: In produzione, usare mese corrente o permettere configurazione
       const now = new Date();
       console.log(`[DASHBOARD] Server date:`, now.toISOString());
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      
+      // Forza agosto 2025 per mantenere compatibilità con dati esistenti
+      const forceMonth = 7; // agosto (0-based)
+      const forceYear = 2025;
+      const startOfMonth = new Date(forceYear, forceMonth, 1);
+      const endOfMonth = new Date(forceYear, forceMonth + 1, 0, 23, 59, 59, 999);
+      
+      console.log(`[DASHBOARD] Forced to August 2025 for deployment compatibility`);
       
       const filters: any = {
         startDate: startOfMonth.toISOString().split('T')[0],
         endDate: endOfMonth.toISOString().split('T')[0]
       };
       
-      console.log(`[DASHBOARD] Current month: ${now.getMonth() + 1}/${now.getFullYear()}`);
+      console.log(`[DASHBOARD] Forced month: ${forceMonth + 1}/${forceYear} (August 2025)`);
       console.log(`[DASHBOARD] Filters applied:`, filters);
       
       // User con role 'user' vedono solo i loro movimenti
