@@ -90,10 +90,16 @@ function DashboardChart({ title, subtitle, movements, isLoading, type }: {
           }
         }, {} as Record<string, any>);
         
-        // Restituisce tutti i giorni del mese corrente (non solo ultimi 7)
+        // Ordinamento corretto: usa la data originale per ordinare
         return Object.values(groupedByDate).sort((a: any, b: any) => {
-          const dateA = new Date(a.date.split('/').reverse().join('-'));
-          const dateB = new Date(b.date.split('/').reverse().join('-'));
+          // Trova i movimenti originali per recuperare la data completa
+          const movementA = movements.find(m => format(new Date(m.flowDate), 'dd/MM', { locale: it }) === a.date);
+          const movementB = movements.find(m => format(new Date(m.flowDate), 'dd/MM', { locale: it }) === b.date);
+          
+          if (!movementA || !movementB) return 0;
+          
+          const dateA = new Date(movementA.flowDate);
+          const dateB = new Date(movementB.flowDate);
           return dateA.getTime() - dateB.getTime();
         });
       } else {
