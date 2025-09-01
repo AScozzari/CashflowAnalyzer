@@ -728,20 +728,7 @@ export default function DashboardProfessional() {
   const currentMonthStart = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
   const currentMonthEnd = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
   
-  // Fetch analytics data for CURRENT MONTH ONLY
-  const { data: statsData, isLoading: statsLoading, error: statsError } = useQuery({
-    queryKey: ["/api/analytics/stats", currentMonthStart, currentMonthEnd],
-    queryFn: () => fetch(`/api/analytics/stats?startDate=${currentMonthStart}&endDate=${currentMonthEnd}`, { credentials: 'include' }).then(res => res.json()),
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-  });
-
-  // Debug logging per vedere cosa succede
-  console.log('🔍 DASHBOARD DEBUG:', { 
-    statsData, 
-    statsLoading, 
-    statsError: statsError?.message 
-  });
+  // Remove separate stats API call - we'll calculate from movements data for consistency
 
   // Fetch movements data with proper typing - use /recent endpoint for current month data
   const { data: movementsData, isLoading: movementsLoading, error: movementsError } = useQuery<MovementWithRelations[]>({
@@ -882,8 +869,8 @@ export default function DashboardProfessional() {
         
         {/* Enhanced Stats Grid - Current Month Only */}
         <EnhancedStatsGrid 
-          data={statsData} 
-          isLoading={statsLoading} 
+          data={monthlyStats.current} 
+          isLoading={movementsLoading} 
           movements={movements} 
           monthlyStats={monthlyStats}
           formatChange={formatChange}
