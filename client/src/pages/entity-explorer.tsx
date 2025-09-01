@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { AvatarInitials } from '@/components/ui/avatar-initials';
 import { Separator } from '@/components/ui/separator';
@@ -26,6 +27,7 @@ import {
   TrendingDown,
   Eye,
   Filter,
+  RotateCcw,
   Download,
   MoreHorizontal,
   Building,
@@ -76,7 +78,6 @@ export default function EntityExplorer() {
   const [isSearching, setIsSearching] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [showFilters, setShowFilters] = useState(false);
   const [showEntityModal, setShowEntityModal] = useState(false);
 
   // Real search function using API
@@ -201,68 +202,19 @@ export default function EntityExplorer() {
                 size="lg"
                 className="px-6"
                 disabled={isSearching}
-                onClick={() => setShowFilters(!showFilters)}
+                onClick={() => {
+                  setSearchQuery('');
+                  setTypeFilter('all');
+                  setStatusFilter('all');
+                  setSearchResults([]);
+                  setSelectedEntity(null);
+                }}
               >
-                <Filter className="w-4 h-4 mr-2" />
-                Filtri
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Resetta
               </Button>
             </div>
 
-            {/* Filters Panel */}
-            {showFilters && (
-              <div className="mt-4 p-4 bg-muted/30 rounded-lg border">
-                <h4 className="text-sm font-medium mb-3">Filtri di ricerca</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-2 block">Tipo Entità</label>
-                    <Select value={typeFilter} onValueChange={(value) => {
-                      setTypeFilter(value);
-                      if (searchQuery) performSearch(searchQuery);
-                    }}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Tutti i tipi" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tutti i tipi</SelectItem>
-                        <SelectItem value="customer">Clienti</SelectItem>
-                        <SelectItem value="supplier">Fornitori</SelectItem>
-                        <SelectItem value="resource">Risorse</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-2 block">Stato</label>
-                    <Select value={statusFilter} onValueChange={(value) => {
-                      setStatusFilter(value);
-                      if (searchQuery) performSearch(searchQuery);
-                    }}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Tutti gli stati" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tutti gli stati</SelectItem>
-                        <SelectItem value="Attivo">Attivo</SelectItem>
-                        <SelectItem value="Inattivo">Inattivo</SelectItem>
-                        <SelectItem value="Sospeso">Sospeso</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="mt-3 flex justify-end">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setTypeFilter('all');
-                      setStatusFilter('all');
-                      if (searchQuery) performSearch(searchQuery);
-                    }}
-                  >
-                    Cancella Filtri
-                  </Button>
-                </div>
-              </div>
-            )}
 
             {/* Search Results */}
             {searchResults.length > 0 && (
